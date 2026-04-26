@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile — SabSys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h4 class="fw-bold mb-4">Your profile</h4>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="text-muted small text-uppercase mb-3">Account</h6>
+        <dl class="row small mb-0">
+          <dt class="col-4 text-muted">Email</dt>
+          <dd class="col-8">{{ user.email }}</dd>
+          <dt class="col-4 text-muted">Member since</dt>
+          <dd class="col-8">{{ user.created_at|date:"N j, Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted small text-uppercase mb-3">Personal info</h6>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          {% with placeholder="https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&size=96&background=6c757d&color=fff&rounded=true" %}
+          <div class="d-flex flex-column align-items-center mb-4"
+               x-data="avatarHandler('{% if user.avatar %}{{ user.avatar.url }}{% endif %}', '{{ placeholder }}')">
+
+            <div class="position-relative mb-2">
+              <img :src="previewSrc"
+                   alt="Avatar"
+                   width="96" height="96"
+                   class="rounded-circle object-fit-cover border shadow-sm">
+
+              <button type="button"
+                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                      style="width:28px;height:28px;top:0;right:0;"
+                      title="Change photo"
+                      @click="$refs.fileInput.click()">
+                <i class="bi bi-pencil" style="font-size:.7rem;"></i>
+              </button>
+
+              <button type="button"
+                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                      style="width:28px;height:28px;bottom:0;right:0;"
+                      title="Remove photo"
+                      x-show="hasAvatar"
+                      @click="clear()">
+                <i class="bi bi-x" style="font-size:.85rem;"></i>
+              </button>
+            </div>
+
+            <p class="text-muted mb-0" style="font-size:.75rem;">Allowed file types: png, jpg, jpeg.</p>
+
+            <input type="file" name="avatar" id="id_avatar" accept=".png,.jpg,.jpeg"
+                   class="d-none" x-ref="fileInput" @change="change($event)">
+            <input type="checkbox" name="avatar-clear" id="avatar-clear_id"
+                   class="d-none" x-ref="clearInput">
+          </div>
+          {% endwith %}
+
+          {% crispy form %}
+
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-3">
+      <div class="card-body">
+        <h6 class="text-muted small text-uppercase mb-3">Change password</h6>
+        <a href="{% url 'account_change_password' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-key me-1"></i> Change password
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function avatarHandler(currentUrl, placeholderUrl) {
+  return {
+    previewSrc: currentUrl || placeholderUrl,
+    hasAvatar:  !!currentUrl,
+
+    change(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      this.previewSrc = URL.createObjectURL(file);
+      this.hasAvatar = true;
+      this.$refs.clearInput.checked = false;
+    },
+
+    clear() {
+      this.previewSrc = placeholderUrl;
+      this.hasAvatar = false;
+      this.$refs.fileInput.value = '';
+      this.$refs.clearInput.checked = true;
+    },
+  };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Join {{ invitation.organization.name|default:"Organization" }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-5 text-center">
+
+        {% if status == "already_accepted" %}
+          <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+          <h5 class="fw-bold mt-3 mb-2">Already accepted</h5>
+          <p class="text-muted mb-4">This invitation has already been used.</p>
+          <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary">Go to dashboard</a>
+
+        {% elif status == "expired" %}
+          <i class="bi bi-clock-history text-warning" style="font-size:3rem;"></i>
+          <h5 class="fw-bold mt-3 mb-2">Invitation expired</h5>
+          <p class="text-muted mb-4">
+            This invitation for <strong>{{ invitation.email }}</strong> to join
+            <strong>{{ invitation.organization.name }}</strong> has expired.
+            Please ask an admin to send a new one.
+          </p>
+          {% if user.is_authenticated %}
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">Go to dashboard</a>
+          {% else %}
+            <a href="{% url 'account_login' %}" class="btn btn-outline-secondary">Sign in</a>
+          {% endif %}
+
+        {% elif status == "login_required" %}
+          <i class="bi bi-envelope-open-fill text-primary" style="font-size:3rem;"></i>
+          <h5 class="fw-bold mt-3 mb-2">You've been invited!</h5>
+          <p class="text-muted mb-1">
+            <strong>{{ invitation.invited_by.full_name|default:"Someone" }}</strong> invited
+            <strong>{{ invitation.email }}</strong> to join
+          </p>
+          <p class="fw-semibold mb-4">{{ invitation.organization.name }}</p>
+          <div class="d-grid gap-2">
+            <a href="{{ login_url }}" class="btn btn-primary">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign in to accept
+            </a>
+            <a href="{{ signup_url }}" class="btn btn-outline-primary">
+              <i class="bi bi-person-plus me-1"></i> Create an account
+            </a>
+          </div>
+
+        {% elif status == "wrong_email" %}
+          <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:3rem;"></i>
+          <h5 class="fw-bold mt-3 mb-2">Wrong account</h5>
+          <p class="text-muted mb-4">
+            This invitation was sent to <strong>{{ invitation.email }}</strong>
+            but you are signed in as <strong>{{ user.email }}</strong>.
+            Please sign in with the correct account to accept.
+          </p>
+          <div class="d-grid gap-2">
+            <a href="{% url 'account_logout' %}?next={{ request.path }}" class="btn btn-outline-secondary">
+              <i class="bi bi-box-arrow-right me-1"></i> Sign out and switch account
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-link text-muted">Go to dashboard</a>
+          </div>
+
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

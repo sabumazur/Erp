@@ -1,0 +1,12 @@
+Hi,
+
+{{ invitation.invited_by.full_name|default:"A team admin" }} has invited you to join {{ invitation.organization.name }} on SabSys as a {{ invitation.get_role_display }}.
+
+Accept your invitation here:
+{{ accept_url }}
+
+This invitation expires on {{ invitation.expires_at|date:"N j, Y" }}.
+
+If you did not expect this invitation, you can safely ignore this email.
+
+— The SabSys team

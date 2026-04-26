@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip --version)",
+      "Bash(psql --version)",
+      "Bash(python -m pip list)",
+      "PowerShell(winget install --id PostgreSQL.PostgreSQL.17 --accept-package-agreements --accept-source-agreements 2>&1)",
+      "PowerShell($pgBin = \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; & \"$pgBin\\\\pg_ctl.exe\" status -D \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\data\" 2>&1)",
+      "Bash(grep -v \"^$\")",
+      "PowerShell(Start-Process powershell -Verb RunAs -ArgumentList \"-NoProfile -Command `\"Start-Service postgresql-x64-17; Start-Sleep 3; \\(Get-Service postgresql-x64-17\\).Status`\"\" -Wait 2>&1)",
+      "Bash(python3 -c \"import sys; sys.path.insert\\(0, '/c/Users/sabum/sabsys'\\); from config.settings import development\")"
+    ]
+  }
+}

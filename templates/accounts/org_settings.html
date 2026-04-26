@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Organization Settings — SabSys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h4 class="fw-bold mb-0">Organization Settings</h4>
+        <span class="text-muted small">{{ organization.name }}</span>
+      </div>
+      <a href="{% url 'accounts:members' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-people me-1"></i> Members
+      </a>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body p-4">
+        <h6 class="text-muted small text-uppercase mb-3">General</h6>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          {% with placeholder="https://ui-avatars.com/api/?name={{ organization.name|urlencode }}&size=80&background=0d6efd&color=fff&rounded=false" %}
+          <div class="d-flex align-items-center gap-4 mb-4"
+               x-data="avatarHandler('{% if organization.logo %}{{ organization.logo.url }}{% endif %}', '{{ placeholder }}')">
+            <div class="position-relative">
+              <img :src="previewSrc"
+                   alt="Logo"
+                   width="80" height="80"
+                   class="rounded-3 object-fit-cover border shadow-sm">
+
+              <button type="button"
+                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                      style="width:26px;height:26px;top:0;right:0;"
+                      title="Change logo"
+                      @click="$refs.fileInput.click()">
+                <i class="bi bi-pencil" style="font-size:.65rem;"></i>
+              </button>
+
+              <button type="button"
+                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                      style="width:26px;height:26px;bottom:0;right:0;"
+                      title="Remove logo"
+                      x-show="hasAvatar"
+                      @click="clear()">
+                <i class="bi bi-x" style="font-size:.8rem;"></i>
+              </button>
+            </div>
+
+            <div>
+              <div class="fw-semibold">{{ organization.name }}</div>
+              <div class="text-muted small">{{ organization.slug }}</div>
+              <div class="text-muted" style="font-size:.72rem;">Allowed: png, jpg, jpeg.</div>
+            </div>
+
+            <input type="file" name="logo" id="id_logo" accept=".png,.jpg,.jpeg"
+                   class="d-none" x-ref="fileInput" @change="change($event)">
+            <input type="checkbox" name="logo-clear" id="logo-clear_id"
+                   class="d-none" x-ref="clearInput">
+          </div>
+          {% endwith %}
+
+          {% crispy form %}
+
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body p-4">
+        <h6 class="text-muted small text-uppercase mb-1">Details</h6>
+        <dl class="row small mb-0 mt-3">
+          <dt class="col-4 text-muted">Slug</dt>
+          <dd class="col-8 font-monospace">{{ organization.slug }}</dd>
+          <dt class="col-4 text-muted">Owner</dt>
+          <dd class="col-8">{{ organization.owner.full_name }}</dd>
+          <dt class="col-4 text-muted">Created</dt>
+          <dd class="col-8">{{ organization.created_at|date:"N j, Y" }}</dd>
+          <dt class="col-4 text-muted">Status</dt>
+          <dd class="col-8">
+            {% if organization.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function avatarHandler(currentUrl, placeholderUrl) {
+  return {
+    previewSrc: currentUrl || placeholderUrl,
+    hasAvatar:  !!currentUrl,
+    change(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      this.previewSrc = URL.createObjectURL(file);
+      this.hasAvatar = true;
+      this.$refs.clearInput.checked = false;
+    },
+    clear() {
+      this.previewSrc = placeholderUrl;
+      this.hasAvatar = false;
+      this.$refs.fileInput.value = '';
+      this.$refs.clearInput.checked = true;
+    },
+  };
+}
+</script>
+{% endblock %}
