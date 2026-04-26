@@ -17,15 +17,6 @@
       </a>
     </div>
 
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-
     {# ── Create team form ──────────────────────────────────────────── #}
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-white border-bottom py-3">
@@ -93,13 +84,28 @@
                    class="btn btn-sm btn-outline-secondary" title="Edit">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <form method="post" action="{% url 'accounts:team_delete' team.pk %}"
-                      onsubmit="return confirm('Delete team {{ team.name }}? Members will be unassigned.')">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
+                <div x-data="{ _open: false }">
+                  <form method="post" action="{% url 'accounts:team_delete' team.pk %}"
+                        @submit.prevent="_open = true">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                  <dialog x-ref="dlg"
+                          x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
+                          @close="_open = false"
+                          class="erp-dialog confirm-dialog">
+                    <div class="p-4">
+                      <p class="mb-1 fw-semibold">Delete team?</p>
+                      <p class="text-muted small mb-3"><strong>{{ team.name }}</strong> will be removed and all members will be unassigned.</p>
+                      <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Cancel</button>
+                        <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Delete</button>
+                      </div>
+                    </div>
+                  </dialog>
+                </div>
               </div>
             </div>
 

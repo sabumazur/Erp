@@ -45,14 +45,27 @@
 
             {# Leave current org — only shown when the user belongs to more than one #}
             {% if user_memberships|length > 1 and organization %}
-            <li>
+            <li x-data="{ _open: false }">
               <form method="post" action="{% url 'accounts:leave_org' %}"
-                    onsubmit="return confirm('Leave {{ organization.name }}?')">
+                    @submit.prevent="_open = true">
                 {% csrf_token %}
                 <button type="submit" class="dropdown-item text-danger">
                   <i class="bi bi-box-arrow-left me-1"></i> Leave organization
                 </button>
               </form>
+              <dialog x-ref="dlg"
+                      x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
+                      @close="_open = false"
+                      class="erp-dialog confirm-dialog">
+                <div class="p-4">
+                  <p class="mb-1 fw-semibold">Leave organization?</p>
+                  <p class="text-muted small mb-3">You will lose access to <strong>{{ organization.name }}</strong>. You can only rejoin via invitation.</p>
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Stay</button>
+                    <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Leave</button>
+                  </div>
+                </div>
+              </dialog>
             </li>
             {% endif %}
 

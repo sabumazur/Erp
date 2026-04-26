@@ -1,7 +1,22 @@
-{% for message in messages %}
-<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert"
-     x-data x-init="setTimeout(() => $el.remove(), 4000)">
-  {{ message }}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% if messages %}
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100">
+  {% for message in messages %}
+  <div class="toast align-items-center border-0 text-bg-{{ message.tags|default:'secondary' }}"
+       role="alert" aria-live="assertive" aria-atomic="true"
+       data-bs-autohide="true" data-bs-delay="4500">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2">
+        {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill"></i>
+        {% elif message.tags == 'danger' %}<i class="bi bi-exclamation-circle-fill"></i>
+        {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i>
+        {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+        {{ message }}
+      </div>
+      <button type="button"
+              class="btn-close {% if message.tags != 'warning' %}btn-close-white{% endif %} me-2 m-auto"
+              data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+  {% endfor %}
 </div>
-{% endfor %}
+{% endif %}
