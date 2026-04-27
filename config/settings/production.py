@@ -1,3 +1,4 @@
+import os
 from .base import *
 from decouple import config, Csv
 import dj_database_url
@@ -40,6 +41,13 @@ STORAGES = {
 # ── Security ──────────────────────────────────────────────────────────────────
 
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv(), default="")
+
+# Railway injects RAILWAY_PUBLIC_DOMAIN automatically — no manual env var needed
+# for the default *.up.railway.app domain or any custom domain Railway manages.
+_railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
+if _railway_domain:
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, _railway_domain]
+    CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, f"https://{_railway_domain}"]
 
 # Trust Railway's reverse proxy so SECURE_SSL_REDIRECT doesn't loop
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
