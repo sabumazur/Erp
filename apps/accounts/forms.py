@@ -15,7 +15,7 @@ class CustomSignupForm(SignupForm):
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs["autocomplete"] = "new-password"
         if "password1" in self.fields:
-            self.fields["password1"].help_text = _PASSWORD_HELP
+            self.fields["password1"].help_text = ""
 
 
 class CustomChangePasswordForm(ChangePasswordForm):

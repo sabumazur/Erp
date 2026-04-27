@@ -3,6 +3,10 @@
 
 {% block title %}Create account — SabSys{% endblock %}
 
+{% block extra_css %}
+<style>[x-cloak]{display:none!important}</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-5">
@@ -13,7 +17,8 @@
 
         <form method="post" action="{% url 'account_signup' %}" x-data="passwordChecker()">
           {% csrf_token %}
-          {{ form|crispy }}
+          {{ form.email|as_crispy_field }}
+          {{ form.password1|as_crispy_field }}
 
           <div class="mb-3" x-show="password.length > 0" x-cloak>
             <div class="progress mb-2" style="height:5px;">
@@ -46,6 +51,8 @@
             </ul>
           </div>
 
+          {{ form.password2|as_crispy_field }}
+
           <div class="d-grid mt-3">
             <button type="submit" class="btn btn-success">
               <i class="bi bi-person-plus me-1"></i> Create account
@@ -64,7 +71,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<style>[x-cloak]{display:none!important}</style>
 <script>
 function passwordChecker() {
   return {
