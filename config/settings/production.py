@@ -27,6 +27,7 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=config("EMAIL_HOST_USE
 SERVER_EMAIL = config("EMAIL_HOST_USER")
 
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 # ── Static files ──────────────────────────────────────────────────────────────
 

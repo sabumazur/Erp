@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+
+# Secrets — never bake into the image
+.env
+.env.*
+
+# Generated at runtime
+staticfiles/
+media/
+*.log
+
+# Dev tools
+.git/
+.gitignore
+.python-version
+pytest.ini
+.coverage
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
