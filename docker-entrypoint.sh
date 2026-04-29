@@ -7,6 +7,9 @@ python manage.py collectstatic --no-input
 echo "Running migrations..."
 python manage.py migrate --no-input
 
+echo "Configuring site domain..."
+python manage.py configure_site
+
 echo "Starting gunicorn..."
 exec gunicorn config.wsgi \
     --workers "${GUNICORN_WORKERS:-2}" \
