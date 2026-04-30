@@ -1,0 +1,119 @@
+# Spanish translations for sabsys.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# ── User ──────────────────────────────────────────────────────────────────────
+
+msgid "email"
+msgstr "correo electrónico"
+
+msgid "first name"
+msgstr "nombre"
+
+msgid "last name"
+msgstr "apellido"
+
+msgid "avatar"
+msgstr "avatar"
+
+msgid "active"
+msgstr "activo"
+
+msgid "staff status"
+msgstr "estado de personal"
+
+msgid "user"
+msgstr "usuario"
+
+msgid "users"
+msgstr "usuarios"
+
+# ── Organization ──────────────────────────────────────────────────────────────
+
+msgid "name"
+msgstr "nombre"
+
+msgid "slug"
+msgstr "slug"
+
+msgid "owner"
+msgstr "propietario"
+
+msgid "logo"
+msgstr "logotipo"
+
+msgid "tax ID"
+msgstr "RNC/Cédula"
+
+msgid "phone"
+msgstr "teléfono"
+
+msgid "website"
+msgstr "sitio web"
+
+msgid "address"
+msgstr "dirección"
+
+msgid "city"
+msgstr "ciudad"
+
+msgid "state"
+msgstr "estado/provincia"
+
+msgid "zip code"
+msgstr "código postal"
+
+msgid "country"
+msgstr "país"
+
+msgid "organization"
+msgstr "organización"
+
+msgid "organizations"
+msgstr "organizaciones"
+
+# ── Team ──────────────────────────────────────────────────────────────────────
+
+msgid "module access"
+msgstr "acceso a módulos"
+
+msgid "Leave empty to grant access to all modules."
+msgstr "Dejar vacío para otorgar acceso a todos los módulos."
+
+msgid "team"
+msgstr "equipo"
+
+msgid "teams"
+msgstr "equipos"
+
+# ── Membership ────────────────────────────────────────────────────────────────
+
+msgid "Owner"
+msgstr "Propietario"
+
+msgid "Admin"
+msgstr "Administrador"
+
+msgid "Member"
+msgstr "Miembro"
+
+msgid "Viewer"
+msgstr "Espectador"
+
+msgid "membership"
+msgstr "membresía"
+
+msgid "memberships"
+msgstr "membresías"
+
+# ── Invitation ────────────────────────────────────────────────────────────────
+
+msgid "invitation"
+msgstr "invitación"
+
+msgid "invitations"
+msgstr "invitaciones"

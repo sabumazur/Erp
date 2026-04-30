@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import ERPBaseModel, SoftDeleteQuerySet
 
@@ -29,12 +30,12 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin, ERPBaseModel):
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
-    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    email = models.EmailField(unique=True, verbose_name=_("email"))
+    first_name = models.CharField(max_length=150, blank=True, verbose_name=_("first name"))
+    last_name = models.CharField(max_length=150, blank=True, verbose_name=_("last name"))
+    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, verbose_name=_("avatar"))
+    is_active = models.BooleanField(default=True, verbose_name=_("active"))
+    is_staff = models.BooleanField(default=False, verbose_name=_("staff status"))
 
     objects = UserManager()
 
@@ -42,8 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin, ERPBaseModel):
     REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = "User"
-        verbose_name_plural = "Users"
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 
     def __str__(self):
         return self.email
@@ -54,19 +55,33 @@ class User(AbstractBaseUser, PermissionsMixin, ERPBaseModel):
 
 
 class Organization(ERPBaseModel):
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, max_length=255)
+    name = models.CharField(max_length=255, verbose_name=_("name"))
+    slug = models.SlugField(unique=True, max_length=255, verbose_name=_("slug"))
     owner = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="owned_organizations",
+        verbose_name=_("owner"),
     )
-    logo = models.ImageField(upload_to="org_logos/", null=True, blank=True)
-    is_active = models.BooleanField(default=True)
+    logo = models.ImageField(upload_to="org_logos/", null=True, blank=True, verbose_name=_("logo"))
+    is_active = models.BooleanField(default=True, verbose_name=_("active"))
+
+    # Contact & identity
+    tax_id = models.CharField(max_length=50, blank=True, verbose_name=_("tax ID"))
+    email = models.EmailField(blank=True, verbose_name=_("email"))
+    phone = models.CharField(max_length=20, blank=True, verbose_name=_("phone"))
+    website = models.URLField(blank=True, verbose_name=_("website"))
+
+    # Address
+    address = models.CharField(max_length=255, blank=True, verbose_name=_("address"))
+    city = models.CharField(max_length=100, blank=True, verbose_name=_("city"))
+    state = models.CharField(max_length=100, blank=True, verbose_name=_("state"))
+    zip_code = models.CharField(max_length=20, blank=True, verbose_name=_("zip code"))
+    country = models.CharField(max_length=100, blank=True, verbose_name=_("country"))
 
     class Meta:
-        verbose_name = "Organization"
-        verbose_name_plural = "Organizations"
+        verbose_name = _("organization")
+        verbose_name_plural = _("organizations")
 
     def __str__(self):
         return self.name
@@ -82,8 +97,8 @@ class Team(ERPBaseModel):
         "core.Module",
         blank=True,
         related_name="teams",
-        verbose_name="Module access",
-        help_text="Leave empty to grant access to all modules.",
+        verbose_name=_("module access"),
+        help_text=_("Leave empty to grant access to all modules."),
     )
 
     class Meta:
@@ -96,8 +111,8 @@ class Team(ERPBaseModel):
                 name="unique_active_team_name_per_org",
             )
         ]
-        verbose_name = "Team"
-        verbose_name_plural = "Teams"
+        verbose_name = _("team")
+        verbose_name_plural = _("teams")
 
     def __str__(self):
         return f"{self.organization.name} › {self.name}"
@@ -105,10 +120,10 @@ class Team(ERPBaseModel):
 
 class Membership(ERPBaseModel):
     class Role(models.TextChoices):
-        OWNER = "owner", "Owner"
-        ADMIN = "admin", "Admin"
-        MEMBER = "member", "Member"
-        VIEWER = "viewer", "Viewer"
+        OWNER = "owner", _("Owner")
+        ADMIN = "admin", _("Admin")
+        MEMBER = "member", _("Member")
+        VIEWER = "viewer", _("Viewer")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
     organization = models.ForeignKey(
@@ -128,8 +143,8 @@ class Membership(ERPBaseModel):
                 name="unique_active_user_org_membership",
             )
         ]
-        verbose_name = "Membership"
-        verbose_name_plural = "Memberships"
+        verbose_name = _("membership")
+        verbose_name_plural = _("memberships")
 
     def __str__(self):
         return f"{self.user.email} @ {self.organization.name} [{self.role}]"
@@ -161,8 +176,8 @@ class Invitation(ERPBaseModel):
                 name="unique_pending_invitation_per_org",
             )
         ]
-        verbose_name = "Invitation"
-        verbose_name_plural = "Invitations"
+        verbose_name = _("invitation")
+        verbose_name_plural = _("invitations")
 
     def __str__(self):
         return f"{self.email} → {self.organization.name}"

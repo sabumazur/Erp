@@ -21,7 +21,7 @@
       <div class="card-body p-4">
         <h6 class="text-muted small text-uppercase mb-3">General</h6>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" novalidate>
           {% csrf_token %}
 
           {% with placeholder="https://ui-avatars.com/api/?name={{ organization.name|urlencode }}&size=80&background=0d6efd&color=fff&rounded=false" %}
