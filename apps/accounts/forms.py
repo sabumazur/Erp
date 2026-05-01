@@ -64,7 +64,7 @@ class OrganizationForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             "name",
-            HTML('<hr class="my-3"><p class="text-muted small text-uppercase mb-3">Contact</p>'),
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'),
             Row(
                 Column("tax_id", css_class="col-md-6"),
                 Column("email", css_class="col-md-6"),
@@ -73,7 +73,7 @@ class OrganizationForm(forms.ModelForm):
                 Column("phone", css_class="col-md-6"),
                 Column("website", css_class="col-md-6"),
             ),
-            HTML('<hr class="my-3"><p class="text-muted small text-uppercase mb-3">Address</p>'),
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'),
             "address",
             Row(
                 Column("city", css_class="col-md-5"),

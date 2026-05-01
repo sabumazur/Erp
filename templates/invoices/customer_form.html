@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{% trans "Editar cliente" %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">{% trans "Editar cliente" %}</h1>
+  <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% crispy form %}
+      <hr>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">{% trans "Guardar cambios" %}</button>
+        <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

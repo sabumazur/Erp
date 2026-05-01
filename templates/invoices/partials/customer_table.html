@@ -1,0 +1,39 @@
+{% load i18n %}
+<table class="table table-hover table-sm mb-0">
+  <thead class="table-light">
+    <tr>
+      <th>{% trans "Nombre" %}</th>
+      <th>{% trans "RNC / Cédula" %}</th>
+      <th>{% trans "Correo" %}</th>
+      <th>{% trans "Teléfono" %}</th>
+      <th>{% trans "Tipo NCF" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in customers %}
+    <tr>
+      <td class="fw-semibold">{{ c.name }}</td>
+      <td><code>{{ c.rnc_cedula|default:"—" }}</code></td>
+      <td>{{ c.email|default:"—" }}</td>
+      <td>{{ c.phone|default:"—" }}</td>
+      <td><span class="badge bg-secondary">{{ c.get_default_ncf_type_display }}</span></td>
+      <td class="text-end">
+        <a href="{% url 'invoices:customer_edit' c.pk %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="post" action="{% url 'invoices:customer_delete' c.pk %}" class="d-inline"
+              x-data
+              x-on:submit.prevent="if(confirm('{% trans "¿Eliminar cliente?" %}')) $el.submit()">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay clientes registrados." %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

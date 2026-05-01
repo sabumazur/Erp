@@ -1,56 +1,97 @@
+{% load static %}
 <!doctype html>
-<html lang="en" x-data>
+<html lang="es" x-data>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}SabSys{% endblock %}</title>
+  <title>{% block title %}SabSys{% endblock %} — SabSys</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="/static/css/app.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.min.css" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
   {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-light">
 
-  {% include "partials/_navbar.html" %}
+{% block body %}
+  <div id="erp-shell">
 
-  <main class="container py-4">
-    {% block content %}{% endblock %}
-  </main>
+    {% include "partials/_sidebar.html" %}
 
-  {% include "partials/_messages.html" %}
+    <div id="main-area">
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  {% block extra_js %}{% endblock %}
+      {% include "partials/_navbar.html" %}
 
-  <script>
-    document.querySelectorAll('.toast-container .toast').forEach(el =>
-      bootstrap.Toast.getOrCreateInstance(el).show()
-    );
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('input[type="password"]').forEach(input => {
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        input.parentElement.insertBefore(wrapper, input);
-        wrapper.appendChild(input);
-        input.style.paddingRight = '2.5rem';
+      <main id="main-content">
+        {% include "partials/_messages.html" %}
+        {% block content %}{% endblock %}
+      </main>
 
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2 text-muted';
-        btn.style.zIndex = '10';
-        btn.innerHTML = '<i class="bi bi-eye"></i>';
-        btn.setAttribute('tabindex', '-1');
-        btn.addEventListener('click', () => {
-          const show = input.type === 'password';
-          input.type = show ? 'text' : 'password';
-          btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
-        });
+    </div>
+  </div>
+{% endblock %}
 
-        wrapper.appendChild(btn);
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+  /* ── Toast auto-show ─────────────────────────────────────── */
+  document.querySelectorAll('.toast-container .toast').forEach(el =>
+    bootstrap.Toast.getOrCreateInstance(el).show()
+  );
+
+  /* ── Password visibility toggle ─────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="password"]').forEach(input => {
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      input.parentElement.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      input.style.paddingRight = '2.5rem';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2 text-muted';
+      btn.style.zIndex = '10';
+      btn.innerHTML = '<i class="bi bi-eye"></i>';
+      btn.setAttribute('tabindex', '-1');
+      btn.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
       });
+      wrapper.appendChild(btn);
     });
-  </script>
+  });
+
+  /* ── Sidebar toggle ──────────────────────────────────────── */
+  function toggleSidebar() {
+    const isDesktop = window.innerWidth >= 992;
+    if (isDesktop) {
+      document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed',
+        document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+    } else {
+      document.body.classList.toggle('sidebar-open');
+    }
+  }
+
+  /* Restore desktop collapse preference */
+  (function () {
+    if (window.innerWidth >= 992 && localStorage.getItem('sidebarCollapsed') === '1') {
+      document.body.classList.add('sidebar-collapsed');
+    }
+  })();
+
+  /* Close mobile sidebar on resize to desktop */
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 992) {
+      document.body.classList.remove('sidebar-open');
+    }
+  });
+</script>
 </body>
 </html>

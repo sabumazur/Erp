@@ -14,6 +14,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("allauth.urls")),
     path("", include("apps.accounts.urls", namespace="accounts")),
+    path("", include("apps.invoices.urls", namespace="invoices")),
 ]
 
 if settings.DEBUG:

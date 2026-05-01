@@ -3,6 +3,12 @@ from apps.core.models import Module
 
 MODULES = [
     {
+        "slug": "invoices",
+        "name": "Facturación",
+        "icon": "bi-receipt-cutoff",
+        "description": "Facturas, clientes y reportes DGII (606/607/608)",
+    },
+    {
         "slug": "sales",
         "name": "Sales",
         "icon": "bi-bag-fill",
