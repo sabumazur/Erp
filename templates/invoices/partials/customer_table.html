@@ -19,14 +19,27 @@
       <td>{{ c.phone|default:"—" }}</td>
       <td><span class="badge bg-secondary">{{ c.get_default_ncf_type_display }}</span></td>
       <td class="text-end">
-        <a href="{% url 'invoices:customer_edit' c.pk %}" class="btn btn-outline-secondary btn-sm">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                hx-get="{% url 'invoices:customer_edit' c.pk %}"
+                hx-target="#customer-modal-body"
+                hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
+                                      bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
           <i class="bi bi-pencil"></i>
-        </a>
-        <form method="post" action="{% url 'invoices:customer_delete' c.pk %}" class="d-inline"
-              x-data
-              x-on:submit.prevent="if(confirm('{% trans "¿Eliminar cliente?" %}')) $el.submit()">
+        </button>
+        <form method="post" action="{% url 'invoices:customer_delete' c.pk %}" class="d-inline" id="del-{{ c.pk }}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-outline-danger btn-sm">
+          <button type="button" class="btn btn-outline-danger btn-sm"
+                  onclick="Swal.fire({
+                    icon: 'warning',
+                    title: '{% trans "¿Eliminar cliente?" %}',
+                    html: '<strong>{{ c.name|escapejs }}</strong>',
+                    showCancelButton: true,
+                    confirmButtonText: '{% trans "Eliminar" %}',
+                    cancelButtonText:  '{% trans "Cancelar" %}',
+                    confirmButtonColor: '#dc3545',
+                  }).then(function (r) {
+                    if (r.isConfirmed) document.getElementById('del-{{ c.pk }}').submit();
+                  })">
             <i class="bi bi-trash"></i>
           </button>
         </form>

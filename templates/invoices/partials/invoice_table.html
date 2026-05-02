@@ -33,7 +33,7 @@
               </span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-end fw-semibold">{{ inv.currency }} {{ inv.total|floatformat:2 }}</td>
+          <td class="text-end fw-semibold">{{ inv.total|floatformat:2 }}</td>
           <td class="text-center">
             {% if inv.status == "DRAFT" %}
               <span class="badge bg-secondary">{% trans "Borrador" %}</span>

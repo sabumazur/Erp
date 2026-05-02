@@ -46,6 +46,9 @@
         <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
       </button>
     {% endif %}
+    <a href="{% url 'invoices:invoice_print' invoice.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+    </a>
     {% if invoice.encf and invoice.status != "DRAFT" %}
       <a href="{% url 'invoices:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
@@ -94,10 +97,6 @@
           <div class="col-md-3">
             <p class="text-muted small mb-0">{% trans "Condición pago" %}</p>
             <p class="mb-0">{{ invoice.get_payment_condition_display }}</p>
-          </div>
-          <div class="col-md-3">
-            <p class="text-muted small mb-0">{% trans "Moneda" %}</p>
-            <p class="mb-0">{{ invoice.currency }}</p>
           </div>
           {% if invoice.encf_modified %}
           <div class="col-md-6">
@@ -157,7 +156,7 @@
             <tr>
               <td colspan="4" class="text-end fw-bold fs-5">{% trans "TOTAL" %}</td>
               <td colspan="2" class="text-end fw-bold fs-5">
-                {{ invoice.currency }} {{ invoice.total|floatformat:2 }}
+                {{ invoice.total|floatformat:2 }}
               </td>
             </tr>
           </tfoot>
@@ -177,6 +176,43 @@
         {% endif %}
       </div>
     </div>
+
+    <!-- Consolidated sale orders -->
+    {% if consolidated_orders %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold d-flex align-items-center gap-2">
+        <i class="bi bi-boxes text-success"></i>
+        {% trans "Órdenes de venta consolidadas" %}
+        <span class="badge bg-secondary ms-1">{{ consolidated_orders|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Número" %}</th>
+              <th>{% trans "Fecha de entrega" %}</th>
+              <th>{% trans "Recibido por" %}</th>
+              <th class="text-end">{% trans "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in consolidated_orders %}
+            <tr>
+              <td>
+                <a href="{% url 'invoices:sale_order_detail' o.pk %}" class="font-monospace text-decoration-none">
+                  {{ o.doc_number|default:"—" }}
+                </a>
+              </td>
+              <td>{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+              <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
+              <td class="text-end fw-semibold">{{ o.total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Payments -->
     {% if payments %}
@@ -198,7 +234,7 @@
               <td>{{ p.date|date:"d/m/Y" }}</td>
               <td>{{ p.get_method_display }}</td>
               <td>{{ p.reference|default:"—" }}</td>
-              <td class="text-end fw-semibold">{{ invoice.currency }} {{ p.amount|floatformat:2 }}</td>
+              <td class="text-end fw-semibold">{{ p.amount|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>

@@ -1,0 +1,42 @@
+{% load i18n %}
+{% if orders %}
+<table class="table table-sm mb-0">
+  <thead class="table-light">
+    <tr>
+      <th>{% trans "Número" %}</th>
+      <th>{% trans "Entrega" %}</th>
+      <th>{% trans "Recibido por" %}</th>
+      <th class="text-end">{% trans "Total" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for o in orders %}
+    <tr>
+      <td class="font-monospace">{{ o.doc_number|default:"—" }}</td>
+      <td>{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+      <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
+      <td class="text-end fw-semibold">{{ o.total|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot class="table-light">
+    <tr>
+      <td colspan="3" class="text-end fw-bold">{% trans "TOTAL" %}</td>
+      <td class="text-end fw-bold">
+        {% with total=orders|length %}
+          {# Sum computed in template via loop since we can't use sum filter #}
+        {% endwith %}
+        {% for o in orders %}{% if forloop.last %}
+          {# Show count instead — exact total shown on invoice after creation #}
+        {% endif %}{% endfor %}
+        {{ orders|length }} {% trans "orden(es)" %}
+      </td>
+    </tr>
+  </tfoot>
+</table>
+{% else %}
+<div class="text-center text-muted py-4 small">
+  <i class="bi bi-inbox me-1"></i>
+  {% trans "No hay órdenes entregadas pendientes de facturar para los parámetros seleccionados." %}
+</div>
+{% endif %}

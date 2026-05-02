@@ -37,10 +37,31 @@
         </a>
       </li>
       <li>
+        <a href="{% url 'invoices:quotation_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/quotations/' %}active{% endif %}">
+          <i class="bi bi-file-earmark-text"></i>
+          <span>{% trans "Cotizaciones" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'invoices:sale_order_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/sale-orders/' %}active{% endif %}">
+          <i class="bi bi-box-seam"></i>
+          <span>{% trans "Órdenes de venta" %}</span>
+        </a>
+      </li>
+      <li>
         <a href="{% url 'invoices:customer_list' %}"
            class="sidebar-nav-link {% if 'invoices/customers' in request.path %}active{% endif %}">
           <i class="bi bi-person-lines-fill"></i>
           <span>{% trans "Clientes" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'items:item_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/items/' %}active{% endif %}">
+          <i class="bi bi-box-seam-fill"></i>
+          <span>{% trans "Artículos" %}</span>
         </a>
       </li>
       {% if membership.is_admin %}

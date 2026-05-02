@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags i18n %}
 
-{% block title %}{% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}{% endblock %}
+{% block title %}
+  {% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="h3 mb-0">
-    {% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}
+    {% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}
   </h1>
-  <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
+  <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
   </a>
 </div>
 
-<form method="post" id="invoice-form" x-data="invoiceForm()">
+<form method="post">
   {% csrf_token %}
 
-  <!-- Header fields -->
   <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold">{% trans "Datos generales" %}</div>
+    <div class="card-header fw-semibold">{% trans "Datos de la orden" %}</div>
     <div class="card-body">
       {% crispy form %}
     </div>
   </div>
 
-  <!-- Line items -->
   <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-      {% trans "Líneas de factura" %}
-      <button type="button"
-              class="btn btn-outline-primary btn-sm"
+    <div class="card-header fw-semibold d-flex justify-content-between">
+      <span>{% trans "Líneas" %}</span>
+      <button type="button" class="btn btn-outline-primary btn-sm"
               hx-get="{% url 'invoices:item_row' %}?form_index={{ formset.total_form_count }}"
               hx-target="#item-tbody"
-              hx-swap="beforeend">
+              hx-swap="beforeend"
+              hx-on::after-request="recalcGrandTotal()">
         <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
       </button>
     </div>
@@ -92,7 +92,7 @@
     <button type="submit" class="btn btn-primary">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
   </div>
 </form>
 

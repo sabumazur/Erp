@@ -7,7 +7,14 @@ from .models import Invoice, Customer, NCFType
 
 class InvoiceFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
-        choices=Invoice.Status.choices,
+        choices=[
+            (s.value, s.label) for s in Invoice.Status
+            if s in (
+                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
+                Invoice.Status.SENT, Invoice.Status.PAID,
+                Invoice.Status.OVERDUE, Invoice.Status.CANCELLED,
+            )
+        ],
         empty_label=_("Todos los estados"),
         label=_("Estado"),
         widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
@@ -19,7 +26,7 @@ class InvoiceFilter(django_filters.FilterSet):
         empty_label=None,
     )
     customer = django_filters.ModelChoiceFilter(
-        queryset=Customer.objects.none(),   # overridden in __init__
+        queryset=Customer.objects.none(),
         label=_("Cliente"),
         empty_label=_("Todos los clientes"),
         widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
@@ -48,6 +55,112 @@ class InvoiceFilter(django_filters.FilterSet):
     class Meta:
         model = Invoice
         fields = ["status", "ncf_type", "customer", "issue_date_after", "issue_date_before", "encf"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.filters["customer"].queryset = Customer.objects.filter(
+                organization=organization
+            )
+
+
+class QuotationFilter(django_filters.FilterSet):
+    status = django_filters.ChoiceFilter(
+        choices=[
+            (s.value, s.label) for s in Invoice.Status
+            if s in (
+                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED, Invoice.Status.SENT,
+                Invoice.Status.ACCEPTED, Invoice.Status.REJECTED,
+                Invoice.Status.EXPIRED, Invoice.Status.CONVERTED,
+            )
+        ],
+        empty_label=_("Todos los estados"),
+        label=_("Estado"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    customer = django_filters.ModelChoiceFilter(
+        queryset=Customer.objects.none(),
+        label=_("Cliente"),
+        empty_label=_("Todos los clientes"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    issue_date_after = django_filters.DateFilter(
+        field_name="issue_date",
+        lookup_expr="gte",
+        label=_("Desde"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    issue_date_before = django_filters.DateFilter(
+        field_name="issue_date",
+        lookup_expr="lte",
+        label=_("Hasta"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    doc_number = django_filters.CharFilter(
+        lookup_expr="icontains",
+        label=_("Número"),
+        widget=forms.TextInput(attrs={
+            "placeholder": "COT-…",
+            "class": "form-control form-control-sm",
+        }),
+    )
+
+    class Meta:
+        model = Invoice
+        fields = ["status", "customer", "issue_date_after", "issue_date_before", "doc_number"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.filters["customer"].queryset = Customer.objects.filter(
+                organization=organization
+            )
+
+
+class SaleOrderFilter(django_filters.FilterSet):
+    status = django_filters.ChoiceFilter(
+        choices=[
+            (s.value, s.label) for s in Invoice.Status
+            if s in (
+                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
+                Invoice.Status.DELIVERED, Invoice.Status.INVOICED,
+                Invoice.Status.CANCELLED,
+            )
+        ],
+        empty_label=_("Todos los estados"),
+        label=_("Estado"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    customer = django_filters.ModelChoiceFilter(
+        queryset=Customer.objects.none(),
+        label=_("Cliente"),
+        empty_label=_("Todos los clientes"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    delivery_date_after = django_filters.DateFilter(
+        field_name="delivery_date",
+        lookup_expr="gte",
+        label=_("Entrega desde"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    delivery_date_before = django_filters.DateFilter(
+        field_name="delivery_date",
+        lookup_expr="lte",
+        label=_("Entrega hasta"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    doc_number = django_filters.CharFilter(
+        lookup_expr="icontains",
+        label=_("Número"),
+        widget=forms.TextInput(attrs={
+            "placeholder": "OV-…",
+            "class": "form-control form-control-sm",
+        }),
+    )
+
+    class Meta:
+        model = Invoice
+        fields = ["status", "customer", "delivery_date_after", "delivery_date_before", "doc_number"]
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)

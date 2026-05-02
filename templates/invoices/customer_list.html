@@ -6,7 +6,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="h3 mb-0">{% trans "Clientes" %}</h1>
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customerModal">
     <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
   </button>
 </div>
@@ -19,82 +19,72 @@
   </div>
 </div>
 
-<!-- Add Customer Modal -->
-<div class="modal fade" id="addCustomerModal" tabindex="-1"
-     x-init="$el.addEventListener('hidden.bs.modal', () => {
-       $el.querySelector('form').reset();
-       document.getElementById('rnc-lookup-result').innerHTML = '';
-     })">
-  <div class="modal-dialog modal-dialog-scrollable">
+{# Blank form — inert template, browser never autofills or caches it #}
+<template id="customer-blank-tpl">
+  <form hx-post="{% url 'invoices:customer_list' %}"
+        hx-target="#customer-table"
+        hx-swap="innerHTML"
+        hx-on::after-request="if(event.detail.successful && event.target === this) bootstrap.Modal.getInstance('#customerModal').hide()"
+        class="d-flex flex-column flex-grow-1 overflow-hidden">
+    {% csrf_token %}
+    <div class="modal-body">
+      {% crispy form %}
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+      <button type="submit" class="btn btn-primary">{% trans "Crear" %}</button>
+    </div>
+  </form>
+</template>
+
+<!-- Customer Modal (add & edit) -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <form method="post"
-            class="d-flex flex-column flex-grow-1 overflow-hidden"
-            hx-post="{% url 'invoices:customer_list' %}"
-            hx-target="#customer-table"
-            hx-swap="innerHTML"
-            hx-on::after-request="if(event.detail.successful && event.target === this) bootstrap.Modal.getInstance('#addCustomerModal').hide()">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">{% trans "Nuevo cliente" %}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          {% crispy form %}
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
-        </div>
-      </form>
+      <div class="modal-header">
+        <h5 class="modal-title" id="customerModalTitle">{% trans "Nuevo cliente" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="customer-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
     </div>
   </div>
 </div>
 
 {% block extra_js %}
 <script>
-  // Capture the value before the user edits it so we can restore on cancel
-  document.addEventListener('focusin', function (evt) {
-    if (evt.target && evt.target.name === 'rnc_cedula') {
-      evt.target.dataset.originalValue = evt.target.value;
-    }
-  });
+  function restoreBlank() {
+    var body = document.getElementById('customer-modal-body');
+    body.innerHTML = '';
+    body.appendChild(document.getElementById('customer-blank-tpl').content.cloneNode(true));
+    document.getElementById('customerModalTitle').textContent = '{% trans "Nuevo cliente" %}';
+    htmx.process(body);
+  }
+  restoreBlank();
+  document.getElementById('customerModal').addEventListener('hidden.bs.modal', restoreBlank);
 
   document.body.addEventListener("rncFound", function (evt) {
     var d = evt.detail;
-    var rncField = document.querySelector('[name=rnc_cedula]');
-    var original = rncField ? (rncField.dataset.originalValue || '') : '';
-
     Swal.fire({
       icon: "success",
       title: '{% trans "RNC encontrado" %}',
-      html: '<p class="mb-1"><strong>' + d.name + '</strong></p>'
-          + '<small class="text-muted">RNC ' + d.value + '</small>',
+      html: `<p class="mb-1"><strong>${d.name}</strong></p><small class="text-muted">RNC ${d.value}</small>`,
       showCancelButton: true,
       confirmButtonText: '{% trans "Aceptar" %}',
       cancelButtonText:  '{% trans "Cancelar" %}',
     }).then(function (result) {
       if (result.isConfirmed) {
-        // Accept: fill name, leave rnc_cedula as typed
-        var f = document.querySelector('[name=name]');
+        var f = (document.querySelector('.modal.show') || document).querySelector('[name=name]');
         if (f) f.value = d.name;
-      } else {
-        // Cancel: restore rnc_cedula to what it was before editing
-        if (rncField) rncField.value = original;
       }
     });
   });
 
   document.body.addEventListener("rncNotFound", function () {
-    var rncField = document.querySelector('[name=rnc_cedula]');
-    var original = rncField ? (rncField.dataset.originalValue || '') : '';
-
     Swal.fire({
       icon: "warning",
       title: '{% trans "No encontrado" %}',
       text:  '{% trans "Este RNC/Cédula no está registrado en el registro oficial." %}',
       confirmButtonText: '{% trans "Cerrar" %}',
-    }).then(function () {
-      if (rncField) rncField.value = original;
     });
   });
 </script>

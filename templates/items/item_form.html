@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+{#
+  Non-HTMX fallback for direct URL access to item edit.
+  Normal edit flow goes through the modal on item_list.html.
+#}
+
+{% block title %}{% trans "Editar artículo" %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">{% trans "Editar artículo" %}</h1>
+  <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <form method="post"
+          x-data="itemForm('{{ form.item_type.value|default:'BOTH' }}')"
+          x-init="init()">
+      {% csrf_token %}
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">{% trans "Datos del artículo" %}</div>
+        <div class="card-body">
+          {% crispy form %}
+        </div>
+        <div class="card-footer d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
+          </button>
+          <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary">
+            {% trans "Cancelar" %}
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function itemForm(initialType) {
+  return {
+    itemType: initialType,
+    get autoCode() { return this.itemType === 'SALE' || this.itemType === 'BOTH'; },
+    get codeHint() {
+      return this.autoCode
+        ? "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}"
+        : "{% trans 'Código interno / SKU opcional.' %}";
+    },
+    get codePlaceholder() {
+      return this.autoCode ? "{% trans 'Automático (ART-XXXX)' %}" : "{% trans 'Código manual (opcional)' %}";
+    },
+    init() {
+      const sel = this.$el.querySelector('[name="item_type"]');
+      if (sel) this.itemType = sel.value;
+    },
+  }
+}
+</script>
+{% endblock %}

@@ -1,9 +1,13 @@
 {# Shared Alpine.js / vanilla JS for the invoice item formset #}
 <script>
+// ── Per-row Alpine component ──────────────────────────────────────────────────
 function itemRow() {
   return {
-    qty:   1, price: 0, rate: 'RATE_18',
+    qty:   1,
+    price: 0,
+    rate:  'RATE_18',
     rateMap: { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 },
+
     init() {
       const row = this.$el;
       const qEl = row.querySelector('[name$="-quantity"]');
@@ -14,17 +18,99 @@ function itemRow() {
       if (rEl) this.rate  = rEl.value || 'RATE_18';
       this.$nextTick(() => recalcGrandTotal());
     },
-    subtotal()     { return this.qty * this.price; },
-    itbisAmt()     { return this.subtotal() * (this.rateMap[this.rate] || 0); },
-    rowTotal()     { return this.subtotal() + this.itbisAmt(); },
-    fmt(n)         { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); },
-    fmtSubtotal()  { return this.fmt(this.subtotal()); },
-    fmtItbis()     { return this.fmt(this.itbisAmt()); },
-    fmtTotal()     { return this.fmt(this.rowTotal()); },
-    recalc()       { recalcGrandTotal(); },
+
+    deleteRow(btn) {
+      const row   = btn.closest('tr');
+      const delEl = row ? row.querySelector('[name$="-DELETE"]') : null;
+      if (delEl) {
+        delEl.checked = true;
+        row.style.display = 'none';
+      } else if (row) {
+        row.remove();
+      }
+      recalcGrandTotal();
+    },
+
+    subtotal()    { return this.qty * this.price; },
+    itbisAmt()    { return this.subtotal() * (this.rateMap[this.rate] || 0); },
+    rowTotal()    { return this.subtotal() + this.itbisAmt(); },
+    fmt(n)        { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); },
+    fmtSubtotal() { return this.fmt(this.subtotal()); },
+    fmtItbis()    { return this.fmt(this.itbisAmt()); },
+    fmtTotal()    { return this.fmt(this.rowTotal()); },
+    recalc()      { recalcGrandTotal(); },
   }
 }
 
+// ── Item picker modal Alpine component ───────────────────────────────────────
+function itemPickerModal() {
+  return {
+    query:      '',
+    selectedPk: null,
+
+    get filtered() {
+      const q       = this.query.toLowerCase().trim();
+      const catalog = window.ITEM_CATALOG || [];
+      if (!q) return catalog;
+      return catalog.filter(item =>
+        (item.name        || '').toLowerCase().includes(q) ||
+        (item.code        || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q)
+      );
+    },
+
+    select(pk) {
+      if (!pk) return;
+      if (window.activeItemRow) {
+        pickCatalogRow(window.activeItemRow, pk);
+      }
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('itemPickerModal')).hide();
+      this.query      = '';
+      this.selectedPk = null;
+    },
+  }
+}
+
+// ── Open picker: store active row ref, show modal ────────────────────────────
+function openItemPicker(rowEl) {
+  window.activeItemRow = rowEl;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('itemPickerModal')).show();
+}
+
+// ── Apply a catalog selection to a row element ────────────────────────────────
+function pickCatalogRow(rowEl, pk) {
+  const catalog = window.ITEM_CATALOG || [];
+  const item    = catalog.find(i => i.pk === pk);
+  if (!item) return;
+
+  const descEl  = rowEl.querySelector('[name$="-description"]');
+  const priceEl = rowEl.querySelector('[name$="-unit_price"]');
+  const rateEl  = rowEl.querySelector('[name$="-itbis_rate"]');
+  const itemEl  = rowEl.querySelector('[name$="-item"]');
+
+  // Always update description from catalog
+  if (descEl) descEl.value = item.description || item.name;
+
+  // Fill price only when currently 0 — keep user-entered prices
+  const currentPrice = parseFloat(priceEl ? priceEl.value : '0') || 0;
+  if (priceEl && currentPrice === 0) {
+    priceEl.value = item.unit_price;
+  }
+
+  if (rateEl) rateEl.value = item.itbis_rate;
+  if (itemEl) itemEl.value = pk;
+
+  // Sync Alpine reactive state on the row
+  const data = typeof Alpine !== 'undefined' ? Alpine.$data(rowEl) : null;
+  if (data) {
+    if (currentPrice === 0) data.price = parseFloat(item.unit_price) || 0;
+    data.rate = item.itbis_rate;
+  }
+
+  recalcGrandTotal();
+}
+
+// ── Grand-total footer recalculation ─────────────────────────────────────────
 function recalcGrandTotal() {
   let subtotal = 0, itbis18 = 0, itbis16 = 0;
   document.querySelectorAll('#item-tbody tr').forEach(row => {
@@ -34,18 +120,18 @@ function recalcGrandTotal() {
     const dEl = row.querySelector('[name$="-DELETE"]');
     if (!qEl || !pEl || !rEl) return;
     if (dEl && dEl.checked) return;
-    const qty   = parseFloat(qEl.value) || 0;
-    const price = parseFloat(pEl.value) || 0;
-    const rate  = rEl.value;
-    const base  = qty * price;
-    const rateMap = { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 };
-    const itbis = base * (rateMap[rate] || 0);
+    const qty      = parseFloat(qEl.value) || 0;
+    const price    = parseFloat(pEl.value) || 0;
+    const rate     = rEl.value;
+    const base     = qty * price;
+    const rateMap  = { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 };
+    const itbis    = base * (rateMap[rate] || 0);
     subtotal += base;
     if (rate === 'RATE_18') itbis18 += itbis;
     else if (rate === 'RATE_16') itbis16 += itbis;
   });
   const fmt = n => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const el = id => document.getElementById(id);
+  const el  = id => document.getElementById(id);
   if (el('grand-subtotal')) el('grand-subtotal').textContent = fmt(subtotal);
   if (el('grand-itbis18'))  el('grand-itbis18').textContent  = fmt(itbis18);
   if (el('grand-itbis16'))  el('grand-itbis16').textContent  = fmt(itbis16);
@@ -53,5 +139,11 @@ function recalcGrandTotal() {
 }
 
 document.addEventListener('DOMContentLoaded', recalcGrandTotal);
-document.body.addEventListener('htmx:afterSwap', recalcGrandTotal);
+document.body.addEventListener('htmx:afterSwap', function (e) {
+  if (e.detail.target && e.detail.target.id === 'item-tbody') {
+    const newRow = e.detail.target.lastElementChild;
+    if (newRow && typeof Alpine !== 'undefined') Alpine.initTree(newRow);
+  }
+  recalcGrandTotal();
+});
 </script>

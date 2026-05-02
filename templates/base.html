@@ -13,6 +13,9 @@
 </head>
 <body class="bg-light">
 
+<!-- Dynamic HTMX toast container -->
+<div id="htmx-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100"></div>
+
 {% block body %}
   <div id="erp-shell">
 
@@ -38,10 +41,38 @@
 {% block extra_js %}{% endblock %}
 
 <script>
-  /* ── Toast auto-show ─────────────────────────────────────── */
+  /* ── Toast auto-show (Django messages) ──────────────────── */
   document.querySelectorAll('.toast-container .toast').forEach(el =>
     bootstrap.Toast.getOrCreateInstance(el).show()
   );
+
+  /* ── Dynamic HTMX toasts ─────────────────────────────────── */
+  var TOAST_ICONS = {
+    success: "bi-check-circle-fill",
+    danger:  "bi-exclamation-circle-fill",
+    warning: "bi-exclamation-triangle-fill",
+    info:    "bi-info-circle-fill",
+  };
+  document.body.addEventListener("showToast", function (evt) {
+    var msg  = evt.detail.message || "";
+    var type = evt.detail.type    || "success";
+    var icon = TOAST_ICONS[type]  || TOAST_ICONS.info;
+    var el = document.createElement("div");
+    el.className = "toast align-items-center border-0 text-bg-" + type;
+    el.setAttribute("role", "alert");
+    el.setAttribute("data-bs-autohide", "true");
+    el.setAttribute("data-bs-delay", "4500");
+    el.innerHTML =
+      '<div class="d-flex">' +
+        '<div class="toast-body d-flex align-items-center gap-2">' +
+          '<i class="bi ' + icon + '"></i>' + msg +
+        '</div>' +
+        '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+      '</div>';
+    document.getElementById("htmx-toast-container").appendChild(el);
+    bootstrap.Toast.getOrCreateInstance(el).show();
+    el.addEventListener("hidden.bs.toast", function () { el.remove(); });
+  });
 
   /* ── Password visibility toggle ─────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {

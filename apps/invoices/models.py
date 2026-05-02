@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -22,6 +23,34 @@ class NCFType(models.IntegerChoices):
     GUBERNAMENTAL = 45, _("45 – Gubernamental")
     EXPORTACIONES = 46, _("46 – Exportaciones")
     PAGOS_EXTERIOR = 47, _("47 – Pagos al Exterior")
+
+
+class PaymentTerm(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name=_("nombre"))
+    description = models.CharField(max_length=255, blank=True, verbose_name=_("descripción"))
+    days_due = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(365)],
+        verbose_name=_("días de vencimiento"),
+        help_text=_("Número de días para este término de pago."),
+    )
+
+    class Meta:
+        verbose_name = _("término de pago")
+        verbose_name_plural = _("términos de pago")
+        ordering = ["days_due", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class PaymentMethod(models.TextChoices):
+    CASH     = "CASH",     _("Efectivo")
+    CHECK    = "CHECK",    _("Cheque")
+    CARD     = "CARD",     _("Tarjeta de crédito/débito")
+    TRANSFER = "TRANSFER", _("Transferencia bancaria")
+    SWAP     = "SWAP",     _("Permuta")
+    OTHER    = "OTHER",    _("Otro")
 
 
 # ── Customer ──────────────────────────────────────────────────────────────────
@@ -70,6 +99,20 @@ class Customer(ERPBaseModel):
         verbose_name=_("país"),
     )
     notes = models.TextField(blank=True, verbose_name=_("notas"))
+    payment_term = models.ForeignKey(
+        PaymentTerm,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="customers",
+        verbose_name=_("término de pago"),
+    )
+    default_payment_method = models.CharField(
+        max_length=10,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.TRANSFER,
+        verbose_name=_("forma de pago por defecto"),
+    )
     default_ncf_type = models.IntegerField(
         choices=NCFType.choices,
         default=NCFType.CREDITO_FISCAL,
@@ -184,23 +227,146 @@ class NCFSequence(models.Model):
         return f"{seq.series}{seq.ncf_type:02d}{next_num:010d}"
 
 
-# ── Invoice ───────────────────────────────────────────────────────────────────
+# ── Document Sequence (for Quotations and Sale Orders) ────────────────────────
+
+
+class DocumentSequence(models.Model):
+    """
+    Auto-increment sequence for non-fiscal documents (Quotations, Sale Orders).
+    One row per (organization, doc_type) pair.
+
+    Produces:
+      COT-2025-0001  for QUOTATION
+      OV-2025-0001   for SALE_ORDER
+    """
+
+    class DocType(models.TextChoices):
+        QUOTATION   = "QUOTATION",   _("Cotización")
+        SALE_ORDER  = "SALE_ORDER",  _("Orden de Venta")
+
+    PREFIX = {
+        "QUOTATION":  "COT",
+        "SALE_ORDER": "OV",
+    }
+
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        related_name="document_sequences",
+        verbose_name=_("organización"),
+    )
+    doc_type = models.CharField(
+        max_length=20,
+        choices=DocType.choices,
+        verbose_name=_("tipo de documento"),
+    )
+    current_seq = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("secuencia actual"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("secuencia de documento")
+        verbose_name_plural = _("secuencias de documentos")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "doc_type"],
+                name="unique_doc_sequence_per_org_type",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.organization} · {self.get_doc_type_display()} · {self.current_seq:04d}"
+
+    @classmethod
+    def generate(cls, organization, doc_type: str) -> str:
+        """
+        Atomically reserve and return the next document number.
+        Format: PREFIX-YYYY-NNNN  (e.g. COT-2025-0001, OV-2025-0001)
+        """
+        year = timezone.now().year
+        with transaction.atomic():
+            seq, _ = cls.objects.select_for_update().get_or_create(
+                organization=organization,
+                doc_type=doc_type,
+            )
+            seq.current_seq += 1
+            seq.save(update_fields=["current_seq", "updated_at"])
+
+        prefix = cls.PREFIX.get(doc_type, doc_type[:3].upper())
+        return f"{prefix}-{year}-{seq.current_seq:04d}"
+
+
+# ── Custom managers ───────────────────────────────────────────────────────────
+
+
+class InvoiceQuerySet(models.QuerySet):
+    def invoices(self):
+        return self.filter(doc_type=Invoice.DocType.INVOICE)
+
+    def quotations(self):
+        return self.filter(doc_type=Invoice.DocType.QUOTATION)
+
+    def sale_orders(self):
+        return self.filter(doc_type=Invoice.DocType.SALE_ORDER)
+
+
+class InvoiceManager(models.Manager):
+    def get_queryset(self):
+        return InvoiceQuerySet(self.model, using=self._db).filter(
+            doc_type=Invoice.DocType.INVOICE
+        )
+
+
+class QuotationManager(models.Manager):
+    def get_queryset(self):
+        return InvoiceQuerySet(self.model, using=self._db).filter(
+            doc_type=Invoice.DocType.QUOTATION
+        )
+
+
+class SaleOrderManager(models.Manager):
+    def get_queryset(self):
+        return InvoiceQuerySet(self.model, using=self._db).filter(
+            doc_type=Invoice.DocType.SALE_ORDER
+        )
+
+
+# ── Invoice (unified document model) ─────────────────────────────────────────
 
 
 class Invoice(ERPBaseModel):
+
+    class DocType(models.TextChoices):
+        INVOICE     = "INVOICE",    _("Factura")
+        QUOTATION   = "QUOTATION",  _("Cotización")
+        SALE_ORDER  = "SALE_ORDER", _("Orden de Venta")
+
     class Status(models.TextChoices):
-        DRAFT = "DRAFT", _("Borrador")
-        CONFIRMED = "CONFIRMED", _("Confirmada")
-        SENT = "SENT", _("Enviada")
-        PAID = "PAID", _("Pagada")
-        OVERDUE = "OVERDUE", _("Vencida")
-        CANCELLED = "CANCELLED", _("Anulada")
+        # ── Shared ───────────────────────────────────────────────
+        DRAFT       = "DRAFT",      _("Borrador")
+        CONFIRMED   = "CONFIRMED",  _("Confirmada")
+        CANCELLED   = "CANCELLED",  _("Anulada")
+        # ── Invoice ──────────────────────────────────────────────
+        SENT        = "SENT",       _("Enviada")
+        PAID        = "PAID",       _("Pagada")
+        OVERDUE     = "OVERDUE",    _("Vencida")
+        # ── Quotation ────────────────────────────────────────────
+        ACCEPTED    = "ACCEPTED",   _("Aceptada")
+        REJECTED    = "REJECTED",   _("Rechazada")
+        EXPIRED     = "EXPIRED",    _("Expirada")
+        CONVERTED   = "CONVERTED",  _("Convertida")
+        # ── Sale Order ───────────────────────────────────────────
+        DELIVERED   = "DELIVERED",  _("Entregada")
+        INVOICED    = "INVOICED",   _("Facturada")
 
     class PaymentCondition(models.TextChoices):
-        CASH = "CASH", _("Contado")
+        CASH   = "CASH",   _("Contado")
         CREDIT = "CREDIT", _("Crédito")
-        FREE = "FREE", _("Gratuito")
-        OTHER = "OTHER", _("Otro")
+        FREE   = "FREE",   _("Gratuito")
+        OTHER  = "OTHER",  _("Otro")
 
     class Currency(models.TextChoices):
         DOP = "DOP", _("Peso Dominicano (DOP)")
@@ -208,9 +374,18 @@ class Invoice(ERPBaseModel):
         EUR = "EUR", _("Euro (EUR)")
 
     class DGIIStatus(models.TextChoices):
-        PENDING = "PENDING", _("Pendiente")
+        PENDING  = "PENDING",  _("Pendiente")
         ACCEPTED = "ACCEPTED", _("Aceptada")
         REJECTED = "REJECTED", _("Rechazada")
+
+    # ── Document type discriminator ───────────────────────────────────────────
+    doc_type = models.CharField(
+        max_length=20,
+        choices=DocType.choices,
+        default=DocType.INVOICE,
+        verbose_name=_("tipo de documento"),
+        db_index=True,
+    )
 
     organization = models.ForeignKey(
         "accounts.Organization",
@@ -225,7 +400,7 @@ class Invoice(ERPBaseModel):
         verbose_name=_("cliente"),
     )
 
-    # ── NCF / e-CF ───────────────────────────────────────────────────────────
+    # ── NCF / e-CF  (INVOICE only) ────────────────────────────────────────────
     encf = models.CharField(
         max_length=13,
         blank=True,
@@ -250,6 +425,15 @@ class Invoice(ERPBaseModel):
         help_text=_("Obligatorio para Notas de Crédito (34) y Débito (33)."),
     )
 
+    # ── Non-fiscal document number (QUOTATION / SALE_ORDER) ───────────────────
+    doc_number = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name=_("número de documento"),
+        help_text=_("Asignado automáticamente al confirmar (COT-YYYY-NNNN / OV-YYYY-NNNN)."),
+        db_index=True,
+    )
+
     # ── Dates & conditions ────────────────────────────────────────────────────
     issue_date = models.DateField(
         default=timezone.now, verbose_name=_("fecha de emisión")
@@ -262,6 +446,36 @@ class Invoice(ERPBaseModel):
         choices=PaymentCondition.choices,
         default=PaymentCondition.CASH,
         verbose_name=_("condición de pago"),
+    )
+
+    # ── Quotation-specific ────────────────────────────────────────────────────
+    valid_until = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("válida hasta"),
+        help_text=_("Fecha de vencimiento de la cotización."),
+    )
+
+    # ── Sale Order-specific ───────────────────────────────────────────────────
+    delivery_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("fecha de entrega"),
+    )
+    signed_by = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name=_("recibido por"),
+        help_text=_("Nombre de la persona que recibió y firmó la entrega."),
+    )
+    consolidated_into = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consolidated_orders",
+        verbose_name=_("consolidada en"),
+        help_text=_("Factura que consolidó esta orden de venta."),
     )
 
     # ── Currency ──────────────────────────────────────────────────────────────
@@ -319,8 +533,8 @@ class Invoice(ERPBaseModel):
     terms = models.TextField(blank=True, verbose_name=_("términos y condiciones"))
 
     # ── DGII e-CF submission (Phase 2) ────────────────────────────────────────
-    xml_content = models.TextField(blank=True, verbose_name=_("XML e-CF"))
-    dgii_status = models.CharField(
+    xml_content  = models.TextField(blank=True, verbose_name=_("XML e-CF"))
+    dgii_status  = models.CharField(
         max_length=10,
         choices=DGIIStatus.choices,
         default=DGIIStatus.PENDING,
@@ -330,23 +544,55 @@ class Invoice(ERPBaseModel):
         max_length=100, blank=True, verbose_name=_("track ID DGII")
     )
 
+    # ── Managers ──────────────────────────────────────────────────────────────
+    objects    = models.Manager()          # all documents (default)
+    invoices   = InvoiceManager()          # doc_type=INVOICE
+    quotations = QuotationManager()        # doc_type=QUOTATION
+    sale_orders = SaleOrderManager()       # doc_type=SALE_ORDER
+
     class Meta(ERPBaseModel.Meta):
-        verbose_name = _("factura")
-        verbose_name_plural = _("facturas")
+        verbose_name = _("documento")
+        verbose_name_plural = _("documentos")
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "encf"],
                 condition=models.Q(deleted_at__isnull=True) & ~models.Q(encf=""),
                 name="unique_encf_per_org",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["organization", "doc_number"],
+                condition=models.Q(deleted_at__isnull=True) & ~models.Q(doc_number=""),
+                name="unique_doc_number_per_org",
+            ),
         ]
 
     def __str__(self):
-        return self.encf or f"BORRADOR-{str(self.pk)[:8]}"
+        if self.doc_type == self.DocType.INVOICE:
+            return self.encf or f"BORRADOR-{str(self.pk)[:8]}"
+        return self.doc_number or f"{self.get_doc_type_display()}-{str(self.pk)[:8]}"
 
     @property
     def is_editable(self):
         return self.status == self.Status.DRAFT
+
+    @property
+    def is_invoice(self):
+        return self.doc_type == self.DocType.INVOICE
+
+    @property
+    def is_quotation(self):
+        return self.doc_type == self.DocType.QUOTATION
+
+    @property
+    def is_sale_order(self):
+        return self.doc_type == self.DocType.SALE_ORDER
+
+    @property
+    def display_number(self):
+        """Human-readable document reference regardless of type."""
+        if self.doc_type == self.DocType.INVOICE:
+            return self.encf or f"BORRADOR-{str(self.pk)[:8]}"
+        return self.doc_number or f"{self.get_doc_type_display()}-{str(self.pk)[:8]}"
 
     @property
     def itbis_total(self):
@@ -375,6 +621,10 @@ class Invoice(ERPBaseModel):
         )
 
     def clean(self):
+        # NCF rules only apply to invoices
+        if self.doc_type != self.DocType.INVOICE:
+            return
+
         # Nota de Crédito / Débito must reference another invoice
         if self.ncf_type in (NCFType.NOTA_CREDITO, NCFType.NOTA_DEBITO):
             if not self.encf_modified_id:
@@ -414,7 +664,17 @@ class InvoiceItem(models.Model):
         Invoice,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name=_("factura"),
+        verbose_name=_("documento"),
+    )
+    # Optional reference to the items catalog.
+    # SET_NULL keeps the line intact if the catalog entry is deleted.
+    item = models.ForeignKey(
+        "items.Item",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="line_items",
+        verbose_name=_("artículo"),
     )
     description = models.CharField(max_length=500, verbose_name=_("descripción"))
     quantity = models.DecimalField(
@@ -456,8 +716,8 @@ class InvoiceItem(models.Model):
     )
 
     class Meta:
-        verbose_name = _("línea de factura")
-        verbose_name_plural = _("líneas de factura")
+        verbose_name = _("línea de documento")
+        verbose_name_plural = _("líneas de documento")
         ordering = ["pk"]
 
     def __str__(self):
@@ -479,13 +739,7 @@ class InvoiceItem(models.Model):
 
 
 class Payment(ERPBaseModel):
-    class Method(models.TextChoices):
-        CASH = "CASH", _("Efectivo")
-        CHECK = "CHECK", _("Cheque")
-        CARD = "CARD", _("Tarjeta de crédito/débito")
-        TRANSFER = "TRANSFER", _("Transferencia bancaria")
-        SWAP = "SWAP", _("Permuta")
-        OTHER = "OTHER", _("Otro")
+    Method = PaymentMethod
 
     organization = models.ForeignKey(
         "accounts.Organization",

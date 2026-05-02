@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{% trans "Consolidar órdenes en factura" %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">{% trans "Consolidar órdenes en factura" %}</h1>
+  <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+  </a>
+</div>
+
+<p class="text-muted">
+  {% trans "Seleccione un cliente y un período. El sistema mostrará todas las órdenes entregadas pendientes de facturar." %}
+</p>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">{% trans "Parámetros" %}</div>
+      <div class="card-body">
+        <form method="post" id="consolidate-form">
+          {% csrf_token %}
+          {# Wrap the customer and date fields so HTMX can trigger the preview #}
+          <div
+            hx-get="{% url 'invoices:sale_order_consolidate' %}?preview=1"
+            hx-trigger="change from:#consolidate-form input, change from:#consolidate-form select"
+            hx-target="#consolidate-preview"
+            hx-include="#consolidate-form">
+            {% crispy form %}
+          </div>
+          <hr>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-receipt me-1"></i>{% trans "Generar factura consolidada" %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">{% trans "Vista previa" %}</div>
+      <div class="card-body p-0" id="consolidate-preview">
+        <div class="text-center text-muted py-4 small">
+          <i class="bi bi-search me-1"></i>
+          {% trans "Seleccione un cliente y período para ver las órdenes pendientes." %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

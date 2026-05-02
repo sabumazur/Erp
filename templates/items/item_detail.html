@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ item }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">{{ item.name }}</h1>
+    {% if item.code %}
+      <span class="text-muted font-monospace small">{{ item.code }}</span>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <a href="{% url 'items:item_edit' item.pk %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    </a>
+    <form method="post" action="{% url 'items:item_toggle' item.pk %}"
+          x-data
+          x-on:submit.prevent="if(confirm('{% if item.is_active %}{% trans "¿Desactivar este artículo?" %}{% else %}{% trans "¿Activar este artículo?" %}{% endif %}')) $el.submit()">
+      {% csrf_token %}
+      <button class="btn btn-sm {% if item.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+        {% if item.is_active %}
+          <i class="bi bi-toggle-on me-1"></i>{% trans "Desactivar" %}
+        {% else %}
+          <i class="bi bi-toggle-off me-1"></i>{% trans "Activar" %}
+        {% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# ── Main card ────────────────────────────────────────────────────────────── #}
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        {# Description #}
+        {% if item.description %}
+        <p class="text-muted small mb-1">{% trans "Descripción" %}</p>
+        <p class="mb-3">{{ item.description }}</p>
+        <hr>
+        {% endif %}
+
+        {# Pricing grid #}
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Precio de venta" %}</p>
+            <p class="fw-bold fs-5 mb-0">{{ item.unit_price|floatformat:2 }}</p>
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Precio de costo" %}</p>
+            <p class="fw-semibold mb-0">{{ item.cost_price|floatformat:2|default:"—" }}</p>
+            {% if item.margin is not None %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                {% trans "Margen" %} {{ item.margin }}%
+              </span>
+            {% endif %}
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "ITBIS" %}</p>
+            <span class="badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
+              {{ item.get_itbis_rate_display }}
+            </span>
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Unidad de medida" %}</p>
+            <p class="mb-0">{{ item.get_unit_display }}</p>
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Tipo" %}</p>
+            <span class="badge {% if item.item_type == 'SALE' %}bg-primary{% elif item.item_type == 'PURCHASE' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ item.get_item_type_display }}
+            </span>
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Estado" %}</p>
+            {% if item.is_active %}
+              <span class="badge bg-success">{% trans "Activo" %}</span>
+            {% else %}
+              <span class="badge bg-secondary">{% trans "Inactivo" %}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if item.notes %}
+        <hr>
+        <p class="text-muted small mb-1">{% trans "Notas internas" %}</p>
+        <p class="small mb-0">{{ item.notes }}</p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  {# ── Audit card ───────────────────────────────────────────────────────────── #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small">{% trans "Auditoría" %}</h6>
+        <dl class="row small mb-0">
+          <dt class="col-6 text-muted">{% trans "Creado" %}</dt>
+          <dd class="col-6">{{ item.created_at|date:"d/m/Y H:i" }}</dd>
+          <dt class="col-6 text-muted">{% trans "Actualizado" %}</dt>
+          <dd class="col-6">{{ item.updated_at|date:"d/m/Y H:i" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{{ quotation }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">
+      {{ quotation.doc_number|default:"Borrador" }}
+      <small class="text-muted fs-6 ms-2">{% trans "Cotización" %}</small>
+    </h1>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <a href="{% url 'invoices:quotation_print' quotation.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+    </a>
+
+    {% if quotation.status == "DRAFT" %}
+      <a href="{% url 'invoices:quotation_edit' quotation.pk %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+      </a>
+      <form method="post" action="{% url 'invoices:quotation_confirm' quotation.pk %}"
+            x-data x-on:submit.prevent="if(confirm('{% trans "¿Confirmar cotización?" %}')) $el.submit()">
+        {% csrf_token %}
+        <button class="btn btn-primary btn-sm">
+          <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'invoices:quotation_delete' quotation.pk %}"
+            x-data x-on:submit.prevent="if(confirm('{% trans "¿Eliminar borrador?" %}')) $el.submit()">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+      </form>
+
+    {% elif quotation.status == "CONFIRMED" %}
+      <form method="post" action="{% url 'invoices:quotation_send' quotation.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-info btn-sm text-white">
+          <i class="bi bi-send me-1"></i>{% trans "Marcar enviada" %}
+        </button>
+      </form>
+
+    {% elif quotation.status == "SENT" %}
+      <form method="post" action="{% url 'invoices:quotation_accept' quotation.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-success btn-sm">
+          <i class="bi bi-hand-thumbs-up me-1"></i>{% trans "Aceptada" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'invoices:quotation_reject' quotation.pk %}"
+            x-data x-on:submit.prevent="if(confirm('{% trans "¿Marcar como rechazada?" %}')) $el.submit()">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-hand-thumbs-down me-1"></i>{% trans "Rechazada" %}
+        </button>
+      </form>
+
+    {% elif quotation.status == "ACCEPTED" %}
+      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#convertModal">
+        <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir a factura" %}
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <p class="text-muted small mb-0">{% trans "Cliente" %}</p>
+            <p class="fw-semibold mb-0">{{ quotation.customer.name }}</p>
+            {% if quotation.customer.rnc_cedula %}
+              <p class="text-muted small mb-0">
+                {{ quotation.customer.get_id_type_display }}: {{ quotation.customer.rnc_cedula }}
+              </p>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <p class="text-muted small mb-0">{% trans "Emisión" %}</p>
+            <p class="fw-semibold mb-0">{{ quotation.issue_date|date:"d/m/Y" }}</p>
+          </div>
+          <div class="col-md-3">
+            <p class="text-muted small mb-0">{% trans "Válida hasta" %}</p>
+            <p class="fw-semibold mb-0">{{ quotation.valid_until|date:"d/m/Y"|default:"—" }}</p>
+          </div>
+          <div class="col-md-3">
+            <p class="text-muted small mb-0">{% trans "Condición pago" %}</p>
+            <p class="mb-0">{{ quotation.get_payment_condition_display }}</p>
+          </div>
+        </div>
+
+        <!-- Items table -->
+        <table class="table table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Descripción" %}</th>
+              <th class="text-end">{% trans "Cant." %}</th>
+              <th class="text-end">{% trans "P. Unit." %}</th>
+              <th class="text-center">{% trans "ITBIS" %}</th>
+              <th class="text-end">{% trans "Subtotal" %}</th>
+              <th class="text-end">{% trans "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>{{ item.description }}</td>
+              <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
+              <td class="text-end">{{ item.unit_price|floatformat:2 }}</td>
+              <td class="text-center">
+                <span class="badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
+                  {{ item.get_itbis_rate_display }}
+                </span>
+              </td>
+              <td class="text-end">{{ item.line_total|floatformat:2 }}</td>
+              <td class="text-end fw-semibold">{{ item.line_total_with_itbis|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="4" class="text-end text-muted">{% trans "Subtotal" %}</td>
+              <td colspan="2" class="text-end fw-semibold">{{ quotation.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% if quotation.itbis_18 %}
+            <tr>
+              <td colspan="4" class="text-end text-muted">{% trans "ITBIS 18%" %}</td>
+              <td colspan="2" class="text-end">{{ quotation.itbis_18|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            {% if quotation.itbis_16 %}
+            <tr>
+              <td colspan="4" class="text-end text-muted">{% trans "ITBIS 16%" %}</td>
+              <td colspan="2" class="text-end">{{ quotation.itbis_16|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td colspan="4" class="text-end fw-bold fs-5">{% trans "TOTAL" %}</td>
+              <td colspan="2" class="text-end fw-bold fs-5">{{ quotation.total|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {% if quotation.notes %}
+        <div class="mt-3">
+          <p class="text-muted small mb-1">{% trans "Notas" %}</p>
+          <p class="small">{{ quotation.notes }}</p>
+        </div>
+        {% endif %}
+        {% if quotation.terms %}
+        <div class="mt-2">
+          <p class="text-muted small mb-1">{% trans "Términos y condiciones" %}</p>
+          <p class="small">{{ quotation.terms }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small">{% trans "Estado" %}</h6>
+        <p class="mb-3 fs-6">
+          {% include "invoices/partials/status_badge.html" with status=quotation.status %}
+        </p>
+        <hr>
+        <dl class="row small mb-0">
+          <dt class="col-6 text-muted">{% trans "Número" %}</dt>
+          <dd class="col-6 font-monospace">{{ quotation.doc_number|default:"—" }}</dd>
+          <dt class="col-6 text-muted">{% trans "Moneda" %}</dt>
+          <dd class="col-6">{{ quotation.currency }}</dd>
+          {% if quotation.currency != "DOP" %}
+          <dt class="col-6 text-muted">{% trans "Tasa" %}</dt>
+          <dd class="col-6">{{ quotation.exchange_rate }}</dd>
+          {% endif %}
+          <dt class="col-6 text-muted">{% trans "Creada" %}</dt>
+          <dd class="col-6">{{ quotation.created_at|date:"d/m/Y H:i" }}</dd>
+          <dt class="col-6 text-muted">{% trans "Actualizada" %}</dt>
+          <dd class="col-6">{{ quotation.updated_at|date:"d/m/Y H:i" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Convert modal -->
+{% if quotation.status == "ACCEPTED" %}
+<div class="modal fade" id="convertModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'invoices:quotation_convert' quotation.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">{% trans "Convertir a factura" %}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">{% trans "Seleccione el tipo de comprobante fiscal para la nueva factura." %}</p>
+          <label class="form-label fw-semibold">{% trans "Tipo de comprobante" %}</label>
+          <select name="ncf_type" class="form-select" required>
+            {% for value, label in ncf_type_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% empty %}
+              <option value="31">31 – Factura de Crédito Fiscal</option>
+              <option value="32">32 – Factura de Consumo</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir" %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

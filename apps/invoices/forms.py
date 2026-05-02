@@ -1,4 +1,5 @@
 import re
+from datetime import date, timedelta
 
 from django import forms
 from django.forms import inlineformset_factory
@@ -23,7 +24,7 @@ class CustomerForm(forms.ModelForm):
             "name", "id_type", "rnc_cedula",
             "email", "phone", "contact_name", "contact_number",
             "address", "city", "province", "country",
-            "default_ncf_type", "notes",
+            "default_ncf_type", "default_payment_method", "payment_term", "notes",
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 3}),
@@ -35,7 +36,7 @@ class CustomerForm(forms.ModelForm):
         self.fields["rnc_cedula"].widget.attrs.update({
             "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
             "hx-get": reverse_lazy("invoices:rnc_lookup"),
-            "hx-trigger": "blur changed",
+            "hx-trigger": "blur",
             "hx-target": "#rnc-lookup-result",
             "hx-include": "closest form",
             "hx-indicator": "#rnc-lookup-spinner",
@@ -49,16 +50,13 @@ class CustomerForm(forms.ModelForm):
             "name",
             Row(
                 Column("id_type", css_class="col-md-5"),
-                Column(
-                    Field("rnc_cedula"),
-                    HTML(
-                        '<div class="d-flex align-items-center gap-2">'
-                        '<span id="rnc-lookup-spinner" class="htmx-indicator spinner-border spinner-border-sm text-secondary" role="status"></span>'
-                        '<div id="rnc-lookup-result"></div>'
-                        '</div>'
-                    ),
-                    css_class="col-md-7",
-                ),
+                Column("rnc_cedula", css_class="col-md-7"),
+            ),
+            HTML(
+                '<div class="d-flex align-items-center gap-2 mb-2" style="min-height:1.6rem">'
+                '<span id="rnc-lookup-spinner" class="htmx-indicator spinner-border spinner-border-sm text-secondary" role="status"></span>'
+                '<div id="rnc-lookup-result"></div>'
+                '</div>'
             ),
             # ── Contacto ─────────────────────────────────────────
             HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Contacto")}</p>'),
@@ -81,6 +79,10 @@ class CustomerForm(forms.ModelForm):
             # ── Facturación ──────────────────────────────────────
             HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Facturación")}</p>'),
             "default_ncf_type",
+            Row(
+                Column("default_payment_method", css_class="col-md-6"),
+                Column("payment_term", css_class="col-md-6"),
+            ),
             "notes",
         )
 
@@ -146,16 +148,15 @@ class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
-            "customer", "ncf_type", "encf_modified",
+            "customer", "ncf_type",
             "issue_date", "due_date", "payment_condition",
-            "currency", "exchange_rate",
             "notes", "terms",
         ]
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "due_date":   forms.DateInput(attrs={"type": "date"}),
-            "notes":      forms.Textarea(attrs={"rows": 3}),
-            "terms":      forms.Textarea(attrs={"rows": 3}),
+            "notes":      forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "terms":      forms.TextInput(attrs={"placeholder": _("Términos y condiciones…")}),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -164,14 +165,11 @@ class InvoiceForm(forms.ModelForm):
             self.fields["customer"].queryset = (
                 Customer.objects.filter(organization=organization)
             )
-            self.fields["encf_modified"].queryset = (
-                Invoice.objects.filter(organization=organization)
-                .exclude(encf="")
-                .order_by("-issue_date")
-            )
-        self.fields["encf_modified"].required = False
-        self.fields["encf_modified"].label = _("NCF afectado (solo NC/ND)")
-        self.fields["exchange_rate"].widget.attrs["step"] = "0.0001"
+
+        # Only Factura de Crédito Fiscal is used — lock the field.
+        # Django's disabled=True means the submitted value is ignored and the
+        # model default (CREDITO_FISCAL) is always used instead.
+        self.fields["ncf_type"].disabled = True
 
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -181,14 +179,9 @@ class InvoiceForm(forms.ModelForm):
                 Column("ncf_type", css_class="col-md-4"),
             ),
             Row(
-                Column("issue_date", css_class="col-md-3"),
-                Column("due_date", css_class="col-md-3"),
-                Column("payment_condition", css_class="col-md-3"),
-                Column("currency", css_class="col-md-3"),
-            ),
-            Row(
-                Column("exchange_rate", css_class="col-md-4"),
-                Column("encf_modified", css_class="col-md-8"),
+                Column("issue_date", css_class="col-md-4"),
+                Column("due_date", css_class="col-md-4"),
+                Column("payment_condition", css_class="col-md-4"),
             ),
             HTML('<hr class="my-3">'),
             Row(
@@ -198,15 +191,183 @@ class InvoiceForm(forms.ModelForm):
         )
 
 
+# ── Quotation ─────────────────────────────────────────────────────────────────
+
+class QuotationForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = [
+            "customer",
+            "issue_date", "valid_until", "payment_condition",
+            "notes", "terms",
+        ]
+        widgets = {
+            "issue_date":  forms.DateInput(attrs={"type": "date"}),
+            "valid_until": forms.DateInput(attrs={"type": "date"}),
+            "notes":       forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "terms":       forms.TextInput(attrs={"placeholder": _("Términos y condiciones…")}),
+        }
+
+    def __init__(self, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields["customer"].queryset = (
+                Customer.objects.filter(organization=organization)
+            )
+
+        # Default valid_until = today + 30 days for new quotations
+        if not self.instance.pk:
+            self.fields["valid_until"].initial = date.today() + timedelta(days=30)
+
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column("customer", css_class="col-md-8"),
+                Column("payment_condition", css_class="col-md-4"),
+            ),
+            Row(
+                Column("issue_date", css_class="col-md-4"),
+                Column("valid_until", css_class="col-md-4"),
+            ),
+            HTML('<hr class="my-3">'),
+            Row(
+                Column("notes", css_class="col-md-6"),
+                Column("terms", css_class="col-md-6"),
+            ),
+        )
+
+
+# ── Sale Order ────────────────────────────────────────────────────────────────
+
+class SaleOrderForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = [
+            "customer",
+            "issue_date", "delivery_date", "payment_condition",
+            "notes",
+        ]
+        widgets = {
+            "issue_date":    forms.DateInput(attrs={"type": "date"}),
+            "delivery_date": forms.DateInput(attrs={"type": "date"}),
+            "notes":         forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+        }
+
+    def __init__(self, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields["customer"].queryset = (
+                Customer.objects.filter(organization=organization)
+            )
+        self.fields["delivery_date"].required = False
+
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column("customer", css_class="col-md-8"),
+                Column("payment_condition", css_class="col-md-4"),
+            ),
+            Row(
+                Column("issue_date", css_class="col-md-4"),
+                Column("delivery_date", css_class="col-md-4"),
+            ),
+            HTML('<hr class="my-3">'),
+            "notes",
+        )
+
+
+# ── Deliver Sale Order ────────────────────────────────────────────────────────
+
+class SaleOrderDeliverForm(forms.Form):
+    """Simple form for capturing the delivery signature."""
+    signed_by = forms.CharField(
+        max_length=150,
+        label=_("Recibido por"),
+        help_text=_("Nombre completo de la persona que recibe la entrega."),
+        widget=forms.TextInput(attrs={"placeholder": _("Nombre y apellido")}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout("signed_by")
+
+
+# ── Consolidation ─────────────────────────────────────────────────────────────
+
+class ConsolidateForm(forms.Form):
+    """
+    Parameters for consolidating sale orders into a single invoice.
+    """
+    customer = forms.ModelChoiceField(
+        queryset=Customer.objects.none(),
+        label=_("Cliente"),
+        widget=forms.Select(attrs={
+            "hx-get": "",          # set in view via hx-get attr on the form
+            "hx-trigger": "change",
+            "hx-target": "#consolidate-preview",
+            "hx-include": "closest form",
+        }),
+    )
+    period_start = forms.DateField(
+        label=_("Desde"),
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    period_end = forms.DateField(
+        label=_("Hasta"),
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    ncf_type = forms.ChoiceField(
+        label=_("Tipo de comprobante"),
+        choices=[(k, v) for k, v in Invoice._meta.get_field("ncf_type").choices],
+    )
+
+    def __init__(self, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields["customer"].queryset = Customer.objects.filter(
+                organization=organization
+            )
+        # Default period = previous calendar month
+        today = date.today()
+        first_this_month = today.replace(day=1)
+        last_month_end = first_this_month - timedelta(days=1)
+        last_month_start = last_month_end.replace(day=1)
+        self.fields["period_start"].initial = last_month_start
+        self.fields["period_end"].initial = last_month_end
+
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            "customer",
+            Row(
+                Column("period_start", css_class="col-md-4"),
+                Column("period_end",   css_class="col-md-4"),
+                Column("ncf_type",     css_class="col-md-4"),
+            ),
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get("period_start")
+        end   = cleaned_data.get("period_end")
+        if start and end and start > end:
+            raise forms.ValidationError(_("La fecha de inicio debe ser anterior a la fecha de fin."))
+        return cleaned_data
+
+
 # ── InvoiceItem formset ───────────────────────────────────────────────────────
 
 class InvoiceItemForm(forms.ModelForm):
     class Meta:
         model = InvoiceItem
-        fields = ["description", "quantity", "unit_price", "itbis_rate"]
+        fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
         widgets = {
+            "item": forms.HiddenInput(),
             "description": forms.TextInput(attrs={
-                "placeholder": _("Descripción del bien o servicio"),
                 "class": "form-control form-control-sm",
             }),
             "quantity":   forms.NumberInput(attrs={
@@ -227,6 +388,10 @@ class InvoiceItemForm(forms.ModelForm):
                 "x-on:change": "recalc()",
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["item"].required = False
 
 
 InvoiceItemFormSet = inlineformset_factory(

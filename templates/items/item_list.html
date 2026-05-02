@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Artículos" %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{% trans "Artículos" %}</h1>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#itemModal">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo artículo" %}
+  </button>
+</div>
+
+{# ── Filters ────────────────────────────────────────────────────────────────── #}
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <input type="text"
+               name="q"
+               value="{{ filter.form.q.value|default:'' }}"
+               class="form-control form-control-sm"
+               placeholder="{% trans 'Buscar por nombre, código o descripción…' %}">
+      </div>
+      <div class="col-md-2">
+        <select name="item_type" class="form-select form-select-sm">
+          {% for val, label in filter.form.item_type.field.choices %}
+            <option value="{{ val }}" {% if filter.form.item_type.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="itbis_rate" class="form-select form-select-sm">
+          {% for val, label in filter.form.itbis_rate.field.choices %}
+            <option value="{{ val }}" {% if filter.form.itbis_rate.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="is_active" class="form-select form-select-sm">
+          {% for val, label in filter.form.is_active.field.choices %}
+            <option value="{{ val }}" {% if filter.form.is_active.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-search"></i>
+        </button>
+        <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-x-lg"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Table (HTMX-swappable) ──────────────────────────────────────────────────── #}
+<div class="card shadow-sm">
+  <div class="card-body p-0" id="item-table">
+    {% include "items/partials/item_table.html" %}
+  </div>
+  {% if items %}
+  <div class="card-footer text-muted small">
+    {{ items|length }} {% trans "artículo(s)" %}
+  </div>
+  {% endif %}
+</div>
+
+{# ── Blank form template (cloned into modal on open / reset) ─────────────────── #}
+<template id="item-blank-tpl">
+  {% include "items/partials/item_modal_form.html" with form=form action_url=create_url submit_label=submit_label initial_item_type="BOTH" %}
+</template>
+
+{# ── Item Modal (create & edit) ──────────────────────────────────────────────── #}
+<div class="modal fade" id="itemModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="itemModalLabel">{% trans "Nuevo artículo" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="item-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Alpine component for item form (used inside modal) ────────────────────────
+function itemForm(initialType) {
+  return {
+    itemType: initialType,
+
+    get autoCode() {
+      return this.itemType === 'SALE' || this.itemType === 'BOTH';
+    },
+
+    get codeHint() {
+      return this.autoCode
+        ? "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}"
+        : "{% trans 'Código interno / SKU opcional.' %}";
+    },
+
+    get codePlaceholder() {
+      return this.autoCode
+        ? "{% trans 'Automático (ART-XXXX)' %}"
+        : "{% trans 'Código manual (opcional)' %}";
+    },
+
+    init() {
+      const sel = this.$el.querySelector('[name="item_type"]');
+      if (sel) this.itemType = sel.value;
+    },
+  }
+}
+
+// ── Clone blank form into modal body & re-init HTMX + Alpine ─────────────────
+function restoreBlank() {
+  var body = document.getElementById('item-modal-body');
+  body.innerHTML = '';
+  body.appendChild(document.getElementById('item-blank-tpl').content.cloneNode(true));
+  document.getElementById('itemModalLabel').textContent = '{% trans "Nuevo artículo" %}';
+  htmx.process(body);
+  if (typeof Alpine !== 'undefined') Alpine.initTree(body);
+}
+
+// ── Boot on page load & restore on every modal close ─────────────────────────
+restoreBlank();
+document.getElementById('itemModal').addEventListener('hidden.bs.modal', restoreBlank);
+
+// ── After HTMX loads the edit form, update title & re-init Alpine ─────────────
+document.body.addEventListener('htmx:afterSwap', function (e) {
+  if (e.detail.target && e.detail.target.id === 'item-modal-body') {
+    document.getElementById('itemModalLabel').textContent = '{% trans "Editar artículo" %}';
+    if (typeof Alpine !== 'undefined') Alpine.initTree(e.detail.target);
+  }
+});
+</script>
+{% endblock %}

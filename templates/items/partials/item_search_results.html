@@ -1,0 +1,21 @@
+{% load i18n %}
+{% for item in items %}
+<button type="button"
+        class="d-block w-100 text-start px-3 py-2 border-0 bg-transparent item-pick-btn"
+        style="cursor:pointer"
+        data-desc="{{ item.description|default:item.name|escapejs }}"
+        data-price="{{ item.unit_price }}"
+        data-rate="{{ item.itbis_rate }}"
+        data-pk="{{ item.pk }}"
+        onclick="pickCatalogItem(this)">
+  <div class="fw-semibold small lh-sm">
+    {% if item.code %}<code class="text-muted me-1">{{ item.code }}</code>{% endif %}
+    {{ item.name }}
+  </div>
+  <div class="text-muted" style="font-size:.75rem">
+    {{ item.get_unit_display }} &middot; {{ item.unit_price|floatformat:2 }} &middot; {{ item.get_itbis_rate_display }}
+  </div>
+</button>
+{% empty %}
+<div class="px-3 py-2 text-muted small">{% trans "Sin resultados" %}</div>
+{% endfor %}

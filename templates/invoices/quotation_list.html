@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Cotizaciones" %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">{% trans "Cotizaciones" %}</h1>
+  <a href="{% url 'invoices:quotation_create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva cotización" %}
+  </a>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get"
+          hx-get="{% url 'invoices:quotation_list' %}"
+          hx-target="#quotation-table"
+          hx-push-url="true"
+          hx-trigger="change, search">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">{{ filter.form.status }}</div>
+        <div class="col-md-3">{{ filter.form.customer }}</div>
+        <div class="col-md-2">{{ filter.form.issue_date_after }}</div>
+        <div class="col-md-2">{{ filter.form.issue_date_before }}</div>
+        <div class="col-md-2">{{ filter.form.doc_number }}</div>
+        <div class="col-md-1">
+          <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm w-100">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="quotation-table">
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>{% trans "Número" %}</th>
+            <th>{% trans "Cliente" %}</th>
+            <th>{% trans "Emisión" %}</th>
+            <th>{% trans "Válida hasta" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+            <th class="text-center">{% trans "Estado" %}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in quotations %}
+          <tr>
+            <td class="font-monospace fw-semibold">{{ q.doc_number|default:"—" }}</td>
+            <td>{{ q.customer.name }}</td>
+            <td>{{ q.issue_date|date:"d/m/Y" }}</td>
+            <td>
+              {% if q.valid_until %}
+                <span class="{% if q.status == 'EXPIRED' %}text-danger{% endif %}">
+                  {{ q.valid_until|date:"d/m/Y" }}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-end fw-semibold">{{ q.total|floatformat:2 }}</td>
+            <td class="text-center">
+              {% include "invoices/partials/status_badge.html" with status=q.status %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'invoices:quotation_detail' q.pk %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">{% trans "No hay cotizaciones." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

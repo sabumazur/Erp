@@ -99,10 +99,6 @@
     <div class="meta-label">Condición de Pago</div>
     <div class="meta-value">{{ invoice.get_payment_condition_display }}</div>
   </div>
-  <div class="meta-item">
-    <div class="meta-label">Moneda</div>
-    <div class="meta-value">{{ invoice.currency }}</div>
-  </div>
 </div>
 
 <!-- Line items -->
@@ -143,23 +139,23 @@
 <table class="totals-table">
   <tr>
     <td>Subtotal (sin ITBIS)</td>
-    <td class="text-right">{{ invoice.currency }} {{ invoice.subtotal|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.subtotal|floatformat:2 }}</td>
   </tr>
   {% if invoice.itbis_18 %}
   <tr>
     <td>ITBIS 18%</td>
-    <td class="text-right">{{ invoice.currency }} {{ invoice.itbis_18|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.itbis_18|floatformat:2 }}</td>
   </tr>
   {% endif %}
   {% if invoice.itbis_16 %}
   <tr>
     <td>ITBIS 16%</td>
-    <td class="text-right">{{ invoice.currency }} {{ invoice.itbis_16|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.itbis_16|floatformat:2 }}</td>
   </tr>
   {% endif %}
   <tr class="total-row">
     <td>TOTAL</td>
-    <td class="text-right">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.total|floatformat:2 }}</td>
   </tr>
 </table>
 

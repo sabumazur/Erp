@@ -1,0 +1,14 @@
+{% load i18n %}
+{% if status == "DRAFT" %}<span class="badge bg-secondary">{% trans "Borrador" %}</span>
+{% elif status == "CONFIRMED" %}<span class="badge bg-primary">{% trans "Confirmada" %}</span>
+{% elif status == "SENT" %}<span class="badge bg-info text-dark">{% trans "Enviada" %}</span>
+{% elif status == "PAID" %}<span class="badge bg-success">{% trans "Pagada" %}</span>
+{% elif status == "OVERDUE" %}<span class="badge bg-danger">{% trans "Vencida" %}</span>
+{% elif status == "CANCELLED" %}<span class="badge bg-dark">{% trans "Anulada" %}</span>
+{% elif status == "ACCEPTED" %}<span class="badge bg-success">{% trans "Aceptada" %}</span>
+{% elif status == "REJECTED" %}<span class="badge bg-danger">{% trans "Rechazada" %}</span>
+{% elif status == "EXPIRED" %}<span class="badge bg-warning text-dark">{% trans "Expirada" %}</span>
+{% elif status == "CONVERTED" %}<span class="badge bg-teal" style="background-color:#20c997">{% trans "Convertida" %}</span>
+{% elif status == "DELIVERED" %}<span class="badge bg-success">{% trans "Entregada" %}</span>
+{% elif status == "INVOICED" %}<span class="badge bg-primary">{% trans "Facturada" %}</span>
+{% endif %}
