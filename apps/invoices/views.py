@@ -1,10 +1,14 @@
 import csv
+import importlib
 import io
 import json
 from datetime import date
+from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -14,17 +18,16 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from .filters import InvoiceFilter, QuotationFilter, SaleOrderFilter
-from django.db.models import Count, Q
+from .filters import InvoiceFilter, QuotationFilter, SaleOrderFilter, PaymentFilter
 
 from .forms import (
     CustomerForm, CustomerDepartmentForm,
     InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
-    PaymentForm, CreditNoteForm, NCFSequenceForm,
+    PaymentForm, PaymentHeaderForm, CreditNoteForm, NCFSequenceForm,
     QuotationForm, SaleOrderForm, SaleOrderDeliverForm, ConsolidateForm,
 )
-from .models import Customer, CustomerDepartment, Invoice, InvoiceItem, NCFSequence, Payment
-from .services import NCFService, QuotationService, SaleOrderService
+from .models import Customer, CustomerDepartment, Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
+from .services import NCFService, QuotationService, SaleOrderService, PaymentService
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -169,12 +172,19 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
                 "form": form,
                 "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
                 "submit_label": _("Guardar"),
+                "hx_target": request.GET.get("hx_target", "#customer-table"),
             })
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
         response = super().form_valid(form)
         if self.request.htmx:
+            hx_target = self.request.POST.get("_hx_target", "#customer-table")
+            if hx_target != "#customer-table":
+                messages.success(self.request, _("Cliente actualizado."))
+                resp = HttpResponse()
+                resp["HX-Refresh"] = "true"
+                return resp
             customers = Customer.objects.filter(organization=_org(self.request)).order_by("name")
             resp = render(self.request, "invoices/partials/customer_table.html",
                           {"customers": customers})
@@ -186,10 +196,12 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     def form_invalid(self, form):
         if self.request.htmx:
             customer = self.get_object()
+            hx_target = self.request.POST.get("_hx_target", "#customer-table")
             resp = render(self.request, "invoices/partials/customer_modal_form.html", {
                 "form": form,
                 "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
                 "submit_label": _("Guardar"),
+                "hx_target": hx_target,
             })
             resp["HX-Retarget"] = "#customer-modal-body"
             resp["HX-Reswap"] = "innerHTML"
@@ -207,6 +219,42 @@ class CustomerDetailView(ERPBaseViewMixin, View):
             .filter(deleted_at__isnull=True)
             .order_by("name")
         )
+
+        # ── Account / payment summary ─────────────────────────────────────────
+        _zero = Decimal("0.00")
+        _dec_field = DecimalField(max_digits=14, decimal_places=2)
+
+        invoices = list(
+            Invoice.invoices
+            .filter(organization=_org(request), customer=customer)
+            .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+            .annotate(
+                paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
+            )
+            .select_related("customer")
+            .order_by("-issue_date")
+        )
+
+        # Attach per-invoice balance as a Python attribute
+        for inv in invoices:
+            inv.line_balance = inv.total - inv.paid_amount
+
+        total_invoiced = sum((inv.total for inv in invoices), _zero)
+        total_paid     = sum((inv.paid_amount for inv in invoices), _zero)
+        balance        = total_invoiced - total_paid
+        overdue        = sum(
+            inv.line_balance
+            for inv in invoices
+            if inv.status == Invoice.Status.OVERDUE
+        )
+
+        recent_payments = list(
+            Payment.objects
+            .filter(customer=customer, organization=_org(request))
+            .prefetch_related("allocations__invoice")
+            .order_by("-date", "-created_at")[:30]
+        )
+
         return render(request, "invoices/customer_detail.html", {
             **self.get_context(
                 customer=customer,
@@ -218,7 +266,12 @@ class CustomerDetailView(ERPBaseViewMixin, View):
                     {"label": customer.name},
                 ],
             ),
-            "invoices": customer.invoices.order_by("-issue_date")[:10],
+            "invoices": invoices,
+            "total_invoiced": total_invoiced,
+            "total_paid": total_paid,
+            "balance": balance,
+            "overdue": overdue,
+            "recent_payments": recent_payments,
         })
 
 
@@ -403,7 +456,7 @@ class InvoiceDetailView(ERPBaseViewMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.all()
-        ctx["payments"] = self.object.payments.all()
+        ctx["allocations"] = self.object.allocations.select_related("payment").order_by("payment__date")
         ctx["payment_form"] = PaymentForm(
             initial={"amount": self.object.total, "date": date.today()}
         )
@@ -547,6 +600,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
 
 
 class InvoicePayView(ERPBaseViewMixin, View):
+    """Quick single-invoice payment from the invoice detail page."""
     required_module = "invoices"
 
     def post(self, request, pk):
@@ -557,12 +611,19 @@ class InvoicePayView(ERPBaseViewMixin, View):
             return redirect("invoices:invoice_detail", pk=invoice.pk)
 
         payment = form.save(commit=False)
-        payment.invoice = invoice
+        payment.customer = invoice.customer
         payment.organization = _org(request)
         payment.save()
 
+        # Allocate the full payment amount to this invoice
+        PaymentAllocation.objects.create(
+            payment=payment,
+            invoice=invoice,
+            amount=payment.amount,
+        )
+
         try:
-            NCFService.mark_paid(invoice, payment)
+            NCFService.mark_paid(invoice)
             messages.success(request, _("Pago registrado. Factura marcada como pagada."))
         except ValueError as exc:
             messages.error(request, str(exc))
@@ -1577,3 +1638,173 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
             "items": order.items.all(),
             "org": order.organization,
         })
+
+
+# ── Payments ──────────────────────────────────────────────────────────────────
+
+class PaymentListView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def get(self, request):
+        qs = (
+            Payment.objects
+            .filter(organization=_org(request))
+            .select_related("customer")
+            .prefetch_related("allocations__invoice")
+            .order_by("-date", "-created_at")
+        )
+        f = PaymentFilter(request.GET, queryset=qs, organization=_org(request))
+        total = sum(p.amount for p in f.qs)
+        return render(request, "invoices/payment_list.html", {
+            **self.get_context(
+                filter=f,
+                payments=f.qs,
+                total=total,
+                breadcrumbs=[
+                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                    {"label": _("Pagos")},
+                ],
+            ),
+        })
+
+
+class PaymentCreateView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def _ctx(self, request, form):
+        return {
+            **self.get_context(
+                form=form,
+                breadcrumbs=[
+                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                    {"label": _("Pagos"), "url": reverse("invoices:payment_list")},
+                    {"label": _("Nuevo pago")},
+                ],
+            ),
+        }
+
+    def get(self, request):
+        form = PaymentHeaderForm(
+            organization=_org(request),
+            initial={"date": date.today()},
+        )
+        return render(request, "invoices/payment_form.html", self._ctx(request, form))
+
+    def post(self, request):
+        form = PaymentHeaderForm(organization=_org(request), data=request.POST)
+
+        if not form.is_valid():
+            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+
+        invoice_pks = request.POST.getlist("alloc_invoices")
+        amounts_raw = request.POST.getlist("alloc_amounts")
+
+        allocations = []
+        for pk_str, amt_str in zip(invoice_pks, amounts_raw):
+            try:
+                amt = Decimal(amt_str.replace(",", "."))
+            except Exception:
+                continue
+            if amt <= Decimal("0"):
+                continue
+            try:
+                inv = Invoice.invoices.get(pk=pk_str, organization=_org(request))
+            except Invoice.DoesNotExist:
+                continue
+            allocations.append({"invoice": inv, "amount": amt})
+
+        if not allocations:
+            form.add_error(None, _("Seleccione al menos una factura y un monto mayor a cero."))
+            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+
+        try:
+            payment = PaymentService.register(
+                organization=_org(request),
+                customer=form.cleaned_data["customer"],
+                payment_date=form.cleaned_data["date"],
+                method=form.cleaned_data["method"],
+                reference=form.cleaned_data.get("reference", ""),
+                notes=form.cleaned_data.get("notes", ""),
+                allocations=allocations,
+            )
+            messages.success(request, _("Pago registrado exitosamente."))
+            return redirect("invoices:payment_detail", pk=payment.pk)
+        except ValueError as exc:
+            form.add_error(None, str(exc))
+            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+
+
+class PaymentDetailView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def get(self, request, pk):
+        payment = get_object_or_404(
+            Payment.objects.select_related("customer", "organization")
+                           .prefetch_related("allocations__invoice"),
+            pk=pk,
+            organization=_org(request),
+        )
+        return render(request, "invoices/payment_detail.html", {
+            **self.get_context(
+                payment=payment,
+                breadcrumbs=[
+                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                    {"label": _("Pagos"), "url": reverse("invoices:payment_list")},
+                    {"label": str(payment)},
+                ],
+            ),
+        })
+
+
+class PaymentDeleteView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def post(self, request, pk):
+        payment = get_object_or_404(Payment, pk=pk, organization=_org(request))
+        try:
+            PaymentService.delete(payment)
+            messages.success(request, _("Pago eliminado y facturas reabiertas."))
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("invoices:payment_list")
+
+
+class OutstandingInvoicesView(ERPBaseViewMixin, View):
+    """
+    HTMX endpoint: returns allocation row partials for all outstanding invoices
+    of the selected customer.  Triggered by the customer <select> change in the
+    payment form.
+    """
+    required_module = "invoices"
+
+    def get(self, request):
+        customer_id = request.GET.get("customer", "").strip()
+        invoices = []
+        if customer_id:
+            _zero = Decimal("0.00")
+            _dec  = DecimalField(max_digits=14, decimal_places=2)
+            qs = (
+                Invoice.invoices
+                .filter(
+                    organization=_org(request),
+                    customer_id=customer_id,
+                    status__in=[
+                        Invoice.Status.CONFIRMED,
+                        Invoice.Status.SENT,
+                        Invoice.Status.OVERDUE,
+                    ],
+                )
+                .annotate(
+                    paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec)
+                )
+                .order_by("due_date", "issue_date")
+            )
+            for inv in qs:
+                inv.line_balance = inv.total - inv.paid_amount
+            invoices = [inv for inv in qs if inv.line_balance > Decimal("0")]
+
+        return render(
+            request,
+            "invoices/partials/payment_allocation_rows.html",
+            {"invoices": invoices},
+        )

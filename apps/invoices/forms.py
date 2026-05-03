@@ -561,7 +561,56 @@ InvoiceItemFormSet = inlineformset_factory(
 # ── Payment ───────────────────────────────────────────────────────────────────
 
 
+class PaymentHeaderForm(forms.ModelForm):
+    """
+    Full payment header form used in PaymentCreateView.
+    Customer field triggers HTMX load of outstanding invoices.
+    Amount is derived from the allocations — not a user input here.
+    """
+    class Meta:
+        model = Payment
+        fields = ["customer", "date", "method", "reference", "notes"]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "notes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
+        }
+
+    def __init__(self, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields["customer"].queryset = (
+                Customer.objects.filter(organization=organization).order_by("name")
+            )
+        self.fields["customer"].empty_label = _("— Seleccione un cliente —")
+        self.fields["customer"].widget.attrs.update({
+            "class": "form-select",
+            "hx-get": reverse_lazy("invoices:payment_outstanding_invoices"),
+            "hx-trigger": "change",
+            "hx-target": "#allocation-tbody",
+            "hx-swap": "innerHTML",
+            "hx-include": "this",
+        })
+        self.fields["method"].widget.attrs["class"] = "form-select"
+        self.fields["reference"].widget.attrs["class"] = "form-control"
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column("customer",  css_class="col-md-5"),
+                Column("date",      css_class="col-md-2"),
+                Column("method",    css_class="col-md-3"),
+                Column("reference", css_class="col-md-2"),
+            ),
+            "notes",
+        )
+
+
 class PaymentForm(forms.ModelForm):
+    """
+    Header form for registering a payment receipt.
+    Used for the quick single-invoice modal on invoice_detail.html.
+    The full multi-invoice form lives in PaymentCreateView.
+    """
     class Meta:
         model = Payment
         fields = ["amount", "date", "method", "reference", "notes"]

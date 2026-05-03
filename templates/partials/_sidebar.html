@@ -51,6 +51,13 @@
         </a>
       </li>
       <li>
+        <a href="{% url 'invoices:payment_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/payments/' %}active{% endif %}">
+          <i class="bi bi-cash-stack"></i>
+          <span>{% trans "Pagos" %}</span>
+        </a>
+      </li>
+      <li>
         <a href="{% url 'invoices:customer_list' %}"
            class="sidebar-nav-link {% if 'invoices/customers' in request.path %}active{% endif %}">
           <i class="bi bi-person-lines-fill"></i>

@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -45,12 +46,8 @@ class PaymentTerm(models.Model):
 
 
 class PaymentMethod(models.TextChoices):
-    CASH     = "CASH",     _("Efectivo")
     CHECK    = "CHECK",    _("Cheque")
-    CARD     = "CARD",     _("Tarjeta de crédito/débito")
     TRANSFER = "TRANSFER", _("Transferencia bancaria")
-    SWAP     = "SWAP",     _("Permuta")
-    OTHER    = "OTHER",    _("Otro")
 
 
 # ── Customer ──────────────────────────────────────────────────────────────────
@@ -373,6 +370,39 @@ class InvoiceQuerySet(models.QuerySet):
     def sale_orders(self):
         return self.filter(doc_type=Invoice.DocType.SALE_ORDER)
 
+    def with_aging(self):
+        """
+        Annotate each row with an `aging_bucket` field (string) based on how
+        many days have elapsed since due_date.  Uses Python-computed date
+        literals so it works on SQLite, PostgreSQL, and MySQL alike.
+
+        Buckets:
+            current  — not yet due or no due_date
+            1_30     — 1–30 days past due
+            31_60    — 31–60 days past due
+            61_90    — 61–90 days past due
+            90_plus  — more than 90 days past due
+        """
+        from django.db.models import Case, When, Value, CharField
+        today = date.today()
+        # NOTE: named aging_bucket_db to avoid shadowing the @property on Invoice
+        return self.annotate(
+            aging_bucket_db=Case(
+                When(due_date__isnull=True,
+                     then=Value("current")),
+                When(due_date__gte=today,
+                     then=Value("current")),
+                When(due_date__gte=today - timedelta(days=30),
+                     then=Value("1_30")),
+                When(due_date__gte=today - timedelta(days=60),
+                     then=Value("31_60")),
+                When(due_date__gte=today - timedelta(days=90),
+                     then=Value("61_90")),
+                default=Value("90_plus"),
+                output_field=CharField(max_length=10),
+            )
+        )
+
 
 class InvoiceManager(models.Manager):
     def get_queryset(self):
@@ -428,6 +458,13 @@ class Invoice(ERPBaseModel):
         CREDIT = "CREDIT", _("Crédito")
         FREE   = "FREE",   _("Gratuito")
         OTHER  = "OTHER",  _("Otro")
+
+    class AgingBucket(models.TextChoices):
+        CURRENT    = "current",  _("Corriente")
+        DAYS_1_30  = "1_30",     _("1–30 días")
+        DAYS_31_60 = "31_60",    _("31–60 días")
+        DAYS_61_90 = "61_90",    _("61–90 días")
+        DAYS_90_PLUS = "90_plus", _("Más de 90 días")
 
     class Currency(models.TextChoices):
         DOP = "DOP", _("Peso Dominicano (DOP)")
@@ -658,6 +695,36 @@ class Invoice(ERPBaseModel):
         return self.doc_type == self.DocType.SALE_ORDER
 
     @property
+    def days_overdue(self) -> int:
+        """
+        How many calendar days past due_date this invoice is.
+        Returns 0 when not yet due, already paid/cancelled, or has no due_date.
+        """
+        terminal = (self.Status.DRAFT, self.Status.CANCELLED, self.Status.PAID)
+        if self.status in terminal or not self.due_date:
+            return 0
+        delta = (date.today() - self.due_date).days
+        return max(0, delta)
+
+    @property
+    def aging_bucket(self) -> str:
+        """Return the AgingBucket value for this invoice."""
+        d = self.days_overdue
+        if d == 0:
+            return self.AgingBucket.CURRENT
+        elif d <= 30:
+            return self.AgingBucket.DAYS_1_30
+        elif d <= 60:
+            return self.AgingBucket.DAYS_31_60
+        elif d <= 90:
+            return self.AgingBucket.DAYS_61_90
+        return self.AgingBucket.DAYS_90_PLUS
+
+    @property
+    def aging_bucket_label(self) -> str:
+        return self.AgingBucket(self.aging_bucket).label
+
+    @property
     def display_number(self):
         """Human-readable document reference regardless of type."""
         if self.doc_type == self.DocType.INVOICE:
@@ -809,6 +876,12 @@ class InvoiceItem(models.Model):
 
 
 class Payment(ERPBaseModel):
+    """
+    A single payment receipt from a customer.  One payment can cover one or
+    more invoices; the split is recorded in PaymentAllocation.
+
+    Accepted methods: bank transfer or cheque only.
+    """
     Method = PaymentMethod
 
     organization = models.ForeignKey(
@@ -817,14 +890,15 @@ class Payment(ERPBaseModel):
         related_name="payments",
         verbose_name=_("organización"),
     )
-    invoice = models.ForeignKey(
-        Invoice,
-        on_delete=models.CASCADE,
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
         related_name="payments",
-        verbose_name=_("factura"),
+        verbose_name=_("cliente"),
     )
     amount = models.DecimalField(
-        max_digits=14, decimal_places=2, verbose_name=_("monto")
+        max_digits=14, decimal_places=2,
+        verbose_name=_("monto total recibido"),
     )
     date = models.DateField(default=timezone.now, verbose_name=_("fecha de pago"))
     method = models.CharField(
@@ -837,13 +911,67 @@ class Payment(ERPBaseModel):
         max_length=100,
         blank=True,
         verbose_name=_("referencia"),
-        help_text=_("Número de cheque, confirmación de transferencia, etc."),
+        help_text=_("Número de cheque o confirmación de transferencia bancaria."),
     )
     notes = models.TextField(blank=True, verbose_name=_("notas"))
 
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("pago")
         verbose_name_plural = _("pagos")
+        ordering = ["-date", "-created_at"]
 
     def __str__(self):
-        return f"Pago {self.amount} → {self.invoice}"
+        return f"Pago {self.amount} – {self.customer} ({self.date})"
+
+    @property
+    def allocated_total(self) -> Decimal:
+        """Sum of all allocations. Should equal self.amount when fully applied."""
+        from django.db.models import Sum
+        result = self.allocations.aggregate(t=Sum("amount"))["t"]
+        return result or Decimal("0.00")
+
+    @property
+    def unallocated(self) -> Decimal:
+        return self.amount - self.allocated_total
+
+
+# ── PaymentAllocation ─────────────────────────────────────────────────────────
+
+
+class PaymentAllocation(models.Model):
+    """
+    Records how much of a Payment is applied to a specific Invoice.
+
+    Invariant: sum(allocations.amount) for a payment == payment.amount
+    Invariant: allocation.amount <= invoice.outstanding_balance at time of creation
+    """
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name="allocations",
+        verbose_name=_("pago"),
+    )
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.PROTECT,
+        related_name="allocations",
+        verbose_name=_("factura"),
+    )
+    amount = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        verbose_name=_("monto aplicado"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("aplicación de pago")
+        verbose_name_plural = _("aplicaciones de pago")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["payment", "invoice"],
+                name="unique_payment_invoice_allocation",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.payment} → {self.invoice}: {self.amount}"

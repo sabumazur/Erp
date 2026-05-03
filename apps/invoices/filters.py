@@ -2,7 +2,7 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Invoice, Customer, CustomerDepartment, NCFType
+from .models import Invoice, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod
 
 
 class InvoiceFilter(django_filters.FilterSet):
@@ -180,3 +180,49 @@ class SaleOrderFilter(django_filters.FilterSet):
                 is_active=True,
                 deleted_at__isnull=True,
             ).select_related("customer").order_by("customer__name", "name")
+
+
+class PaymentFilter(django_filters.FilterSet):
+    customer = django_filters.ModelChoiceFilter(
+        queryset=Customer.objects.none(),
+        label=_("Cliente"),
+        empty_label=_("Todos los clientes"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    date_after = django_filters.DateFilter(
+        field_name="date",
+        lookup_expr="gte",
+        label=_("Desde"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    date_before = django_filters.DateFilter(
+        field_name="date",
+        lookup_expr="lte",
+        label=_("Hasta"),
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+    )
+    method = django_filters.ChoiceFilter(
+        choices=[("", _("Todos los métodos"))] + PaymentMethod.choices,
+        empty_label=None,
+        label=_("Método"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    reference = django_filters.CharFilter(
+        lookup_expr="icontains",
+        label=_("Referencia"),
+        widget=forms.TextInput(attrs={
+            "placeholder": _("Cheque, transferencia…"),
+            "class": "form-control form-control-sm",
+        }),
+    )
+
+    class Meta:
+        model = Payment
+        fields = ["customer", "date_after", "date_before", "method", "reference"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.filters["customer"].queryset = Customer.objects.filter(
+                organization=organization
+            ).order_by("name")

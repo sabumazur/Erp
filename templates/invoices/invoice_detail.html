@@ -215,9 +215,9 @@
     {% endif %}
 
     <!-- Payments -->
-    {% if payments %}
+    {% if allocations %}
     <div class="card shadow-sm">
-      <div class="card-header fw-semibold">{% trans "Pagos registrados" %}</div>
+      <div class="card-header fw-semibold">{% trans "Pagos aplicados" %}</div>
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
           <thead class="table-light">
@@ -225,16 +225,16 @@
               <th>{% trans "Fecha" %}</th>
               <th>{% trans "Método" %}</th>
               <th>{% trans "Referencia" %}</th>
-              <th class="text-end">{% trans "Monto" %}</th>
+              <th class="text-end">{% trans "Monto aplicado" %}</th>
             </tr>
           </thead>
           <tbody>
-            {% for p in payments %}
+            {% for alloc in allocations %}
             <tr>
-              <td>{{ p.date|date:"d/m/Y" }}</td>
-              <td>{{ p.get_method_display }}</td>
-              <td>{{ p.reference|default:"—" }}</td>
-              <td class="text-end fw-semibold">{{ p.amount|floatformat:2 }}</td>
+              <td>{{ alloc.payment.date|date:"d/m/Y" }}</td>
+              <td>{{ alloc.payment.get_method_display }}</td>
+              <td class="text-muted">{{ alloc.payment.reference|default:"—" }}</td>
+              <td class="text-end fw-semibold text-success">{{ alloc.amount|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>

@@ -5,13 +5,21 @@ Business-logic services for the invoices app.
 All public functions assume they are called from within a request/view context
 where request.organization is already set.
 """
+import uuid
 from datetime import date
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .models import DocumentSequence, Invoice, InvoiceItem, NCFSequence
+from decimal import Decimal as _Decimal
+
+from django.db.models import Sum as _Sum
+from django.db.models.functions import Coalesce as _Coalesce
+from django.db.models import DecimalField as _DecimalField
+
+from .models import DocumentSequence, Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
 
 
 # ── NCFService ────────────────────────────────────────────────────────────────
@@ -54,7 +62,19 @@ class NCFService:
         invoice.full_clean()
 
         # Assign next e-NCF atomically
-        encf = NCFSequence.generate(invoice.organization, invoice.ncf_type)
+        try:
+            encf = NCFSequence.generate(invoice.organization, invoice.ncf_type)
+        except ValueError:
+            if not settings.DEBUG:
+                raise
+            # ── Dev-mode fallback ──────────────────────────────────────────────
+            # No active NCFSequence configured. Generate a locally-unique fake
+            # NCF using the 'B' series prefix (the DGII only issues 'E' series
+            # for e-CF), so fake numbers are visually distinguishable and will
+            # never collide with real sequences.
+            # Format: B{type:02d}{10-digit random}  →  e.g. B310947382610
+            fake_seq = int(uuid.uuid4()) % 10_000_000_000
+            encf = f"B{invoice.ncf_type:02d}{fake_seq:010d}"
 
         invoice.encf = encf
         invoice.status = Invoice.Status.CONFIRMED
@@ -72,12 +92,29 @@ class NCFService:
         return invoice
 
     @staticmethod
-    def mark_paid(invoice: Invoice, payment) -> Invoice:
-        """Transition CONFIRMED / SENT / OVERDUE → PAID."""
+    def mark_paid(invoice: Invoice) -> Invoice:
+        """
+        Transition CONFIRMED / SENT / OVERDUE → PAID.
+        Called automatically by PaymentService when the sum of allocations
+        covers the invoice total.
+        """
         allowed = (Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE)
         if invoice.status not in allowed:
             raise ValueError("La factura no puede marcarse como pagada en su estado actual.")
         invoice.status = Invoice.Status.PAID
+        invoice.save(update_fields=["status", "updated_at"])
+        return invoice
+
+    @staticmethod
+    def reopen(invoice: Invoice) -> Invoice:
+        """
+        Reverse PAID → SENT (or CONFIRMED if it was never sent).
+        Called by PaymentService.delete() when a payment that fully covered
+        this invoice is deleted.
+        """
+        if invoice.status != Invoice.Status.PAID:
+            raise ValueError("Solo se pueden reabrir facturas en estado Pagada.")
+        invoice.status = Invoice.Status.SENT
         invoice.save(update_fields=["status", "updated_at"])
         return invoice
 
@@ -423,6 +460,146 @@ class SaleOrderService:
         invoice.recompute_totals()
 
         return invoice
+
+
+# ── PaymentService ────────────────────────────────────────────────────────────
+
+class PaymentService:
+    """
+    Handles creation and deletion of multi-invoice payments.
+
+    A Payment covers one or more invoices via PaymentAllocation rows.
+    Accepted methods: TRANSFER and CHECK only.
+    """
+
+    _ZERO = _Decimal("0.00")
+    _DEC  = _DecimalField(max_digits=14, decimal_places=2)
+
+    @classmethod
+    def _outstanding(cls, invoice: Invoice) -> _Decimal:
+        """Return the current outstanding balance for an invoice."""
+        paid = invoice.allocations.aggregate(
+            t=_Coalesce(_Sum("amount"), cls._ZERO, output_field=cls._DEC)
+        )["t"]
+        return invoice.total - paid
+
+    @staticmethod
+    @transaction.atomic
+    def register(
+        organization,
+        customer,
+        payment_date,
+        method: str,
+        reference: str,
+        notes: str,
+        allocations: list,          # [{"invoice": Invoice, "amount": Decimal}, …]
+    ) -> Payment:
+        """
+        Create a Payment header + PaymentAllocation rows atomically.
+
+        Validates:
+          - At least one allocation with amount > 0
+          - Each allocation amount ≤ invoice outstanding balance
+          - Invoice belongs to the same organization
+
+        Auto-marks each invoice as PAID when its allocations fully cover its total.
+        Returns the saved Payment instance.
+        """
+        if not allocations:
+            raise ValueError(_("Debe aplicar el pago a al menos una factura."))
+
+        total = sum(a["amount"] for a in allocations)
+        if total <= 0:
+            raise ValueError(_("El monto total del pago debe ser mayor a cero."))
+
+        _zero = _Decimal("0.00")
+
+        for alloc in allocations:
+            inv = alloc["invoice"]
+            amt = alloc["amount"]
+
+            if inv.organization_id != organization.pk:
+                raise ValueError(_(f"La factura {inv.display_number} no pertenece a esta organización."))
+
+            if amt <= _zero:
+                raise ValueError(_(f"El monto para {inv.display_number} debe ser mayor a cero."))
+
+            outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
+            already_paid = inv.allocations.aggregate(t=outstanding)["t"]
+            balance = inv.total - already_paid
+
+            if amt > balance:
+                raise ValueError(
+                    _(f"El monto {amt} excede el saldo pendiente ({balance:.2f}) "
+                      f"de la factura {inv.display_number}.")
+                )
+
+        payment = Payment.objects.create(
+            organization=organization,
+            customer=customer,
+            amount=total,
+            date=payment_date,
+            method=method,
+            reference=reference,
+            notes=notes,
+        )
+
+        for alloc in allocations:
+            inv = alloc["invoice"]
+            amt = alloc["amount"]
+
+            PaymentAllocation.objects.create(
+                payment=payment,
+                invoice=inv,
+                amount=amt,
+            )
+
+            # Re-check balance including the new allocation and auto-mark PAID
+            outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
+            now_paid = inv.allocations.aggregate(t=outstanding)["t"]
+            if now_paid >= inv.total:
+                try:
+                    NCFService.mark_paid(inv)
+                except ValueError:
+                    pass  # Already paid or wrong status — skip silently
+
+        return payment
+
+    @staticmethod
+    @transaction.atomic
+    def delete(payment: Payment) -> None:
+        """
+        Delete a payment and reverse all of its effects:
+          - Collect affected invoices before deletion
+          - Delete the payment (CASCADE removes allocations)
+          - Re-open any invoice that was PAID solely due to this payment
+        """
+        _zero = _Decimal("0.00")
+
+        # Snapshot affected invoices before deletion
+        affected = list(
+            payment.allocations.select_related("invoice").values_list("invoice_id", flat=True)
+        )
+
+        payment.delete()   # CASCADE deletes PaymentAllocation rows
+
+        # Re-open invoices whose coverage is now incomplete
+        for inv_pk in affected:
+            try:
+                inv = Invoice.objects.get(pk=inv_pk)
+            except Invoice.DoesNotExist:
+                continue
+
+            if inv.status != Invoice.Status.PAID:
+                continue
+
+            outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
+            still_paid = inv.allocations.aggregate(t=outstanding)["t"]
+            if still_paid < inv.total:
+                try:
+                    NCFService.reopen(inv)
+                except ValueError:
+                    pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

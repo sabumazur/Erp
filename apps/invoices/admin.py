@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Customer, CustomerDepartment, DocumentSequence, Invoice, InvoiceItem,
-    NCFSequence, Payment, PaymentTerm,
+    NCFSequence, Payment, PaymentAllocation, PaymentTerm,
 )
 
 
@@ -98,12 +98,28 @@ class NCFSequenceAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
 
+class PaymentAllocationInline(admin.TabularInline):
+    model   = PaymentAllocation
+    extra   = 0
+    fields  = ["invoice", "amount"]
+    readonly_fields = ["created_at"]
+    autocomplete_fields = ["invoice"]
+
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display   = ["invoice", "amount", "date", "method", "reference", "organization"]
-    list_filter    = ["method", "organization"]
-    search_fields  = ["invoice__encf", "invoice__doc_number", "reference"]
+    list_display    = ["customer", "amount", "date", "method", "reference", "organization"]
+    list_filter     = ["method", "organization", "date"]
+    search_fields   = ["customer__name", "reference"]
     readonly_fields = ["created_at", "updated_at"]
+    inlines         = [PaymentAllocationInline]
+
+
+@admin.register(PaymentAllocation)
+class PaymentAllocationAdmin(admin.ModelAdmin):
+    list_display  = ["payment", "invoice", "amount", "created_at"]
+    search_fields = ["payment__reference", "invoice__encf", "invoice__doc_number"]
+    readonly_fields = ["created_at"]
 
 
 @admin.register(PaymentTerm)

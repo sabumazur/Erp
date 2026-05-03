@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Pago" %} — {{ payment.date|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0">{% trans "Recibo de pago" %}</h1>
+    <span class="text-muted small">{{ payment.date|date:"d/m/Y" }} · {{ payment.customer.name }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <form method="post" action="{% url 'invoices:payment_delete' payment.pk %}"
+          x-data
+          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar este pago? Las facturas cubiertas se reabrirán." %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# ── Header info ──────────────────────────────────────────────────────────── #}
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Cliente" %}</p>
+            <p class="fw-semibold mb-0">
+              <a href="{% url 'invoices:customer_detail' payment.customer.pk %}"
+                 class="text-decoration-none">
+                {{ payment.customer.name }}
+              </a>
+            </p>
+            {% if payment.customer.rnc_cedula %}
+              <p class="text-muted small mb-0">{{ payment.customer.get_id_type_display }}: {{ payment.customer.rnc_cedula }}</p>
+            {% endif %}
+          </div>
+          <div class="col-sm-3">
+            <p class="text-muted small mb-0">{% trans "Fecha" %}</p>
+            <p class="fw-semibold mb-0">{{ payment.date|date:"d/m/Y" }}</p>
+          </div>
+          <div class="col-sm-3">
+            <p class="text-muted small mb-0">{% trans "Forma de pago" %}</p>
+            <span class="badge {% if payment.method == 'TRANSFER' %}bg-info text-dark{% else %}bg-secondary{% endif %} fs-6">
+              {{ payment.get_method_display }}
+            </span>
+          </div>
+          {% if payment.reference %}
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Referencia" %}</p>
+            <p class="fw-semibold font-monospace mb-0">{{ payment.reference }}</p>
+          </div>
+          {% endif %}
+          {% if payment.notes %}
+          <div class="col-12">
+            <p class="text-muted small mb-0">{% trans "Notas" %}</p>
+            <p class="small mb-0">{{ payment.notes }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ── Allocations ──────────────────────────────────────────────────────────── #}
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold small text-uppercase text-muted">
+        {% trans "Facturas cubiertas" %}
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "NCF" %}</th>
+              <th>{% trans "Emisión" %}</th>
+              <th>{% trans "Vence" %}</th>
+              <th class="text-end">{% trans "Total factura" %}</th>
+              <th class="text-end">{% trans "Monto aplicado" %}</th>
+              <th class="text-center">{% trans "Estado" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alloc in payment.allocations.all %}
+            <tr>
+              <td>
+                <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
+                   class="text-decoration-none font-monospace small">
+                  {{ alloc.invoice.display_number }}
+                </a>
+              </td>
+              <td class="small text-nowrap">{{ alloc.invoice.issue_date|date:"d/m/Y" }}</td>
+              <td class="small text-nowrap">{{ alloc.invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
+              <td class="text-end small">{{ alloc.invoice.total|floatformat:2 }}</td>
+              <td class="text-end small fw-semibold text-success">{{ alloc.amount|floatformat:2 }}</td>
+              <td class="text-center">
+                {% include "invoices/partials/status_badge.html" with status=alloc.invoice.status %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-3">{% trans "Sin aplicaciones registradas." %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="4" class="text-end fw-bold">{% trans "Total pagado" %}</td>
+              <td class="text-end fw-bold text-success fs-6">{{ payment.amount|floatformat:2 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ── Sidebar ──────────────────────────────────────────────────────────────── #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small">{% trans "Resumen" %}</h6>
+        <dl class="row small mb-0">
+          <dt class="col-6 text-muted">{% trans "Monto total" %}</dt>
+          <dd class="col-6 fw-bold text-success fs-5">{{ payment.amount|floatformat:2 }}</dd>
+          <dt class="col-6 text-muted">{% trans "Facturas" %}</dt>
+          <dd class="col-6">{{ payment.allocations.count }}</dd>
+          <dt class="col-6 text-muted">{% trans "Creado" %}</dt>
+          <dd class="col-6">{{ payment.created_at|date:"d/m/Y H:i" }}</dd>
+          <dt class="col-6 text-muted">{% trans "Organización" %}</dt>
+          <dd class="col-6">{{ payment.organization.name }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
