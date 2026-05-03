@@ -30,13 +30,6 @@
     <div class="sidebar-section-label">{% trans "Facturación" %}</div>
     <ul class="sidebar-nav">
       <li>
-        <a href="{% url 'invoices:invoice_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/invoices/' and 'customers' not in request.path and 'ncf' not in request.path and 'reports' not in request.path %}active{% endif %}">
-          <i class="bi bi-receipt-cutoff"></i>
-          <span>{% trans "Facturas" %}</span>
-        </a>
-      </li>
-      <li>
         <a href="{% url 'invoices:quotation_list' %}"
            class="sidebar-nav-link {% if request.path|startswith:'/quotations/' %}active{% endif %}">
           <i class="bi bi-file-earmark-text"></i>
@@ -48,6 +41,13 @@
            class="sidebar-nav-link {% if request.path|startswith:'/sale-orders/' %}active{% endif %}">
           <i class="bi bi-box-seam"></i>
           <span>{% trans "Órdenes de venta" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'invoices:invoice_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/invoices/' and 'customers' not in request.path and 'ncf' not in request.path and 'reports' not in request.path %}active{% endif %}">
+          <i class="bi bi-receipt-cutoff"></i>
+          <span>{% trans "Facturas" %}</span>
         </a>
       </li>
       <li>

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ customer }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">{{ customer.name }}</h1>
+    {% if customer.rnc_cedula %}
+      <span class="text-muted font-monospace small">{{ customer.get_id_type_display }} · {{ customer.rnc_cedula }}</span>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm"
+            hx-get="{% url 'invoices:customer_edit' customer.pk %}"
+            hx-target="#customer-modal-body"
+            hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
+                                  bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
+      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    </button>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# ── Contact & fiscal card ─────────────────────────────────────────────────── #}
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Información de contacto" %}</h6>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Correo electrónico" %}</p>
+            <p class="mb-0">{{ customer.email|default:"—" }}</p>
+          </div>
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Teléfono" %}</p>
+            <p class="mb-0">{{ customer.phone|default:"—" }}</p>
+          </div>
+          {% if customer.contact_name %}
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Persona de contacto" %}</p>
+            <p class="mb-0">{{ customer.contact_name }}</p>
+          </div>
+          {% endif %}
+          {% if customer.contact_number %}
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Número de contacto" %}</p>
+            <p class="mb-0">{{ customer.contact_number }}</p>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if customer.address or customer.city or customer.province %}
+        <hr>
+        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Dirección" %}</h6>
+        <div class="row g-3">
+          {% if customer.address %}
+          <div class="col-12">
+            <p class="text-muted small mb-0">{% trans "Dirección" %}</p>
+            <p class="mb-0">{{ customer.address }}</p>
+          </div>
+          {% endif %}
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Ciudad" %}</p>
+            <p class="mb-0">{{ customer.city|default:"—" }}</p>
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "Provincia" %}</p>
+            <p class="mb-0">{{ customer.province|default:"—" }}</p>
+          </div>
+          <div class="col-sm-4">
+            <p class="text-muted small mb-0">{% trans "País" %}</p>
+            <p class="mb-0">{{ customer.country|default:"—" }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <hr>
+        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Configuración fiscal" %}</h6>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Tipo de comprobante por defecto" %}</p>
+            <span class="badge bg-secondary">{{ customer.get_default_ncf_type_display }}</span>
+          </div>
+          <div class="col-sm-6">
+            <p class="text-muted small mb-0">{% trans "Término de pago" %}</p>
+            <p class="mb-0">{{ customer.payment_term|default:"—" }}</p>
+          </div>
+        </div>
+
+        {% if customer.notes %}
+        <hr>
+        <p class="text-muted small mb-1">{% trans "Notas internas" %}</p>
+        <p class="small mb-0">{{ customer.notes }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Departments card ─────────────────────────────────────────────────────── #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-uppercase small">{% trans "Departamentos de entrega" %}</span>
+        <button type="button" class="btn btn-outline-primary btn-sm"
+                hx-get="{% url 'invoices:department_create' customer.pk %}"
+                hx-target="#dept-modal-body"
+                hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Nuevo departamento" %}';
+                                      bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <div id="dept-table-wrapper">
+          {% include "invoices/partials/department_table.html" with departments=departments customer=customer %}
+        </div>
+      </div>
+    </div>
+
+    {# ── Recent invoices ──────────────────────────────────────────────────────── #}
+    {% if invoices %}
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="px-3 pt-3 pb-2">
+          <h6 class="card-title text-muted text-uppercase small mb-0">{% trans "Últimas facturas" %}</h6>
+        </div>
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "NCF / Número" %}</th>
+              <th>{% trans "Fecha" %}</th>
+              <th>{% trans "Estado" %}</th>
+              <th class="text-end">{% trans "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in invoices %}
+            <tr>
+              <td>
+                <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace small">
+                  {{ inv.display_number }}
+                </a>
+              </td>
+              <td class="small">{{ inv.issue_date|date:"d/m/Y" }}</td>
+              <td><span class="badge bg-secondary">{{ inv.get_status_display }}</span></td>
+              <td class="text-end small">{{ inv.total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Audit card ───────────────────────────────────────────────────────────── #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small">{% trans "Auditoría" %}</h6>
+        <dl class="row small mb-0">
+          <dt class="col-6 text-muted">{% trans "Creado" %}</dt>
+          <dd class="col-6">{{ customer.created_at|date:"d/m/Y H:i" }}</dd>
+          <dt class="col-6 text-muted">{% trans "Actualizado" %}</dt>
+          <dd class="col-6">{{ customer.updated_at|date:"d/m/Y H:i" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Customer edit modal ──────────────────────────────────────────────────── #}
+<div class="modal fade" id="customerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="customerModalTitle">{% trans "Editar cliente" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="customer-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+{# ── Department modal ─────────────────────────────────────────────────────── #}
+<div class="modal fade" id="deptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deptModalTitle">{% trans "Departamento" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="dept-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Close dept modal when a successful create/update returns closeDeptModal trigger
+  document.body.addEventListener("closeDeptModal", function () {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("deptModal")).hide();
+  });
+</script>
+{% endblock %}

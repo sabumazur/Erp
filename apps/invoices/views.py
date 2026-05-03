@@ -15,12 +15,15 @@ from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from .filters import InvoiceFilter, QuotationFilter, SaleOrderFilter
+from django.db.models import Count, Q
+
 from .forms import (
-    CustomerForm, InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
+    CustomerForm, CustomerDepartmentForm,
+    InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
     PaymentForm, CreditNoteForm, NCFSequenceForm,
     QuotationForm, SaleOrderForm, SaleOrderDeliverForm, ConsolidateForm,
 )
-from .models import Customer, Invoice, InvoiceItem, NCFSequence, Payment
+from .models import Customer, CustomerDepartment, Invoice, InvoiceItem, NCFSequence, Payment
 from .services import NCFService, QuotationService, SaleOrderService
 
 
@@ -75,10 +78,9 @@ def _sale_items_json(request) -> str:
         [
             {
                 "pk":          str(item.pk),
-                "code":        item.code,
-                "name":        item.name,
-                "description": item.description,
-                "unit_price":  str(item.unit_price),
+                "code":       item.code,
+                "name":       item.name,
+                "unit_price": str(item.unit_price),
                 "itbis_rate":  item.itbis_rate,
             }
             for item in qs
@@ -100,9 +102,14 @@ class CustomerListView(ERPBaseViewMixin, TemplateView):
         ctx["customers"] = (
             Customer.objects
             .filter(organization=_org(self.request))
+            .annotate(dept_count=Count("departments", filter=Q(departments__deleted_at__isnull=True)))
             .order_by("name")
         )
         ctx["form"] = CustomerForm()
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Clientes")},
+        ]
         return ctx
 
     def post(self, request):
@@ -139,6 +146,15 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     template_name = "invoices/customer_form.html"
     required_module = "invoices"
     success_url = reverse_lazy("invoices:customer_list")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Clientes"), "url": reverse("invoices:customer_list")},
+            {"label": self.object.name},
+        ]
+        return ctx
 
     def get_object(self):
         return get_object_or_404(
@@ -181,6 +197,31 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
         return super().form_invalid(form)
 
 
+class CustomerDetailView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def get(self, request, pk):
+        customer = get_object_or_404(Customer, pk=pk, organization=_org(request))
+        departments = (
+            customer.departments
+            .filter(deleted_at__isnull=True)
+            .order_by("name")
+        )
+        return render(request, "invoices/customer_detail.html", {
+            **self.get_context(
+                customer=customer,
+                departments=departments,
+                dept_form=CustomerDepartmentForm(),
+                breadcrumbs=[
+                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                    {"label": _("Clientes"), "url": reverse("invoices:customer_list")},
+                    {"label": customer.name},
+                ],
+            ),
+            "invoices": customer.invoices.order_by("-issue_date")[:10],
+        })
+
+
 class CustomerDeleteView(ERPBaseViewMixin, View):
     required_module = "invoices"
     admin_required = True
@@ -197,6 +238,128 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
         customer.delete()
         messages.success(request, _(f"Cliente «{name}» eliminado."))
         return redirect("invoices:customer_list")
+
+
+# ── Customer Department CRUD ──────────────────────────────────────────────────
+
+class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
+    """GET → blank form for HTMX modal.  POST → save and refresh table."""
+    required_module = "invoices"
+
+    def _customer(self, request, customer_pk):
+        return get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+
+    def _departments(self, customer):
+        return customer.departments.filter(deleted_at__isnull=True).order_by("name")
+
+    def get(self, request, customer_pk):
+        customer = self._customer(request, customer_pk)
+        form = CustomerDepartmentForm()
+        return render(request, "invoices/partials/department_modal_form.html", {
+            "form": form,
+            "customer": customer,
+            "action_url": reverse("invoices:department_create", args=[customer_pk]),
+            "submit_label": _("Crear"),
+        })
+
+    def post(self, request, customer_pk):
+        customer = self._customer(request, customer_pk)
+        form = CustomerDepartmentForm(request.POST)
+        if form.is_valid():
+            dept = form.save(commit=False)
+            dept.organization = _org(request)
+            dept.customer = customer
+            dept.save()
+            if request.htmx:
+                resp = render(request, "invoices/partials/department_table.html",
+                              {"departments": self._departments(customer), "customer": customer})
+                resp["HX-Trigger"] = json.dumps({
+                    "showToast":    {"message": str(_("Departamento creado.")), "type": "success"},
+                    "closeDeptModal": True,
+                })
+                return resp
+            messages.success(request, _("Departamento creado."))
+            return redirect("invoices:customer_detail", pk=customer_pk)
+
+        if request.htmx:
+            resp = render(request, "invoices/partials/department_modal_form.html", {
+                "form": form,
+                "customer": customer,
+                "action_url": reverse("invoices:department_create", args=[customer_pk]),
+                "submit_label": _("Crear"),
+            })
+            resp["HX-Retarget"] = "#dept-modal-body"
+            resp["HX-Reswap"] = "innerHTML"
+            return resp
+        messages.error(request, _("Por favor corrija los errores."))
+        return redirect("invoices:customer_detail", pk=customer_pk)
+
+
+class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def _get_objects(self, request, customer_pk, pk):
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
+        return customer, dept
+
+    def _departments(self, customer):
+        return customer.departments.filter(deleted_at__isnull=True).order_by("name")
+
+    def get(self, request, customer_pk, pk):
+        customer, dept = self._get_objects(request, customer_pk, pk)
+        form = CustomerDepartmentForm(instance=dept)
+        return render(request, "invoices/partials/department_modal_form.html", {
+            "form": form,
+            "customer": customer,
+            "action_url": reverse("invoices:department_edit", args=[customer_pk, pk]),
+            "submit_label": _("Guardar"),
+        })
+
+    def post(self, request, customer_pk, pk):
+        customer, dept = self._get_objects(request, customer_pk, pk)
+        form = CustomerDepartmentForm(request.POST, instance=dept)
+        if form.is_valid():
+            form.save()
+            if request.htmx:
+                resp = render(request, "invoices/partials/department_table.html",
+                              {"departments": self._departments(customer), "customer": customer})
+                resp["HX-Trigger"] = json.dumps({
+                    "showToast":    {"message": str(_("Departamento actualizado.")), "type": "success"},
+                    "closeDeptModal": True,
+                })
+                return resp
+            messages.success(request, _("Departamento actualizado."))
+            return redirect("invoices:customer_detail", pk=customer_pk)
+
+        if request.htmx:
+            resp = render(request, "invoices/partials/department_modal_form.html", {
+                "form": form,
+                "customer": customer,
+                "action_url": reverse("invoices:department_edit", args=[customer_pk, pk]),
+                "submit_label": _("Guardar"),
+            })
+            resp["HX-Retarget"] = "#dept-modal-body"
+            resp["HX-Reswap"] = "innerHTML"
+            return resp
+        messages.error(request, _("Por favor corrija los errores."))
+        return redirect("invoices:customer_detail", pk=customer_pk)
+
+
+class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
+    """Toggle is_active; returns refreshed table partial for HTMX."""
+    required_module = "invoices"
+
+    def post(self, request, customer_pk, pk):
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
+        dept.is_active = not dept.is_active
+        dept.save(update_fields=["is_active", "updated_at"])
+        if request.htmx:
+            departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
+            return render(request, "invoices/partials/department_table.html",
+                          {"departments": departments, "customer": customer})
+        return redirect("invoices:customer_detail", pk=customer_pk)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -218,6 +381,10 @@ class InvoiceListView(ERPBaseViewMixin, TemplateView):
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=_org(self.request))
         ctx["filter"] = f
         ctx["invoices"] = f.qs
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Facturas")},
+        ]
         return ctx
 
 
@@ -247,6 +414,12 @@ class InvoiceDetailView(ERPBaseViewMixin, DetailView):
             .order_by("delivery_date")
             if self.object.is_invoice else None
         )
+        invoice = self.object
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+            {"label": invoice.doc_number or invoice.encf or str(_("Borrador"))},
+        ]
         return ctx
 
 
@@ -258,8 +431,13 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", InvoiceForm(organization=_org(self.request)))
         ctx.setdefault("formset", InvoiceItemFormSet())
-        ctx["sale_items_json"]       = _sale_items_json(self.request)
+        ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+            {"label": _("Nueva factura")},
+        ]
         return ctx
 
     def post(self, request):
@@ -328,6 +506,15 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        invoice = kwargs.get("invoice")
+        if invoice:
+            ctx["breadcrumbs"] = [
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+                {"label": invoice.doc_number or str(_("Borrador")),
+                 "url": reverse("invoices:invoice_detail", args=[invoice.pk])},
+                {"label": _("Editar")},
+            ]
         return ctx
 
 
@@ -455,6 +642,15 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", CreditNoteForm())
         ctx.setdefault("formset", InvoiceItemFormSet())
+        original = kwargs.get("original")
+        if original:
+            ctx["breadcrumbs"] = [
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+                {"label": original.doc_number or str(_("Borrador")),
+                 "url": reverse("invoices:invoice_detail", args=[original.pk])},
+                {"label": _("Nota de crédito/débito")},
+            ]
         return ctx
 
 
@@ -477,6 +673,10 @@ class QuotationListView(ERPBaseViewMixin, TemplateView):
         f = QuotationFilter(self.request.GET, queryset=qs, organization=_org(self.request))
         ctx["filter"] = f
         ctx["quotations"] = f.qs
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Cotizaciones")},
+        ]
         return ctx
 
 
@@ -490,6 +690,11 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+            {"label": _("Nueva cotización")},
+        ]
         return ctx
 
     def post(self, request):
@@ -529,6 +734,12 @@ class QuotationDetailView(ERPBaseViewMixin, DetailView):
         ctx["items"] = self.object.items.all()
         from .models import NCFType
         ctx["ncf_type_choices"] = NCFType.choices
+        q = self.object
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+            {"label": q.doc_number or str(_("Borrador"))},
+        ]
         return ctx
 
 
@@ -574,6 +785,15 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        q = kwargs.get("quotation")
+        if q:
+            ctx["breadcrumbs"] = [
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+                {"label": q.doc_number or str(_("Borrador")),
+                 "url": reverse("invoices:quotation_detail", args=[q.pk])},
+                {"label": _("Editar")},
+            ]
         return ctx
 
 
@@ -679,12 +899,16 @@ class SaleOrderListView(ERPBaseViewMixin, TemplateView):
         qs = (
             Invoice.sale_orders
             .filter(organization=_org(self.request))
-            .select_related("customer")
+            .select_related("customer", "department")
             .order_by("-delivery_date", "-created_at")
         )
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=_org(self.request))
         ctx["filter"] = f
         ctx["orders"] = f.qs
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Órdenes de venta")},
+        ]
         return ctx
 
 
@@ -698,6 +922,11 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": _("Nueva orden")},
+        ]
         return ctx
 
     def post(self, request):
@@ -727,7 +956,9 @@ class SaleOrderDetailView(ERPBaseViewMixin, DetailView):
 
     def get_object(self):
         return get_object_or_404(
-            Invoice.sale_orders.select_related("customer", "organization", "consolidated_into"),
+            Invoice.sale_orders.select_related(
+                "customer", "organization", "consolidated_into", "department"
+            ),
             pk=self.kwargs["pk"],
             organization=_org(self.request),
         )
@@ -736,6 +967,12 @@ class SaleOrderDetailView(ERPBaseViewMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.all()
         ctx["deliver_form"] = SaleOrderDeliverForm()
+        o = self.object
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": o.doc_number or str(_("Borrador"))},
+        ]
         return ctx
 
 
@@ -781,6 +1018,15 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["sale_items_json"]        = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        o = kwargs.get("order")
+        if o:
+            ctx["breadcrumbs"] = [
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+                {"label": o.doc_number or str(_("Borrador")),
+                 "url": reverse("invoices:sale_order_detail", args=[o.pk])},
+                {"label": _("Editar")},
+            ]
         return ctx
 
 
@@ -861,6 +1107,11 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", ConsolidateForm(organization=_org(self.request)))
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": _("Consolidar en factura")},
+        ]
         return ctx
 
     def get(self, request, *args, **kwargs):
@@ -871,17 +1122,19 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
 
     def _render_preview(self, request):
         """Return the pending-orders preview table for the HTMX target."""
-        customer_id = request.GET.get("customer")
+        customer_id   = request.GET.get("customer", "").strip()
+        department_id = request.GET.get("department", "").strip()
         start = request.GET.get("period_start")
         end   = request.GET.get("period_end")
 
         orders = []
+        grand_total = 0
         if customer_id and start and end:
             try:
                 from datetime import datetime
                 p_start = datetime.strptime(start, "%Y-%m-%d").date()
                 p_end   = datetime.strptime(end,   "%Y-%m-%d").date()
-                orders = list(
+                qs = (
                     Invoice.sale_orders
                     .filter(
                         organization=_org(request),
@@ -891,14 +1144,19 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                         delivery_date__gte=p_start,
                         delivery_date__lte=p_end,
                     )
-                    .select_related("customer")
+                    .select_related("customer", "department")
                     .order_by("delivery_date")
                 )
+                if department_id:
+                    qs = qs.filter(department_id=department_id)
+                orders = list(qs)
+                grand_total = sum(o.total for o in orders)
             except (ValueError, TypeError):
                 pass
 
         return render(request, "invoices/partials/consolidate_preview.html", {
-            "orders": orders,
+            "orders":      orders,
+            "grand_total": grand_total,
         })
 
     def post(self, request):
@@ -916,6 +1174,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                 period_start=cd["period_start"],
                 period_end=cd["period_end"],
                 ncf_type=int(cd["ncf_type"]),
+                department=cd.get("department"),
             )
             messages.success(
                 request,
@@ -927,6 +1186,33 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
             ctx = self.get_context_data()
             ctx["form"] = form
             return self.render_to_response(ctx)
+
+
+# ── HTMX: department options for a customer ──────────────────────────────────
+
+class CustomerDepartmentsView(ERPBaseViewMixin, View):
+    """
+    HTMX GET: return <option> tags for the selected customer's active departments.
+    Used by SaleOrderForm's customer select to dynamically reload the department
+    select when the customer changes.
+    """
+    required_module = "invoices"
+
+    def get(self, request):
+        customer_id = request.GET.get("customer", "").strip()
+        departments = []
+        if customer_id:
+            departments = list(
+                CustomerDepartment.objects.filter(
+                    customer_id=customer_id,
+                    organization=_org(request),
+                    is_active=True,
+                    deleted_at__isnull=True,
+                ).order_by("name")
+            )
+        return render(request, "invoices/partials/department_options.html", {
+            "departments": departments,
+        })
 
 
 # ── HTMX: RNC / Cédula lookup ────────────────────────────────────────────────
@@ -984,6 +1270,10 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
             organization=_org(self.request)
         ).order_by("ncf_type")
         ctx["form"] = NCFSequenceForm()
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Secuencias NCF")},
+        ]
         return ctx
 
     def post(self, request):
@@ -1011,6 +1301,15 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
             NCFSequence, pk=self.kwargs["pk"], organization=_org(self.request)
         )
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Secuencias NCF"), "url": reverse("invoices:ncf_sequences")},
+            {"label": self.object.get_ncf_type_display()},
+        ]
+        return ctx
+
     def form_valid(self, form):
         messages.success(self.request, _("Secuencia NCF actualizada."))
         return super().form_valid(form)
@@ -1028,6 +1327,10 @@ class ReportIndexView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["today"] = timezone.now().date()
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Reportes DGII")},
+        ]
         return ctx
 
 
@@ -1193,6 +1496,7 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
             doc_type=Invoice.DocType.SALE_ORDER,
             status=Invoice.Status.DRAFT,
             customer=source.customer,
+            department=source.department,
             issue_date=date.today(),
             payment_condition=source.payment_condition,
             currency=source.currency,
@@ -1263,7 +1567,7 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         order = get_object_or_404(
-            Invoice.objects.select_related("customer", "organization"),
+            Invoice.objects.select_related("customer", "organization", "department"),
             pk=pk,
             organization=_org(request),
             doc_type=Invoice.DocType.SALE_ORDER,

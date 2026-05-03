@@ -47,9 +47,6 @@
                   <td class="text-muted small font-monospace" x-text="item.code || '—'"></td>
                   <td>
                     <div class="fw-semibold" x-text="item.name"></div>
-                    <div class="text-muted small"
-                         x-text="item.description"
-                         x-show="item.description && item.description !== item.name"></div>
                   </td>
                   <td class="text-end"
                       x-text="parseFloat(item.unit_price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></td>

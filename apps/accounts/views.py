@@ -11,6 +11,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
@@ -87,11 +88,40 @@ class ERPBaseViewMixin(LoginRequiredMixin):
         )
         return ctx
 
+    def get_context(self, **kwargs):
+        """
+        Helper for plain View subclasses that call render() directly and
+        therefore bypass get_context_data().  Injects the same sidebar
+        variables (organization, membership, user_memberships) so that
+        {% if user.is_authenticated and organization %} in _sidebar.html
+        always evaluates correctly.
+
+        Usage:
+            return render(request, self.template_name, self.get_context(item=item))
+        """
+        return {
+            "organization": self.request.organization,
+            "membership": self.request.membership,
+            "user_memberships": (
+                self.request.user.memberships
+                .select_related("organization")
+                .order_by("created_at")
+            ),
+            **kwargs,
+        }
+
 
 # ── Dashboard & Profile ───────────────────────────────────────────────────────
 
 class DashboardView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard")},
+        ]
+        return ctx
 
 
 class ProfileView(ERPBaseViewMixin, UpdateView):
@@ -101,6 +131,14 @@ class ProfileView(ERPBaseViewMixin, UpdateView):
 
     def get_object(self):
         return self.request.user
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Mi perfil")},
+        ]
+        return ctx
 
     def form_valid(self, form):
         messages.success(self.request, "Profile updated.")
@@ -129,6 +167,15 @@ class OrganizationSettingsView(ERPBaseViewMixin, UpdateView):
     def get_object(self):
         return self.request.organization
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Organización")},
+            {"label": _("Configuración")},
+        ]
+        return ctx
+
     def form_valid(self, form):
         messages.success(self.request, "Organization settings saved.")
         return super().form_valid(form)
@@ -142,6 +189,11 @@ class MemberListView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Organización")},
+            {"label": _("Miembros")},
+        ]
         ctx["members"] = (
             Membership.objects
             .filter(organization=self.request.organization)
@@ -335,6 +387,11 @@ class TeamListView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Organización")},
+            {"label": _("Equipos")},
+        ]
         ctx["teams"] = (
             Team.objects
             .filter(organization=self.request.organization)
@@ -370,6 +427,12 @@ class TeamUpdateView(ERPBaseViewMixin, UpdateView):
     def get_context_data(self, **kwargs):
         from apps.core.models import Module
         ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Organización")},
+            {"label": _("Equipos"), "url": reverse("accounts:teams")},
+            {"label": self.object.name},
+        ]
         ctx["all_modules"] = Module.objects.filter(is_active=True)
         ctx["selected_module_pks"] = set(
             str(pk) for pk in self.object.modules.values_list("pk", flat=True)
@@ -418,6 +481,10 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", CreateOrganizationForm())
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Nueva organización")},
+        ]
         return ctx
 
     def post(self, request, *args, **kwargs):

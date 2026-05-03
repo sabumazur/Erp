@@ -20,7 +20,7 @@
     </a>
     <form method="post" action="{% url 'items:item_toggle' item.pk %}"
           x-data
-          x-on:submit.prevent="if(confirm('{% if item.is_active %}{% trans "¿Desactivar este artículo?" %}{% else %}{% trans "¿Activar este artículo?" %}{% endif %}')) $el.submit()">
+          x-on:submit.prevent="swalConfirm($el, '{% if item.is_active %}{% trans "¿Desactivar este artículo?" %}{% else %}{% trans "¿Activar este artículo?" %}{% endif %}', {% if item.is_active %}{icon:'warning', color:'#fd7e14', ok:'Sí, desactivar'}{% else %}{icon:'question', color:'#198754', ok:'Sí, activar'}{% endif %})">
       {% csrf_token %}
       <button class="btn btn-sm {% if item.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
         {% if item.is_active %}
@@ -38,13 +38,6 @@
   <div class="col-lg-8">
     <div class="card shadow-sm">
       <div class="card-body">
-
-        {# Description #}
-        {% if item.description %}
-        <p class="text-muted small mb-1">{% trans "Descripción" %}</p>
-        <p class="mb-3">{{ item.description }}</p>
-        <hr>
-        {% endif %}
 
         {# Pricing grid #}
         <div class="row g-3">

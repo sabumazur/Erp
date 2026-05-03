@@ -109,6 +109,21 @@
         <div class="party-meta">{{ order.customer.address }}</div>
       {% endif %}
     </div>
+    {% if order.department %}
+    <div class="party">
+      <div class="party-label">{% trans "Departamento de entrega" %}</div>
+      <div class="party-name">{{ order.department.name }}</div>
+      {% if order.department.contact_name %}
+        <div class="party-meta">{{ order.department.contact_name }}</div>
+      {% endif %}
+      {% if order.department.phone %}
+        <div class="party-meta">Tel: {{ order.department.phone }}</div>
+      {% endif %}
+      {% if order.department.address %}
+        <div class="party-meta">{{ order.department.address }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
     <div class="party">
       <div class="party-label">{% trans "Emisor" %}</div>
       <div class="party-name">{{ org.name }}</div>
@@ -126,6 +141,12 @@
     <div class="meta-item">
       <div class="meta-label">{% trans "Fecha de entrega" %}</div>
       <div class="meta-value">{{ order.delivery_date|date:"d/m/Y" }}</div>
+    </div>
+    {% endif %}
+    {% if order.department %}
+    <div class="meta-item">
+      <div class="meta-label">{% trans "Departamento" %}</div>
+      <div class="meta-value">{{ order.department.name }}</div>
     </div>
     {% endif %}
     <div class="meta-item">

@@ -9,7 +9,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
-from .models import Customer, Invoice, InvoiceItem, Payment, NCFSequence
+from .models import Customer, CustomerDepartment, Invoice, InvoiceItem, Payment, NCFSequence
 from .validators import validate_rnc, validate_cedula
 
 _PHONE_RE = re.compile(r"^\+?[\d\s.\-()+]{7,20}$")
@@ -17,14 +17,25 @@ _PHONE_RE = re.compile(r"^\+?[\d\s.\-()+]{7,20}$")
 
 # ── Customer ──────────────────────────────────────────────────────────────────
 
+
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = [
-            "name", "id_type", "rnc_cedula",
-            "email", "phone", "contact_name", "contact_number",
-            "address", "city", "province", "country",
-            "default_ncf_type", "default_payment_method", "payment_term", "notes",
+            "name",
+            "id_type",
+            "rnc_cedula",
+            "email",
+            "phone",
+            "contact_name",
+            "contact_number",
+            "address",
+            "city",
+            "province",
+            "country",
+            "default_ncf_type",
+            "payment_term",
+            "notes",
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 3}),
@@ -33,20 +44,24 @@ class CustomerForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["rnc_cedula"].help_text = ""
-        self.fields["rnc_cedula"].widget.attrs.update({
-            "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
-            "hx-get": reverse_lazy("invoices:rnc_lookup"),
-            "hx-trigger": "blur",
-            "hx-target": "#rnc-lookup-result",
-            "hx-include": "closest form",
-            "hx-indicator": "#rnc-lookup-spinner",
-        })
+        self.fields["rnc_cedula"].widget.attrs.update(
+            {
+                "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
+                "hx-get": reverse_lazy("invoices:rnc_lookup"),
+                "hx-trigger": "blur",
+                "hx-target": "#rnc-lookup-result",
+                "hx-include": "closest form",
+                "hx-indicator": "#rnc-lookup-spinner",
+            }
+        )
         self.helper = FormHelper()
 
         self.helper.form_tag = False
         self.helper.layout = Layout(
             # ── General ──────────────────────────────────────────
-            HTML(f'<p class="text-muted small text-uppercase mb-2 mt-1">{_("General")}</p>'),
+            HTML(
+                f'<p class="text-muted small text-uppercase mb-2 mt-1">{_("General")}</p>'
+            ),
             "name",
             Row(
                 Column("id_type", css_class="col-md-5"),
@@ -56,10 +71,12 @@ class CustomerForm(forms.ModelForm):
                 '<div class="d-flex align-items-center gap-2 mb-2" style="min-height:1.6rem">'
                 '<span id="rnc-lookup-spinner" class="htmx-indicator spinner-border spinner-border-sm text-secondary" role="status"></span>'
                 '<div id="rnc-lookup-result"></div>'
-                '</div>'
+                "</div>"
             ),
             # ── Contacto ─────────────────────────────────────────
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Contacto")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Contacto")}</p>'
+            ),
             Row(
                 Column("email", css_class="col-md-6"),
                 Column("phone", css_class="col-md-6"),
@@ -69,7 +86,9 @@ class CustomerForm(forms.ModelForm):
                 Column("contact_number", css_class="col-md-6"),
             ),
             # ── Dirección ────────────────────────────────────────
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Dirección")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Dirección")}</p>'
+            ),
             "address",
             Row(
                 Column("city", css_class="col-md-4"),
@@ -77,13 +96,14 @@ class CustomerForm(forms.ModelForm):
                 Column("country", css_class="col-md-4"),
             ),
             # ── Facturación ──────────────────────────────────────
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Facturación")}</p>'),
-            "default_ncf_type",
-            Row(
-                Column("default_payment_method", css_class="col-md-6"),
-                Column("payment_term", css_class="col-md-6"),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Facturación")}</p>'
             ),
-            "notes",
+            Row(
+                Column("default_ncf_type", css_class="col-md-6"),
+                Column("payment_term", css_class="col-md-6"),
+                Column("notes", css_class="col-md-12"),
+            ),
         )
 
     def clean(self):
@@ -132,38 +152,88 @@ class CustomerForm(forms.ModelForm):
     def clean_phone(self):
         phone = (self.cleaned_data.get("phone") or "").strip()
         if phone and not _PHONE_RE.match(phone):
-            raise forms.ValidationError(_("Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis)."))
+            raise forms.ValidationError(
+                _(
+                    "Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis)."
+                )
+            )
         return phone
 
     def clean_contact_number(self):
         number = (self.cleaned_data.get("contact_number") or "").strip()
         if number and not _PHONE_RE.match(number):
-            raise forms.ValidationError(_("Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis)."))
+            raise forms.ValidationError(
+                _(
+                    "Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis)."
+                )
+            )
         return number
 
 
+# ── CustomerDepartment ────────────────────────────────────────────────────────
+
+
+class CustomerDepartmentForm(forms.ModelForm):
+    class Meta:
+        model = CustomerDepartment
+        fields = ["name", "contact_name", "phone", "address", "notes", "is_active"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            "name",
+            Row(
+                Column("contact_name", css_class="col-md-6"),
+                Column("phone", css_class="col-md-6"),
+            ),
+            "address",
+            "notes",
+            "is_active",
+        )
+
+    def clean_phone(self):
+        phone = (self.cleaned_data.get("phone") or "").strip()
+        if phone and not _PHONE_RE.match(phone):
+            raise forms.ValidationError(
+                _("Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis).")
+            )
+        return phone
+
+
 # ── Invoice ───────────────────────────────────────────────────────────────────
+
 
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
-            "customer", "ncf_type",
-            "issue_date", "due_date", "payment_condition",
-            "notes", "terms",
+            "customer",
+            "ncf_type",
+            "issue_date",
+            "due_date",
+            "payment_condition",
+            "notes",
+            "terms",
         ]
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "due_date":   forms.DateInput(attrs={"type": "date"}),
-            "notes":      forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
-            "terms":      forms.TextInput(attrs={"placeholder": _("Términos y condiciones…")}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "terms": forms.TextInput(
+                attrs={"placeholder": _("Términos y condiciones…")}
+            ),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if organization:
-            self.fields["customer"].queryset = (
-                Customer.objects.filter(organization=organization)
+            self.fields["customer"].queryset = Customer.objects.filter(
+                organization=organization
             )
 
         # Only Factura de Crédito Fiscal is used — lock the field.
@@ -193,26 +263,32 @@ class InvoiceForm(forms.ModelForm):
 
 # ── Quotation ─────────────────────────────────────────────────────────────────
 
+
 class QuotationForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
             "customer",
-            "issue_date", "valid_until", "payment_condition",
-            "notes", "terms",
+            "issue_date",
+            "valid_until",
+            "payment_condition",
+            "notes",
+            "terms",
         ]
         widgets = {
-            "issue_date":  forms.DateInput(attrs={"type": "date"}),
+            "issue_date": forms.DateInput(attrs={"type": "date"}),
             "valid_until": forms.DateInput(attrs={"type": "date"}),
-            "notes":       forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
-            "terms":       forms.TextInput(attrs={"placeholder": _("Términos y condiciones…")}),
+            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "terms": forms.TextInput(
+                attrs={"placeholder": _("Términos y condiciones…")}
+            ),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if organization:
-            self.fields["customer"].queryset = (
-                Customer.objects.filter(organization=organization)
+            self.fields["customer"].queryset = Customer.objects.filter(
+                organization=organization
             )
 
         # Default valid_until = today + 30 days for new quotations
@@ -240,27 +316,58 @@ class QuotationForm(forms.ModelForm):
 
 # ── Sale Order ────────────────────────────────────────────────────────────────
 
+
 class SaleOrderForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = [
             "customer",
-            "issue_date", "delivery_date", "payment_condition",
+            "department",
+            "issue_date",
+            "delivery_date",
+            "payment_condition",
             "notes",
         ]
         widgets = {
-            "issue_date":    forms.DateInput(attrs={"type": "date"}),
+            "issue_date": forms.DateInput(attrs={"type": "date"}),
             "delivery_date": forms.DateInput(attrs={"type": "date"}),
-            "notes":         forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if organization:
-            self.fields["customer"].queryset = (
-                Customer.objects.filter(organization=organization)
+            self.fields["customer"].queryset = Customer.objects.filter(
+                organization=organization
             )
         self.fields["delivery_date"].required = False
+        self.fields["department"].required = False
+        self.fields["department"].empty_label = _("— Sin departamento —")
+
+        # Resolve which customer is currently active so we can pre-populate options.
+        # Priority: existing saved instance → POST data (re-render after error).
+        customer_id = None
+        if self.instance and self.instance.pk and self.instance.customer_id:
+            customer_id = self.instance.customer_id
+        elif self.data.get("customer"):
+            customer_id = self.data.get("customer")
+
+        if customer_id:
+            self.fields["department"].queryset = CustomerDepartment.objects.filter(
+                customer_id=customer_id,
+                is_active=True,
+                deleted_at__isnull=True,
+            ).order_by("name")
+        else:
+            self.fields["department"].queryset = CustomerDepartment.objects.none()
+
+        # HTMX: when customer changes, swap the department <option> tags in place.
+        self.fields["customer"].widget.attrs.update({
+            "hx-get":     reverse_lazy("invoices:departments_for_customer"),
+            "hx-trigger": "change",
+            "hx-target":  "#id_department",
+            "hx-swap":    "innerHTML",
+        })
 
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -268,6 +375,9 @@ class SaleOrderForm(forms.ModelForm):
             Row(
                 Column("customer", css_class="col-md-8"),
                 Column("payment_condition", css_class="col-md-4"),
+            ),
+            Row(
+                Column("department", css_class="col-md-8"),
             ),
             Row(
                 Column("issue_date", css_class="col-md-4"),
@@ -280,8 +390,10 @@ class SaleOrderForm(forms.ModelForm):
 
 # ── Deliver Sale Order ────────────────────────────────────────────────────────
 
+
 class SaleOrderDeliverForm(forms.Form):
     """Simple form for capturing the delivery signature."""
+
     signed_by = forms.CharField(
         max_length=150,
         label=_("Recibido por"),
@@ -298,19 +410,23 @@ class SaleOrderDeliverForm(forms.Form):
 
 # ── Consolidation ─────────────────────────────────────────────────────────────
 
+
 class ConsolidateForm(forms.Form):
     """
     Parameters for consolidating sale orders into a single invoice.
+    Optionally filtered to a single customer department.
     """
+
     customer = forms.ModelChoiceField(
         queryset=Customer.objects.none(),
         label=_("Cliente"),
-        widget=forms.Select(attrs={
-            "hx-get": "",          # set in view via hx-get attr on the form
-            "hx-trigger": "change",
-            "hx-target": "#consolidate-preview",
-            "hx-include": "closest form",
-        }),
+    )
+    department = forms.ModelChoiceField(
+        queryset=CustomerDepartment.objects.none(),
+        required=False,
+        label=_("Departamento"),
+        empty_label=_("— Todos los departamentos —"),
+        help_text=_("Opcional — deje vacío para consolidar todas las órdenes del cliente."),
     )
     period_start = forms.DateField(
         label=_("Desde"),
@@ -331,6 +447,17 @@ class ConsolidateForm(forms.Form):
             self.fields["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+
+        # Populate department choices for the customer currently in POST data.
+        # On a fresh GET there is no customer yet, so queryset stays empty.
+        customer_id = self.data.get("customer") or None
+        if customer_id:
+            self.fields["department"].queryset = CustomerDepartment.objects.filter(
+                customer_id=customer_id,
+                is_active=True,
+                deleted_at__isnull=True,
+            ).order_by("name")
+
         # Default period = previous calendar month
         today = date.today()
         first_this_month = today.replace(day=1)
@@ -343,23 +470,34 @@ class ConsolidateForm(forms.Form):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             "customer",
+            "department",
             Row(
                 Column("period_start", css_class="col-md-4"),
-                Column("period_end",   css_class="col-md-4"),
-                Column("ncf_type",     css_class="col-md-4"),
+                Column("period_end", css_class="col-md-4"),
+                Column("ncf_type", css_class="col-md-4"),
             ),
         )
 
     def clean(self):
         cleaned_data = super().clean()
         start = cleaned_data.get("period_start")
-        end   = cleaned_data.get("period_end")
+        end = cleaned_data.get("period_end")
         if start and end and start > end:
-            raise forms.ValidationError(_("La fecha de inicio debe ser anterior a la fecha de fin."))
+            raise forms.ValidationError(
+                _("La fecha de inicio debe ser anterior a la fecha de fin.")
+            )
+        # Ensure the chosen department actually belongs to the chosen customer.
+        customer = cleaned_data.get("customer")
+        department = cleaned_data.get("department")
+        if department and customer and department.customer_id != customer.pk:
+            raise forms.ValidationError(
+                _("El departamento seleccionado no pertenece al cliente indicado.")
+            )
         return cleaned_data
 
 
 # ── InvoiceItem formset ───────────────────────────────────────────────────────
+
 
 class InvoiceItemForm(forms.ModelForm):
     class Meta:
@@ -367,31 +505,46 @@ class InvoiceItemForm(forms.ModelForm):
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
         widgets = {
             "item": forms.HiddenInput(),
-            "description": forms.TextInput(attrs={
-                "class": "form-control form-control-sm",
-            }),
-            "quantity":   forms.NumberInput(attrs={
-                "step": "0.0001", "min": "0.0001",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "qty",
-                "x-on:input": "recalc()",
-            }),
-            "unit_price": forms.NumberInput(attrs={
-                "step": "0.01", "min": "0",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "price",
-                "x-on:input": "recalc()",
-            }),
-            "itbis_rate": forms.Select(attrs={
-                "class": "form-select form-select-sm",
-                "x-model": "rate",
-                "x-on:change": "recalc()",
-            }),
+            "description": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-sm",
+                }
+            ),
+            "quantity": forms.NumberInput(
+                attrs={
+                    "step": "0.0001",
+                    "min": "0.0001",
+                    "class": "form-control form-control-sm text-end",
+                    "x-model": "qty",
+                    "x-on:input": "recalc()",
+                }
+            ),
+            "unit_price": forms.NumberInput(
+                attrs={
+                    "step": "0.01",
+                    "min": "0",
+                    "class": "form-control form-control-sm text-end",
+                    "x-model": "price",
+                    "x-on:input": "recalc()",
+                }
+            ),
+            "itbis_rate": forms.Select(
+                attrs={
+                    "class": "form-select form-select-sm",
+                    "x-model": "rate",
+                    "x-on:change": "recalc()",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["item"].required = False
+        # Match the Alpine.js defaults so an untouched extra row is treated
+        # as unchanged by has_changed() and silently skipped by the formset.
+        self.initial.setdefault("quantity", 1)
+        self.initial.setdefault("unit_price", 0)
+        self.initial.setdefault("itbis_rate", "RATE_18")
 
 
 InvoiceItemFormSet = inlineformset_factory(
@@ -400,19 +553,20 @@ InvoiceItemFormSet = inlineformset_factory(
     form=InvoiceItemForm,
     extra=1,
     can_delete=True,
-    min_num=1,
-    validate_min=True,
+    min_num=0,        # allow saving drafts with no items
+    validate_min=False,
 )
 
 
 # ── Payment ───────────────────────────────────────────────────────────────────
+
 
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
         fields = ["amount", "date", "method", "reference", "notes"]
         widgets = {
-            "date":  forms.DateInput(attrs={"type": "date"}),
+            "date": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.Textarea(attrs={"rows": 2}),
         }
 
@@ -433,19 +587,21 @@ class PaymentForm(forms.ModelForm):
 
 # ── Credit / Debit Note ───────────────────────────────────────────────────────
 
+
 class CreditNoteForm(forms.ModelForm):
     """
     Simplified form for creating a Nota de Crédito (34) or Nota de Débito (33)
     that references an existing confirmed invoice.
     """
+
     class Meta:
         model = Invoice
         fields = ["ncf_type", "issue_date", "due_date", "notes", "terms"]
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "due_date":   forms.DateInput(attrs={"type": "date"}),
-            "notes":      forms.Textarea(attrs={"rows": 3}),
-            "terms":      forms.Textarea(attrs={"rows": 2}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+            "terms": forms.Textarea(attrs={"rows": 2}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -460,6 +616,7 @@ class CreditNoteForm(forms.ModelForm):
 
 
 # ── NCFSequence ───────────────────────────────────────────────────────────────
+
 
 class NCFSequenceForm(forms.ModelForm):
     class Meta:

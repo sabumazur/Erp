@@ -330,6 +330,7 @@ class SaleOrderService:
         period_start: date,
         period_end: date,
         ncf_type: int,
+        department=None,
     ) -> Invoice:
         """
         Consolidate all DELIVERED sale orders for a customer within a date range
@@ -341,12 +342,15 @@ class SaleOrderService:
           unit_price  = order.subtotal  (pre-ITBIS)
           itbis_rate  = dominant rate from the order's items (or EXEMPT if mixed)
 
+        If `department` is given, only orders assigned to that department are
+        included. Pass None to include all departments.
+
         The new Invoice is returned in DRAFT status so the user can review it
         and then call NCFService.confirm() to assign the e-NCF.
 
         Raises ValueError if no eligible orders are found.
         """
-        orders = list(
+        qs = (
             Invoice.sale_orders
             .select_related("customer")
             .prefetch_related("items")
@@ -358,18 +362,27 @@ class SaleOrderService:
                 delivery_date__gte=period_start,
                 delivery_date__lte=period_end,
             )
-            .order_by("delivery_date", "doc_number")
         )
+        if department is not None:
+            qs = qs.filter(department=department)
+
+        orders = list(qs.order_by("delivery_date", "doc_number"))
 
         if not orders:
+            scope = (
+                _("para el departamento «%(dept)s»") % {"dept": department.name}
+                if department
+                else _("para este cliente")
+            )
             raise ValueError(
                 _("No hay órdenes de venta entregadas pendientes de facturar "
-                  "para este cliente en el período indicado.")
+                  "%(scope)s en el período indicado.") % {"scope": scope}
             )
 
         # Use the currency/exchange_rate of the first order (all should match)
         first = orders[0]
 
+        dept_label = f" · Depto.: {department.name}" if department else ""
         invoice = Invoice.objects.create(
             doc_type=Invoice.DocType.INVOICE,
             organization=organization,
@@ -381,7 +394,7 @@ class SaleOrderService:
             exchange_rate=first.exchange_rate,
             notes=_(
                 f"Consolidación de {len(orders)} orden(es) de venta. "
-                f"Período: {period_start} – {period_end}."
+                f"Período: {period_start} – {period_end}.{dept_label}"
             ),
             status=Invoice.Status.DRAFT,
         )

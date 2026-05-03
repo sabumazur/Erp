@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-7">
+  <div class="col-12 col-xl-10">
 
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
@@ -17,83 +17,93 @@
       </a>
     </div>
 
-    <div class="card border-0 shadow-sm mb-3">
-      <div class="card-body p-4">
-        <h6 class="text-muted small text-uppercase mb-3">General</h6>
+    <div class="row g-4">
 
-        <form method="post" enctype="multipart/form-data" novalidate>
-          {% csrf_token %}
+      <!-- Main form card (left) -->
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h6 class="text-muted small text-uppercase mb-3">General</h6>
 
-          {% with placeholder="https://ui-avatars.com/api/?name={{ organization.name|urlencode }}&size=80&background=0d6efd&color=fff&rounded=false" %}
-          <div class="d-flex align-items-center gap-4 mb-4"
-               x-data="avatarHandler('{% if organization.logo %}{{ organization.logo.url }}{% endif %}', '{{ placeholder }}')">
-            <div class="position-relative">
-              <img :src="previewSrc"
-                   alt="Logo"
-                   width="80" height="80"
-                   class="rounded-3 object-fit-cover border shadow-sm">
+            <form method="post" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
 
-              <button type="button"
-                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
-                      style="width:26px;height:26px;top:0;right:0;"
-                      title="Change logo"
-                      @click="$refs.fileInput.click()">
-                <i class="bi bi-pencil" style="font-size:.65rem;"></i>
-              </button>
+              {% with placeholder="https://ui-avatars.com/api/?name={{ organization.name|urlencode }}&size=80&background=0d6efd&color=fff&rounded=false" %}
+              <div class="d-flex align-items-center gap-4 mb-4"
+                   x-data="avatarHandler('{% if organization.logo %}{{ organization.logo.url }}{% endif %}', '{{ placeholder }}')">
+                <div class="position-relative">
+                  <img :src="previewSrc"
+                       alt="Logo"
+                       width="80" height="80"
+                       class="rounded-3 object-fit-cover border shadow-sm">
 
-              <button type="button"
-                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
-                      style="width:26px;height:26px;bottom:0;right:0;"
-                      title="Remove logo"
-                      x-show="hasAvatar"
-                      @click="clear()">
-                <i class="bi bi-x" style="font-size:.8rem;"></i>
-              </button>
-            </div>
+                  <button type="button"
+                          class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                          style="width:26px;height:26px;top:0;right:0;"
+                          title="Change logo"
+                          @click="$refs.fileInput.click()">
+                    <i class="bi bi-pencil" style="font-size:.65rem;"></i>
+                  </button>
 
-            <div>
-              <div class="fw-semibold">{{ organization.name }}</div>
-              <div class="text-muted small">{{ organization.slug }}</div>
-              <div class="text-muted" style="font-size:.72rem;">Allowed: png, jpg, jpeg.</div>
-            </div>
+                  <button type="button"
+                          class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
+                          style="width:26px;height:26px;bottom:0;right:0;"
+                          title="Remove logo"
+                          x-show="hasAvatar"
+                          @click="clear()">
+                    <i class="bi bi-x" style="font-size:.8rem;"></i>
+                  </button>
+                </div>
 
-            <input type="file" name="logo" id="id_logo" accept=".png,.jpg,.jpeg"
-                   class="d-none" x-ref="fileInput" @change="change($event)">
-            <input type="checkbox" name="logo-clear" id="logo-clear_id"
-                   class="d-none" x-ref="clearInput">
+                <div>
+                  <div class="fw-semibold">{{ organization.name }}</div>
+                  <div class="text-muted small">{{ organization.slug }}</div>
+                  <div class="text-muted" style="font-size:.72rem;">Allowed: png, jpg, jpeg.</div>
+                </div>
+
+                <input type="file" name="logo" id="id_logo" accept=".png,.jpg,.jpeg"
+                       class="d-none" x-ref="fileInput" @change="change($event)">
+                <input type="checkbox" name="logo-clear" id="logo-clear_id"
+                       class="d-none" x-ref="clearInput">
+              </div>
+              {% endwith %}
+
+              {% crispy form %}
+
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+              </div>
+            </form>
           </div>
-          {% endwith %}
+        </div>
+      </div>
 
-          {% crispy form %}
-
-          <div class="d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+      <!-- Details card (right) -->
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h6 class="text-muted small text-uppercase mb-1">Details</h6>
+            <dl class="row small mb-0 mt-3">
+              <dt class="col-5 text-muted">Slug</dt>
+              <dd class="col-7 font-monospace">{{ organization.slug }}</dd>
+              <dt class="col-5 text-muted">Owner</dt>
+              <dd class="col-7">{{ organization.owner.full_name }}</dd>
+              <dt class="col-5 text-muted">Created</dt>
+              <dd class="col-7">{{ organization.created_at|date:"N j, Y" }}</dd>
+              <dt class="col-5 text-muted">Status</dt>
+              <dd class="col-7">
+                {% if organization.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </dd>
+            </dl>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
 
-    <div class="card border-0 shadow-sm mb-3">
-      <div class="card-body p-4">
-        <h6 class="text-muted small text-uppercase mb-1">Details</h6>
-        <dl class="row small mb-0 mt-3">
-          <dt class="col-4 text-muted">Slug</dt>
-          <dd class="col-8 font-monospace">{{ organization.slug }}</dd>
-          <dt class="col-4 text-muted">Owner</dt>
-          <dd class="col-8">{{ organization.owner.full_name }}</dd>
-          <dt class="col-4 text-muted">Created</dt>
-          <dd class="col-8">{{ organization.created_at|date:"N j, Y" }}</dd>
-          <dt class="col-4 text-muted">Status</dt>
-          <dd class="col-8">
-            {% if organization.is_active %}
-              <span class="badge bg-success">Active</span>
-            {% else %}
-              <span class="badge bg-secondary">Inactive</span>
-            {% endif %}
-          </dd>
-        </dl>
-      </div>
-    </div>
+    </div><!-- /.row -->
 
   </div>
 </div>

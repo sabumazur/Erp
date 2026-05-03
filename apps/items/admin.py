@@ -9,11 +9,11 @@ class ItemAdmin(admin.ModelAdmin):
     list_display   = ["__str__", "item_type", "unit", "unit_price", "cost_price",
                       "itbis_rate", "is_active", "organization"]
     list_filter    = ["organization", "item_type", "itbis_rate", "unit", "is_active"]
-    search_fields  = ["name", "code", "description"]
+    search_fields  = ["name", "code"]
     readonly_fields = ["created_at", "updated_at"]
     fieldsets = (
         (_("General"), {
-            "fields": ("organization", "code", "name", "description", "item_type"),
+            "fields": ("organization", "code", "name", "item_type"),
         }),
         (_("Precio y unidad"), {
             "fields": ("unit", "unit_price", "cost_price", "itbis_rate"),

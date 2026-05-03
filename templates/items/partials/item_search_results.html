@@ -3,7 +3,7 @@
 <button type="button"
         class="d-block w-100 text-start px-3 py-2 border-0 bg-transparent item-pick-btn"
         style="cursor:pointer"
-        data-desc="{{ item.description|default:item.name|escapejs }}"
+        data-desc="{{ item.name|escapejs }}"
         data-price="{{ item.unit_price }}"
         data-rate="{{ item.itbis_rate }}"
         data-pk="{{ item.pk }}"

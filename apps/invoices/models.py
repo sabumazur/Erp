@@ -107,12 +107,6 @@ class Customer(ERPBaseModel):
         related_name="customers",
         verbose_name=_("término de pago"),
     )
-    default_payment_method = models.CharField(
-        max_length=10,
-        choices=PaymentMethod.choices,
-        default=PaymentMethod.TRANSFER,
-        verbose_name=_("forma de pago por defecto"),
-    )
     default_ncf_type = models.IntegerField(
         choices=NCFType.choices,
         default=NCFType.CREDITO_FISCAL,
@@ -137,6 +131,73 @@ class Customer(ERPBaseModel):
         from .validators import validate_rnc_cedula
         if self.rnc_cedula:
             validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
+
+
+# ── Customer Department ───────────────────────────────────────────────────────
+
+
+class CustomerDepartment(ERPBaseModel):
+    """
+    A delivery department or branch of a customer.
+    Each sale order is optionally assigned to a department; consolidation
+    is then done per (customer, department) pair.
+    """
+
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        related_name="customer_departments",
+        verbose_name=_("organización"),
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="departments",
+        verbose_name=_("cliente"),
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name=_("nombre del departamento"),
+        help_text=_("Ej.: Almacén Central, Restaurante Piso 2, Oficina Gerencial"),
+    )
+    contact_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name=_("persona de contacto"),
+    )
+    phone = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name=_("teléfono"),
+    )
+    address = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("dirección de entrega"),
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_("notas"),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("activo"),
+    )
+
+    class Meta(ERPBaseModel.Meta):
+        verbose_name = _("departamento")
+        verbose_name_plural = _("departamentos")
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["customer", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_dept_name_per_customer",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.customer.name} — {self.name}"
 
 
 # ── NCF Sequence ──────────────────────────────────────────────────────────────
@@ -457,6 +518,15 @@ class Invoice(ERPBaseModel):
     )
 
     # ── Sale Order-specific ───────────────────────────────────────────────────
+    department = models.ForeignKey(
+        "CustomerDepartment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sale_orders",
+        verbose_name=_("departamento de entrega"),
+        help_text=_("Departamento o sucursal del cliente al que se entrega esta orden."),
+    )
     delivery_date = models.DateField(
         null=True,
         blank=True,

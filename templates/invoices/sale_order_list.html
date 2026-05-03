@@ -25,10 +25,11 @@
           hx-trigger="change, search">
       <div class="row g-2 align-items-end">
         <div class="col-md-2">{{ filter.form.status }}</div>
-        <div class="col-md-3">{{ filter.form.customer }}</div>
+        <div class="col-md-2">{{ filter.form.customer }}</div>
+        <div class="col-md-2">{{ filter.form.department }}</div>
         <div class="col-md-2">{{ filter.form.delivery_date_after }}</div>
         <div class="col-md-2">{{ filter.form.delivery_date_before }}</div>
-        <div class="col-md-2">{{ filter.form.doc_number }}</div>
+        <div class="col-md-1">{{ filter.form.doc_number }}</div>
         <div class="col-md-1">
           <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm w-100">
             <i class="bi bi-x-lg"></i>
@@ -47,6 +48,7 @@
           <tr>
             <th>{% trans "Número" %}</th>
             <th>{% trans "Cliente" %}</th>
+            <th>{% trans "Departamento" %}</th>
             <th>{% trans "Emisión" %}</th>
             <th>{% trans "Entrega" %}</th>
             <th>{% trans "Recibido por" %}</th>
@@ -60,6 +62,13 @@
           <tr>
             <td class="font-monospace fw-semibold">{{ o.doc_number|default:"—" }}</td>
             <td>{{ o.customer.name }}</td>
+            <td>
+              {% if o.department %}
+                <span class="badge bg-info text-dark">{{ o.department.name }}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
             <td>{{ o.issue_date|date:"d/m/Y" }}</td>
             <td>{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
             <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
@@ -74,7 +83,7 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="8" class="text-center text-muted py-4">{% trans "No hay órdenes de venta." %}</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-4">{% trans "No hay órdenes de venta." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>

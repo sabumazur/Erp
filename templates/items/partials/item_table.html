@@ -21,9 +21,6 @@
         <a href="{% url 'items:item_detail' item.pk %}" class="text-decoration-none fw-semibold">
           {{ item.name }}
         </a>
-        {% if item.description %}
-          <div class="text-muted small text-truncate" style="max-width:220px">{{ item.description }}</div>
-        {% endif %}
       </td>
       <td>
         <span class="badge {% if item.item_type == 'SALE' %}bg-primary{% elif item.item_type == 'PURCHASE' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">

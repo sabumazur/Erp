@@ -2,8 +2,12 @@ from django.urls import path
 from .views import (
     # Customers
     CustomerListView,
+    CustomerDetailView,
     CustomerUpdateView,
     CustomerDeleteView,
+    CustomerDepartmentCreateView,
+    CustomerDepartmentUpdateView,
+    CustomerDepartmentToggleView,
     # Invoices
     InvoiceListView,
     InvoiceCreateView,
@@ -44,6 +48,7 @@ from .views import (
     # HTMX
     InvoiceItemRowView,
     RNCLookupView,
+    CustomerDepartmentsView,
     # NCF sequences
     NCFSequenceListView,
     NCFSequenceUpdateView,
@@ -58,8 +63,17 @@ app_name = "invoices"
 urlpatterns = [
     # ── Customers ─────────────────────────────────────────────────────────────
     path("invoices/customers/",                    CustomerListView.as_view(),   name="customer_list"),
+    path("invoices/customers/<uuid:pk>/",          CustomerDetailView.as_view(), name="customer_detail"),
     path("invoices/customers/<uuid:pk>/edit/",     CustomerUpdateView.as_view(), name="customer_edit"),
     path("invoices/customers/<uuid:pk>/delete/",   CustomerDeleteView.as_view(), name="customer_delete"),
+
+    # Customer departments
+    path("invoices/customers/<uuid:customer_pk>/departments/create/",
+         CustomerDepartmentCreateView.as_view(), name="department_create"),
+    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/edit/",
+         CustomerDepartmentUpdateView.as_view(), name="department_edit"),
+    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/toggle/",
+         CustomerDepartmentToggleView.as_view(), name="department_toggle"),
 
     # ── Invoices ──────────────────────────────────────────────────────────────
     path("invoices/",                              InvoiceListView.as_view(),    name="invoice_list"),
@@ -114,6 +128,7 @@ urlpatterns = [
     # ── HTMX helpers ──────────────────────────────────────────────────────────
     path("invoices/items/row/",                    InvoiceItemRowView.as_view(),   name="item_row"),
     path("invoices/rnc-lookup/",                   RNCLookupView.as_view(),        name="rnc_lookup"),
+    path("invoices/customers/departments/",        CustomerDepartmentsView.as_view(), name="departments_for_customer"),
 
     # ── NCF sequences ─────────────────────────────────────────────────────────
     path("invoices/ncf/",                          NCFSequenceListView.as_view(),  name="ncf_sequences"),

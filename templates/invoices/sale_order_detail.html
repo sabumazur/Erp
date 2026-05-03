@@ -20,7 +20,7 @@
     </a>
     <form method="post" action="{% url 'invoices:sale_order_clone' order.pk %}"
           x-data
-          x-on:submit.prevent="if(confirm('{% trans "¿Clonar esta orden como nuevo borrador?" %}')) $el.submit()">
+          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#198754', ok:'Sí, clonar'})">
       {% csrf_token %}
       <button type="submit" class="btn btn-outline-success btn-sm">
         <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
@@ -32,14 +32,14 @@
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
       <form method="post" action="{% url 'invoices:sale_order_confirm' order.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Confirmar orden?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar orden?" %}', {icon:'question', color:'#0d6efd', ok:'Sí, confirmar'})">
         {% csrf_token %}
         <button class="btn btn-primary btn-sm">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
       <form method="post" action="{% url 'invoices:sale_order_delete' order.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Eliminar borrador?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
       </form>
@@ -49,7 +49,7 @@
         <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}
       </button>
       <form method="post" action="{% url 'invoices:sale_order_cancel' order.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Anular esta orden?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm">
           <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
@@ -88,6 +88,20 @@
             <p class="text-muted small mb-0">{% trans "Fecha de entrega" %}</p>
             <p class="fw-semibold mb-0">{{ order.delivery_date|date:"d/m/Y"|default:"—" }}</p>
           </div>
+          {% if order.department %}
+          <div class="col-md-6">
+            <p class="text-muted small mb-0">{% trans "Departamento de entrega" %}</p>
+            <p class="fw-semibold mb-0">
+              <i class="bi bi-building me-1 text-info"></i>{{ order.department.name }}
+            </p>
+            {% if order.department.contact_name %}
+              <p class="text-muted small mb-0">{{ order.department.contact_name }}{% if order.department.phone %} · {{ order.department.phone }}{% endif %}</p>
+            {% endif %}
+            {% if order.department.address %}
+              <p class="text-muted small mb-0">{{ order.department.address }}</p>
+            {% endif %}
+          </div>
+          {% endif %}
           {% if order.signed_by %}
           <div class="col-md-6">
             <p class="text-muted small mb-0">{% trans "Recibido por" %}</p>
@@ -166,6 +180,12 @@
         <dl class="row small mb-0">
           <dt class="col-6 text-muted">{% trans "Número" %}</dt>
           <dd class="col-6 font-monospace">{{ order.doc_number|default:"—" }}</dd>
+          {% if order.department %}
+          <dt class="col-6 text-muted">{% trans "Departamento" %}</dt>
+          <dd class="col-6">
+            <span class="badge bg-info text-dark">{{ order.department.name }}</span>
+          </dd>
+          {% endif %}
           <dt class="col-6 text-muted">{% trans "Moneda" %}</dt>
           <dd class="col-6">{{ order.currency }}</dd>
           <dt class="col-6 text-muted">{% trans "Creada" %}</dt>

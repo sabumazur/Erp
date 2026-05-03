@@ -98,6 +98,21 @@
     });
   });
 
+  /* ── SweetAlert2 confirm helper ─────────────────────────── */
+  function swalConfirm(form, message, opts) {
+    opts = opts || {};
+    Swal.fire({
+      text:               message,
+      icon:               opts.icon  || 'question',
+      showCancelButton:   true,
+      confirmButtonText:  opts.ok    || 'Sí, continuar',
+      cancelButtonText:   'Cancelar',
+      confirmButtonColor: opts.color || '#0d6efd',
+      cancelButtonColor:  '#6c757d',
+      reverseButtons:     true,
+    }).then(function (r) { if (r.isConfirmed) form.submit(); });
+  }
+
   /* ── Sidebar toggle ──────────────────────────────────────── */
   function toggleSidebar() {
     const isDesktop = window.innerWidth >= 992;

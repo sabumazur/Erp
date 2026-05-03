@@ -80,7 +80,7 @@ class Item(ERPBaseModel):
     Codes are auto-generated for SALE and BOTH items when left blank.
     PURCHASE-only items keep code optional/manual.
 
-    The `item` FK on InvoiceItem is optional; description, unit_price, and
+    The `item` FK on InvoiceItem is optional; name, unit_price, and
     itbis_rate are always editable — the FK is a catalog snapshot reference.
     """
 
@@ -126,11 +126,6 @@ class Item(ERPBaseModel):
     name = models.CharField(
         max_length=150,
         verbose_name=_("nombre"),
-    )
-    description = models.TextField(
-        blank=True,
-        verbose_name=_("descripción"),
-        help_text=_("Se usará como descripción de la línea en el documento."),
     )
     item_type = models.CharField(
         max_length=10,

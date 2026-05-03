@@ -7,9 +7,23 @@
     <i class="bi bi-list"></i>
   </button>
 
-  {# ── Breadcrumb / page title area ───────────────────────── #}
+  {# ── Breadcrumbs ────────────────────────────────────────── #}
   <div class="topbar-title">
-    {% block topbar_title %}{% endblock %}
+    {% if breadcrumbs %}
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          {% for crumb in breadcrumbs %}
+            {% if not forloop.last %}
+              <li class="breadcrumb-item">
+                <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+              </li>
+            {% else %}
+              <li class="breadcrumb-item active" aria-current="page">{{ crumb.label }}</li>
+            {% endif %}
+          {% endfor %}
+        </ol>
+      </nav>
+    {% endif %}
   </div>
 
   {% if user.is_authenticated %}

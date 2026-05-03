@@ -44,6 +44,10 @@ class ItemListView(ERPBaseViewMixin, TemplateView):
         ctx["form"]          = ItemForm()
         ctx["create_url"]    = reverse("items:item_list")
         ctx["submit_label"]  = _("Crear")
+        ctx["breadcrumbs"]   = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Artículos")},
+        ]
         return ctx
 
     def post(self, request):
@@ -82,7 +86,14 @@ class ItemDetailView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=_org(request))
-        return render(request, self.template_name, {"item": item})
+        return render(request, self.template_name, self.get_context(
+            item=item,
+            breadcrumbs=[
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Artículos"), "url": reverse("items:item_list")},
+                {"label": item.name},
+            ],
+        ))
 
 
 # ── Update ────────────────────────────────────────────────────────────────────
@@ -103,11 +114,15 @@ class ItemUpdateView(ERPBaseViewMixin, View):
             })
 
         # Non-HTMX fallback — full page
-        return render(request, "items/item_form.html", {
-            "form":   form,
-            "item":   item,
-            "action": "edit",
-        })
+        return render(request, "items/item_form.html", self.get_context(
+            form=form, item=item, action="edit",
+            breadcrumbs=[
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Artículos"), "url": reverse("items:item_list")},
+                {"label": item.name, "url": reverse("items:item_detail", args=[item.pk])},
+                {"label": _("Editar")},
+            ],
+        ))
 
     def post(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=_org(request))
@@ -131,11 +146,15 @@ class ItemUpdateView(ERPBaseViewMixin, View):
             resp["HX-Reswap"]   = "innerHTML"
             return resp
 
-        return render(request, "items/item_form.html", {
-            "form":   form,
-            "item":   item,
-            "action": "edit",
-        })
+        return render(request, "items/item_form.html", self.get_context(
+            form=form, item=item, action="edit",
+            breadcrumbs=[
+                {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                {"label": _("Artículos"), "url": reverse("items:item_list")},
+                {"label": item.name, "url": reverse("items:item_detail", args=[item.pk])},
+                {"label": _("Editar")},
+            ],
+        ))
 
 
 # ── Toggle active / inactive ─────────────────────────────────────────────────
@@ -184,7 +203,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
             qs = qs.filter(item_type__in=[Item.ItemType.PURCHASE, Item.ItemType.BOTH])
 
         qs = qs.filter(
-            Q(name__icontains=q) | Q(code__icontains=q) | Q(description__icontains=q)
+            Q(name__icontains=q) | Q(code__icontains=q)
         )[:10]
 
         return render(request, "items/partials/item_search_results.html", {"items": qs})

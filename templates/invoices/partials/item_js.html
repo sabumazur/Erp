@@ -53,9 +53,8 @@ function itemPickerModal() {
       const catalog = window.ITEM_CATALOG || [];
       if (!q) return catalog;
       return catalog.filter(item =>
-        (item.name        || '').toLowerCase().includes(q) ||
-        (item.code        || '').toLowerCase().includes(q) ||
-        (item.description || '').toLowerCase().includes(q)
+        (item.name || '').toLowerCase().includes(q) ||
+        (item.code || '').toLowerCase().includes(q)
       );
     },
 
@@ -89,7 +88,7 @@ function pickCatalogRow(rowEl, pk) {
   const itemEl  = rowEl.querySelector('[name$="-item"]');
 
   // Always update description from catalog
-  if (descEl) descEl.value = item.description || item.name;
+  if (descEl) descEl.value = item.name;
 
   // Fill price only when currently 0 — keep user-entered prices
   const currentPrice = parseFloat(priceEl ? priceEl.value : '0') || 0;

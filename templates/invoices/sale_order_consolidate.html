@@ -12,7 +12,7 @@
 </div>
 
 <p class="text-muted">
-  {% trans "Seleccione un cliente y un período. El sistema mostrará todas las órdenes entregadas pendientes de facturar." %}
+  {% trans "Seleccione un cliente, departamento (opcional) y período. El sistema mostrará todas las órdenes entregadas pendientes de facturar." %}
 </p>
 
 <div class="row g-3">
@@ -51,4 +51,28 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var custSel = document.getElementById('id_customer');
+  if (!custSel) return;
+
+  custSel.addEventListener('change', function () {
+    var pk = this.value;
+    var deptSel = document.getElementById('id_department');
+    if (!deptSel) return;
+
+    deptSel.value = '';
+
+    if (pk) {
+      htmx.ajax('GET', '{% url "invoices:departments_for_customer" %}?customer=' + pk, {
+        target: '#id_department',
+        swap:   'innerHTML',
+      });
+    } else {
+      deptSel.innerHTML = '<option value="">— {% trans "Todos los departamentos" %} —</option>';
+    }
+  });
+});
+</script>
 {% endblock %}

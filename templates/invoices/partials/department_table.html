@@ -1,0 +1,50 @@
+{% load i18n %}
+<table class="table table-hover table-sm mb-0">
+  <thead class="table-light">
+    <tr>
+      <th>{% trans "Nombre" %}</th>
+      <th>{% trans "Contacto" %}</th>
+      <th>{% trans "Teléfono" %}</th>
+      <th>{% trans "Dirección de entrega" %}</th>
+      <th style="width:90px">{% trans "Estado" %}</th>
+      <th style="width:50px"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for dept in departments %}
+    <tr>
+      <td class="fw-semibold">{{ dept.name }}</td>
+      <td>{{ dept.contact_name|default:"—" }}</td>
+      <td class="small">{{ dept.phone|default:"—" }}</td>
+      <td class="small text-muted">{{ dept.address|default:"—" }}</td>
+      <td>
+        <button type="button"
+                hx-post="{% url 'invoices:department_toggle' customer.pk dept.pk %}"
+                hx-target="#dept-table-wrapper"
+                hx-swap="innerHTML"
+                class="badge border-0 {% if dept.is_active %}bg-success{% else %}bg-secondary{% endif %}"
+                style="cursor:pointer"
+                title="{% trans 'Clic para cambiar estado' %}">
+          {% if dept.is_active %}{% trans "Activo" %}{% else %}{% trans "Inactivo" %}{% endif %}
+        </button>
+      </td>
+      <td class="text-end">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                hx-get="{% url 'invoices:department_edit' customer.pk dept.pk %}"
+                hx-target="#dept-modal-body"
+                hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
+                                      bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
+          <i class="bi bi-pencil"></i>
+        </button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="text-center text-muted py-4">
+        <i class="bi bi-building me-1 opacity-50"></i>
+        {% trans "No hay departamentos registrados." %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

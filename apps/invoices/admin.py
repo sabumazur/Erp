@@ -2,9 +2,16 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from .models import (
-    Customer, DocumentSequence, Invoice, InvoiceItem,
+    Customer, CustomerDepartment, DocumentSequence, Invoice, InvoiceItem,
     NCFSequence, Payment, PaymentTerm,
 )
+
+
+class CustomerDepartmentInline(admin.TabularInline):
+    model   = CustomerDepartment
+    extra   = 0
+    fields  = ["name", "contact_name", "phone", "address", "is_active"]
+    ordering = ["name"]
 
 
 @admin.register(Customer)
@@ -12,6 +19,15 @@ class CustomerAdmin(admin.ModelAdmin):
     list_display   = ["name", "id_type", "rnc_cedula", "email", "organization", "default_ncf_type"]
     list_filter    = ["organization", "id_type", "default_ncf_type"]
     search_fields  = ["name", "rnc_cedula", "email"]
+    readonly_fields = ["created_at", "updated_at"]
+    inlines        = [CustomerDepartmentInline]
+
+
+@admin.register(CustomerDepartment)
+class CustomerDepartmentAdmin(admin.ModelAdmin):
+    list_display  = ["name", "customer", "contact_name", "phone", "is_active", "organization"]
+    list_filter   = ["organization", "is_active"]
+    search_fields = ["name", "customer__name", "contact_name"]
     readonly_fields = ["created_at", "updated_at"]
 
 

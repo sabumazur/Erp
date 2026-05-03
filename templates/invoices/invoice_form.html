@@ -38,6 +38,11 @@
     </div>
     <div class="card-body p-0">
       {{ formset.management_form }}
+      {% if formset.non_form_errors %}
+        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
+          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
       <div class="table-responsive">
         <table class="table table-sm mb-0">
           <thead class="table-light">

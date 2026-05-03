@@ -204,6 +204,32 @@ body.sidebar-collapsed #sidebar {
   text-overflow: ellipsis;
 }
 
+/* Breadcrumbs inside the topbar */
+#topbar .breadcrumb {
+  font-size: 0.82rem;
+  margin: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+}
+
+#topbar .breadcrumb-item + .breadcrumb-item::before {
+  color: #c0c7d0;
+}
+
+#topbar .breadcrumb-item a {
+  color: #5b9af5;
+  text-decoration: none;
+}
+
+#topbar .breadcrumb-item a:hover {
+  text-decoration: underline;
+}
+
+#topbar .breadcrumb-item.active {
+  color: #343a40;
+  font-weight: 500;
+}
+
 /* ── Main content area ─────────────────────────────────────── */
 
 #main-area {

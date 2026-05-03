@@ -39,7 +39,6 @@ class ItemFilter(django_filters.FilterSet):
         return queryset.filter(
             Q(name__icontains=value)
             | Q(code__icontains=value)
-            | Q(description__icontains=value)
         )
 
     def active_filter(self, queryset, name, value):

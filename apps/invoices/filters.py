@@ -2,7 +2,7 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Invoice, Customer, NCFType
+from .models import Invoice, Customer, CustomerDepartment, NCFType
 
 
 class InvoiceFilter(django_filters.FilterSet):
@@ -149,6 +149,12 @@ class SaleOrderFilter(django_filters.FilterSet):
         label=_("Entrega hasta"),
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
     )
+    department = django_filters.ModelChoiceFilter(
+        queryset=CustomerDepartment.objects.none(),
+        label=_("Departamento"),
+        empty_label=_("Todos los departamentos"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
     doc_number = django_filters.CharFilter(
         lookup_expr="icontains",
         label=_("Número"),
@@ -160,7 +166,8 @@ class SaleOrderFilter(django_filters.FilterSet):
 
     class Meta:
         model = Invoice
-        fields = ["status", "customer", "delivery_date_after", "delivery_date_before", "doc_number"]
+        fields = ["status", "customer", "department",
+                  "delivery_date_after", "delivery_date_before", "doc_number"]
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -168,3 +175,8 @@ class SaleOrderFilter(django_filters.FilterSet):
             self.filters["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+            self.filters["department"].queryset = CustomerDepartment.objects.filter(
+                organization=organization,
+                is_active=True,
+                deleted_at__isnull=True,
+            ).select_related("customer").order_by("customer__name", "name")

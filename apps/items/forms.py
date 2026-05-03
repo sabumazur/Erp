@@ -10,13 +10,12 @@ class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
         fields = [
-            "code", "name", "description",
+            "code", "name",
             "item_type", "unit",
             "unit_price", "cost_price", "itbis_rate",
             "is_active", "notes",
         ]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
             "notes":       forms.Textarea(attrs={"rows": 2}),
             "unit_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "cost_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
@@ -30,7 +29,6 @@ class ItemForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["description"].help_text = ""
         self.fields["cost_price"].required = False
         # Help text rendered via Alpine below the field instead of a static string
         self.fields["code"].help_text = ""
@@ -50,7 +48,6 @@ class ItemForm(forms.ModelForm):
                 '  <span x-text="codeHint"></span>'
                 '</p>'
             ),
-            "description",
             # ── Type, Unit, ITBIS ─────────────────────────────────────────────
             HTML('<hr class="my-3">'),
             Row(

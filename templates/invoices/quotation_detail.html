@@ -24,14 +24,14 @@
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
       <form method="post" action="{% url 'invoices:quotation_confirm' quotation.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Confirmar cotización?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#0d6efd', ok:'Sí, confirmar'})">
         {% csrf_token %}
         <button class="btn btn-primary btn-sm">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
       <form method="post" action="{% url 'invoices:quotation_delete' quotation.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Eliminar borrador?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
       </form>
@@ -52,7 +52,7 @@
         </button>
       </form>
       <form method="post" action="{% url 'invoices:quotation_reject' quotation.pk %}"
-            x-data x-on:submit.prevent="if(confirm('{% trans "¿Marcar como rechazada?" %}')) $el.submit()">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Marcar como rechazada?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, rechazar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm">
           <i class="bi bi-hand-thumbs-down me-1"></i>{% trans "Rechazada" %}

@@ -21,7 +21,7 @@
       </a>
       <form method="post" action="{% url 'invoices:invoice_confirm' invoice.pk %}"
             x-data
-            x-on:submit.prevent="if(confirm('{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}')) $el.submit()">
+            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}', {icon:'warning', color:'#0d6efd', ok:'Sí, confirmar'})">
         {% csrf_token %}
         <button class="btn btn-primary btn-sm">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
@@ -29,7 +29,7 @@
       </form>
       <form method="post" action="{% url 'invoices:invoice_delete' invoice.pk %}"
             x-data
-            x-on:submit.prevent="if(confirm('{% trans "¿Eliminar borrador?" %}')) $el.submit()">
+            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
       </form>
@@ -60,7 +60,7 @@
     {% if invoice.status not in "PAID,CANCELLED,DRAFT" %}
       <form method="post" action="{% url 'invoices:invoice_cancel' invoice.pk %}"
             x-data
-            x-on:submit.prevent="if(confirm('{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}')) $el.submit()">
+            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
         {% csrf_token %}
         <button class="btn btn-danger btn-sm">
           <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}

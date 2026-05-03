@@ -7,17 +7,25 @@
       <th>{% trans "Correo" %}</th>
       <th>{% trans "Teléfono" %}</th>
       <th>{% trans "Tipo NCF" %}</th>
+      <th class="text-center" style="width:90px">{% trans "Depts." %}</th>
       <th></th>
     </tr>
   </thead>
   <tbody>
     {% for c in customers %}
     <tr>
-      <td class="fw-semibold">{{ c.name }}</td>
+      <td class="fw-semibold"><a href="{% url 'invoices:customer_detail' c.pk %}" class="text-decoration-none">{{ c.name }}</a></td>
       <td><code>{{ c.rnc_cedula|default:"—" }}</code></td>
       <td>{{ c.email|default:"—" }}</td>
       <td>{{ c.phone|default:"—" }}</td>
       <td><span class="badge bg-secondary">{{ c.get_default_ncf_type_display }}</span></td>
+      <td class="text-center">
+        {% if c.dept_count %}
+          <span class="badge bg-info text-dark">{{ c.dept_count }}</span>
+        {% else %}
+          <span class="text-muted small">—</span>
+        {% endif %}
+      </td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-secondary btn-sm"
                 hx-get="{% url 'invoices:customer_edit' c.pk %}"
@@ -46,7 +54,7 @@
       </td>
     </tr>
     {% empty %}
-    <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay clientes registrados." %}</td></tr>
+    <tr><td colspan="7" class="text-center text-muted py-4">{% trans "No hay clientes registrados." %}</td></tr>
     {% endfor %}
   </tbody>
 </table>

@@ -4,6 +4,7 @@
   <thead class="table-light">
     <tr>
       <th>{% trans "Número" %}</th>
+      <th>{% trans "Departamento" %}</th>
       <th>{% trans "Entrega" %}</th>
       <th>{% trans "Recibido por" %}</th>
       <th class="text-end">{% trans "Total" %}</th>
@@ -12,25 +13,27 @@
   <tbody>
     {% for o in orders %}
     <tr>
-      <td class="font-monospace">{{ o.doc_number|default:"—" }}</td>
-      <td>{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+      <td class="font-monospace small">{{ o.doc_number|default:"—" }}</td>
+      <td class="small">
+        {% if o.department %}
+          <span class="badge bg-info text-dark">{{ o.department.name }}</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+      <td class="small">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
       <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
       <td class="text-end fw-semibold">{{ o.total|floatformat:2 }}</td>
     </tr>
     {% endfor %}
   </tbody>
-  <tfoot class="table-light">
+  <tfoot class="table-light fw-bold">
     <tr>
-      <td colspan="3" class="text-end fw-bold">{% trans "TOTAL" %}</td>
-      <td class="text-end fw-bold">
-        {% with total=orders|length %}
-          {# Sum computed in template via loop since we can't use sum filter #}
-        {% endwith %}
-        {% for o in orders %}{% if forloop.last %}
-          {# Show count instead — exact total shown on invoice after creation #}
-        {% endif %}{% endfor %}
-        {{ orders|length }} {% trans "orden(es)" %}
+      <td colspan="4" class="text-end">
+        {% blocktrans count n=orders|length %}{{ n }} orden{% plural %}{{ n }} órdenes{% endblocktrans %}
+        &nbsp;·&nbsp; {% trans "TOTAL" %}
       </td>
+      <td class="text-end">{{ grand_total|floatformat:2 }}</td>
     </tr>
   </tfoot>
 </table>

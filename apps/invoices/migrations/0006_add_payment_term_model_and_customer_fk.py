@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0005_add_default_payment_method_to_customer"),
+        ("invoices", "0004_alter_customer_rnc_cedula"),
     ]
 
     operations = [
