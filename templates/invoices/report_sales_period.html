@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Ventas por Período" %}{% endblock %}
+
+{% block content %}
+
+{# ── Print-only document header ───────────────────────────────────────────── #}
+<div class="print-header">
+  <p class="print-org">{{ organization.name }}</p>
+  <h1 class="print-title">{% trans "Ventas por Período" %}</h1>
+  {% if year %}<p class="print-meta">{% trans "Año" %} {{ year }}</p>{% endif %}
+</div>
+
+{# ── Screen header (hidden on print) ─────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
+  <h1 class="h3 mb-0">{% trans "Ventas por Período" %}</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+    </button>
+  </div>
+</div>
+
+{# ── Filter form ──────────────────────────────────────────────────────────── #}
+<div class="card shadow-sm mb-4 no-print">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small fw-semibold">{% trans "Año" %}</label>
+        <input type="number" name="year" value="{{ year_input|default:today.year }}"
+               min="2020" max="2099"
+               class="form-control form-control-sm" required>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-success btn-sm">
+          <i class="bi bi-search me-1"></i>{% trans "Consultar" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if year %}
+
+{% if rows %}
+{# ── Summary pills ─────────────────────────────────────────────────────────── #}
+<div class="row g-2 mb-3">
+  <div class="col-6 col-sm-4">
+    <div class="card border-0 bg-light text-center py-2">
+      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total facturado" %}</div>
+      <div class="fw-bold fs-6">{{ totals.invoiced|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4">
+    <div class="card border-0 bg-light text-center py-2">
+      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total cobrado" %}</div>
+      <div class="fw-bold fs-6 text-success">{{ totals.collected|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4">
+    <div class="card border-0 bg-light text-center py-2">
+      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Neto del año" %}</div>
+      <div class="fw-bold fs-6 {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
+        {{ totals.net|floatformat:2 }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Monthly breakdown table ───────────────────────────────────────────────── #}
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>{% trans "Mes" %}</th>
+          <th class="text-end">{% trans "Facturado" %}</th>
+          <th class="text-end">{% trans "Cobrado" %}</th>
+          <th class="text-end">{% trans "Neto del mes" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="fw-semibold">{{ row.month|date:"F Y" }}</td>
+          <td class="text-end">{{ row.invoiced|floatformat:2 }}</td>
+          <td class="text-end text-success">{{ row.collected|floatformat:2 }}</td>
+          <td class="text-end fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-success{% endif %}">
+            {{ row.net|floatformat:2 }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td>{% trans "Total" %}</td>
+          <td class="text-end">{{ totals.invoiced|floatformat:2 }}</td>
+          <td class="text-end text-success">{{ totals.collected|floatformat:2 }}</td>
+          <td class="text-end {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
+            {{ totals.net|floatformat:2 }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-1"></i>
+  {% blocktrans with y=year %}No hay actividad registrada para el año {{ y }}.{% endblocktrans %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

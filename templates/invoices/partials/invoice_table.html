@@ -1,8 +1,4 @@
 {% load i18n %}
-
-{% with status_colors="DRAFT:secondary,CONFIRMED:primary,SENT:info,PAID:success,OVERDUE:danger,CANCELLED:dark" %}
-{% endwith %}
-
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
@@ -14,14 +10,15 @@
           <th>{% trans "Vence" %}</th>
           <th class="text-end">{% trans "Total" %}</th>
           <th class="text-center">{% trans "Estado" %}</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for inv in invoices %}
         <tr>
           <td class="font-monospace fw-semibold">
-            {{ inv.encf|default:"—" }}
+            <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none">
+              {{ inv.display_number }}
+            </a>
             <small class="text-muted d-block">{{ inv.get_ncf_type_display }}</small>
           </td>
           <td>{{ inv.customer.name }}</td>
@@ -49,14 +46,9 @@
               <span class="badge bg-dark">{% trans "Anulada" %}</span>
             {% endif %}
           </td>
-          <td class="text-end">
-            <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="btn btn-outline-secondary btn-sm">
-              <i class="bi bi-eye"></i>
-            </a>
-          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="text-center text-muted py-4">{% trans "No hay facturas." %}</td></tr>
+        <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay facturas." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -35,6 +35,7 @@ class CustomerForm(forms.ModelForm):
             "country",
             "default_ncf_type",
             "payment_term",
+            "credit_limit",
             "notes",
         ]
         widgets = {
@@ -102,6 +103,7 @@ class CustomerForm(forms.ModelForm):
             Row(
                 Column("default_ncf_type", css_class="col-md-6"),
                 Column("payment_term", css_class="col-md-6"),
+                Column("credit_limit", css_class="col-md-4"),
                 Column("notes", css_class="col-md-12"),
             ),
         )

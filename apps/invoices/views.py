@@ -7,8 +7,8 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, DecimalField, Q, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, DecimalField, Prefetch, Q, Sum
+from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -18,7 +18,7 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from .filters import InvoiceFilter, QuotationFilter, SaleOrderFilter, PaymentFilter
+from .filters import InvoiceFilter, QuotationFilter, SaleOrderFilter, PaymentFilter, CustomerFilter
 
 from .forms import (
     CustomerForm,
@@ -76,11 +76,42 @@ def _customer_defaults_json(request) -> str:
                     if c.payment_term and c.payment_term.days_due > 0
                     else "CASH"
                 ),
+                "days_due": (
+                    c.payment_term.days_due
+                    if c.payment_term and c.payment_term.days_due > 0
+                    else 0
+                ),
             }
             for c in qs
         },
         ensure_ascii=False,
     )
+
+
+def _customers_with_depts(organization):
+    """Customer queryset with active_depts prefetch and dept_count annotation."""
+    active_depts = CustomerDepartment.objects.filter(
+        deleted_at__isnull=True, is_active=True
+    ).only("id", "customer_id", "name").order_by("name")
+    return (
+        Customer.objects.filter(organization=organization)
+        .prefetch_related(Prefetch("departments", queryset=active_depts, to_attr="active_depts"))
+        .annotate(
+            dept_count=Count(
+                "departments", filter=Q(departments__deleted_at__isnull=True)
+            )
+        )
+        .order_by("name")
+    )
+
+
+def _active_filter_count(request) -> int:
+    """
+    Count non-empty GET params that represent active filters,
+    excluding the quick-search field (q) and pagination (page).
+    """
+    skip = {"q", "page", "csrfmiddlewaretoken"}
+    return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
 
 
 def _sale_items_json(request) -> str:
@@ -120,18 +151,23 @@ class CustomerListView(ERPBaseViewMixin, TemplateView):
     template_name = "invoices/customer_list.html"
     required_module = "invoices"
 
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "invoices/partials/customer_table.html", ctx)
+        return self.render_to_response(ctx)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["customers"] = (
-            Customer.objects.filter(organization=_org(self.request))
-            .annotate(
-                dept_count=Count(
-                    "departments", filter=Q(departments__deleted_at__isnull=True)
-                )
-            )
-            .order_by("name")
-        )
+        qs = _customers_with_depts(_org(self.request))
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(rnc_cedula__icontains=q))
+        f = CustomerFilter(self.request.GET, queryset=qs)
+        ctx["filter"] = f
+        ctx["customers"] = f.qs
         ctx["form"] = CustomerForm()
+        ctx["active_filter_count"] = _active_filter_count(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Clientes")},
@@ -145,13 +181,10 @@ class CustomerListView(ERPBaseViewMixin, TemplateView):
             customer.organization = _org(request)
             customer.save()
             if request.htmx:
-                customers = Customer.objects.filter(
-                    organization=_org(request)
-                ).order_by("name")
                 resp = render(
                     request,
                     "invoices/partials/customer_table.html",
-                    {"customers": customers},
+                    {"customers": _customers_with_depts(_org(request))},
                 )
                 resp["HX-Trigger"] = json.dumps(
                     {
@@ -228,13 +261,10 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
                 resp = HttpResponse()
                 resp["HX-Refresh"] = "true"
                 return resp
-            customers = Customer.objects.filter(
-                organization=_org(self.request)
-            ).order_by("name")
             resp = render(
                 self.request,
                 "invoices/partials/customer_table.html",
-                {"customers": customers},
+                {"customers": _customers_with_depts(_org(self.request))},
             )
             resp["HX-Trigger"] = json.dumps(
                 {
@@ -304,6 +334,16 @@ class CustomerDetailView(ERPBaseViewMixin, View):
             inv.line_balance for inv in invoices if inv.status == Invoice.Status.OVERDUE
         )
 
+        # Aging breakdown: outstanding balance grouped by how many days past due
+        _aging = {b: _zero for b in Invoice.AgingBucket.values}
+        for inv in invoices:
+            if inv.line_balance > _zero:
+                _aging[inv.aging_bucket] += inv.line_balance
+        aging_breakdown = [
+            {"label": Invoice.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
+            for b in Invoice.AgingBucket.values
+        ]
+
         recent_payments = list(
             Payment.objects.filter(customer=customer, organization=_org(request))
             .prefetch_related("allocations__invoice")
@@ -332,7 +372,13 @@ class CustomerDetailView(ERPBaseViewMixin, View):
                 "total_paid": total_paid,
                 "balance": balance,
                 "overdue": overdue,
+                "aging_breakdown": aging_breakdown,
                 "recent_payments": recent_payments,
+                "credit_available": (
+                    (customer.credit_limit - balance)
+                    if customer.credit_limit is not None
+                    else None
+                ),
             },
         )
 
@@ -536,20 +582,28 @@ class InvoiceListView(ERPBaseViewMixin, TemplateView):
     template_name = "invoices/invoice_list.html"
     required_module = "invoices"
 
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "invoices/partials/invoice_table.html", ctx)
+        return self.render_to_response(ctx)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         qs = (
-            Invoice.invoices.filter(  # doc_type=INVOICE only
-                organization=_org(self.request)
-            )
+            Invoice.invoices.filter(organization=_org(self.request))
             .select_related("customer")
             .order_by("-issue_date", "-created_at")
         )
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(encf__icontains=q) | Q(customer__name__icontains=q))
         f = InvoiceFilter(
             self.request.GET, queryset=qs, organization=_org(self.request)
         )
         ctx["filter"] = f
         ctx["invoices"] = f.qs
+        ctx["active_filter_count"] = _active_filter_count(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Facturas")},
@@ -864,6 +918,12 @@ class QuotationListView(ERPBaseViewMixin, TemplateView):
     template_name = "invoices/quotation_list.html"
     required_module = "invoices"
 
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "invoices/partials/quotation_table.html", ctx)
+        return self.render_to_response(ctx)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         qs = (
@@ -871,11 +931,15 @@ class QuotationListView(ERPBaseViewMixin, TemplateView):
             .select_related("customer")
             .order_by("-issue_date", "-created_at")
         )
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(doc_number__icontains=q) | Q(customer__name__icontains=q))
         f = QuotationFilter(
             self.request.GET, queryset=qs, organization=_org(self.request)
         )
         ctx["filter"] = f
         ctx["quotations"] = f.qs
+        ctx["active_filter_count"] = _active_filter_count(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Cotizaciones")},
@@ -1109,6 +1173,12 @@ class SaleOrderListView(ERPBaseViewMixin, TemplateView):
     template_name = "invoices/sale_order_list.html"
     required_module = "invoices"
 
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "invoices/partials/sale_order_table.html", ctx)
+        return self.render_to_response(ctx)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         qs = (
@@ -1116,11 +1186,15 @@ class SaleOrderListView(ERPBaseViewMixin, TemplateView):
             .select_related("customer", "department")
             .order_by("-delivery_date", "-created_at")
         )
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(doc_number__icontains=q) | Q(customer__name__icontains=q))
         f = SaleOrderFilter(
             self.request.GET, queryset=qs, organization=_org(self.request)
         )
         ctx["filter"] = f
         ctx["orders"] = f.qs
+        ctx["active_filter_count"] = _active_filter_count(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Órdenes de venta")},
@@ -1700,6 +1774,367 @@ class Report608View(ERPBaseViewMixin, View):
         return response
 
 
+# ── Management Reports ────────────────────────────────────────────────────────
+
+_AGING_CSS = {
+    "current": "text-success",
+    "1_30":    "text-warning",
+    "31_60":   "text-warning",
+    "61_90":   "text-danger",
+    "90_plus": "text-danger",
+}
+
+
+class ReportAgingView(ERPBaseViewMixin, View):
+    """Cross-customer aging receivables as of today."""
+
+    required_module = "invoices"
+    admin_required = True
+
+    def get(self, request):
+        _zero = Decimal("0.00")
+        _dec = DecimalField(max_digits=14, decimal_places=2)
+
+        invoices = list(
+            Invoice.invoices.filter(
+                organization=_org(request),
+                status__in=[
+                    Invoice.Status.CONFIRMED,
+                    Invoice.Status.SENT,
+                    Invoice.Status.OVERDUE,
+                ],
+            )
+            .annotate(
+                paid_amount=Coalesce(
+                    Sum("allocations__amount"), _zero, output_field=_dec
+                )
+            )
+            .select_related("customer")
+        )
+        for inv in invoices:
+            inv.line_balance = inv.total - inv.paid_amount
+
+        customers_map = {}
+        for inv in invoices:
+            if inv.line_balance <= _zero:
+                continue
+            cpk = inv.customer_id
+            if cpk not in customers_map:
+                customers_map[cpk] = {
+                    "customer": inv.customer,
+                    "buckets": {b: _zero for b in Invoice.AgingBucket.values},
+                    "total": _zero,
+                }
+            customers_map[cpk]["buckets"][inv.aging_bucket] += inv.line_balance
+            customers_map[cpk]["total"] += inv.line_balance
+
+        col_totals = {b: _zero for b in Invoice.AgingBucket.values}
+        grand_total = _zero
+        rows = sorted(customers_map.values(), key=lambda r: r["customer"].name)
+        for row in rows:
+            row["bucket_cells"] = [
+                {"amount": row["buckets"][b], "css": _AGING_CSS[b]}
+                for b in Invoice.AgingBucket.values
+            ]
+            for b in Invoice.AgingBucket.values:
+                col_totals[b] += row["buckets"][b]
+            grand_total += row["total"]
+
+        return render(
+            request,
+            "invoices/report_aging.html",
+            {
+                **self.get_context(
+                    breadcrumbs=[
+                        {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Antigüedad de Cuentas por Cobrar")},
+                    ]
+                ),
+                "rows": rows,
+                "bucket_headers": [
+                    {"label": Invoice.AgingBucket(b).label, "css": _AGING_CSS[b]}
+                    for b in Invoice.AgingBucket.values
+                ],
+                "col_total_cells": [
+                    {"amount": col_totals[b], "css": _AGING_CSS[b]}
+                    for b in Invoice.AgingBucket.values
+                ],
+                "grand_total": grand_total,
+                "today": timezone.now().date(),
+            },
+        )
+
+
+class ReportStatementView(ERPBaseViewMixin, View):
+    """Customer account statement for a date range."""
+
+    required_module = "invoices"
+    admin_required = True
+
+    def get(self, request):
+        from datetime import datetime as dt
+
+        _zero = Decimal("0.00")
+        _dec = DecimalField(max_digits=14, decimal_places=2)
+
+        customers = Customer.objects.filter(
+            organization=_org(request)
+        ).order_by("name")
+
+        customer_id   = request.GET.get("customer",  "").strip()
+        date_from_str = request.GET.get("date_from", "").strip()
+        date_to_str   = request.GET.get("date_to",   "").strip()
+
+        customer = None
+        lines = []
+        opening_balance = closing_balance = _zero
+        period_invoiced = period_collected = _zero
+        error = None
+
+        if customer_id and date_from_str and date_to_str:
+            try:
+                customer = get_object_or_404(
+                    Customer, pk=customer_id, organization=_org(request)
+                )
+                d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
+                d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+
+                inv_before = (
+                    Invoice.invoices.filter(
+                        organization=_org(request), customer=customer,
+                        issue_date__lt=d_from,
+                    )
+                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .aggregate(t=Coalesce(Sum("total"), _zero, output_field=_dec))["t"]
+                )
+                pmt_before = Payment.objects.filter(
+                    organization=_org(request), customer=customer,
+                    date__lt=d_from,
+                ).aggregate(t=Coalesce(Sum("amount"), _zero, output_field=_dec))["t"]
+                opening_balance = inv_before - pmt_before
+
+                for inv in (
+                    Invoice.invoices.filter(
+                        organization=_org(request), customer=customer,
+                        issue_date__gte=d_from, issue_date__lte=d_to,
+                    )
+                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .order_by("issue_date", "created_at")
+                ):
+                    lines.append({
+                        "date":   inv.issue_date,
+                        "type":   "invoice",
+                        "ref":    inv.display_number,
+                        "url":    reverse("invoices:invoice_detail", args=[inv.pk]),
+                        "debit":  inv.total,
+                        "credit": _zero,
+                    })
+                    period_invoiced += inv.total
+
+                for pmt in Payment.objects.filter(
+                    organization=_org(request), customer=customer,
+                    date__gte=d_from, date__lte=d_to,
+                ).order_by("date", "created_at"):
+                    lines.append({
+                        "date":   pmt.date,
+                        "type":   "payment",
+                        "ref":    f"PAG-{pmt.pk.hex[:8].upper()}",
+                        "url":    reverse("invoices:payment_detail", args=[pmt.pk]),
+                        "debit":  _zero,
+                        "credit": pmt.amount,
+                    })
+                    period_collected += pmt.amount
+
+                lines.sort(key=lambda x: (x["date"], x["type"]))
+
+                balance = opening_balance
+                for line in lines:
+                    balance += line["debit"] - line["credit"]
+                    line["balance"] = balance
+                closing_balance = balance
+
+            except (ValueError, TypeError):
+                error = _("Fechas inválidas.")
+
+        return render(
+            request,
+            "invoices/report_statement.html",
+            {
+                **self.get_context(
+                    breadcrumbs=[
+                        {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Estado de Cuenta")},
+                    ]
+                ),
+                "customers":        customers,
+                "customer":         customer,
+                "customer_id":      customer_id,
+                "date_from":        date_from_str,
+                "date_to":          date_to_str,
+                "lines":            lines,
+                "opening_balance":  opening_balance,
+                "closing_balance":  closing_balance,
+                "period_invoiced":  period_invoiced,
+                "period_collected": period_collected,
+                "error":            error,
+            },
+        )
+
+
+class ReportSalesByPeriodView(ERPBaseViewMixin, View):
+    """Monthly invoiced vs. collected for a given year."""
+
+    required_module = "invoices"
+    admin_required = True
+
+    def get(self, request):
+        _zero = Decimal("0.00")
+        _dec = DecimalField(max_digits=14, decimal_places=2)
+
+        year_str = request.GET.get("year", "").strip()
+        year = None
+        rows = []
+        totals = {"invoiced": _zero, "collected": _zero, "net": _zero}
+
+        if year_str:
+            try:
+                year = int(year_str)
+
+                inv_by_month = {
+                    r["month"]: r["total"]
+                    for r in Invoice.invoices.filter(
+                        organization=_org(request), issue_date__year=year,
+                    )
+                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .annotate(month=TruncMonth("issue_date"))
+                    .values("month")
+                    .annotate(total=Coalesce(Sum("total"), _zero, output_field=_dec))
+                }
+
+                pmt_by_month = {
+                    r["month"]: r["total"]
+                    for r in Payment.objects.filter(
+                        organization=_org(request), date__year=year,
+                    )
+                    .annotate(month=TruncMonth("date"))
+                    .values("month")
+                    .annotate(total=Coalesce(Sum("amount"), _zero, output_field=_dec))
+                }
+
+                for month_dt in sorted(set(inv_by_month) | set(pmt_by_month)):
+                    invoiced  = inv_by_month.get(month_dt, _zero)
+                    collected = pmt_by_month.get(month_dt, _zero)
+                    net       = invoiced - collected
+                    rows.append({
+                        "month":     month_dt,
+                        "invoiced":  invoiced,
+                        "collected": collected,
+                        "net":       net,
+                    })
+                    totals["invoiced"]  += invoiced
+                    totals["collected"] += collected
+                    totals["net"]       += net
+
+            except (ValueError, TypeError):
+                year = None
+
+        return render(
+            request,
+            "invoices/report_sales_period.html",
+            {
+                **self.get_context(
+                    breadcrumbs=[
+                        {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Ventas por Período")},
+                    ]
+                ),
+                "year":       year,
+                "year_input": year_str,
+                "rows":       rows,
+                "totals":     totals,
+                "today":      timezone.now().date(),
+            },
+        )
+
+
+class ReportCollectionsView(ERPBaseViewMixin, View):
+    """Payment collections summary for a date range."""
+
+    required_module = "invoices"
+    admin_required = True
+
+    def get(self, request):
+        from datetime import datetime as dt
+
+        _zero = Decimal("0.00")
+        _dec = DecimalField(max_digits=14, decimal_places=2)
+
+        date_from_str = request.GET.get("date_from", "").strip()
+        date_to_str   = request.GET.get("date_to",   "").strip()
+
+        payments    = []
+        by_method   = []
+        grand_total = _zero
+        error       = None
+
+        if date_from_str and date_to_str:
+            try:
+                d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
+                d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+
+                payments = list(
+                    Payment.objects.filter(
+                        organization=_org(request),
+                        date__gte=d_from, date__lte=d_to,
+                    )
+                    .select_related("customer")
+                    .order_by("date", "customer__name")
+                )
+
+                method_labels = dict(Payment.Method.choices)
+                by_method = [
+                    {**r, "method_display": method_labels.get(r["method"], r["method"])}
+                    for r in Payment.objects.filter(
+                        organization=_org(request),
+                        date__gte=d_from, date__lte=d_to,
+                    )
+                    .values("method")
+                    .annotate(
+                        count=Count("id"),
+                        total=Coalesce(Sum("amount"), _zero, output_field=_dec),
+                    )
+                    .order_by("method")
+                ]
+
+                grand_total = sum(p.amount for p in payments)
+
+            except (ValueError, TypeError):
+                error = _("Fechas inválidas.")
+
+        return render(
+            request,
+            "invoices/report_collections.html",
+            {
+                **self.get_context(
+                    breadcrumbs=[
+                        {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Cobros del Período")},
+                    ]
+                ),
+                "date_from":   date_from_str,
+                "date_to":     date_to_str,
+                "payments":    payments,
+                "by_method":   by_method,
+                "grand_total": grand_total,
+                "error":       error,
+            },
+        )
+
+
 # ── PDF ───────────────────────────────────────────────────────────────────────
 
 
@@ -1886,23 +2321,26 @@ class PaymentListView(ERPBaseViewMixin, View):
             .prefetch_related("allocations__invoice")
             .order_by("-date", "-created_at")
         )
+        q = request.GET.get("q", "").strip()
+        if q:
+            qs = qs.filter(Q(reference__icontains=q) | Q(customer__name__icontains=q))
         f = PaymentFilter(request.GET, queryset=qs, organization=_org(request))
         total = sum(p.amount for p in f.qs)
-        return render(
-            request,
-            "invoices/payment_list.html",
-            {
-                **self.get_context(
-                    filter=f,
-                    payments=f.qs,
-                    total=total,
-                    breadcrumbs=[
-                        {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Pagos")},
-                    ],
-                ),
-            },
-        )
+        ctx = {
+            **self.get_context(
+                filter=f,
+                payments=f.qs,
+                total=total,
+                active_filter_count=_active_filter_count(request),
+                breadcrumbs=[
+                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+                    {"label": _("Pagos")},
+                ],
+            ),
+        }
+        if request.htmx:
+            return render(request, "invoices/partials/payment_table.html", ctx)
+        return render(request, "invoices/payment_list.html", ctx)
 
 
 class PaymentCreateView(ERPBaseViewMixin, View):

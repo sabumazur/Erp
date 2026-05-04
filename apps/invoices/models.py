@@ -96,6 +96,14 @@ class Customer(ERPBaseModel):
         verbose_name=_("país"),
     )
     notes = models.TextField(blank=True, verbose_name=_("notas"))
+    credit_limit = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name=_("límite de crédito"),
+        help_text=_("Monto máximo de crédito autorizado. Dejar en blanco para sin límite."),
+    )
     payment_term = models.ForeignKey(
         PaymentTerm,
         on_delete=models.PROTECT,
@@ -155,7 +163,7 @@ class CustomerDepartment(ERPBaseModel):
     name = models.CharField(
         max_length=200,
         verbose_name=_("nombre del departamento"),
-        help_text=_("Ej.: Almacén Central, Restaurante Piso 2, Oficina Gerencial"),
+        help_text=_("Ej.: Almacén Central, Depósito, Oficina Gerencial"),
     )
     contact_name = models.CharField(
         max_length=150,

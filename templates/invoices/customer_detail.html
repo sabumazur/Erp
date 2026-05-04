@@ -249,8 +249,82 @@
     {% endif %}
   </div>
 
-  {# ── Audit card ───────────────────────────────────────────────────────────── #}
+  {# ── Sidebar cards ────────────────────────────────────────────────────────── #}
   <div class="col-lg-4">
+
+    {# Credit limit card #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Crédito" %}</h6>
+        <dl class="row small mb-0">
+          <dt class="col-7 text-muted">{% trans "Límite de crédito" %}</dt>
+          <dd class="col-5 text-end fw-semibold">
+            {% if customer.credit_limit %}
+              {{ customer.credit_limit|floatformat:2 }}
+            {% else %}
+              <span class="text-muted">{% trans "Sin límite" %}</span>
+            {% endif %}
+          </dd>
+          <dt class="col-7 text-muted">{% trans "Saldo pendiente" %}</dt>
+          <dd class="col-5 text-end fw-semibold {% if balance > 0 %}text-warning{% endif %}">
+            {{ balance|floatformat:2 }}
+          </dd>
+          {% if customer.credit_limit %}
+          <dt class="col-7 text-muted">{% trans "Disponible" %}</dt>
+          <dd class="col-5 text-end fw-semibold {% if balance > customer.credit_limit %}text-danger{% else %}text-success{% endif %}">
+            {{ credit_available|floatformat:2 }}
+          </dd>
+          {% endif %}
+          <dt class="col-7 text-muted">{% trans "Última factura" %}</dt>
+          <dd class="col-5 text-end">
+            {% if invoices %}
+              {{ invoices.0.issue_date|date:"d/m/Y" }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </dd>
+          <dt class="col-7 text-muted">{% trans "Último pago" %}</dt>
+          <dd class="col-5 text-end">
+            {% if recent_payments %}
+              {{ recent_payments.0.date|date:"d/m/Y" }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </dd>
+        </dl>
+        {% if customer.credit_limit and balance > customer.credit_limit %}
+        <div class="alert alert-danger py-1 px-2 mt-2 mb-0 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{% trans "Límite de crédito excedido" %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Aging breakdown card #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Antigüedad de saldos" %}</h6>
+        <dl class="row small mb-0">
+          {% for row in aging_breakdown %}
+          <dt class="col-7 text-muted">{{ row.label }}</dt>
+          <dd class="col-5 text-end fw-semibold
+            {% if row.bucket == 'current' %}text-success
+            {% elif row.bucket == '1_30' %}text-warning
+            {% elif row.bucket == '31_60' %}text-warning
+            {% elif row.bucket == '61_90' %}text-danger
+            {% else %}text-danger{% endif %}">
+            {{ row.amount|floatformat:2 }}
+          </dd>
+          {% endfor %}
+          <dt class="col-7 fw-semibold border-top pt-2 mt-1">{% trans "Total" %}</dt>
+          <dd class="col-5 text-end fw-bold border-top pt-2 mt-1 {% if balance > 0 %}text-warning{% endif %}">
+            {{ balance|floatformat:2 }}
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    {# Audit card #}
     <div class="card shadow-sm">
       <div class="card-body">
         <h6 class="card-title text-muted text-uppercase small">{% trans "Auditoría" %}</h6>

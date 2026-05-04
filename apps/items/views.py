@@ -19,6 +19,11 @@ def _org(request):
     return request.organization
 
 
+def _active_filter_count(request) -> int:
+    skip = {"q", "page", "csrfmiddlewaretoken"}
+    return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
+
+
 def _item_table_response(request, msg, msg_type="success"):
     """Return the full item table partial with an HX-Trigger toast."""
     items = Item.objects.filter(organization=_org(request)).order_by("name")
@@ -39,16 +44,23 @@ class ItemListView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         qs = Item.objects.filter(organization=_org(self.request))
         f  = ItemFilter(self.request.GET, queryset=qs)
-        ctx["filter"]        = f
-        ctx["items"]         = f.qs
-        ctx["form"]          = ItemForm()
-        ctx["create_url"]    = reverse("items:item_list")
-        ctx["submit_label"]  = _("Crear")
-        ctx["breadcrumbs"]   = [
+        ctx["filter"]               = f
+        ctx["items"]                = f.qs
+        ctx["active_filter_count"]  = _active_filter_count(self.request)
+        ctx["form"]                 = ItemForm()
+        ctx["create_url"]           = reverse("items:item_list")
+        ctx["submit_label"]         = _("Crear")
+        ctx["breadcrumbs"]          = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Artículos")},
         ]
         return ctx
+
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "items/partials/item_table.html", ctx)
+        return self.render_to_response(ctx)
 
     def post(self, request):
         form = ItemForm(request.POST)

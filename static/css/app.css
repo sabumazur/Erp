@@ -297,3 +297,184 @@ body.sidebar-collapsed #sidebar {
 .confirm-dialog {
   width: 360px;
 }
+
+/* ── Print header (hidden on screen, shown on print) ───────── */
+
+.print-header {
+  display: none;
+}
+
+/* ── Print ─────────────────────────────────────────────────── */
+
+@media print {
+  @page {
+    margin: 1.5cm 2cm;
+    size: A4 portrait;
+  }
+
+  /* ─ Hide UI chrome ─ */
+  #sidebar,
+  #sidebar-backdrop,
+  #topbar,
+  .no-print,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* ─ Unwind the ERP shell into a flat document ─ */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    font-size: 10pt;
+    color: #000;
+  }
+
+  #erp-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #main-area {
+    display: block !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  #main-content {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  /* ─ Print document header ─ */
+  .print-header {
+    display: block !important;
+    border-bottom: 2px solid #000;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .print-header .print-org {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #444;
+    margin: 0;
+  }
+
+  .print-header .print-title {
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 2px 0 0;
+    line-height: 1.2;
+  }
+
+  .print-header .print-meta {
+    font-size: 8.5pt;
+    color: #555;
+    margin-top: 3px;
+  }
+
+  /* ─ Remove card chrome ─ */
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .card-body {
+    padding: 0 !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  /* ─ Document-style tables ─ */
+  .table {
+    font-size: 9pt;
+    border-collapse: collapse !important;
+    width: 100%;
+    margin-bottom: 0 !important;
+  }
+
+  .table th,
+  .table td {
+    border: 1px solid #aaa !important;
+    padding: 4px 7px !important;
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table thead th {
+    background: #e8e8e8 !important;
+    font-weight: 700;
+  }
+
+  .table tfoot td,
+  .table tfoot th {
+    background: #e8e8e8 !important;
+    font-weight: 700;
+  }
+
+  /* Table rows should not split across pages */
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr    { page-break-inside: avoid; }
+
+  /* ─ Reset Bootstrap utility colors to black ─ */
+  .text-success,
+  .text-warning,
+  .text-danger,
+  .text-info,
+  .text-primary,
+  .text-muted {
+    color: #000 !important;
+  }
+
+  /* Keep bold on highlighted cells */
+  .fw-semibold, .fw-bold { font-weight: 700 !important; }
+
+  /* ─ Badges ─ */
+  .badge {
+    background: transparent !important;
+    color: #000 !important;
+    border: 1px solid #999 !important;
+    font-size: 7.5pt;
+    font-weight: 400;
+    padding: 1px 4px;
+  }
+
+  /* ─ Summary pill cards ─ */
+  .card.border-0.bg-light,
+  .card.border-success {
+    border: 1px solid #aaa !important;
+    border-radius: 0 !important;
+  }
+
+  /* ─ Alerts ─ */
+  .alert {
+    border: 1px solid #aaa !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* ─ Links ─ */
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  /* ─ Bootstrap icons ─ */
+  .bi { display: none !important; }
+
+  /* ─ Tighten vertical spacing ─ */
+  .mb-4 { margin-bottom: 0.8rem !important; }
+}

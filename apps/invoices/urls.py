@@ -62,6 +62,10 @@ from .views import (
     ReportIndexView,
     Report607View,
     Report608View,
+    ReportAgingView,
+    ReportStatementView,
+    ReportSalesByPeriodView,
+    ReportCollectionsView,
 )
 
 app_name = "invoices"
@@ -148,7 +152,13 @@ urlpatterns = [
     path("invoices/ncf/<int:pk>/edit/",            NCFSequenceUpdateView.as_view(), name="ncf_sequence_edit"),
 
     # ── DGII reports ──────────────────────────────────────────────────────────
-    path("invoices/reports/",                      ReportIndexView.as_view(),      name="reports"),
-    path("invoices/reports/607/",                  Report607View.as_view(),        name="report_607"),
-    path("invoices/reports/608/",                  Report608View.as_view(),        name="report_608"),
+    path("invoices/reports/",                      ReportIndexView.as_view(),           name="reports"),
+    path("invoices/reports/607/",                  Report607View.as_view(),             name="report_607"),
+    path("invoices/reports/608/",                  Report608View.as_view(),             name="report_608"),
+
+    # ── Management reports ────────────────────────────────────────────────────
+    path("invoices/reports/aging/",                ReportAgingView.as_view(),           name="report_aging"),
+    path("invoices/reports/statement/",            ReportStatementView.as_view(),       name="report_statement"),
+    path("invoices/reports/sales-by-period/",      ReportSalesByPeriodView.as_view(),   name="report_sales_period"),
+    path("invoices/reports/collections/",          ReportCollectionsView.as_view(),     name="report_collections"),
 ]

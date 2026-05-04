@@ -20,8 +20,13 @@
       <td>{{ c.phone|default:"—" }}</td>
       <td><span class="badge bg-secondary">{{ c.get_default_ncf_type_display }}</span></td>
       <td class="text-center">
-        {% if c.dept_count %}
-          <span class="badge bg-info text-dark">{{ c.dept_count }}</span>
+        {% if c.active_depts %}
+          <span class="badge bg-info text-dark dept-popover"
+                tabindex="0"
+                style="cursor:pointer"
+                data-departments="[{% for d in c.active_depts %}&quot;{{ d.name|escapejs }}&quot;{% if not forloop.last %},{% endif %}{% endfor %}]">
+            {{ c.dept_count }}
+          </span>
         {% else %}
           <span class="text-muted small">—</span>
         {% endif %}

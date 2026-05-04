@@ -114,8 +114,25 @@ document.addEventListener('DOMContentLoaded', function () {
   function applyCustomerDefaults(pk) {
     var defaults = (window.CUSTOMER_DEFAULTS || {})[pk];
     if (!defaults) return;
+
+    // payment_condition
     var condSel = document.querySelector('[name="payment_condition"]');
     if (condSel && defaults.payment_condition) condSel.value = defaults.payment_condition;
+
+    // due_date = issue_date + days_due
+    var daysDue = defaults.days_due || 0;
+    if (daysDue > 0) {
+      var issueDateEl = document.querySelector('[name="issue_date"]');
+      var dueDateEl   = document.querySelector('[name="due_date"]');
+      if (issueDateEl && dueDateEl) {
+        var base = issueDateEl.value ? new Date(issueDateEl.value) : new Date();
+        base.setDate(base.getDate() + daysDue);
+        var yyyy = base.getFullYear();
+        var mm   = String(base.getMonth() + 1).padStart(2, '0');
+        var dd   = String(base.getDate()).padStart(2, '0');
+        dueDateEl.value = yyyy + '-' + mm + '-' + dd;
+      }
+    }
   }
 
   custSel.addEventListener('change', function () { applyCustomerDefaults(this.value); });

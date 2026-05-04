@@ -226,3 +226,16 @@ class PaymentFilter(django_filters.FilterSet):
             self.filters["customer"].queryset = Customer.objects.filter(
                 organization=organization
             ).order_by("name")
+
+
+class CustomerFilter(django_filters.FilterSet):
+    default_ncf_type = django_filters.ChoiceFilter(
+        choices=[("", _("Todos los tipos NCF"))] + NCFType.choices,
+        empty_label=None,
+        label=_("Tipo NCF"),
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+
+    class Meta:
+        model = Customer
+        fields = ["default_ncf_type"]
