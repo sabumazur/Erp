@@ -15,7 +15,13 @@
     {% for c in customers %}
     <tr>
       <td class="fw-semibold"><a href="{% url 'invoices:customer_detail' c.pk %}" class="text-decoration-none">{{ c.name }}</a></td>
-      <td><code>{{ c.rnc_cedula|default:"—" }}</code></td>
+      <td class="text-nowrap">
+        {% if c.rnc_cedula %}
+          {{ c.rnc_cedula }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
       <td>{{ c.email|default:"—" }}</td>
       <td>{{ c.phone|default:"—" }}</td>
       <td><span class="badge bg-secondary">{{ c.get_default_ncf_type_display }}</span></td>

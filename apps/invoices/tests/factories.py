@@ -64,8 +64,8 @@ class PaymentFactory(DjangoModelFactory):
         model = Payment
 
     organization = factory.SubFactory(OrganizationFactory)
-    invoice = factory.SubFactory(InvoiceFactory,
-                                  organization=factory.SelfAttribute("..organization"))
+    customer = factory.SubFactory(CustomerFactory,
+                                   organization=factory.SelfAttribute("..organization"))
     amount = Decimal("1180.00")
     date = factory.LazyFunction(lambda: timezone.now().date())
     method = Payment.Method.TRANSFER

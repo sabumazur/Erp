@@ -16,9 +16,8 @@
       <tbody>
         {% for pmt in payments %}
         <tr>
-          <td class="text-nowrap">
-            <a href="{% url 'invoices:payment_detail' pmt.pk %}"
-               class="text-decoration-none font-monospace small">
+          <td class="font-monospace fw-semibold">
+            <a href="{% url 'invoices:payment_detail' pmt.pk %}" class="text-decoration-none">
               PAG-{{ pmt.pk.hex|slice:":8"|upper }}
             </a>
           </td>

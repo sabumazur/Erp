@@ -1,10 +1,12 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -117,10 +119,95 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/dashboard.html"
 
     def get_context_data(self, **kwargs):
+        from apps.invoices.models import Invoice, Customer, Payment
+
         ctx = super().get_context_data(**kwargs)
-        ctx["breadcrumbs"] = [
-            {"label": _("Dashboard")},
-        ]
+        ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
+
+        org = self.request.organization
+        if not org:
+            return ctx
+
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
+        _zero = Decimal("0")
+        ctx["today"] = today
+
+        _inv = Invoice.invoices.filter(organization=org, deleted_at__isnull=True)
+        _quot = Invoice.quotations.filter(organization=org, deleted_at__isnull=True)
+        _so = Invoice.sale_orders.filter(organization=org, deleted_at__isnull=True)
+
+        # ── KPIs ──────────────────────────────────────────────────────────────
+
+        ctx["month_invoiced"] = (
+            _inv.filter(
+                issue_date__gte=month_start,
+                status__in=[
+                    Invoice.Status.CONFIRMED,
+                    Invoice.Status.SENT,
+                    Invoice.Status.PAID,
+                    Invoice.Status.OVERDUE,
+                ],
+            )
+            .aggregate(t=Sum("total"))["t"] or _zero
+        )
+
+        ctx["month_collected"] = (
+            Payment.objects.for_org(org)
+            .filter(date__gte=month_start)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
+
+        ctx["outstanding"] = (
+            _inv.filter(
+                status__in=[
+                    Invoice.Status.CONFIRMED,
+                    Invoice.Status.SENT,
+                    Invoice.Status.OVERDUE,
+                ],
+            )
+            .aggregate(t=Sum("total"))["t"] or _zero
+        )
+
+        ctx["overdue_total"] = (
+            _inv.filter(status=Invoice.Status.OVERDUE)
+            .aggregate(t=Sum("total"))["t"] or _zero
+        )
+
+        # ── Counts ────────────────────────────────────────────────────────────
+
+        ctx["customer_count"] = Customer.objects.for_org(org).count()
+
+        ctx["pending_quotations"] = _quot.filter(
+            status__in=[Invoice.Status.CONFIRMED, Invoice.Status.SENT],
+        ).count()
+
+        ctx["pending_sale_orders"] = _so.filter(
+            status__in=[Invoice.Status.CONFIRMED, Invoice.Status.DELIVERED],
+        ).count()
+
+        ctx["overdue_count"] = _inv.filter(status=Invoice.Status.OVERDUE).count()
+
+        # ── Tables ────────────────────────────────────────────────────────────
+
+        ctx["recent_invoices"] = (
+            _inv.exclude(status=Invoice.Status.DRAFT)
+            .select_related("customer")
+            .order_by("-issue_date")[:8]
+        )
+
+        ctx["overdue_invoices"] = (
+            _inv.filter(status=Invoice.Status.OVERDUE)
+            .select_related("customer")
+            .order_by("due_date")[:6]
+        )
+
+        ctx["recent_payments"] = (
+            Payment.objects.for_org(org)
+            .select_related("customer")
+            .order_by("-date")[:6]
+        )
+
         return ctx
 
 

@@ -5,6 +5,7 @@ Business-logic services for the invoices app.
 All public functions assume they are called from within a request/view context
 where request.organization is already set.
 """
+import logging
 import uuid
 from datetime import date
 
@@ -20,6 +21,8 @@ from django.db.models.functions import Coalesce as _Coalesce
 from django.db.models import DecimalField as _DecimalField
 
 from .models import DocumentSequence, Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
+
+logger = logging.getLogger(__name__)
 
 
 # ── NCFService ────────────────────────────────────────────────────────────────
@@ -513,7 +516,12 @@ class PaymentService:
             raise ValueError(_("El monto total del pago debe ser mayor a cero."))
 
         _zero = _Decimal("0.00")
+        _dec = _DecimalField(max_digits=14, decimal_places=2)
+        _agg = lambda inv: inv.allocations.aggregate(
+            t=_Coalesce(_Sum("amount"), _zero, output_field=_dec)
+        )["t"]
 
+        # Validate all allocations and cache each invoice's current balance.
         for alloc in allocations:
             inv = alloc["invoice"]
             amt = alloc["amount"]
@@ -524,9 +532,9 @@ class PaymentService:
             if amt <= _zero:
                 raise ValueError(_(f"El monto para {inv.display_number} debe ser mayor a cero."))
 
-            outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
-            already_paid = inv.allocations.aggregate(t=outstanding)["t"]
+            already_paid = _agg(inv)
             balance = inv.total - already_paid
+            alloc["_balance"] = balance  # carry forward — avoids a second DB query
 
             if amt > balance:
                 raise ValueError(
@@ -554,14 +562,16 @@ class PaymentService:
                 amount=amt,
             )
 
-            # Re-check balance including the new allocation and auto-mark PAID
-            outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
-            now_paid = inv.allocations.aggregate(t=outstanding)["t"]
-            if now_paid >= inv.total:
+            # Use the cached balance; subtract the amount just applied.
+            remaining = alloc["_balance"] - amt
+            if remaining <= _zero:
                 try:
                     NCFService.mark_paid(inv)
-                except ValueError:
-                    pass  # Already paid or wrong status — skip silently
+                except ValueError as exc:
+                    logger.warning(
+                        "mark_paid skipped for invoice %s after payment %s: %s",
+                        inv.pk, payment.pk, exc,
+                    )
 
         return payment
 
@@ -598,8 +608,11 @@ class PaymentService:
             if still_paid < inv.total:
                 try:
                     NCFService.reopen(inv)
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.warning(
+                        "reopen skipped for invoice %s after deleting payment %s: %s",
+                        inv_pk, payment.pk, exc,
+                    )
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

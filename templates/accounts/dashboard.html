@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block title %}Dashboard — {{ organization.name }}{% endblock %}
 
@@ -8,52 +9,257 @@
     <h4 class="mb-0 fw-bold">Dashboard</h4>
     <span class="text-muted small">
       <i class="bi bi-building me-1"></i>{{ organization.name }}
-      <span class="badge bg-primary ms-1">{{ membership.role }}</span>
     </span>
+  </div>
+  <span class="text-muted small">{{ today|date:"d/m/Y" }}</span>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="text-muted small mb-1">{% trans "Facturado (mes actual)" %}</div>
+            <div class="fs-4 fw-bold">{{ month_invoiced|floatformat:2 }}</div>
+          </div>
+          <div class="bg-primary bg-opacity-10 rounded-3 p-2">
+            <i class="bi bi-receipt text-primary fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="text-muted small mb-1">{% trans "Cobrado (mes actual)" %}</div>
+            <div class="fs-4 fw-bold text-success">{{ month_collected|floatformat:2 }}</div>
+          </div>
+          <div class="bg-success bg-opacity-10 rounded-3 p-2">
+            <i class="bi bi-cash-stack text-success fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="text-muted small mb-1">{% trans "Por cobrar" %}</div>
+            <div class="fs-4 fw-bold text-warning">{{ outstanding|floatformat:2 }}</div>
+          </div>
+          <div class="bg-warning bg-opacity-10 rounded-3 p-2">
+            <i class="bi bi-hourglass-split text-warning fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="text-muted small mb-1">{% trans "Vencido" %}</div>
+            <div class="fs-4 fw-bold {% if overdue_total %}text-danger{% endif %}">{{ overdue_total|floatformat:2 }}</div>
+          </div>
+          <div class="bg-danger bg-opacity-10 rounded-3 p-2">
+            <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+          </div>
+        </div>
+        {% if overdue_count %}
+        <div class="mt-2 text-danger small">{{ overdue_count }} {% trans "factura(s) vencida(s)" %}</div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Stat pills -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="bg-info bg-opacity-10 rounded-3 p-2">
+          <i class="bi bi-people text-info fs-5"></i>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold">{{ customer_count }}</div>
+          <div class="text-muted small">{% trans "Clientes" %}</div>
+        </div>
+        <a href="{% url 'invoices:customer_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="bg-primary bg-opacity-10 rounded-3 p-2">
+          <i class="bi bi-file-earmark-text text-primary fs-5"></i>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold">{{ pending_quotations }}</div>
+          <div class="text-muted small">{% trans "Cotizaciones activas" %}</div>
+        </div>
+        <a href="{% url 'invoices:quotation_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="bg-warning bg-opacity-10 rounded-3 p-2">
+          <i class="bi bi-cart text-warning fs-5"></i>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold">{{ pending_sale_orders }}</div>
+          <div class="text-muted small">{% trans "Órdenes pendientes" %}</div>
+        </div>
+        <a href="{% url 'invoices:sale_order_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent invoices -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+    <span class="fw-semibold">{% trans "Facturas recientes" %}</span>
+    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-sm btn-outline-primary">{% trans "Ver todas" %}</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>{% trans "N° Factura" %}</th>
+          <th>{% trans "Cliente" %}</th>
+          <th>{% trans "Emisión" %}</th>
+          <th>{% trans "Vence" %}</th>
+          <th>{% trans "Estado" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in recent_invoices %}
+        <tr>
+          <td class="font-monospace fw-semibold">
+            <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none">{{ inv.display_number }}</a>
+          </td>
+          <td>{{ inv.customer.name }}</td>
+          <td class="small text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
+          <td class="small text-nowrap {% if inv.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
+            {{ inv.due_date|date:"d/m/Y"|default:"—" }}
+          </td>
+          <td>
+            {% if inv.status == 'PAID' %}
+              <span class="badge bg-success">{{ inv.get_status_display }}</span>
+            {% elif inv.status == 'OVERDUE' %}
+              <span class="badge bg-danger">{{ inv.get_status_display }}</span>
+            {% elif inv.status == 'CONFIRMED' %}
+              <span class="badge bg-primary">{{ inv.get_status_display }}</span>
+            {% elif inv.status == 'SENT' %}
+              <span class="badge bg-info text-dark">{{ inv.get_status_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ inv.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td class="text-end fw-semibold">{{ inv.total|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay facturas registradas." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Overdue + Recent payments -->
 <div class="row g-3">
-  <div class="col-md-4">
+  <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-body d-flex align-items-center gap-3">
-        <div class="bg-primary bg-opacity-10 rounded-3 p-3">
-          <i class="bi bi-person-fill text-primary fs-4"></i>
-        </div>
-        <div>
-          <div class="text-muted small">Logged in as</div>
-          <div class="fw-semibold">{{ user.full_name }}</div>
-          <div class="text-muted small">{{ user.email }}</div>
-        </div>
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+        <span class="fw-semibold text-danger"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}</span>
+        {% if overdue_count > 6 %}
+        <a href="{% url 'invoices:invoice_list' %}?status=OVERDUE" class="btn btn-sm btn-outline-danger">{% trans "Ver todas" %}</a>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Factura" %}</th>
+              <th>{% trans "Cliente" %}</th>
+              <th class="text-end">{% trans "Días" %}</th>
+              <th class="text-end">{% trans "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in overdue_invoices %}
+            <tr>
+              <td class="font-monospace small">
+                <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none text-danger">{{ inv.display_number }}</a>
+              </td>
+              <td class="small">{{ inv.customer.name }}</td>
+              <td class="text-end small text-danger fw-semibold">{{ inv.days_overdue }}</td>
+              <td class="text-end fw-semibold small">{{ inv.total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">
+                <i class="bi bi-check-circle text-success me-1"></i>{% trans "Sin facturas vencidas." %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-body d-flex align-items-center gap-3">
-        <div class="bg-success bg-opacity-10 rounded-3 p-3">
-          <i class="bi bi-building text-success fs-4"></i>
-        </div>
-        <div>
-          <div class="text-muted small">Active workspace</div>
-          <div class="fw-semibold">{{ organization.name }}</div>
-          <div class="text-muted small">{{ membership.get_role_display }}</div>
-        </div>
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+        <span class="fw-semibold">{% trans "Pagos recientes" %}</span>
+        <a href="{% url 'invoices:payment_list' %}" class="btn btn-sm btn-outline-secondary">{% trans "Ver todos" %}</a>
       </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body d-flex align-items-center gap-3">
-        <div class="bg-warning bg-opacity-10 rounded-3 p-3">
-          <i class="bi bi-people-fill text-warning fs-4"></i>
-        </div>
-        <div>
-          <div class="text-muted small">Team</div>
-          <div class="fw-semibold">{{ membership.team.name|default:"No team assigned" }}</div>
-        </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Fecha" %}</th>
+              <th>{% trans "Cliente" %}</th>
+              <th>{% trans "Método" %}</th>
+              <th class="text-end">{% trans "Monto" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pmt in recent_payments %}
+            <tr>
+              <td class="small text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
+              <td class="small">
+                <a href="{% url 'invoices:customer_detail' pmt.customer.pk %}" class="text-decoration-none">{{ pmt.customer.name }}</a>
+              </td>
+              <td class="small">
+                <span class="badge {% if pmt.method == 'TRANSFER' %}bg-info text-dark{% elif pmt.method == 'CASH' %}bg-success{% else %}bg-secondary{% endif %}">
+                  {{ pmt.get_method_display }}
+                </span>
+              </td>
+              <td class="text-end fw-semibold text-success small">{{ pmt.amount|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">{% trans "Sin pagos recientes." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

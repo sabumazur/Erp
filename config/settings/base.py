@@ -27,7 +27,6 @@ THIRD_PARTY_APPS = [
     "django_htmx",
     "django_filters",
     "simple_history",
-    "rest_framework",
 ]
 
 LOCAL_APPS = [
@@ -113,6 +112,10 @@ LOGIN_REDIRECT_URL = "accounts:dashboard"
 LOGOUT_REDIRECT_URL = "account_login"
 LOGIN_URL = "account_login"
 
+ACCOUNT_RATE_LIMITS = {
+    "login_failed": "5/300s",  # lock out after 5 failed attempts within 5 minutes
+}
+
 # ── Crispy ────────────────────────────────────────────────────────────────────
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -129,7 +132,7 @@ LANGUAGES = [
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Santo_Domingo"
 USE_I18N = True
 USE_TZ = True
 

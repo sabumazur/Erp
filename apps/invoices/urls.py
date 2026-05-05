@@ -51,10 +51,12 @@ from .views import (
     PaymentDetailView,
     PaymentDeleteView,
     OutstandingInvoicesView,
-    # HTMX
+    # HTMX helpers
     InvoiceItemRowView,
     RNCLookupView,
     CustomerDepartmentsView,
+    CustomerDefaultsView,
+    ItemCatalogView,
     # NCF sequences
     NCFSequenceListView,
     NCFSequenceUpdateView,
@@ -142,10 +144,12 @@ urlpatterns = [
     path("payments/<uuid:pk>/delete/",             PaymentDeleteView.as_view(),    name="payment_delete"),
 
     # ── HTMX helpers ──────────────────────────────────────────────────────────
-    path("invoices/items/row/",                    InvoiceItemRowView.as_view(),   name="item_row"),
-    path("invoices/rnc-lookup/",                   RNCLookupView.as_view(),        name="rnc_lookup"),
+    path("invoices/items/row/",                    InvoiceItemRowView.as_view(),      name="item_row"),
+    path("invoices/rnc-lookup/",                   RNCLookupView.as_view(),           name="rnc_lookup"),
     path("invoices/customers/departments/",        CustomerDepartmentsView.as_view(), name="departments_for_customer"),
     path("payments/outstanding-invoices/",         OutstandingInvoicesView.as_view(), name="payment_outstanding_invoices"),
+    path("invoices/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
+    path("invoices/items/catalog/",                ItemCatalogView.as_view(),         name="item_catalog"),
 
     # ── NCF sequences ─────────────────────────────────────────────────────────
     path("invoices/ncf/",                          NCFSequenceListView.as_view(),  name="ncf_sequences"),

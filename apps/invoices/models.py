@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
 
 from apps.core.models import ERPBaseModel
 
@@ -27,7 +28,16 @@ class NCFType(models.IntegerChoices):
 
 
 class PaymentTerm(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name=_("nombre"))
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="payment_terms",
+        verbose_name=_("organización"),
+        help_text=_("Dejar en blanco para términos globales compartidos entre organizaciones."),
+    )
+    name = models.CharField(max_length=100, verbose_name=_("nombre"))
     description = models.CharField(max_length=255, blank=True, verbose_name=_("descripción"))
     days_due = models.PositiveIntegerField(
         default=0,
@@ -40,12 +50,20 @@ class PaymentTerm(models.Model):
         verbose_name = _("término de pago")
         verbose_name_plural = _("términos de pago")
         ordering = ["days_due", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "name"],
+                condition=models.Q(organization__isnull=False),
+                name="unique_payment_term_name_per_org",
+            ),
+        ]
 
     def __str__(self):
         return self.name
 
 
 class PaymentMethod(models.TextChoices):
+    CASH     = "CASH",     _("Efectivo")
     CHECK    = "CHECK",    _("Cheque")
     TRANSFER = "TRANSFER", _("Transferencia bancaria")
 
@@ -128,6 +146,8 @@ class Customer(ERPBaseModel):
                 name="unique_active_customer_rnc_per_org",
             )
         ]
+
+    history = HistoricalRecords()
 
     def __str__(self):
         return self.name
@@ -665,9 +685,25 @@ class Invoice(ERPBaseModel):
     quotations = QuotationManager()        # doc_type=QUOTATION
     sale_orders = SaleOrderManager()       # doc_type=SALE_ORDER
 
+    history = HistoricalRecords()
+
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("documento")
         verbose_name_plural = _("documentos")
+        indexes = [
+            models.Index(
+                fields=["organization", "doc_type", "status"],
+                name="invoice_org_doctype_status_idx",
+            ),
+            models.Index(
+                fields=["organization", "customer", "status"],
+                name="inv_org_customer_status_idx",
+            ),
+            models.Index(
+                fields=["organization", "due_date", "status"],
+                name="invoice_org_duedate_status_idx",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "encf"],
@@ -922,6 +958,8 @@ class Payment(ERPBaseModel):
         help_text=_("Número de cheque o confirmación de transferencia bancaria."),
     )
     notes = models.TextField(blank=True, verbose_name=_("notas"))
+
+    history = HistoricalRecords()
 
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("pago")
