@@ -130,6 +130,40 @@
   </div>
 </div>
 
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <span class="fw-semibold">{% trans "Facturación vs Cobros (últimos 6 meses)" %}</span>
+      </div>
+      <div class="card-body">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <span class="fw-semibold">{% trans "Facturación por cliente (últimos 6 meses)" %}</span>
+      </div>
+      <div class="card-body">
+        <canvas id="customerChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent py-3">
+        <span class="fw-semibold">{% trans "Estado de facturas" %}</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="statusChart" style="max-height:240px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Recent invoices -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
@@ -264,4 +298,90 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_months|json_script:"chart-months" }}
+{{ chart_invoiced|json_script:"chart-invoiced" }}
+{{ chart_collected|json_script:"chart-collected" }}
+{{ chart_status_labels|json_script:"chart-status-labels" }}
+{{ chart_status_counts|json_script:"chart-status-counts" }}
+{{ chart_status_colors|json_script:"chart-status-colors" }}
+{{ chart_customer_datasets|json_script:"chart-customer-datasets" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var months      = JSON.parse(document.getElementById('chart-months').textContent);
+  var invoiced    = JSON.parse(document.getElementById('chart-invoiced').textContent);
+  var collected   = JSON.parse(document.getElementById('chart-collected').textContent);
+  var stLabels    = JSON.parse(document.getElementById('chart-status-labels').textContent);
+  var stCounts    = JSON.parse(document.getElementById('chart-status-counts').textContent);
+  var stColors       = JSON.parse(document.getElementById('chart-status-colors').textContent);
+  var custDatasets   = JSON.parse(document.getElementById('chart-customer-datasets').textContent);
+
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: '{% trans "Facturado" %}',
+          data: invoiced,
+          backgroundColor: 'rgba(13,110,253,0.75)',
+          borderRadius: 4,
+        },
+        {
+          label: '{% trans "Cobrado" %}',
+          data: collected,
+          backgroundColor: 'rgba(25,135,84,0.75)',
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true, ticks: { maxTicksLimit: 6 } } },
+    },
+  });
+
+  if (stCounts.length) {
+    new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: stLabels,
+        datasets: [{ data: stCounts, backgroundColor: stColors, borderWidth: 2 }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
+      },
+    });
+  } else {
+    document.getElementById('statusChart').closest('.card-body').innerHTML =
+      '<p class="text-muted small text-center mb-0">{% trans "Sin facturas registradas." %}</p>';
+  }
+
+  if (custDatasets.length) {
+    new Chart(document.getElementById('customerChart'), {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: custDatasets,
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, beginAtZero: true, ticks: { maxTicksLimit: 6 } },
+        },
+      },
+    });
+  } else {
+    document.getElementById('customerChart').closest('.card-body').innerHTML =
+      '<p class="text-muted small text-center py-3 mb-0">{% trans "Sin datos de clientes." %}</p>';
+  }
+})();
+</script>
 {% endblock %}

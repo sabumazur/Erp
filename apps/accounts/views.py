@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -207,6 +207,134 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .select_related("customer")
             .order_by("-date")[:6]
         )
+
+        # ── Charts ────────────────────────────────────────────────────────────
+
+        from django.db.models.functions import TruncMonth
+
+        _MONTH_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                     "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+
+        months_list = []
+        y, mo = today.year, today.month
+        for i in range(5, -1, -1):
+            m_off = mo - i
+            y_off = y
+            while m_off <= 0:
+                m_off += 12
+                y_off -= 1
+            months_list.append(date(y_off, m_off, 1))
+
+        six_months_ago = months_list[0]
+
+        inv_by_month = {
+            row["month"]: float(row["total"])
+            for row in _inv.filter(
+                issue_date__gte=six_months_ago,
+                status__in=[
+                    Invoice.Status.CONFIRMED,
+                    Invoice.Status.SENT,
+                    Invoice.Status.PAID,
+                    Invoice.Status.OVERDUE,
+                ],
+            )
+            .annotate(month=TruncMonth("issue_date"))
+            .values("month")
+            .annotate(total=Sum("total"))
+        }
+
+        pay_by_month = {
+            row["month"]: float(row["total"])
+            for row in Payment.objects.for_org(org)
+            .filter(date__gte=six_months_ago)
+            .annotate(month=TruncMonth("date"))
+            .values("month")
+            .annotate(total=Sum("amount"))
+        }
+
+        ctx["chart_months"] = [f"{_MONTH_ES[m.month - 1]} {m.year}" for m in months_list]
+        ctx["chart_invoiced"] = [inv_by_month.get(m, 0.0) for m in months_list]
+        ctx["chart_collected"] = [pay_by_month.get(m, 0.0) for m in months_list]
+
+        _STATUS_LABELS = {
+            Invoice.Status.CONFIRMED: "Confirmada",
+            Invoice.Status.SENT: "Enviada",
+            Invoice.Status.PAID: "Pagada",
+            Invoice.Status.OVERDUE: "Vencida",
+            Invoice.Status.DRAFT: "Borrador",
+        }
+        _STATUS_COLORS = {
+            Invoice.Status.CONFIRMED: "#0d6efd",
+            Invoice.Status.SENT: "#0dcaf0",
+            Invoice.Status.PAID: "#198754",
+            Invoice.Status.OVERDUE: "#dc3545",
+            Invoice.Status.DRAFT: "#adb5bd",
+        }
+
+        status_counts_qs = {
+            row["status"]: row["count"]
+            for row in _inv.values("status").annotate(count=Count("id"))
+        }
+        ordered_statuses = [s for s in _STATUS_LABELS if status_counts_qs.get(s, 0) > 0]
+
+        ctx["chart_status_labels"] = [_STATUS_LABELS[s] for s in ordered_statuses]
+        ctx["chart_status_counts"] = [status_counts_qs[s] for s in ordered_statuses]
+        ctx["chart_status_colors"] = [_STATUS_COLORS[s] for s in ordered_statuses]
+
+        # ── Customer chart: top 6 by invoiced amount, monthly breakdown ───────
+
+        _CUSTOMER_COLORS = [
+            "rgba(13,110,253,0.8)",
+            "rgba(25,135,84,0.8)",
+            "rgba(255,193,7,0.8)",
+            "rgba(220,53,69,0.8)",
+            "rgba(13,202,240,0.8)",
+            "rgba(111,66,193,0.8)",
+        ]
+
+        _inv_status_filter = [
+            Invoice.Status.CONFIRMED,
+            Invoice.Status.SENT,
+            Invoice.Status.PAID,
+            Invoice.Status.OVERDUE,
+        ]
+
+        top_customers = list(
+            _inv.filter(issue_date__gte=six_months_ago, status__in=_inv_status_filter)
+            .values("customer__id", "customer__name")
+            .annotate(total=Sum("total"))
+            .order_by("-total")[:6]
+        )
+
+        if top_customers:
+            top_ids = [c["customer__id"] for c in top_customers]
+
+            cust_monthly = (
+                _inv.filter(
+                    issue_date__gte=six_months_ago,
+                    status__in=_inv_status_filter,
+                    customer__id__in=top_ids,
+                )
+                .annotate(month=TruncMonth("issue_date"))
+                .values("customer__id", "month")
+                .annotate(total=Sum("total"))
+            )
+
+            cust_data = {cid: {} for cid in top_ids}
+            for row in cust_monthly:
+                cust_data[row["customer__id"]][row["month"]] = float(row["total"])
+
+            ctx["chart_customer_datasets"] = [
+                {
+                    "label": c["customer__name"],
+                    "data": [cust_data[c["customer__id"]].get(m, 0.0) for m in months_list],
+                    "backgroundColor": _CUSTOMER_COLORS[i % len(_CUSTOMER_COLORS)],
+                    "borderRadius": 3,
+                }
+                for i, c in enumerate(top_customers)
+            ]
+        else:
+            ctx["chart_customer_datasets"] = []
 
         return ctx
 
