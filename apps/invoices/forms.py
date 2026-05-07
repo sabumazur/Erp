@@ -225,10 +225,8 @@ class InvoiceForm(forms.ModelForm):
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
-            "terms": forms.TextInput(
-                attrs={"placeholder": _("Términos y condiciones…")}
-            ),
+            "notes": forms.TextInput(),
+            "terms": forms.TextInput(),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -241,7 +239,7 @@ class InvoiceForm(forms.ModelForm):
         # Only Factura de Crédito Fiscal is used — lock the field.
         # Django's disabled=True means the submitted value is ignored and the
         # model default (CREDITO_FISCAL) is always used instead.
-        self.fields["ncf_type"].disabled = True
+        # self.fields["ncf_type"].disabled = True
 
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -280,10 +278,8 @@ class QuotationForm(forms.ModelForm):
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "valid_until": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
-            "terms": forms.TextInput(
-                attrs={"placeholder": _("Términos y condiciones…")}
-            ),
+            "notes": forms.TextInput(),
+            "terms": forms.TextInput(),
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -333,7 +329,7 @@ class SaleOrderForm(forms.ModelForm):
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "delivery_date": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.TextInput(attrs={"placeholder": _("Notas internas…")}),
+            "notes": forms.TextInput(),
         }
 
     def __init__(self, organization=None, *args, **kwargs):

@@ -16,13 +16,13 @@ from apps.core.models import ERPBaseModel
 
 class NCFType(models.IntegerChoices):
     CREDITO_FISCAL = 31, _("31 – Factura de Crédito Fiscal")
+    GUBERNAMENTAL = 45, _("45 – Gubernamental")
     CONSUMO = 32, _("32 – Factura de Consumo")
     NOTA_DEBITO = 33, _("33 – Nota de Débito")
     NOTA_CREDITO = 34, _("34 – Nota de Crédito")
     COMPRAS = 41, _("41 – Comprobante de Compras")
     GASTOS_MENORES = 43, _("43 – Gastos Menores")
     REG_ESPECIALES = 44, _("44 – Regímenes Especiales")
-    GUBERNAMENTAL = 45, _("45 – Gubernamental")
     EXPORTACIONES = 46, _("46 – Exportaciones")
     PAGOS_EXTERIOR = 47, _("47 – Pagos al Exterior")
 
@@ -120,7 +120,7 @@ class Customer(ERPBaseModel):
         null=True,
         blank=True,
         verbose_name=_("límite de crédito"),
-        help_text=_("Monto máximo de crédito autorizado. Dejar en blanco para sin límite."),
+        help_text=_("Dejar en blanco para sin límite."),
     )
     payment_term = models.ForeignKey(
         PaymentTerm,
@@ -133,7 +133,7 @@ class Customer(ERPBaseModel):
     default_ncf_type = models.IntegerField(
         choices=NCFType.choices,
         default=NCFType.CREDITO_FISCAL,
-        verbose_name=_("tipo de comprobante por defecto"),
+        verbose_name=_("tipo de comprobante"),
     )
 
     class Meta(ERPBaseModel.Meta):
