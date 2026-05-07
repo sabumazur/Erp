@@ -16,26 +16,26 @@ from apps.core.models import ERPBaseModel
 
 class NCFType(models.IntegerChoices):
     # ── Físico (B-series, comprobantes tradicionales) ─────────────────────────
-    B01_CREDITO_FISCAL = 1,  _("01 – Crédito Fiscal")
-    B02_CONSUMO        = 2,  _("02 – Consumo")
-    B03_NOTA_DEBITO    = 3,  _("03 – Nota de Débito")
-    B04_NOTA_CREDITO   = 4,  _("04 – Nota de Crédito")
-    B11_PROVEEDORES    = 11, _("11 – Proveedores Informales")
+    B01_CREDITO_FISCAL = 1, _("01 – Crédito Fiscal")
+    B02_CONSUMO = 2, _("02 – Consumo")
+    B03_NOTA_DEBITO = 3, _("03 – Nota de Débito")
+    B04_NOTA_CREDITO = 4, _("04 – Nota de Crédito")
+    B11_PROVEEDORES = 11, _("11 – Proveedores Informales")
     B12_GASTOS_MENORES = 12, _("12 – Gastos Menores")
     B13_REG_ESPECIALES = 13, _("13 – Regímenes Especiales")
-    B14_GUBERNAMENTAL  = 14, _("14 – Gubernamental")
-    B15_EXPORTACIONES  = 15, _("15 – Exportaciones")
+    B14_GUBERNAMENTAL = 14, _("14 – Gubernamental")
+    B15_EXPORTACIONES = 15, _("15 – Exportaciones")
     B16_PAGOS_EXTERIOR = 16, _("16 – Pagos al Exterior")
     # ── Electrónico (E-series, e-CF) ──────────────────────────────────────────
     CREDITO_FISCAL = 31, _("31 – Crédito Fiscal (e-CF)")
-    CONSUMO        = 32, _("32 – Consumo (e-CF)")
-    NOTA_DEBITO    = 33, _("33 – Nota de Débito (e-CF)")
-    NOTA_CREDITO   = 34, _("34 – Nota de Crédito (e-CF)")
-    COMPRAS        = 41, _("41 – Comprobante de Compras (e-CF)")
+    CONSUMO = 32, _("32 – Consumo (e-CF)")
+    NOTA_DEBITO = 33, _("33 – Nota de Débito (e-CF)")
+    NOTA_CREDITO = 34, _("34 – Nota de Crédito (e-CF)")
+    COMPRAS = 41, _("41 – Comprobante de Compras (e-CF)")
     GASTOS_MENORES = 43, _("43 – Gastos Menores (e-CF)")
     REG_ESPECIALES = 44, _("44 – Regímenes Especiales (e-CF)")
-    GUBERNAMENTAL  = 45, _("45 – Gubernamental (e-CF)")
-    EXPORTACIONES  = 46, _("46 – Exportaciones (e-CF)")
+    GUBERNAMENTAL = 45, _("45 – Gubernamental (e-CF)")
+    EXPORTACIONES = 46, _("46 – Exportaciones (e-CF)")
     PAGOS_EXTERIOR = 47, _("47 – Pagos al Exterior (e-CF)")
 
 
@@ -47,10 +47,14 @@ class PaymentTerm(models.Model):
         blank=True,
         related_name="payment_terms",
         verbose_name=_("organización"),
-        help_text=_("Dejar en blanco para términos globales compartidos entre organizaciones."),
+        help_text=_(
+            "Dejar en blanco para términos globales compartidos entre organizaciones."
+        ),
     )
     name = models.CharField(max_length=100, verbose_name=_("nombre"))
-    description = models.CharField(max_length=255, blank=True, verbose_name=_("descripción"))
+    description = models.CharField(
+        max_length=255, blank=True, verbose_name=_("descripción")
+    )
     days_due = models.PositiveIntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(365)],
@@ -75,8 +79,8 @@ class PaymentTerm(models.Model):
 
 
 class PaymentMethod(models.TextChoices):
-    CASH     = "CASH",     _("Efectivo")
-    CHECK    = "CHECK",    _("Cheque")
+    CASH = "CASH", _("Efectivo")
+    CHECK = "CHECK", _("Cheque")
     TRANSFER = "TRANSFER", _("Transferencia bancaria")
 
 
@@ -166,6 +170,7 @@ class Customer(ERPBaseModel):
 
     def clean(self):
         from .validators import validate_rnc_cedula
+
         if self.rnc_cedula:
             validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
 
@@ -254,13 +259,13 @@ class NCFSequence(models.Model):
     """
 
     # Physical NCF type codes (B-series, 01-16)
-    PHYSICAL_TYPES  = {1, 2, 3, 4, 11, 12, 13, 14, 15, 16}
+    PHYSICAL_TYPES = {1, 2, 3, 4, 11, 12, 13, 14, 15, 16}
     # Electronic NCF type codes (E-series, 31-47)
     ELECTRONIC_TYPES = {31, 32, 33, 34, 41, 43, 44, 45, 46, 47}
 
     class Series(models.TextChoices):
-        PHYSICAL    = "B", _("B – Físico (comprobante tradicional)")
-        ELECTRONIC  = "E", _("E – Electrónico (e-CF)")
+        PHYSICAL = "B", _("B – Físico (comprobante tradicional)")
+        ELECTRONIC = "E", _("E – Electrónico (e-CF)")
 
     organization = models.ForeignKey(
         "accounts.Organization",
@@ -277,7 +282,6 @@ class NCFSequence(models.Model):
         choices=Series.choices,
         default=Series.PHYSICAL,
         verbose_name=_("serie"),
-        help_text=_("'B' para comprobantes físicos (01–16). 'E' para electrónicos (31–47)."),
     )
     current_seq = models.PositiveIntegerField(
         default=0, verbose_name=_("secuencia actual")
@@ -372,11 +376,11 @@ class DocumentSequence(models.Model):
     """
 
     class DocType(models.TextChoices):
-        QUOTATION   = "QUOTATION",   _("Cotización")
-        SALE_ORDER  = "SALE_ORDER",  _("Orden de Venta")
+        QUOTATION = "QUOTATION", _("Cotización")
+        SALE_ORDER = "SALE_ORDER", _("Orden de Venta")
 
     PREFIX = {
-        "QUOTATION":  "COT",
+        "QUOTATION": "COT",
         "SALE_ORDER": "OV",
     }
 
@@ -457,20 +461,16 @@ class InvoiceQuerySet(models.QuerySet):
             90_plus  — more than 90 days past due
         """
         from django.db.models import Case, When, Value, CharField
+
         today = date.today()
         # NOTE: named aging_bucket_db to avoid shadowing the @property on Invoice
         return self.annotate(
             aging_bucket_db=Case(
-                When(due_date__isnull=True,
-                     then=Value("current")),
-                When(due_date__gte=today,
-                     then=Value("current")),
-                When(due_date__gte=today - timedelta(days=30),
-                     then=Value("1_30")),
-                When(due_date__gte=today - timedelta(days=60),
-                     then=Value("31_60")),
-                When(due_date__gte=today - timedelta(days=90),
-                     then=Value("61_90")),
+                When(due_date__isnull=True, then=Value("current")),
+                When(due_date__gte=today, then=Value("current")),
+                When(due_date__gte=today - timedelta(days=30), then=Value("1_30")),
+                When(due_date__gte=today - timedelta(days=60), then=Value("31_60")),
+                When(due_date__gte=today - timedelta(days=90), then=Value("61_90")),
                 default=Value("90_plus"),
                 output_field=CharField(max_length=10),
             )
@@ -502,41 +502,40 @@ class SaleOrderManager(models.Manager):
 
 
 class Invoice(ERPBaseModel):
-
     class DocType(models.TextChoices):
-        INVOICE     = "INVOICE",    _("Factura")
-        QUOTATION   = "QUOTATION",  _("Cotización")
-        SALE_ORDER  = "SALE_ORDER", _("Orden de Venta")
+        INVOICE = "INVOICE", _("Factura")
+        QUOTATION = "QUOTATION", _("Cotización")
+        SALE_ORDER = "SALE_ORDER", _("Orden de Venta")
 
     class Status(models.TextChoices):
         # ── Shared ───────────────────────────────────────────────
-        DRAFT       = "DRAFT",      _("Borrador")
-        CONFIRMED   = "CONFIRMED",  _("Confirmada")
-        CANCELLED   = "CANCELLED",  _("Anulada")
+        DRAFT = "DRAFT", _("Borrador")
+        CONFIRMED = "CONFIRMED", _("Confirmada")
+        CANCELLED = "CANCELLED", _("Anulada")
         # ── Invoice ──────────────────────────────────────────────
-        SENT        = "SENT",       _("Enviada")
-        PAID        = "PAID",       _("Pagada")
-        OVERDUE     = "OVERDUE",    _("Vencida")
+        SENT = "SENT", _("Enviada")
+        PAID = "PAID", _("Pagada")
+        OVERDUE = "OVERDUE", _("Vencida")
         # ── Quotation ────────────────────────────────────────────
-        ACCEPTED    = "ACCEPTED",   _("Aceptada")
-        REJECTED    = "REJECTED",   _("Rechazada")
-        EXPIRED     = "EXPIRED",    _("Expirada")
-        CONVERTED   = "CONVERTED",  _("Convertida")
+        ACCEPTED = "ACCEPTED", _("Aceptada")
+        REJECTED = "REJECTED", _("Rechazada")
+        EXPIRED = "EXPIRED", _("Expirada")
+        CONVERTED = "CONVERTED", _("Convertida")
         # ── Sale Order ───────────────────────────────────────────
-        DELIVERED   = "DELIVERED",  _("Entregada")
-        INVOICED    = "INVOICED",   _("Facturada")
+        DELIVERED = "DELIVERED", _("Entregada")
+        INVOICED = "INVOICED", _("Facturada")
 
     class PaymentCondition(models.TextChoices):
-        CASH   = "CASH",   _("Contado")
+        CASH = "CASH", _("Contado")
         CREDIT = "CREDIT", _("Crédito")
-        FREE   = "FREE",   _("Gratuito")
-        OTHER  = "OTHER",  _("Otro")
+        FREE = "FREE", _("Gratuito")
+        OTHER = "OTHER", _("Otro")
 
     class AgingBucket(models.TextChoices):
-        CURRENT    = "current",  _("Corriente")
-        DAYS_1_30  = "1_30",     _("1–30 días")
-        DAYS_31_60 = "31_60",    _("31–60 días")
-        DAYS_61_90 = "61_90",    _("61–90 días")
+        CURRENT = "current", _("Corriente")
+        DAYS_1_30 = "1_30", _("1–30 días")
+        DAYS_31_60 = "31_60", _("31–60 días")
+        DAYS_61_90 = "61_90", _("61–90 días")
         DAYS_90_PLUS = "90_plus", _("Más de 90 días")
 
     class Currency(models.TextChoices):
@@ -545,7 +544,7 @@ class Invoice(ERPBaseModel):
         EUR = "EUR", _("Euro (EUR)")
 
     class DGIIStatus(models.TextChoices):
-        PENDING  = "PENDING",  _("Pendiente")
+        PENDING = "PENDING", _("Pendiente")
         ACCEPTED = "ACCEPTED", _("Aceptada")
         REJECTED = "REJECTED", _("Rechazada")
 
@@ -601,7 +600,9 @@ class Invoice(ERPBaseModel):
         max_length=20,
         blank=True,
         verbose_name=_("número de documento"),
-        help_text=_("Asignado automáticamente al confirmar (COT-YYYY-NNNN / OV-YYYY-NNNN)."),
+        help_text=_(
+            "Asignado automáticamente al confirmar (COT-YYYY-NNNN / OV-YYYY-NNNN)."
+        ),
         db_index=True,
     )
 
@@ -635,7 +636,9 @@ class Invoice(ERPBaseModel):
         blank=True,
         related_name="sale_orders",
         verbose_name=_("departamento de entrega"),
-        help_text=_("Departamento o sucursal del cliente al que se entrega esta orden."),
+        help_text=_(
+            "Departamento o sucursal del cliente al que se entrega esta orden."
+        ),
     )
     delivery_date = models.DateField(
         null=True,
@@ -713,8 +716,8 @@ class Invoice(ERPBaseModel):
     terms = models.TextField(blank=True, verbose_name=_("términos y condiciones"))
 
     # ── DGII e-CF submission (Phase 2) ────────────────────────────────────────
-    xml_content  = models.TextField(blank=True, verbose_name=_("XML e-CF"))
-    dgii_status  = models.CharField(
+    xml_content = models.TextField(blank=True, verbose_name=_("XML e-CF"))
+    dgii_status = models.CharField(
         max_length=10,
         choices=DGIIStatus.choices,
         default=DGIIStatus.PENDING,
@@ -725,10 +728,10 @@ class Invoice(ERPBaseModel):
     )
 
     # ── Managers ──────────────────────────────────────────────────────────────
-    objects    = models.Manager()          # all documents (default)
-    invoices   = InvoiceManager()          # doc_type=INVOICE
-    quotations = QuotationManager()        # doc_type=QUOTATION
-    sale_orders = SaleOrderManager()       # doc_type=SALE_ORDER
+    objects = models.Manager()  # all documents (default)
+    invoices = InvoiceManager()  # doc_type=INVOICE
+    quotations = QuotationManager()  # doc_type=QUOTATION
+    sale_orders = SaleOrderManager()  # doc_type=SALE_ORDER
 
     history = HistoricalRecords()
 
@@ -852,8 +855,10 @@ class Invoice(ERPBaseModel):
             return
 
         _nota_types = (
-            NCFType.B03_NOTA_DEBITO, NCFType.B04_NOTA_CREDITO,
-            NCFType.NOTA_DEBITO, NCFType.NOTA_CREDITO,
+            NCFType.B03_NOTA_DEBITO,
+            NCFType.B04_NOTA_CREDITO,
+            NCFType.NOTA_DEBITO,
+            NCFType.NOTA_CREDITO,
         )
         _credito_fiscal_types = (NCFType.B01_CREDITO_FISCAL, NCFType.CREDITO_FISCAL)
 
@@ -861,7 +866,9 @@ class Invoice(ERPBaseModel):
         if self.ncf_type in _nota_types:
             if not self.encf_modified_id:
                 raise ValidationError(
-                    _("Las Notas de Crédito y Débito deben referenciar el NCF afectado.")
+                    _(
+                        "Las Notas de Crédito y Débito deben referenciar el NCF afectado."
+                    )
                 )
         # Crédito Fiscal requires buyer RNC
         if self.ncf_type in _credito_fiscal_types:
@@ -973,6 +980,7 @@ class Payment(ERPBaseModel):
 
     Accepted methods: bank transfer or cheque only.
     """
+
     Method = PaymentMethod
 
     organization = models.ForeignKey(
@@ -988,7 +996,8 @@ class Payment(ERPBaseModel):
         verbose_name=_("cliente"),
     )
     amount = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         verbose_name=_("monto total recibido"),
     )
     date = models.DateField(default=timezone.now, verbose_name=_("fecha de pago"))
@@ -1020,6 +1029,7 @@ class Payment(ERPBaseModel):
     def allocated_total(self) -> Decimal:
         """Sum of all allocations. Should equal self.amount when fully applied."""
         from django.db.models import Sum
+
         result = self.allocations.aggregate(t=Sum("amount"))["t"]
         return result or Decimal("0.00")
 
@@ -1038,6 +1048,7 @@ class PaymentAllocation(models.Model):
     Invariant: sum(allocations.amount) for a payment == payment.amount
     Invariant: allocation.amount <= invoice.outstanding_balance at time of creation
     """
+
     payment = models.ForeignKey(
         Payment,
         on_delete=models.CASCADE,
@@ -1051,7 +1062,8 @@ class PaymentAllocation(models.Model):
         verbose_name=_("factura"),
     )
     amount = models.DecimalField(
-        max_digits=14, decimal_places=2,
+        max_digits=14,
+        decimal_places=2,
         verbose_name=_("monto aplicado"),
     )
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
@@ -39,13 +39,13 @@
               <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
                  class="text-decoration-none font-monospace d-block">
                 {{ alloc.invoice.display_number }}
-                <span class="text-muted">({{ alloc.amount|floatformat:2 }})</span>
+                <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
               </a>
             {% empty %}
               <span class="text-muted">—</span>
             {% endfor %}
           </td>
-          <td class="text-end fw-semibold text-success">{{ pmt.amount|floatformat:2 }}</td>
+          <td class="text-end fw-semibold text-success">{{ pmt.amount|floatformat:2|intcomma }}</td>
         </tr>
         {% empty %}
         <tr>
@@ -57,7 +57,7 @@
       <tfoot class="table-light">
         <tr>
           <td colspan="6" class="text-end fw-bold">{% trans "Total" %}</td>
-          <td class="text-end fw-bold text-success">{{ total|floatformat:2 }}</td>
+          <td class="text-end fw-bold text-success">{{ total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
       {% endif %}

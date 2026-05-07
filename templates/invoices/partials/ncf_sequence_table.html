@@ -1,0 +1,69 @@
+{% load i18n humanize %}
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>{% trans "Tipo" %}</th>
+          <th>{% trans "Serie" %}</th>
+          <th class="text-end">{% trans "Actual" %}</th>
+          <th class="text-end">{% trans "Máximo" %}</th>
+          <th class="text-end">{% trans "Disponibles" %}</th>
+          <th class="text-center">{% trans "Próximo NCF" %}</th>
+          <th class="text-center">{% trans "Activa" %}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for seq in sequences %}
+        <tr>
+          <td class="small">{{ seq.get_ncf_type_display }}</td>
+          <td>
+            <span class="badge {% if seq.series == 'B' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+              {{ seq.series }}
+            </span>
+          </td>
+          <td class="text-end font-monospace">{{ seq.current_seq }}</td>
+          <td class="text-end font-monospace">{{ seq.max_seq }}</td>
+          <td class="text-end">
+            <span class="{% if seq.remaining < 100 %}text-danger fw-bold{% elif seq.remaining < 500 %}text-warning{% endif %}">
+              {{ seq.remaining }}
+            </span>
+          </td>
+          <td class="font-monospace fw-semibold text-center">{{ seq.preview_next }}</td>
+          <td class="text-center">
+            {% if seq.is_active %}
+              <span class="badge bg-success">{% trans "Sí" %}</span>
+            {% else %}
+              <span class="badge bg-secondary">{% trans "No" %}</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
+                 class="btn btn-outline-secondary">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% if seq.current_seq == 0 %}
+              <form method="post" action="{% url 'invoices:ncf_sequence_delete' seq.pk %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-outline-danger"
+                        onclick="confirmDeleteNCF(this)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            {% trans "No hay secuencias registradas." %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

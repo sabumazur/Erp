@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
@@ -29,7 +29,7 @@
               </span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-end fw-semibold">{{ q.total|floatformat:2 }}</td>
+          <td class="text-end fw-semibold">{{ q.total|floatformat:2|intcomma }}</td>
           <td class="text-center">
             {% include "invoices/partials/status_badge.html" with status=q.status %}
           </td>

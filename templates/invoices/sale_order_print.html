@@ -1,4 +1,4 @@
-{% load i18n %}<!DOCTYPE html>
+{% load i18n humanize %}<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -178,10 +178,10 @@
       <tr>
         <td>{{ item.description }}</td>
         <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
-        <td class="text-end">{{ item.unit_price|floatformat:2 }}</td>
+        <td class="text-end">{{ item.unit_price|floatformat:2|intcomma }}</td>
         <td class="text-center">{{ item.get_itbis_rate_display }}</td>
-        <td class="text-end">{{ item.line_total|floatformat:2 }}</td>
-        <td class="text-end">{{ item.line_total_with_itbis|floatformat:2 }}</td>
+        <td class="text-end">{{ item.line_total|floatformat:2|intcomma }}</td>
+        <td class="text-end">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -192,23 +192,23 @@
     <table class="totals-table">
       <tr>
         <td>{% trans "Subtotal" %}</td>
-        <td>{{ order.subtotal|floatformat:2 }}</td>
+        <td>{{ order.subtotal|floatformat:2|intcomma }}</td>
       </tr>
       {% if order.itbis_18 %}
       <tr>
         <td>{% trans "ITBIS 18%" %}</td>
-        <td>{{ order.itbis_18|floatformat:2 }}</td>
+        <td>{{ order.itbis_18|floatformat:2|intcomma }}</td>
       </tr>
       {% endif %}
       {% if order.itbis_16 %}
       <tr>
         <td>{% trans "ITBIS 16%" %}</td>
-        <td>{{ order.itbis_16|floatformat:2 }}</td>
+        <td>{{ order.itbis_16|floatformat:2|intcomma }}</td>
       </tr>
       {% endif %}
       <tr class="grand">
         <td>{% trans "TOTAL" %}</td>
-        <td>{{ order.total|floatformat:2 }}</td>
+        <td>{{ order.total|floatformat:2|intcomma }}</td>
       </tr>
     </table>
   </div>

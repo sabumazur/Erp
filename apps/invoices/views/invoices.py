@@ -376,11 +376,12 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
     admin_required = True
 
+    def _sequences(self, request):
+        return NCFSequence.objects.filter(organization=_org(request)).order_by("ncf_type")
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["sequences"] = NCFSequence.objects.filter(
-            organization=_org(self.request)
-        ).order_by("ncf_type")
+        ctx["sequences"] = self._sequences(self.request)
         ctx["form"] = NCFSequenceForm()
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -394,8 +395,28 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
             seq = form.save(commit=False)
             seq.organization = _org(request)
             seq.save()
+            if request.htmx:
+                resp = render(
+                    request,
+                    "invoices/partials/ncf_sequence_table.html",
+                    {"sequences": self._sequences(request)},
+                )
+                resp["HX-Trigger"] = json.dumps(
+                    {"showToast": {"message": str(_("Secuencia NCF registrada.")), "type": "success"}}
+                )
+                return resp
             messages.success(request, _("Secuencia NCF registrada."))
             return redirect("invoices:ncf_sequences")
+
+        if request.htmx:
+            resp = render(
+                request,
+                "invoices/partials/ncf_sequence_modal_form.html",
+                {"form": form, "action_url": reverse("invoices:ncf_sequences")},
+            )
+            resp["HX-Retarget"] = "#ncf-modal-body"
+            resp["HX-Reswap"] = "innerHTML"
+            return resp
         ctx = self.get_context_data()
         ctx["form"] = form
         return self.render_to_response(ctx)

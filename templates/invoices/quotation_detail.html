@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags i18n %}
+{% load crispy_forms_tags i18n humanize %}
 
 {% block title %}{{ quotation }}{% endblock %}
 
@@ -112,37 +112,37 @@
             <tr>
               <td>{{ item.description }}</td>
               <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
-              <td class="text-end">{{ item.unit_price|floatformat:2 }}</td>
+              <td class="text-end">{{ item.unit_price|floatformat:2|intcomma }}</td>
               <td class="text-center">
                 <span class="badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
                   {{ item.get_itbis_rate_display }}
                 </span>
               </td>
-              <td class="text-end">{{ item.line_total|floatformat:2 }}</td>
-              <td class="text-end fw-semibold">{{ item.line_total_with_itbis|floatformat:2 }}</td>
+              <td class="text-end">{{ item.line_total|floatformat:2|intcomma }}</td>
+              <td class="text-end fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot class="table-light">
             <tr>
               <td colspan="4" class="text-end text-muted">{% trans "Subtotal" %}</td>
-              <td colspan="2" class="text-end fw-semibold">{{ quotation.subtotal|floatformat:2 }}</td>
+              <td colspan="2" class="text-end fw-semibold">{{ quotation.subtotal|floatformat:2|intcomma }}</td>
             </tr>
             {% if quotation.itbis_18 %}
             <tr>
               <td colspan="4" class="text-end text-muted">{% trans "ITBIS 18%" %}</td>
-              <td colspan="2" class="text-end">{{ quotation.itbis_18|floatformat:2 }}</td>
+              <td colspan="2" class="text-end">{{ quotation.itbis_18|floatformat:2|intcomma }}</td>
             </tr>
             {% endif %}
             {% if quotation.itbis_16 %}
             <tr>
               <td colspan="4" class="text-end text-muted">{% trans "ITBIS 16%" %}</td>
-              <td colspan="2" class="text-end">{{ quotation.itbis_16|floatformat:2 }}</td>
+              <td colspan="2" class="text-end">{{ quotation.itbis_16|floatformat:2|intcomma }}</td>
             </tr>
             {% endif %}
             <tr>
               <td colspan="4" class="text-end fw-bold fs-5">{% trans "TOTAL" %}</td>
-              <td colspan="2" class="text-end fw-bold fs-5">{{ quotation.total|floatformat:2 }}</td>
+              <td colspan="2" class="text-end fw-bold fs-5">{{ quotation.total|floatformat:2|intcomma }}</td>
             </tr>
           </tfoot>
         </table>

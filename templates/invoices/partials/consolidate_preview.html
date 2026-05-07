@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 {% if orders %}
 <table class="table table-sm mb-0">
   <thead class="table-light">
@@ -23,7 +23,7 @@
       </td>
       <td class="small">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
       <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
-      <td class="text-end fw-semibold">{{ o.total|floatformat:2 }}</td>
+      <td class="text-end fw-semibold">{{ o.total|floatformat:2|intcomma }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -33,7 +33,7 @@
         {% blocktrans count n=orders|length %}{{ n }} orden{% plural %}{{ n }} órdenes{% endblocktrans %}
         &nbsp;·&nbsp; {% trans "TOTAL" %}
       </td>
-      <td class="text-end">{{ grand_total|floatformat:2 }}</td>
+      <td class="text-end">{{ grand_total|floatformat:2|intcomma }}</td>
     </tr>
   </tfoot>
 </table>

@@ -9,7 +9,14 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
-from .models import Customer, CustomerDepartment, Invoice, InvoiceItem, Payment, NCFSequence
+from .models import (
+    Customer,
+    CustomerDepartment,
+    Invoice,
+    InvoiceItem,
+    Payment,
+    NCFSequence,
+)
 from .validators import validate_rnc, validate_cedula
 
 _PHONE_RE = re.compile(r"^\+?[\d\s.\-()+]{7,20}$")
@@ -202,7 +209,9 @@ class CustomerDepartmentForm(forms.ModelForm):
         phone = (self.cleaned_data.get("phone") or "").strip()
         if phone and not _PHONE_RE.match(phone):
             raise forms.ValidationError(
-                _("Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis).")
+                _(
+                    "Número de teléfono inválido (7–20 dígitos, puede incluir +, espacios, guiones y paréntesis)."
+                )
             )
         return phone
 
@@ -234,7 +243,9 @@ class InvoiceForm(forms.ModelForm):
             "customer": {"required": _("El cliente es obligatorio.")},
             "ncf_type": {"required": _("El tipo de comprobante es obligatorio.")},
             "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
-            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
+            "payment_condition": {
+                "required": _("La condición de pago es obligatoria.")
+            },
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -295,7 +306,9 @@ class QuotationForm(forms.ModelForm):
             "customer": {"required": _("El cliente es obligatorio.")},
             "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
             "valid_until": {"required": _("La fecha de validez es obligatoria.")},
-            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
+            "payment_condition": {
+                "required": _("La condición de pago es obligatoria.")
+            },
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -352,7 +365,9 @@ class SaleOrderForm(forms.ModelForm):
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
             "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
-            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
+            "payment_condition": {
+                "required": _("La condición de pago es obligatoria.")
+            },
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -383,12 +398,14 @@ class SaleOrderForm(forms.ModelForm):
             self.fields["department"].queryset = CustomerDepartment.objects.none()
 
         # HTMX: when customer changes, swap the department <option> tags in place.
-        self.fields["customer"].widget.attrs.update({
-            "hx-get":     reverse_lazy("invoices:departments_for_customer"),
-            "hx-trigger": "change",
-            "hx-target":  "#id_department",
-            "hx-swap":    "innerHTML",
-        })
+        self.fields["customer"].widget.attrs.update(
+            {
+                "hx-get": reverse_lazy("invoices:departments_for_customer"),
+                "hx-trigger": "change",
+                "hx-target": "#id_department",
+                "hx-swap": "innerHTML",
+            }
+        )
 
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -447,7 +464,9 @@ class ConsolidateForm(forms.Form):
         required=False,
         label=_("Departamento"),
         empty_label=_("— Todos los departamentos —"),
-        help_text=_("Opcional — deje vacío para consolidar todas las órdenes del cliente."),
+        help_text=_(
+            "Opcional — deje vacío para consolidar todas las órdenes del cliente."
+        ),
     )
     period_start = forms.DateField(
         label=_("Desde"),
@@ -574,7 +593,7 @@ InvoiceItemFormSet = inlineformset_factory(
     form=InvoiceItemForm,
     extra=1,
     can_delete=True,
-    min_num=0,        # allow saving drafts with no items
+    min_num=0,  # allow saving drafts with no items
     validate_min=False,
 )
 
@@ -588,6 +607,7 @@ class PaymentHeaderForm(forms.ModelForm):
     Customer field triggers HTMX load of outstanding invoices.
     Amount is derived from the allocations — not a user input here.
     """
+
     use_required_attribute = False
 
     class Meta:
@@ -606,27 +626,29 @@ class PaymentHeaderForm(forms.ModelForm):
     def __init__(self, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if organization:
-            self.fields["customer"].queryset = (
-                Customer.objects.filter(organization=organization).order_by("name")
-            )
+            self.fields["customer"].queryset = Customer.objects.filter(
+                organization=organization
+            ).order_by("name")
         self.fields["customer"].empty_label = _("— Seleccione un cliente —")
-        self.fields["customer"].widget.attrs.update({
-            "class": "form-select",
-            "hx-get": reverse_lazy("invoices:payment_outstanding_invoices"),
-            "hx-trigger": "change",
-            "hx-target": "#allocation-tbody",
-            "hx-swap": "innerHTML",
-            "hx-include": "this",
-        })
+        self.fields["customer"].widget.attrs.update(
+            {
+                "class": "form-select",
+                "hx-get": reverse_lazy("invoices:payment_outstanding_invoices"),
+                "hx-trigger": "change",
+                "hx-target": "#allocation-tbody",
+                "hx-swap": "innerHTML",
+                "hx-include": "this",
+            }
+        )
         self.fields["method"].widget.attrs["class"] = "form-select"
         self.fields["reference"].widget.attrs["class"] = "form-control"
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("customer",  css_class="col-md-5"),
-                Column("date",      css_class="col-md-2"),
-                Column("method",    css_class="col-md-3"),
+                Column("customer", css_class="col-md-5"),
+                Column("date", css_class="col-md-2"),
+                Column("method", css_class="col-md-3"),
                 Column("reference", css_class="col-md-2"),
             ),
             "notes",
@@ -639,6 +661,7 @@ class PaymentForm(forms.ModelForm):
     Used for the quick single-invoice modal on invoice_detail.html.
     The full multi-invoice form lives in PaymentCreateView.
     """
+
     use_required_attribute = False
 
     class Meta:
@@ -677,6 +700,7 @@ class CreditNoteForm(forms.ModelForm):
     Simplified form for creating a Nota de Crédito (34) or Nota de Débito (33)
     that references an existing confirmed invoice.
     """
+
     use_required_attribute = False
 
     class Meta:
@@ -697,8 +721,8 @@ class CreditNoteForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Restrict to note types only (both physical and electronic)
         self.fields["ncf_type"].choices = [
-            (3,  _("03 – Nota de Débito")),
-            (4,  _("04 – Nota de Crédito")),
+            (3, _("03 – Nota de Débito")),
+            (4, _("04 – Nota de Crédito")),
             (33, _("33 – Nota de Débito (e-CF)")),
             (34, _("34 – Nota de Crédito (e-CF)")),
         ]
@@ -720,13 +744,13 @@ class NCFSequenceForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("series", css_class="col-md-3"),
-                Column("ncf_type", css_class="col-md-6"),
-                Column("is_active", css_class="col-md-3 pt-4"),
+                Column("series", css_class="col-md-5"),
+                Column("ncf_type", css_class="col-md-7"),
             ),
             Row(
                 Column("current_seq", css_class="col-md-4"),
                 Column("max_seq", css_class="col-md-4"),
+                Column("is_active", css_class="col-md-4 pt-4"),
             ),
         )
 
@@ -737,29 +761,43 @@ class NCFSequenceForm(forms.ModelForm):
         max_seq = cleaned.get("max_seq")
 
         if series and ncf_type:
-            if series == NCFSequence.Series.PHYSICAL and ncf_type not in NCFSequence.PHYSICAL_TYPES:
+            if (
+                series == NCFSequence.Series.PHYSICAL
+                and ncf_type not in NCFSequence.PHYSICAL_TYPES
+            ):
                 self.add_error(
                     "ncf_type",
-                    _("Los comprobantes físicos (B) usan tipos 01–16. "
-                      "Para tipos 31–47 seleccione serie E (electrónico)."),
+                    _(
+                        "Los comprobantes físicos (B) usan tipos 01–16. "
+                        "Para tipos 31–47 seleccione serie E (electrónico)."
+                    ),
                 )
-            elif series == NCFSequence.Series.ELECTRONIC and ncf_type not in NCFSequence.ELECTRONIC_TYPES:
+            elif (
+                series == NCFSequence.Series.ELECTRONIC
+                and ncf_type not in NCFSequence.ELECTRONIC_TYPES
+            ):
                 self.add_error(
                     "ncf_type",
-                    _("Los comprobantes electrónicos (E) usan tipos 31–47. "
-                      "Para tipos 01–16 seleccione serie B (físico)."),
+                    _(
+                        "Los comprobantes electrónicos (E) usan tipos 31–47. "
+                        "Para tipos 01–16 seleccione serie B (físico)."
+                    ),
                 )
 
         if series and max_seq is not None:
             if series == NCFSequence.Series.PHYSICAL and max_seq > 99_999_999:
                 self.add_error(
                     "max_seq",
-                    _("Los comprobantes físicos admiten hasta 8 dígitos (máx. 99,999,999)."),
+                    _(
+                        "Los comprobantes físicos admiten hasta 8 dígitos (máx. 99,999,999)."
+                    ),
                 )
             elif series == NCFSequence.Series.ELECTRONIC and max_seq > 9_999_999_999:
                 self.add_error(
                     "max_seq",
-                    _("Los comprobantes electrónicos admiten hasta 10 dígitos (máx. 9,999,999,999)."),
+                    _(
+                        "Los comprobantes electrónicos admiten hasta 10 dígitos (máx. 9,999,999,999)."
+                    ),
                 )
 
         return cleaned

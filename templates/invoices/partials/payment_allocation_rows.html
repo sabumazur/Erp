@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 {% if invoices %}
   {% for inv in invoices %}
   <tr>
@@ -27,12 +27,12 @@
         {% endif %}
       {% endwith %}
     </td>
-    <td class="text-end small">{{ inv.total|floatformat:2 }}</td>
+    <td class="text-end small">{{ inv.total|floatformat:2|intcomma }}</td>
     <td class="text-end small fw-semibold
         {% if inv.aging_bucket == 'current' %}text-body
         {% elif inv.aging_bucket == '1_30' %}text-warning
         {% else %}text-danger{% endif %}">
-      {{ inv.line_balance|floatformat:2 }}
+      {{ inv.line_balance|floatformat:2|intcomma }}
     </td>
     <td class="text-end">
       <input type="number"

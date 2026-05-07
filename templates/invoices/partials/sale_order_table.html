@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
@@ -33,7 +33,7 @@
           <td class="text-nowrap">{{ o.issue_date|date:"d/m/Y" }}</td>
           <td class="text-nowrap">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
           <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
-          <td class="text-end fw-semibold">{{ o.total|floatformat:2 }}</td>
+          <td class="text-end fw-semibold">{{ o.total|floatformat:2|intcomma }}</td>
           <td class="text-center">
             {% include "invoices/partials/status_badge.html" with status=o.status %}
           </td>

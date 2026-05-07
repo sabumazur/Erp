@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load humanize %}<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -118,7 +118,7 @@
     <tr>
       <td>{{ item.description }}</td>
       <td class="text-right">{{ item.quantity|floatformat:"-4" }}</td>
-      <td class="text-right">{{ item.unit_price|floatformat:2 }}</td>
+      <td class="text-right">{{ item.unit_price|floatformat:2|intcomma }}</td>
       <td class="text-center">
         {% if item.itbis_rate == "RATE_18" %}
           <span class="badge badge-18">18%</span>
@@ -128,8 +128,8 @@
           <span class="badge badge-0">Exento</span>
         {% endif %}
       </td>
-      <td class="text-right">{{ item.line_total|floatformat:2 }}</td>
-      <td class="text-right">{{ item.line_total_with_itbis|floatformat:2 }}</td>
+      <td class="text-right">{{ item.line_total|floatformat:2|intcomma }}</td>
+      <td class="text-right">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -139,23 +139,23 @@
 <table class="totals-table">
   <tr>
     <td>Subtotal (sin ITBIS)</td>
-    <td class="text-right">{{ invoice.subtotal|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.subtotal|floatformat:2|intcomma }}</td>
   </tr>
   {% if invoice.itbis_18 %}
   <tr>
     <td>ITBIS 18%</td>
-    <td class="text-right">{{ invoice.itbis_18|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.itbis_18|floatformat:2|intcomma }}</td>
   </tr>
   {% endif %}
   {% if invoice.itbis_16 %}
   <tr>
     <td>ITBIS 16%</td>
-    <td class="text-right">{{ invoice.itbis_16|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.itbis_16|floatformat:2|intcomma }}</td>
   </tr>
   {% endif %}
   <tr class="total-row">
     <td>TOTAL</td>
-    <td class="text-right">{{ invoice.total|floatformat:2 }}</td>
+    <td class="text-right">{{ invoice.total|floatformat:2|intcomma }}</td>
   </tr>
 </table>
 
