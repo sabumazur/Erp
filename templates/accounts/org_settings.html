@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Organization Settings — SabSys{% endblock %}
+{% block title %}Configuración de organización — SabSys{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,11 +9,11 @@
 
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
-        <h4 class="fw-bold mb-0">Organization Settings</h4>
+        <h4 class="fw-bold mb-0">Configuración de organización</h4>
         <span class="text-muted small">{{ organization.name }}</span>
       </div>
       <a href="{% url 'accounts:members' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-people me-1"></i> Members
+        <i class="bi bi-people me-1"></i> Miembros
       </a>
     </div>
 
@@ -33,14 +33,14 @@
                    x-data="avatarHandler('{% if organization.logo %}{{ organization.logo.url }}{% endif %}', '{{ placeholder }}')">
                 <div class="position-relative">
                   <img :src="previewSrc"
-                       alt="Logo"
+                       alt="Logotipo"
                        width="80" height="80"
                        class="rounded-3 object-fit-cover border shadow-sm">
 
                   <button type="button"
                           class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                           style="width:26px;height:26px;top:0;right:0;"
-                          title="Change logo"
+                          title="Cambiar logotipo"
                           @click="$refs.fileInput.click()">
                     <i class="bi bi-pencil" style="font-size:.65rem;"></i>
                   </button>
@@ -48,7 +48,7 @@
                   <button type="button"
                           class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                           style="width:26px;height:26px;bottom:0;right:0;"
-                          title="Remove logo"
+                          title="Eliminar logotipo"
                           x-show="hasAvatar"
                           @click="clear()">
                     <i class="bi bi-x" style="font-size:.8rem;"></i>
@@ -58,7 +58,7 @@
                 <div>
                   <div class="fw-semibold">{{ organization.name }}</div>
                   <div class="text-muted small">{{ organization.slug }}</div>
-                  <div class="text-muted" style="font-size:.72rem;">Allowed: png, jpg, jpeg.</div>
+                  <div class="text-muted" style="font-size:.72rem;">Permitido: png, jpg, jpeg.</div>
                 </div>
 
                 <input type="file" name="logo" id="id_logo" accept=".png,.jpg,.jpeg"
@@ -71,7 +71,7 @@
               {% crispy form %}
 
               <div class="d-flex justify-content-end mt-3">
-                <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+                <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
               </div>
             </form>
           </div>
@@ -82,20 +82,20 @@
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body p-4">
-            <h6 class="text-muted small text-uppercase mb-1">Details</h6>
+            <h6 class="text-muted small text-uppercase mb-1">Detalles</h6>
             <dl class="row small mb-0 mt-3">
               <dt class="col-5 text-muted">Slug</dt>
               <dd class="col-7 font-monospace">{{ organization.slug }}</dd>
-              <dt class="col-5 text-muted">Owner</dt>
+              <dt class="col-5 text-muted">Propietario</dt>
               <dd class="col-7">{{ organization.owner.full_name }}</dd>
-              <dt class="col-5 text-muted">Created</dt>
-              <dd class="col-7">{{ organization.created_at|date:"N j, Y" }}</dd>
-              <dt class="col-5 text-muted">Status</dt>
+              <dt class="col-5 text-muted">Creada</dt>
+              <dd class="col-7">{{ organization.created_at|date:"d/m/Y" }}</dd>
+              <dt class="col-5 text-muted">Estado</dt>
               <dd class="col-7">
                 {% if organization.is_active %}
-                  <span class="badge bg-success">Active</span>
+                  <span class="badge bg-success">Activa</span>
                 {% else %}
-                  <span class="badge bg-secondary">Inactive</span>
+                  <span class="badge bg-secondary">Inactiva</span>
                 {% endif %}
               </dd>
             </dl>

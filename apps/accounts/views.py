@@ -356,7 +356,7 @@ class ProfileView(ERPBaseViewMixin, UpdateView):
         return ctx
 
     def form_valid(self, form):
-        messages.success(self.request, "Profile updated.")
+        messages.success(self.request, "Perfil actualizado.")
         return super().form_valid(form)
 
 
@@ -392,7 +392,7 @@ class OrganizationSettingsView(ERPBaseViewMixin, UpdateView):
         return ctx
 
     def form_valid(self, form):
-        messages.success(self.request, "Organization settings saved.")
+        messages.success(self.request, "Configuración de organización guardada.")
         return super().form_valid(form)
 
 
@@ -437,12 +437,12 @@ class ChangeMemberRoleView(ERPBaseViewMixin, View):
             Membership, pk=pk, organization=request.organization
         )
         if membership.user == request.user:
-            messages.error(request, "You cannot change your own role.")
+            messages.error(request, "No puedes cambiar tu propio rol.")
             return redirect("accounts:members")
 
         new_role = request.POST.get("role")
         if new_role not in dict(Membership.Role.choices):
-            messages.error(request, "Invalid role.")
+            messages.error(request, "Rol inválido.")
             return redirect("accounts:members")
 
         if new_role == Membership.Role.OWNER and request.membership.role != Membership.Role.OWNER:
@@ -450,7 +450,7 @@ class ChangeMemberRoleView(ERPBaseViewMixin, View):
 
         membership.role = new_role
         membership.save()
-        messages.success(request, f"{membership.user.full_name}'s role updated to {membership.get_role_display()}.")
+        messages.success(request, f"El rol de {membership.user.full_name} ha sido actualizado a {membership.get_role_display()}.")
         return redirect("accounts:members")
 
 
@@ -462,7 +462,7 @@ class RemoveMemberView(ERPBaseViewMixin, View):
             Membership, pk=pk, organization=request.organization
         )
         if membership.user == request.user:
-            messages.error(request, "You cannot remove yourself.")
+            messages.error(request, "No puedes eliminarte a ti mismo.")
             return redirect("accounts:members")
 
         if membership.role == Membership.Role.OWNER:
@@ -471,12 +471,12 @@ class RemoveMemberView(ERPBaseViewMixin, View):
                 role=Membership.Role.OWNER,
             ).count()
             if owner_count <= 1:
-                messages.error(request, "Cannot remove the last owner.")
+                messages.error(request, "No se puede eliminar al último propietario.")
                 return redirect("accounts:members")
 
         revoke_org_permissions(membership)
         membership.delete()
-        messages.success(request, f"{membership.user.full_name} has been removed.")
+        messages.success(request, f"{membership.user.full_name} ha sido eliminado.")
         return redirect("accounts:members")
 
 
@@ -488,7 +488,7 @@ class InviteMemberView(ERPBaseViewMixin, View):
     def post(self, request):
         form = InvitationForm(request.POST)
         if not form.is_valid():
-            messages.error(request, "Please enter a valid email address.")
+            messages.error(request, "Por favor ingresa un correo electrónico válido.")
             return redirect("accounts:members")
 
         email = form.cleaned_data["email"]
@@ -498,7 +498,7 @@ class InviteMemberView(ERPBaseViewMixin, View):
             user__email__iexact=email,
             organization=request.organization,
         ).exists():
-            messages.error(request, f"{email} is already a member of this organization.")
+            messages.error(request, f"{email} ya es miembro de esta organización.")
             return redirect("accounts:members")
 
         if Invitation.objects.filter(
@@ -507,7 +507,7 @@ class InviteMemberView(ERPBaseViewMixin, View):
             accepted_at__isnull=True,
             expires_at__gt=timezone.now(),
         ).exists():
-            messages.warning(request, f"A pending invitation already exists for {email}.")
+            messages.warning(request, f"Ya existe una invitación pendiente para {email}.")
             return redirect("accounts:members")
 
         invitation = Invitation.create_for(
@@ -517,7 +517,7 @@ class InviteMemberView(ERPBaseViewMixin, View):
             invited_by=request.user,
         )
         send_invitation_email(invitation, request)
-        messages.success(request, f"Invitation sent to {email}.")
+        messages.success(request, f"Invitación enviada a {email}.")
         return redirect("accounts:members")
 
 
@@ -531,7 +531,7 @@ class ResendInvitationView(ERPBaseViewMixin, View):
         invitation.expires_at = timezone.now() + timedelta(days=7)
         invitation.save(update_fields=["expires_at"])
         send_invitation_email(invitation, request)
-        messages.success(request, f"Invitation resent to {invitation.email}.")
+        messages.success(request, f"Invitación reenviada a {invitation.email}.")
         return redirect("accounts:members")
 
 
@@ -544,7 +544,7 @@ class CancelInvitationView(ERPBaseViewMixin, View):
         )
         email = invitation.email
         invitation.delete()
-        messages.success(request, f"Invitation for {email} cancelled.")
+        messages.success(request, f"Invitación para {email} cancelada.")
         return redirect("accounts:members")
 
 
@@ -577,7 +577,7 @@ class AcceptInvitationView(View):
             })
 
         self._accept(request, invitation)
-        messages.success(request, f"You've joined {invitation.organization.name}!")
+        messages.success(request, f"¡Te has unido a {invitation.organization.name}!")
         return redirect("accounts:dashboard")
 
     def _accept(self, request, invitation):
@@ -622,9 +622,9 @@ class TeamListView(ERPBaseViewMixin, TemplateView):
             team.organization = request.organization
             team.save()
             form.save_m2m()
-            messages.success(request, f"Team \"{team.name}\" created.")
+            messages.success(request, f"Equipo \"{team.name}\" creado.")
         else:
-            messages.error(request, "Please fix the errors below.")
+            messages.error(request, "Por favor corrige los errores indicados.")
         return redirect("accounts:teams")
 
 
@@ -655,7 +655,7 @@ class TeamUpdateView(ERPBaseViewMixin, UpdateView):
         return ctx
 
     def form_valid(self, form):
-        messages.success(self.request, "Team updated.")
+        messages.success(self.request, "Equipo actualizado.")
         return super().form_valid(form)
 
 
@@ -666,7 +666,7 @@ class TeamDeleteView(ERPBaseViewMixin, View):
         team = get_object_or_404(Team, pk=pk, organization=request.organization)
         name = team.name
         team.delete()
-        messages.success(request, f"Team \"{name}\" deleted.")
+        messages.success(request, f"Equipo \"{name}\" eliminado.")
         return redirect("accounts:teams")
 
 
@@ -722,7 +722,7 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
             role=Membership.Role.OWNER,
         )
         request.session["active_org_slug"] = org.slug
-        messages.success(request, f'Organization "{org.name}" created.')
+        messages.success(request, f'Organización "{org.name}" creada.')
         return redirect("accounts:org_settings")
 
 
@@ -743,15 +743,15 @@ class LeaveOrganizationView(LoginRequiredMixin, View):
             if owner_count <= 1:
                 messages.error(
                     request,
-                    "You are the only owner of this organization. "
-                    "Transfer ownership to another member before leaving.",
+                    "Eres el único propietario de esta organización. "
+                    "Transfiere la propiedad a otro miembro antes de salir.",
                 )
                 return redirect("accounts:members")
 
         # Must keep at least one organization
         remaining_count = request.user.memberships.exclude(organization=org).count()
         if remaining_count == 0:
-            messages.error(request, "You cannot leave your only organization.")
+            messages.error(request, "No puedes abandonar tu única organización.")
             return redirect("accounts:dashboard")
 
         org_name = org.name
@@ -769,5 +769,5 @@ class LeaveOrganizationView(LoginRequiredMixin, View):
         else:
             request.session.pop("active_org_slug", None)
 
-        messages.success(request, f'You have left "{org_name}".')
+        messages.success(request, f'Has abandonado "{org_name}".')
         return redirect("accounts:dashboard")

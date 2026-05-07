@@ -1,22 +1,22 @@
 {% extends "base_anon.html" %}
 
-{% block title %}Email verification required — SabSys{% endblock %}
+{% block title %}Verificación de correo requerida — SabSys{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
   <div class="col-md-5 text-center">
     <i class="bi bi-shield-exclamation display-3 text-warning"></i>
-    <h4 class="mt-3 fw-bold">Verify your email to continue</h4>
+    <h4 class="mt-3 fw-bold">Verifica tu correo para continuar</h4>
     <p class="text-muted">
-      You need to confirm your email address before accessing this page.
-      Check your inbox for the verification link we sent when you signed up.
+      Debes confirmar tu correo electrónico antes de acceder a esta página.
+      Revisa tu bandeja de entrada para el enlace de verificación que te enviamos al registrarte.
     </p>
     <p class="text-muted small">
-      Can't find it? Check your spam folder or
-      <a href="{% url 'account_email' %}">request a new confirmation email</a>.
+      ¿No lo encuentras? Revisa tu carpeta de spam o
+      <a href="{% url 'account_email' %}">solicita un nuevo correo de confirmación</a>.
     </p>
     <a href="{% url 'account_login' %}" class="btn btn-outline-secondary btn-sm mt-2">
-      <i class="bi bi-arrow-left me-1"></i> Back to sign in
+      <i class="bi bi-arrow-left me-1"></i> Volver a iniciar sesión
     </a>
   </div>
 </div>

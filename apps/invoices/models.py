@@ -816,7 +816,7 @@ class Invoice(ERPBaseModel):
                 )
         # Crédito Fiscal requires buyer RNC
         if self.ncf_type == NCFType.CREDITO_FISCAL:
-            if not self.customer.rnc_cedula:
+            if self.customer_id and not self.customer.rnc_cedula:
                 raise ValidationError(
                     _(
                         "La Factura de Crédito Fiscal (31) requiere el RNC del comprador."

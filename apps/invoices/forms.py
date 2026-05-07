@@ -211,6 +211,8 @@ class CustomerDepartmentForm(forms.ModelForm):
 
 
 class InvoiceForm(forms.ModelForm):
+    use_required_attribute = False
+
     class Meta:
         model = Invoice
         fields = [
@@ -227,6 +229,12 @@ class InvoiceForm(forms.ModelForm):
             "due_date": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
+        }
+        error_messages = {
+            "customer": {"required": _("El cliente es obligatorio.")},
+            "ncf_type": {"required": _("El tipo de comprobante es obligatorio.")},
+            "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
+            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -265,6 +273,8 @@ class InvoiceForm(forms.ModelForm):
 
 
 class QuotationForm(forms.ModelForm):
+    use_required_attribute = False
+
     class Meta:
         model = Invoice
         fields = [
@@ -280,6 +290,12 @@ class QuotationForm(forms.ModelForm):
             "valid_until": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
+        }
+        error_messages = {
+            "customer": {"required": _("El cliente es obligatorio.")},
+            "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
+            "valid_until": {"required": _("La fecha de validez es obligatoria.")},
+            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -316,6 +332,8 @@ class QuotationForm(forms.ModelForm):
 
 
 class SaleOrderForm(forms.ModelForm):
+    use_required_attribute = False
+
     class Meta:
         model = Invoice
         fields = [
@@ -330,6 +348,11 @@ class SaleOrderForm(forms.ModelForm):
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "delivery_date": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.TextInput(),
+        }
+        error_messages = {
+            "customer": {"required": _("El cliente es obligatorio.")},
+            "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
+            "payment_condition": {"required": _("La condición de pago es obligatoria.")},
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -565,12 +588,19 @@ class PaymentHeaderForm(forms.ModelForm):
     Customer field triggers HTMX load of outstanding invoices.
     Amount is derived from the allocations — not a user input here.
     """
+    use_required_attribute = False
+
     class Meta:
         model = Payment
         fields = ["customer", "date", "method", "reference", "notes"]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "notes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
+        }
+        error_messages = {
+            "customer": {"required": _("El cliente es obligatorio.")},
+            "date": {"required": _("La fecha es obligatoria.")},
+            "method": {"required": _("El método de pago es obligatorio.")},
         }
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -609,12 +639,19 @@ class PaymentForm(forms.ModelForm):
     Used for the quick single-invoice modal on invoice_detail.html.
     The full multi-invoice form lives in PaymentCreateView.
     """
+    use_required_attribute = False
+
     class Meta:
         model = Payment
         fields = ["amount", "date", "method", "reference", "notes"]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.Textarea(attrs={"rows": 2}),
+        }
+        error_messages = {
+            "amount": {"required": _("El monto es obligatorio.")},
+            "date": {"required": _("La fecha es obligatoria.")},
+            "method": {"required": _("El método de pago es obligatorio.")},
         }
 
     def __init__(self, *args, **kwargs):
@@ -640,6 +677,7 @@ class CreditNoteForm(forms.ModelForm):
     Simplified form for creating a Nota de Crédito (34) or Nota de Débito (33)
     that references an existing confirmed invoice.
     """
+    use_required_attribute = False
 
     class Meta:
         model = Invoice
@@ -649,6 +687,10 @@ class CreditNoteForm(forms.ModelForm):
             "due_date": forms.DateInput(attrs={"type": "date"}),
             "notes": forms.Textarea(attrs={"rows": 3}),
             "terms": forms.Textarea(attrs={"rows": 2}),
+        }
+        error_messages = {
+            "ncf_type": {"required": _("El tipo de comprobante es obligatorio.")},
+            "issue_date": {"required": _("La fecha de emisión es obligatoria.")},
         }
 
     def __init__(self, *args, **kwargs):

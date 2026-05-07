@@ -1,32 +1,32 @@
 {% extends "base_anon.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Sign in — SabSys{% endblock %}
+{% block title %}Iniciar sesión — SabSys{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-5">
     <div class="card shadow-sm border-0 mt-5">
       <div class="card-body p-4">
-        <h4 class="card-title mb-1 fw-bold">Welcome back</h4>
-        <p class="text-muted mb-4 small">Sign in to continue to SabSys</p>
+        <h4 class="card-title mb-1 fw-bold">Bienvenido de vuelta</h4>
+        <p class="text-muted mb-4 small">Inicia sesión para continuar en SabSys</p>
 
         <form method="post" action="{% url 'account_login' %}">
           {% csrf_token %}
           {{ form|crispy }}
           <div class="d-grid mt-3">
             <button type="submit" class="btn btn-primary">
-              <i class="bi bi-box-arrow-in-right me-1"></i> Sign in
+              <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
             </button>
           </div>
         </form>
 
         <div class="mt-3 text-center small">
-          <a href="{% url 'account_reset_password' %}">Forgot your password?</a>
+          <a href="{% url 'account_reset_password' %}">¿Olvidaste tu contraseña?</a>
         </div>
         <hr>
         <p class="text-center mb-0 small">
-          No account? <a href="{% url 'account_signup' %}">Create one</a>
+          ¿No tienes cuenta? <a href="{% url 'account_signup' %}">Crear una</a>
         </p>
       </div>
     </div>

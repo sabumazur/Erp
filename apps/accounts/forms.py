@@ -6,7 +6,7 @@ from allauth.account.forms import SignupForm, ChangePasswordForm
 from apps.core.models import Module
 from .models import User, Organization, Membership, Team
 
-_PASSWORD_HELP = "Use 8 or more characters with a mix of letters, numbers & symbols."
+_PASSWORD_HELP = "Usa 8 o más caracteres con una combinación de letras, números y símbolos."
 
 
 class CustomSignupForm(SignupForm):
@@ -28,10 +28,14 @@ class CustomChangePasswordForm(ChangePasswordForm):
 
 class InvitationForm(forms.Form):
     email = forms.EmailField(
-        label="Email address",
-        widget=forms.EmailInput(attrs={"placeholder": "colleague@example.com"}),
+        label=_("Correo electrónico"),
+        widget=forms.EmailInput(attrs={"placeholder": "colega@ejemplo.com"}),
     )
-    role = forms.ChoiceField(choices=Membership.Role.choices, initial=Membership.Role.MEMBER)
+    role = forms.ChoiceField(
+        label=_("Rol"),
+        choices=Membership.Role.choices,
+        initial=Membership.Role.MEMBER,
+    )
 
     def clean_email(self):
         return self.cleaned_data["email"].lower()
@@ -40,8 +44,8 @@ class InvitationForm(forms.Form):
 class CreateOrganizationForm(forms.Form):
     name = forms.CharField(
         max_length=255,
-        label="Organization name",
-        widget=forms.TextInput(attrs={"placeholder": "Acme Corp", "autofocus": True}),
+        label=_("Nombre de la organización"),
+        widget=forms.TextInput(attrs={"placeholder": "Mi Empresa S.R.L.", "autofocus": True}),
     )
 
 
@@ -89,12 +93,17 @@ class TeamForm(forms.ModelForm):
         queryset=Module.objects.filter(is_active=True),
         required=False,
         widget=forms.CheckboxSelectMultiple,
-        help_text="Leave empty to grant access to all modules.",
+        label=_("Acceso a módulos"),
+        help_text=_("Dejar vacío para conceder acceso a todos los módulos."),
     )
 
     class Meta:
         model = Team
         fields = ["name", "description", "modules"]
+        labels = {
+            "name": _("Nombre"),
+            "description": _("Descripción"),
+        }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
         }

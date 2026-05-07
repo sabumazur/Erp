@@ -1,1 +1,1 @@
-You're invited to join {{ organization.name }} on SabSys
+Estás invitado a unirte a {{ organization.name }} en SabSys

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Edit Team — {{ organization.name }}{% endblock %}
+{% block title %}Editar equipo — {{ organization.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -12,7 +12,7 @@
         <i class="bi bi-arrow-left"></i>
       </a>
       <div>
-        <h4 class="fw-bold mb-0">Edit team</h4>
+        <h4 class="fw-bold mb-0">Editar equipo</h4>
         <span class="text-muted small">{{ organization.name }}</span>
       </div>
     </div>
@@ -23,18 +23,18 @@
       {# ── Name & description ──────────────────────────────────────── #}
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-bottom py-3">
-          <h6 class="fw-semibold mb-0"><i class="bi bi-pencil me-1"></i> Team details</h6>
+          <h6 class="fw-semibold mb-0"><i class="bi bi-pencil me-1"></i> Datos del equipo</h6>
         </div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label fw-semibold small">Name</label>
+            <label class="form-label fw-semibold small">Nombre</label>
             {{ form.name }}
             {% if form.name.errors %}
               <div class="text-danger small mt-1">{{ form.name.errors }}</div>
             {% endif %}
           </div>
           <div class="mb-0">
-            <label class="form-label fw-semibold small">Description <span class="text-muted fw-normal">(optional)</span></label>
+            <label class="form-label fw-semibold small">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
             {{ form.description }}
           </div>
         </div>
@@ -44,9 +44,9 @@
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-bottom py-3">
           <h6 class="fw-semibold mb-0">
-            <i class="bi bi-grid me-1"></i> Module access
+            <i class="bi bi-grid me-1"></i> Acceso a módulos
             <span class="text-muted fw-normal ms-1" style="font-size:.8rem;">
-              — leave all unchecked to allow access to every module
+              — dejar todo sin marcar permite acceso a todos los módulos
             </span>
           </h6>
         </div>
@@ -86,7 +86,7 @@
           </div>
           {% else %}
           <p class="text-muted mb-0 small">
-            No modules available yet. Run <code>python manage.py seed_modules</code> to populate them.
+            No hay módulos disponibles. Ejecuta <code>python manage.py seed_modules</code> para crearlos.
           </p>
           {% endif %}
         </div>
@@ -94,9 +94,9 @@
 
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-lg me-1"></i> Save changes
+          <i class="bi bi-check-lg me-1"></i> Guardar cambios
         </button>
-        <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary">Cancel</a>
+        <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary">Cancelar</a>
       </div>
     </form>
 

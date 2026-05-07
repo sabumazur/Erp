@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Teams — {{ organization.name }}{% endblock %}
+{% block title %}Equipos — {{ organization.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,34 +9,34 @@
 
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
-        <h4 class="fw-bold mb-0">Teams</h4>
+        <h4 class="fw-bold mb-0">Equipos</h4>
         <span class="text-muted small">{{ organization.name }}</span>
       </div>
       <a href="{% url 'accounts:members' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-people me-1"></i> Members
+        <i class="bi bi-people me-1"></i> Miembros
       </a>
     </div>
 
     {# ── Create team form ──────────────────────────────────────────── #}
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-white border-bottom py-3">
-        <h6 class="fw-semibold mb-0"><i class="bi bi-plus-circle me-1"></i> New team</h6>
+        <h6 class="fw-semibold mb-0"><i class="bi bi-plus-circle me-1"></i> Nuevo equipo</h6>
       </div>
       <div class="card-body">
         <form method="post" action="{% url 'accounts:teams' %}">
           {% csrf_token %}
           <div class="row g-3 align-items-end">
             <div class="col-md-4">
-              <label class="form-label small fw-semibold">Name</label>
+              <label class="form-label small fw-semibold">Nombre</label>
               {{ form.name }}
             </div>
             <div class="col-md-6">
-              <label class="form-label small fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
-              <textarea name="description" class="form-control form-control-sm" rows="1" placeholder="What does this team do?"></textarea>
+              <label class="form-label small fw-semibold">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
+              <textarea name="description" class="form-control form-control-sm" rows="1" placeholder="¿Qué hace este equipo?"></textarea>
             </div>
             <div class="col-md-2">
               <button type="submit" class="btn btn-primary w-100">
-                <i class="bi bi-plus-lg me-1"></i> Create
+                <i class="bi bi-plus-lg me-1"></i> Crear
               </button>
             </div>
           </div>
@@ -62,7 +62,7 @@
                 {% endif %}
                 <div class="d-flex flex-wrap gap-1 mt-1">
                   <span class="badge bg-light text-dark border">
-                    <i class="bi bi-people me-1"></i>{{ team.memberships.count }} member{{ team.memberships.count|pluralize }}
+                    <i class="bi bi-people me-1"></i>{{ team.memberships.count }} miembro{{ team.memberships.count|pluralize:"s" }}
                   </span>
                   {% with mods=team.modules.all %}
                     {% if mods %}
@@ -73,7 +73,7 @@
                       {% endfor %}
                     {% else %}
                       <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
-                        <i class="bi bi-check2-all me-1"></i>All modules
+                        <i class="bi bi-check2-all me-1"></i>Todos los módulos
                       </span>
                     {% endif %}
                   {% endwith %}
@@ -81,14 +81,14 @@
               </div>
               <div class="d-flex gap-1">
                 <a href="{% url 'accounts:team_edit' team.pk %}"
-                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                   class="btn btn-sm btn-outline-secondary" title="Editar">
                   <i class="bi bi-pencil"></i>
                 </a>
                 <div x-data="{ _open: false }">
                   <form method="post" action="{% url 'accounts:team_delete' team.pk %}"
                         @submit.prevent="_open = true">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                       <i class="bi bi-trash"></i>
                     </button>
                   </form>
@@ -97,11 +97,11 @@
                           @close="_open = false"
                           class="erp-dialog confirm-dialog">
                     <div class="p-4">
-                      <p class="mb-1 fw-semibold">Delete team?</p>
-                      <p class="text-muted small mb-3"><strong>{{ team.name }}</strong> will be removed and all members will be unassigned.</p>
+                      <p class="mb-1 fw-semibold">¿Eliminar equipo?</p>
+                      <p class="text-muted small mb-3"><strong>{{ team.name }}</strong> será eliminado y todos los miembros quedarán sin equipo asignado.</p>
                       <div class="d-flex gap-2 justify-content-end">
-                        <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Cancel</button>
-                        <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Delete</button>
+                        <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Cancelar</button>
+                        <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Eliminar</button>
                       </div>
                     </div>
                   </dialog>
@@ -129,7 +129,7 @@
     <div class="card border-0 shadow-sm">
       <div class="card-body text-center text-muted py-5">
         <i class="bi bi-people" style="font-size:2.5rem;opacity:.3;"></i>
-        <p class="mt-2 mb-0">No teams yet. Create one above to organise your members.</p>
+        <p class="mt-2 mb-0">Aún no hay equipos. Crea uno arriba para organizar tus miembros.</p>
       </div>
     </div>
     {% endif %}

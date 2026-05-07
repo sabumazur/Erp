@@ -1,12 +1,12 @@
-Hi,
+Hola,
 
-{{ invitation.invited_by.full_name|default:"A team admin" }} has invited you to join {{ invitation.organization.name }} on SabSys as a {{ invitation.get_role_display }}.
+{{ invitation.invited_by.full_name|default:"Un administrador" }} te ha invitado a unirte a {{ invitation.organization.name }} en SabSys como {{ invitation.get_role_display }}.
 
-Accept your invitation here:
+Acepta tu invitación aquí:
 {{ accept_url }}
 
-This invitation expires on {{ invitation.expires_at|date:"N j, Y" }}.
+Esta invitación vence el {{ invitation.expires_at|date:"j \d\e N \d\e Y" }}.
 
-If you did not expect this invitation, you can safely ignore this email.
+Si no esperabas esta invitación, puedes ignorar este correo con seguridad.
 
-— The SabSys team
+— El equipo de SabSys

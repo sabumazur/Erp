@@ -1,9 +1,9 @@
-Hi,
+Hola,
 
-Thanks for signing up for SabSys. Please confirm your email address by clicking the link below:
+Gracias por registrarte en SabSys. Por favor confirma tu correo electrónico haciendo clic en el enlace a continuación:
 
 {{ activate_url }}
 
-This link will expire in 3 days. If you did not create an account, you can safely ignore this email.
+Este enlace expirará en 3 días. Si no creaste una cuenta, puedes ignorar este correo con seguridad.
 
-— The SabSys team
+— El equipo de SabSys

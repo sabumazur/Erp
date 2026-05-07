@@ -7,6 +7,8 @@ from .models import Item
 
 
 class ItemForm(forms.ModelForm):
+    use_required_attribute = False
+
     class Meta:
         model = Item
         fields = [
@@ -16,7 +18,7 @@ class ItemForm(forms.ModelForm):
             "is_active", "notes",
         ]
         widgets = {
-            "notes":       forms.Textarea(attrs={"rows": 2}),
+            "notes":       forms.Textarea(attrs={"rows": 1}),
             "unit_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "cost_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             # item_type drives Alpine reactive state; x-model keeps them in sync
@@ -26,10 +28,18 @@ class ItemForm(forms.ModelForm):
                 ":placeholder": "codePlaceholder",
             }),
         }
+        error_messages = {
+            "name":       {"required": _("El nombre es obligatorio.")},
+            "item_type":  {"required": _("El tipo de artículo es obligatorio.")},
+            "unit":       {"required": _("La unidad de medida es obligatoria.")},
+            "unit_price": {"required": _("El precio de venta es obligatorio.")},
+            "itbis_rate": {"required": _("La tasa ITBIS es obligatoria.")},
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["cost_price"].required = False
+        self.fields["item_type"].initial = Item.ItemType.SALE
         # Help text rendered via Alpine below the field instead of a static string
         self.fields["code"].help_text = ""
 

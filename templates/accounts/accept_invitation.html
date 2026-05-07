@@ -1,6 +1,6 @@
 {% extends "base_anon.html" %}
 
-{% block title %}Join {{ invitation.organization.name|default:"Organization" }}{% endblock %}
+{% block title %}Unirte a {{ invitation.organization.name|default:"la organización" }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -10,54 +10,54 @@
 
         {% if status == "already_accepted" %}
           <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
-          <h5 class="fw-bold mt-3 mb-2">Already accepted</h5>
-          <p class="text-muted mb-4">This invitation has already been used.</p>
-          <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary">Go to dashboard</a>
+          <h5 class="fw-bold mt-3 mb-2">Ya aceptada</h5>
+          <p class="text-muted mb-4">Esta invitación ya fue utilizada.</p>
+          <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary">Ir al panel</a>
 
         {% elif status == "expired" %}
           <i class="bi bi-clock-history text-warning" style="font-size:3rem;"></i>
-          <h5 class="fw-bold mt-3 mb-2">Invitation expired</h5>
+          <h5 class="fw-bold mt-3 mb-2">Invitación expirada</h5>
           <p class="text-muted mb-4">
-            This invitation for <strong>{{ invitation.email }}</strong> to join
-            <strong>{{ invitation.organization.name }}</strong> has expired.
-            Please ask an admin to send a new one.
+            La invitación para <strong>{{ invitation.email }}</strong> para unirse a
+            <strong>{{ invitation.organization.name }}</strong> ha expirado.
+            Por favor solicita a un administrador que envíe una nueva.
           </p>
           {% if user.is_authenticated %}
-            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">Go to dashboard</a>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">Ir al panel</a>
           {% else %}
-            <a href="{% url 'account_login' %}" class="btn btn-outline-secondary">Sign in</a>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-secondary">Iniciar sesión</a>
           {% endif %}
 
         {% elif status == "login_required" %}
           <i class="bi bi-envelope-open-fill text-primary" style="font-size:3rem;"></i>
-          <h5 class="fw-bold mt-3 mb-2">You've been invited!</h5>
+          <h5 class="fw-bold mt-3 mb-2">¡Has sido invitado!</h5>
           <p class="text-muted mb-1">
-            <strong>{{ invitation.invited_by.full_name|default:"Someone" }}</strong> invited
-            <strong>{{ invitation.email }}</strong> to join
+            <strong>{{ invitation.invited_by.full_name|default:"Alguien" }}</strong> invitó a
+            <strong>{{ invitation.email }}</strong> a unirse a
           </p>
           <p class="fw-semibold mb-4">{{ invitation.organization.name }}</p>
           <div class="d-grid gap-2">
             <a href="{{ login_url }}" class="btn btn-primary">
-              <i class="bi bi-box-arrow-in-right me-1"></i> Sign in to accept
+              <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión para aceptar
             </a>
             <a href="{{ signup_url }}" class="btn btn-outline-primary">
-              <i class="bi bi-person-plus me-1"></i> Create an account
+              <i class="bi bi-person-plus me-1"></i> Crear una cuenta
             </a>
           </div>
 
         {% elif status == "wrong_email" %}
           <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:3rem;"></i>
-          <h5 class="fw-bold mt-3 mb-2">Wrong account</h5>
+          <h5 class="fw-bold mt-3 mb-2">Cuenta incorrecta</h5>
           <p class="text-muted mb-4">
-            This invitation was sent to <strong>{{ invitation.email }}</strong>
-            but you are signed in as <strong>{{ user.email }}</strong>.
-            Please sign in with the correct account to accept.
+            Esta invitación fue enviada a <strong>{{ invitation.email }}</strong>
+            pero has iniciado sesión como <strong>{{ user.email }}</strong>.
+            Por favor inicia sesión con la cuenta correcta para aceptar.
           </p>
           <div class="d-grid gap-2">
             <a href="{% url 'account_logout' %}?next={{ request.path }}" class="btn btn-outline-secondary">
-              <i class="bi bi-box-arrow-right me-1"></i> Sign out and switch account
+              <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión y cambiar de cuenta
             </a>
-            <a href="{% url 'accounts:dashboard' %}" class="btn btn-link text-muted">Go to dashboard</a>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-link text-muted">Ir al panel</a>
           </div>
 
         {% endif %}

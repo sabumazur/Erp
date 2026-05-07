@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Profile — SabSys{% endblock %}
+{% block title %}Perfil — SabSys{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6">
-    <h4 class="fw-bold mb-4">Your profile</h4>
+    <h4 class="fw-bold mb-4">Tu perfil</h4>
 
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Account</h6>
+        <h6 class="text-muted small text-uppercase mb-3">Cuenta</h6>
         <dl class="row small mb-0">
-          <dt class="col-4 text-muted">Email</dt>
+          <dt class="col-4 text-muted">Correo</dt>
           <dd class="col-8">{{ user.email }}</dd>
-          <dt class="col-4 text-muted">Member since</dt>
-          <dd class="col-8">{{ user.created_at|date:"N j, Y" }}</dd>
+          <dt class="col-4 text-muted">Miembro desde</dt>
+          <dd class="col-8">{{ user.created_at|date:"d/m/Y" }}</dd>
         </dl>
       </div>
     </div>
 
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Personal info</h6>
+        <h6 class="text-muted small text-uppercase mb-3">Información personal</h6>
 
         <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
@@ -40,7 +40,7 @@
               <button type="button"
                       class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                       style="width:28px;height:28px;top:0;right:0;"
-                      title="Change photo"
+                      title="Cambiar foto"
                       @click="$refs.fileInput.click()">
                 <i class="bi bi-pencil" style="font-size:.7rem;"></i>
               </button>
@@ -48,14 +48,14 @@
               <button type="button"
                       class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                       style="width:28px;height:28px;bottom:0;right:0;"
-                      title="Remove photo"
+                      title="Eliminar foto"
                       x-show="hasAvatar"
                       @click="clear()">
                 <i class="bi bi-x" style="font-size:.85rem;"></i>
               </button>
             </div>
 
-            <p class="text-muted mb-0" style="font-size:.75rem;">Allowed file types: png, jpg, jpeg.</p>
+            <p class="text-muted mb-0" style="font-size:.75rem;">Tipos permitidos: png, jpg, jpeg.</p>
 
             <input type="file" name="avatar" id="id_avatar" accept=".png,.jpg,.jpeg"
                    class="d-none" x-ref="fileInput" @change="change($event)">
@@ -67,7 +67,7 @@
           {% crispy form %}
 
           <div class="d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+            <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
           </div>
         </form>
       </div>
@@ -75,9 +75,9 @@
 
     <div class="card border-0 shadow-sm mt-3">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Change password</h6>
+        <h6 class="text-muted small text-uppercase mb-3">Cambiar contraseña</h6>
         <a href="{% url 'account_change_password' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-key me-1"></i> Change password
+          <i class="bi bi-key me-1"></i> Cambiar contraseña
         </a>
       </div>
     </div>

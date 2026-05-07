@@ -152,9 +152,6 @@ class Item(ERPBaseModel):
         null=True,
         blank=True,
         verbose_name=_("precio de costo"),
-        help_text=_(
-            "Opcional. Utilizado para el cálculo de márgenes y futuras órdenes de compra."
-        ),
     )
     itbis_rate = models.CharField(
         max_length=8,
