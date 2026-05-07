@@ -22,6 +22,7 @@ from .invoices import (
     InvoicePrintView,
     NCFSequenceListView,
     NCFSequenceUpdateView,
+    NCFSequenceDeleteView,
     InvoiceItemRowView,
     RNCLookupView,
 )

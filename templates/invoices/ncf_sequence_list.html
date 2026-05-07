@@ -6,7 +6,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h1 class="h3 mb-0">{% trans "Secuencias e-NCF" %}</h1>
+    <h1 class="h3 mb-0">{% trans "Secuencias NCF" %}</h1>
     <p class="text-muted small mb-0">
       {% trans "Registre aquí las secuencias autorizadas por la DGII para cada tipo de comprobante." %}
     </p>
@@ -14,7 +14,7 @@
 </div>
 
 <div class="row g-3">
-  <div class="col-lg-7">
+  <div class="col-lg-8">
     <div class="card shadow-sm">
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
@@ -25,6 +25,7 @@
               <th class="text-end">{% trans "Actual" %}</th>
               <th class="text-end">{% trans "Máximo" %}</th>
               <th class="text-end">{% trans "Disponibles" %}</th>
+              <th class="font-monospace">{% trans "Próximo NCF" %}</th>
               <th class="text-center">{% trans "Activa" %}</th>
               <th></th>
             </tr>
@@ -33,16 +34,19 @@
             {% for seq in sequences %}
             <tr>
               <td class="small">{{ seq.get_ncf_type_display }}</td>
-              <td class="font-monospace">{{ seq.series }}</td>
+              <td>
+                <span class="badge {% if seq.series == 'B' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+                  {{ seq.series }}
+                </span>
+              </td>
               <td class="text-end font-monospace">{{ seq.current_seq }}</td>
               <td class="text-end font-monospace">{{ seq.max_seq }}</td>
               <td class="text-end">
-                {% with remaining=seq.max_seq|add:"-"|add:seq.current_seq %}
-                <span class="{% if seq.max_seq|add:0|add:-seq.current_seq < 100 %}text-danger fw-bold{% endif %}">
-                  {{ seq.max_seq|add:-seq.current_seq }}
+                <span class="{% if seq.remaining < 100 %}text-danger fw-bold{% elif seq.remaining < 500 %}text-warning{% endif %}">
+                  {{ seq.remaining }}
                 </span>
-                {% endwith %}
               </td>
+              <td class="font-monospace small text-secondary">{{ seq.preview_next }}</td>
               <td class="text-center">
                 {% if seq.is_active %}
                   <span class="badge bg-success">{% trans "Sí" %}</span>
@@ -50,16 +54,27 @@
                   <span class="badge bg-secondary">{% trans "No" %}</span>
                 {% endif %}
               </td>
-              <td>
-                <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
-                   class="btn btn-outline-secondary btn-sm">
-                  <i class="bi bi-pencil"></i>
-                </a>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
+                     class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  {% if seq.current_seq == 0 %}
+                  <form method="post" action="{% url 'invoices:ncf_sequence_delete' seq.pk %}"
+                        onsubmit="return confirm('{% trans "¿Eliminar esta secuencia NCF?" %}')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 {% trans "No hay secuencias registradas. Agregue la primera a la derecha." %}
               </td>
             </tr>
@@ -68,9 +83,14 @@
         </table>
       </div>
     </div>
+
+    <div class="alert alert-warning mt-3 small">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {% trans "Solo puede eliminarse una secuencia que no haya sido utilizada (secuencia actual = 0)." %}
+    </div>
   </div>
 
-  <div class="col-lg-5">
+  <div class="col-lg-4">
     <div class="card shadow-sm">
       <div class="card-header fw-semibold">{% trans "Nueva secuencia" %}</div>
       <div class="card-body">
@@ -85,7 +105,12 @@
     </div>
     <div class="alert alert-info mt-3 small">
       <i class="bi bi-info-circle me-1"></i>
-      {% trans "El número de secuencia actual es el último número <strong>ya utilizado</strong>. Para una secuencia nueva, déjelo en 0." %}
+      {% blocktrans trimmed %}
+        El número de secuencia actual es el último número <strong>ya utilizado</strong>.
+        Para una secuencia nueva, déjelo en 0.
+        Serie <strong>B</strong> = comprobantes físicos (tipos 01–16, 8 dígitos).
+        Serie <strong>E</strong> = comprobantes electrónicos (tipos 31–47, 10 dígitos).
+      {% endblocktrans %}
     </div>
   </div>
 </div>

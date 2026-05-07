@@ -60,6 +60,7 @@ from .views import (
     # NCF sequences
     NCFSequenceListView,
     NCFSequenceUpdateView,
+    NCFSequenceDeleteView,
     # Reports
     ReportIndexView,
     Report607View,
@@ -152,8 +153,9 @@ urlpatterns = [
     path("invoices/items/catalog/",                ItemCatalogView.as_view(),         name="item_catalog"),
 
     # ── NCF sequences ─────────────────────────────────────────────────────────
-    path("invoices/ncf/",                          NCFSequenceListView.as_view(),  name="ncf_sequences"),
+    path("invoices/ncf/",                          NCFSequenceListView.as_view(),   name="ncf_sequences"),
     path("invoices/ncf/<int:pk>/edit/",            NCFSequenceUpdateView.as_view(), name="ncf_sequence_edit"),
+    path("invoices/ncf/<int:pk>/delete/",          NCFSequenceDeleteView.as_view(), name="ncf_sequence_delete"),
 
     # ── DGII reports ──────────────────────────────────────────────────────────
     path("invoices/reports/",                      ReportIndexView.as_view(),           name="reports"),

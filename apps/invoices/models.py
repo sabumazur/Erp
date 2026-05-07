@@ -15,16 +15,28 @@ from apps.core.models import ERPBaseModel
 
 
 class NCFType(models.IntegerChoices):
-    CREDITO_FISCAL = 31, _("31 – Factura de Crédito Fiscal")
-    GUBERNAMENTAL = 45, _("45 – Gubernamental")
-    CONSUMO = 32, _("32 – Factura de Consumo")
-    NOTA_DEBITO = 33, _("33 – Nota de Débito")
-    NOTA_CREDITO = 34, _("34 – Nota de Crédito")
-    COMPRAS = 41, _("41 – Comprobante de Compras")
-    GASTOS_MENORES = 43, _("43 – Gastos Menores")
-    REG_ESPECIALES = 44, _("44 – Regímenes Especiales")
-    EXPORTACIONES = 46, _("46 – Exportaciones")
-    PAGOS_EXTERIOR = 47, _("47 – Pagos al Exterior")
+    # ── Físico (B-series, comprobantes tradicionales) ─────────────────────────
+    B01_CREDITO_FISCAL = 1,  _("01 – Crédito Fiscal")
+    B02_CONSUMO        = 2,  _("02 – Consumo")
+    B03_NOTA_DEBITO    = 3,  _("03 – Nota de Débito")
+    B04_NOTA_CREDITO   = 4,  _("04 – Nota de Crédito")
+    B11_PROVEEDORES    = 11, _("11 – Proveedores Informales")
+    B12_GASTOS_MENORES = 12, _("12 – Gastos Menores")
+    B13_REG_ESPECIALES = 13, _("13 – Regímenes Especiales")
+    B14_GUBERNAMENTAL  = 14, _("14 – Gubernamental")
+    B15_EXPORTACIONES  = 15, _("15 – Exportaciones")
+    B16_PAGOS_EXTERIOR = 16, _("16 – Pagos al Exterior")
+    # ── Electrónico (E-series, e-CF) ──────────────────────────────────────────
+    CREDITO_FISCAL = 31, _("31 – Crédito Fiscal (e-CF)")
+    CONSUMO        = 32, _("32 – Consumo (e-CF)")
+    NOTA_DEBITO    = 33, _("33 – Nota de Débito (e-CF)")
+    NOTA_CREDITO   = 34, _("34 – Nota de Crédito (e-CF)")
+    COMPRAS        = 41, _("41 – Comprobante de Compras (e-CF)")
+    GASTOS_MENORES = 43, _("43 – Gastos Menores (e-CF)")
+    REG_ESPECIALES = 44, _("44 – Regímenes Especiales (e-CF)")
+    GUBERNAMENTAL  = 45, _("45 – Gubernamental (e-CF)")
+    EXPORTACIONES  = 46, _("46 – Exportaciones (e-CF)")
+    PAGOS_EXTERIOR = 47, _("47 – Pagos al Exterior (e-CF)")
 
 
 class PaymentTerm(models.Model):
@@ -132,7 +144,7 @@ class Customer(ERPBaseModel):
     )
     default_ncf_type = models.IntegerField(
         choices=NCFType.choices,
-        default=NCFType.CREDITO_FISCAL,
+        default=NCFType.B01_CREDITO_FISCAL,
         verbose_name=_("tipo de comprobante"),
     )
 
@@ -230,12 +242,25 @@ class CustomerDepartment(ERPBaseModel):
 
 class NCFSequence(models.Model):
     """
-    Manages the authorized e-NCF sequences issued by the DGII per organization
+    Manages the authorized NCF sequences issued by the DGII per organization
     and per NCF type. Only one sequence may be active per (org, ncf_type) pair.
 
+    Supports two series:
+      - B (physical / traditional): format  B{type:02d}{seq:08d}  e.g. B0100000001
+      - E (electronic / e-CF):      format  E{type:02d}{seq:010d} e.g. E310000000001
+
     Call NCFSequence.generate(org, ncf_type) inside an atomic block to get the
-    next sequential e-NCF string (e.g. "E310000000001").
+    next NCF string.
     """
+
+    # Physical NCF type codes (B-series, 01-16)
+    PHYSICAL_TYPES  = {1, 2, 3, 4, 11, 12, 13, 14, 15, 16}
+    # Electronic NCF type codes (E-series, 31-47)
+    ELECTRONIC_TYPES = {31, 32, 33, 34, 41, 43, 44, 45, 46, 47}
+
+    class Series(models.TextChoices):
+        PHYSICAL    = "B", _("B – Físico (comprobante tradicional)")
+        ELECTRONIC  = "E", _("E – Electrónico (e-CF)")
 
     organization = models.ForeignKey(
         "accounts.Organization",
@@ -249,17 +274,16 @@ class NCFSequence(models.Model):
     )
     series = models.CharField(
         max_length=1,
-        default="E",
+        choices=Series.choices,
+        default=Series.PHYSICAL,
         verbose_name=_("serie"),
-        help_text=_(
-            "'E' para electrónico (e-CF). 'B' para comprobantes físicos legacy."
-        ),
+        help_text=_("'B' para comprobantes físicos (01–16). 'E' para electrónicos (31–47)."),
     )
     current_seq = models.PositiveIntegerField(
         default=0, verbose_name=_("secuencia actual")
     )
     max_seq = models.PositiveIntegerField(
-        default=9999999999, verbose_name=_("secuencia máxima")
+        default=99999999, verbose_name=_("secuencia máxima")
     )
     is_active = models.BooleanField(default=True, verbose_name=_("activa"))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -276,16 +300,36 @@ class NCFSequence(models.Model):
             )
         ]
 
+    def _seq_width(self) -> int:
+        return 8 if self.series == self.Series.PHYSICAL else 10
+
     def __str__(self):
-        return f"{self.organization} · {self.get_ncf_type_display()} · {self.series}{self.ncf_type:02d}{self.current_seq:010d}"
+        w = self._seq_width()
+        return f"{self.organization} · {self.get_ncf_type_display()} · {self.series}{self.ncf_type:02d}{self.current_seq:0{w}d}"
+
+    @property
+    def preview_next(self) -> str:
+        """Display the NCF number that will be assigned next, without incrementing."""
+        next_num = self.current_seq + 1
+        if next_num > self.max_seq:
+            return "—"
+        w = self._seq_width()
+        return f"{self.series}{self.ncf_type:02d}{next_num:0{w}d}"
+
+    @property
+    def remaining(self) -> int:
+        return max(0, self.max_seq - self.current_seq)
 
     @classmethod
     def generate(cls, organization, ncf_type: int) -> str:
         """
-        Atomically reserve and return the next e-NCF string for the given
+        Atomically reserve and return the next NCF string for the given
         organization and NCF type.
 
-        Uses SELECT FOR UPDATE to prevent race conditions under concurrency.
+        B-series: B{type:02d}{seq:08d}   e.g. B0100000001
+        E-series: E{type:02d}{seq:010d}  e.g. E310000000001
+
+        Uses SELECT FOR UPDATE to prevent race conditions.
         Raises ValueError if no active sequence exists or the sequence is exhausted.
         """
         with transaction.atomic():
@@ -303,14 +347,15 @@ class NCFSequence(models.Model):
             if next_num > seq.max_seq:
                 raise ValueError(
                     f"La secuencia NCF tipo {ncf_type} de '{organization}' "
-                    f"está agotada (máximo: {seq.max_seq}). "
+                    f"está agotada (máximo: {seq.max_seq:,}). "
                     f"Solicite una nueva secuencia a la DGII."
                 )
 
             seq.current_seq = next_num
             seq.save(update_fields=["current_seq", "updated_at"])
 
-        return f"{seq.series}{seq.ncf_type:02d}{next_num:010d}"
+        w = 8 if seq.series == cls.Series.PHYSICAL else 10
+        return f"{seq.series}{seq.ncf_type:02d}{next_num:0{w}d}"
 
 
 # ── Document Sequence (for Quotations and Sale Orders) ────────────────────────
@@ -526,19 +571,19 @@ class Invoice(ERPBaseModel):
         verbose_name=_("cliente"),
     )
 
-    # ── NCF / e-CF  (INVOICE only) ────────────────────────────────────────────
+    # ── NCF (INVOICE only) ────────────────────────────────────────────────────
     encf = models.CharField(
         max_length=13,
         blank=True,
-        verbose_name=_("e-NCF"),
+        verbose_name=_("NCF"),
         help_text=_(
-            "Número de Comprobante Fiscal Electrónico asignado por la DGII. "
-            "Se genera automáticamente al confirmar la factura."
+            "Número de Comprobante Fiscal asignado al confirmar la factura. "
+            "Se genera automáticamente desde la secuencia activa."
         ),
     )
     ncf_type = models.IntegerField(
         choices=NCFType.choices,
-        default=NCFType.CREDITO_FISCAL,
+        default=NCFType.B01_CREDITO_FISCAL,
         verbose_name=_("tipo de comprobante"),
     )
     encf_modified = models.ForeignKey(
@@ -806,21 +851,23 @@ class Invoice(ERPBaseModel):
         if self.doc_type != self.DocType.INVOICE:
             return
 
+        _nota_types = (
+            NCFType.B03_NOTA_DEBITO, NCFType.B04_NOTA_CREDITO,
+            NCFType.NOTA_DEBITO, NCFType.NOTA_CREDITO,
+        )
+        _credito_fiscal_types = (NCFType.B01_CREDITO_FISCAL, NCFType.CREDITO_FISCAL)
+
         # Nota de Crédito / Débito must reference another invoice
-        if self.ncf_type in (NCFType.NOTA_CREDITO, NCFType.NOTA_DEBITO):
+        if self.ncf_type in _nota_types:
             if not self.encf_modified_id:
                 raise ValidationError(
-                    _(
-                        "Las Notas de Crédito (34) y Débito (33) deben referenciar el NCF afectado."
-                    )
+                    _("Las Notas de Crédito y Débito deben referenciar el NCF afectado.")
                 )
         # Crédito Fiscal requires buyer RNC
-        if self.ncf_type == NCFType.CREDITO_FISCAL:
+        if self.ncf_type in _credito_fiscal_types:
             if self.customer_id and not self.customer.rnc_cedula:
                 raise ValidationError(
-                    _(
-                        "La Factura de Crédito Fiscal (31) requiere el RNC del comprador."
-                    )
+                    _("La Factura de Crédito Fiscal requiere el RNC del comprador.")
                 )
 
 

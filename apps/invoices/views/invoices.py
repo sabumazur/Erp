@@ -276,7 +276,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
 
     def get(self, request, pk):
         original = self._get_original(request, pk)
-        form = CreditNoteForm(initial={"issue_date": date.today(), "ncf_type": 34})
+        form = CreditNoteForm(initial={"issue_date": date.today(), "ncf_type": 4})
         formset = InvoiceItemFormSet()
         ctx = self.get_context_data(form=form, formset=formset, original=original)
         return self.render_to_response(ctx)
@@ -423,6 +423,18 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, _("Secuencia NCF actualizada."))
         return super().form_valid(form)
+
+
+class NCFSequenceDeleteView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+    admin_required = True
+
+    def post(self, request, pk):
+        seq = get_object_or_404(NCFSequence, pk=pk, organization=_org(request))
+        label = seq.get_ncf_type_display()
+        seq.delete()
+        messages.success(request, _(f"Secuencia NCF «{label}» eliminada."))
+        return redirect("invoices:ncf_sequences")
 
 
 # ── HTMX helpers ──────────────────────────────────────────────────────────────

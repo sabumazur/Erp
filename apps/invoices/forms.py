@@ -695,10 +695,12 @@ class CreditNoteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Restrict to note types only
+        # Restrict to note types only (both physical and electronic)
         self.fields["ncf_type"].choices = [
-            (33, _("33 – Nota de Débito")),
-            (34, _("34 – Nota de Crédito")),
+            (3,  _("03 – Nota de Débito")),
+            (4,  _("04 – Nota de Crédito")),
+            (33, _("33 – Nota de Débito (e-CF)")),
+            (34, _("34 – Nota de Crédito (e-CF)")),
         ]
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -718,12 +720,46 @@ class NCFSequenceForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("ncf_type", css_class="col-md-4"),
-                Column("series", css_class="col-md-2"),
-                Column("is_active", css_class="col-md-2 pt-4"),
+                Column("series", css_class="col-md-3"),
+                Column("ncf_type", css_class="col-md-6"),
+                Column("is_active", css_class="col-md-3 pt-4"),
             ),
             Row(
                 Column("current_seq", css_class="col-md-4"),
                 Column("max_seq", css_class="col-md-4"),
             ),
         )
+
+    def clean(self):
+        cleaned = super().clean()
+        series = cleaned.get("series")
+        ncf_type = cleaned.get("ncf_type")
+        max_seq = cleaned.get("max_seq")
+
+        if series and ncf_type:
+            if series == NCFSequence.Series.PHYSICAL and ncf_type not in NCFSequence.PHYSICAL_TYPES:
+                self.add_error(
+                    "ncf_type",
+                    _("Los comprobantes físicos (B) usan tipos 01–16. "
+                      "Para tipos 31–47 seleccione serie E (electrónico)."),
+                )
+            elif series == NCFSequence.Series.ELECTRONIC and ncf_type not in NCFSequence.ELECTRONIC_TYPES:
+                self.add_error(
+                    "ncf_type",
+                    _("Los comprobantes electrónicos (E) usan tipos 31–47. "
+                      "Para tipos 01–16 seleccione serie B (físico)."),
+                )
+
+        if series and max_seq is not None:
+            if series == NCFSequence.Series.PHYSICAL and max_seq > 99_999_999:
+                self.add_error(
+                    "max_seq",
+                    _("Los comprobantes físicos admiten hasta 8 dígitos (máx. 99,999,999)."),
+                )
+            elif series == NCFSequence.Series.ELECTRONIC and max_seq > 9_999_999_999:
+                self.add_error(
+                    "max_seq",
+                    _("Los comprobantes electrónicos admiten hasta 10 dígitos (máx. 9,999,999,999)."),
+                )
+
+        return cleaned

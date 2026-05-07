@@ -11,16 +11,44 @@
   </a>
 </div>
 
-<div class="card shadow-sm" style="max-width:560px">
-  <div class="card-body">
-    <form method="post">
-      {% csrf_token %}
-      {% crispy form %}
-      <div class="d-flex gap-2 mt-3">
-        <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
-        <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% crispy form %}
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
+            <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold small text-muted text-uppercase">
+        {% trans "Vista previa" %}
+      </div>
+      <div class="card-body">
+        <p class="small text-muted mb-1">{% trans "Próximo NCF a asignar:" %}</p>
+        <p class="font-monospace fs-5 mb-0 text-primary fw-bold">{{ object.preview_next }}</p>
+        <hr class="my-2">
+        <p class="small text-muted mb-1">{% trans "Disponibles:" %}</p>
+        <p class="mb-0 {% if object.remaining < 100 %}text-danger fw-bold{% elif object.remaining < 500 %}text-warning{% endif %}">
+          {{ object.remaining }}
+        </p>
+      </div>
+    </div>
+    <div class="alert alert-info mt-3 small">
+      <i class="bi bi-info-circle me-1"></i>
+      {% blocktrans trimmed %}
+        Serie <strong>B</strong>: tipos 01–16, formato <code>B0100000001</code> (8 dígitos).<br>
+        Serie <strong>E</strong>: tipos 31–47, formato <code>E310000000001</code> (10 dígitos).
+      {% endblocktrans %}
+    </div>
   </div>
 </div>
 {% endblock %}

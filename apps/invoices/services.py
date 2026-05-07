@@ -64,7 +64,7 @@ class NCFService:
         # Run DGII field-level validation
         invoice.full_clean()
 
-        # Assign next e-NCF atomically
+        # Assign next NCF atomically
         try:
             encf = NCFSequence.generate(invoice.organization, invoice.ncf_type)
         except ValueError:
@@ -72,12 +72,11 @@ class NCFService:
                 raise
             # ── Dev-mode fallback ──────────────────────────────────────────────
             # No active NCFSequence configured. Generate a locally-unique fake
-            # NCF using the 'B' series prefix (the DGII only issues 'E' series
-            # for e-CF), so fake numbers are visually distinguishable and will
-            # never collide with real sequences.
-            # Format: B{type:02d}{10-digit random}  →  e.g. B310947382610
-            fake_seq = int(uuid.uuid4()) % 10_000_000_000
-            encf = f"B{invoice.ncf_type:02d}{fake_seq:010d}"
+            # NCF using the 'B' series format (8-digit physical sequence) so
+            # fake numbers never collide with real E-series electronic sequences.
+            # Format: B{type:02d}{8-digit random}  →  e.g. B0109473826
+            fake_seq = int(uuid.uuid4()) % 100_000_000  # max 8 digits
+            encf = f"B{invoice.ncf_type:02d}{fake_seq:08d}"
 
         invoice.encf = encf
         invoice.status = Invoice.Status.CONFIRMED
