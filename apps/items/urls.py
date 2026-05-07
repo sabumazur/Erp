@@ -9,4 +9,5 @@ urlpatterns = [
     path("<uuid:pk>/",           views.ItemDetailView.as_view(), name="item_detail"),
     path("<uuid:pk>/edit/",      views.ItemUpdateView.as_view(), name="item_edit"),
     path("<uuid:pk>/toggle/",    views.ItemToggleView.as_view(), name="item_toggle"),
+    path("<uuid:pk>/delete/",   views.ItemDeleteView.as_view(), name="item_delete"),
 ]

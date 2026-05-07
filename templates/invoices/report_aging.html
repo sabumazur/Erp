@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{% trans "Antigüedad de Cuentas por Cobrar" %}{% endblock %}
 
@@ -57,10 +57,10 @@
             </td>
             {% for bc in row.bucket_cells %}
             <td class="text-end {{ bc.css }}">
-              {% if bc.amount %}{{ bc.amount|floatformat:2 }}{% else %}<span class="text-muted">—</span>{% endif %}
+              {% if bc.amount %}{{ bc.amount|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             {% endfor %}
-            <td class="text-end fw-semibold">{{ row.total|floatformat:2 }}</td>
+            <td class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -68,9 +68,9 @@
           <tr>
             <td>{% trans "Total" %}</td>
             {% for ctc in col_total_cells %}
-            <td class="text-end {{ ctc.css }}">{{ ctc.amount|floatformat:2 }}</td>
+            <td class="text-end {{ ctc.css }}">{{ ctc.amount|floatformat:2|intcomma }}</td>
             {% endfor %}
-            <td class="text-end">{{ grand_total|floatformat:2 }}</td>
+            <td class="text-end">{{ grand_total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
       </table>

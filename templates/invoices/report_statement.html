@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{% trans "Estado de Cuenta" %}{% endblock %}
 
@@ -87,26 +87,26 @@
   <div class="col-6 col-sm-3">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Saldo inicial" %}</div>
-      <div class="fw-bold {% if opening_balance > 0 %}text-warning{% endif %}">{{ opening_balance|floatformat:2 }}</div>
+      <div class="fw-bold {% if opening_balance > 0 %}text-warning{% endif %}">{{ opening_balance|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Facturado" %}</div>
-      <div class="fw-bold">{{ period_invoiced|floatformat:2 }}</div>
+      <div class="fw-bold">{{ period_invoiced|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Cobrado" %}</div>
-      <div class="fw-bold text-success">{{ period_collected|floatformat:2 }}</div>
+      <div class="fw-bold text-success">{{ period_collected|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Saldo final" %}</div>
       <div class="fw-bold {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% endif %}">
-        {{ closing_balance|floatformat:2 }}
+        {{ closing_balance|floatformat:2|intcomma }}
       </div>
     </div>
   </div>
@@ -131,7 +131,7 @@
           <tr class="table-light">
             <td colspan="4" class="text-muted small">{% trans "Saldo anterior al período" %}</td>
             <td class="text-end fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}">
-              {{ opening_balance|floatformat:2 }}
+              {{ opening_balance|floatformat:2|intcomma }}
             </td>
           </tr>
           {% for line in lines %}
@@ -144,13 +144,13 @@
               </span>
             </td>
             <td class="text-end small">
-              {% if line.debit %}{{ line.debit|floatformat:2 }}{% else %}<span class="text-muted">—</span>{% endif %}
+              {% if line.debit %}{{ line.debit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end small text-success">
-              {% if line.credit %}{{ line.credit|floatformat:2 }}{% else %}<span class="text-muted">—</span>{% endif %}
+              {% if line.credit %}{{ line.credit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end small fw-semibold {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
-              {{ line.balance|floatformat:2 }}
+              {{ line.balance|floatformat:2|intcomma }}
             </td>
           </tr>
           {% endfor %}
@@ -159,7 +159,7 @@
           <tr>
             <td colspan="4" class="text-end">{% trans "Saldo final" %}</td>
             <td class="text-end {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% endif %}">
-              {{ closing_balance|floatformat:2 }}
+              {{ closing_balance|floatformat:2|intcomma }}
             </td>
           </tr>
         </tfoot>

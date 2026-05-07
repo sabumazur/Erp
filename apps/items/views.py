@@ -188,6 +188,35 @@ class ItemToggleView(ERPBaseViewMixin, View):
         return redirect("items:item_detail", pk=item.pk)
 
 
+# ── Delete ────────────────────────────────────────────────────────────────────
+
+class ItemDeleteView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+    admin_required = True
+
+    def post(self, request, pk):
+        from apps.invoices.models import InvoiceItem
+        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        if InvoiceItem.objects.filter(item=item).exists():
+            if request.htmx:
+                resp = HttpResponse()
+                resp["HX-Reswap"] = "none"
+                resp["HX-Trigger"] = json.dumps({"showSwal": {
+                    "icon": "error",
+                    "title": str(_("No se puede eliminar")),
+                    "text": str(_("Este artículo está siendo usado en uno o más documentos y no puede eliminarse.")),
+                }})
+                return resp
+            messages.error(request, _("Este artículo está siendo usado en documentos y no puede eliminarse."))
+            return redirect("items:item_list")
+        name = item.name
+        item.delete()
+        if request.htmx:
+            return _item_table_response(request, _(f"Artículo «{name}» eliminado."))
+        messages.success(request, _(f"Artículo «{name}» eliminado."))
+        return redirect("items:item_list")
+
+
 # ── HTMX item search (autocomplete for line-item rows) ────────────────────────
 
 class ItemSearchView(ERPBaseViewMixin, View):

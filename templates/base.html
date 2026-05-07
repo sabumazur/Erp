@@ -74,6 +74,16 @@
     el.addEventListener("hidden.bs.toast", function () { el.remove(); });
   });
 
+  /* ── HTMX SweetAlert trigger ─────────────────────────────── */
+  document.body.addEventListener("showSwal", function (evt) {
+    Swal.fire({
+      icon:             evt.detail.icon  || "error",
+      title:            evt.detail.title || "",
+      text:             evt.detail.text  || "",
+      confirmButtonText: evt.detail.confirmButtonText || "OK",
+    });
+  });
+
   /* ── Password visibility toggle ─────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[type="password"]').forEach(input => {

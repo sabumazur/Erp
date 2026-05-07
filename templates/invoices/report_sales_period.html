@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{% trans "Ventas por Período" %}{% endblock %}
 
@@ -52,20 +52,20 @@
   <div class="col-6 col-sm-4">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total facturado" %}</div>
-      <div class="fw-bold fs-6">{{ totals.invoiced|floatformat:2 }}</div>
+      <div class="fw-bold fs-6">{{ totals.invoiced|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total cobrado" %}</div>
-      <div class="fw-bold fs-6 text-success">{{ totals.collected|floatformat:2 }}</div>
+      <div class="fw-bold fs-6 text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
     <div class="card border-0 bg-light text-center py-2">
       <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Neto del año" %}</div>
       <div class="fw-bold fs-6 {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
-        {{ totals.net|floatformat:2 }}
+        {{ totals.net|floatformat:2|intcomma }}
       </div>
     </div>
   </div>
@@ -87,10 +87,10 @@
         {% for row in rows %}
         <tr>
           <td class="fw-semibold">{{ row.month|date:"F Y" }}</td>
-          <td class="text-end">{{ row.invoiced|floatformat:2 }}</td>
-          <td class="text-end text-success">{{ row.collected|floatformat:2 }}</td>
+          <td class="text-end">{{ row.invoiced|floatformat:2|intcomma }}</td>
+          <td class="text-end text-success">{{ row.collected|floatformat:2|intcomma }}</td>
           <td class="text-end fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-success{% endif %}">
-            {{ row.net|floatformat:2 }}
+            {{ row.net|floatformat:2|intcomma }}
           </td>
         </tr>
         {% endfor %}
@@ -98,10 +98,10 @@
       <tfoot class="table-light fw-bold">
         <tr>
           <td>{% trans "Total" %}</td>
-          <td class="text-end">{{ totals.invoiced|floatformat:2 }}</td>
-          <td class="text-end text-success">{{ totals.collected|floatformat:2 }}</td>
+          <td class="text-end">{{ totals.invoiced|floatformat:2|intcomma }}</td>
+          <td class="text-end text-success">{{ totals.collected|floatformat:2|intcomma }}</td>
           <td class="text-end {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
-            {{ totals.net|floatformat:2 }}
+            {{ totals.net|floatformat:2|intcomma }}
           </td>
         </tr>
       </tfoot>

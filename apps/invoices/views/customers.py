@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -253,14 +254,28 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         customer = get_object_or_404(Customer, pk=pk, organization=_org(request))
-        if customer.invoices.exists():
-            messages.error(
-                request,
-                _("No se puede eliminar un cliente con documentos asociados."),
-            )
+        if customer.invoices.exists() or customer.payments.exists():
+            if request.htmx:
+                resp = HttpResponse()
+                resp["HX-Reswap"] = "none"
+                resp["HX-Trigger"] = json.dumps({"showSwal": {
+                    "icon": "error",
+                    "title": str(_("No se puede eliminar")),
+                    "text": str(_("Este cliente tiene documentos o pagos asociados y no puede eliminarse.")),
+                }})
+                return resp
+            messages.error(request, _("No se puede eliminar un cliente con documentos o pagos asociados."))
             return redirect("invoices:customer_list")
         name = customer.name
         customer.delete()
+        if request.htmx:
+            resp = render(request, "invoices/partials/customer_table.html",
+                          {"customers": _customers_with_depts(_org(request))})
+            resp["HX-Trigger"] = json.dumps({"showToast": {
+                "message": str(_(f"Cliente «{name}» eliminado.")),
+                "type": "success",
+            }})
+            return resp
         messages.success(request, _(f"Cliente «{name}» eliminado."))
         return redirect("invoices:customer_list")
 

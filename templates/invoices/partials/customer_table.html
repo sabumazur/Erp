@@ -45,23 +45,22 @@
                                       bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
           <i class="bi bi-pencil"></i>
         </button>
-        <form method="post" action="{% url 'invoices:customer_delete' c.pk %}" class="d-inline" id="del-{{ c.pk }}">
-          {% csrf_token %}
-          <button type="button" class="btn btn-outline-danger btn-sm"
-                  onclick="Swal.fire({
-                    icon: 'warning',
-                    title: '{% trans "¿Eliminar cliente?" %}',
-                    html: '<strong>{{ c.name|escapejs }}</strong>',
-                    showCancelButton: true,
-                    confirmButtonText: '{% trans "Eliminar" %}',
-                    cancelButtonText:  '{% trans "Cancelar" %}',
-                    confirmButtonColor: '#dc3545',
-                  }).then(function (r) {
-                    if (r.isConfirmed) document.getElementById('del-{{ c.pk }}').submit();
-                  })">
-            <i class="bi bi-trash"></i>
-          </button>
-        </form>
+        <button type="button" class="btn btn-outline-danger btn-sm"
+                onclick="Swal.fire({
+                  icon: 'warning',
+                  title: '{% trans "¿Eliminar cliente?" %}',
+                  html: '<strong>{{ c.name|escapejs }}</strong>',
+                  showCancelButton: true,
+                  confirmButtonText: '{% trans "Eliminar" %}',
+                  cancelButtonText:  '{% trans "Cancelar" %}',
+                  confirmButtonColor: '#dc3545',
+                }).then(function (r) {
+                  if (r.isConfirmed) htmx.ajax('POST', '{% url "invoices:customer_delete" c.pk %}',
+                    { target: '#customer-table', swap: 'innerHTML',
+                      values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                })">
+          <i class="bi bi-trash"></i>
+        </button>
       </td>
     </tr>
     {% empty %}

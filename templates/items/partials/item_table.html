@@ -53,25 +53,37 @@
           <i class="bi bi-pencil"></i>
         </button>
         {# Toggle active/inactive #}
-        <form method="post" action="{% url 'items:item_toggle' item.pk %}"
-              class="d-inline" id="toggle-{{ item.pk }}">
-          {% csrf_token %}
-          <button type="button"
-                  class="btn btn-sm {% if item.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
-                  onclick="Swal.fire({
-                    icon: 'question',
-                    title: '{% if item.is_active %}{% trans "¿Desactivar artículo?" %}{% else %}{% trans "¿Activar artículo?" %}{% endif %}',
-                    html: '<strong>{{ item.name|escapejs }}</strong>',
-                    showCancelButton: true,
-                    confirmButtonText: '{% trans "Confirmar" %}',
-                    cancelButtonText:  '{% trans "Cancelar" %}',
-                  }).then(function(r) {
-                    if (r.isConfirmed) htmx.ajax('POST', '{% url "items:item_toggle" item.pk %}',
-                      { target: '#item-table', swap: 'innerHTML', values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
-                  })">
-            <i class="bi bi-toggle-{% if item.is_active %}on{% else %}off{% endif %}"></i>
-          </button>
-        </form>
+        <button type="button"
+                class="btn btn-sm {% if item.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                onclick="Swal.fire({
+                  icon: 'question',
+                  title: '{% if item.is_active %}{% trans "¿Desactivar artículo?" %}{% else %}{% trans "¿Activar artículo?" %}{% endif %}',
+                  html: '<strong>{{ item.name|escapejs }}</strong>',
+                  showCancelButton: true,
+                  confirmButtonText: '{% trans "Confirmar" %}',
+                  cancelButtonText:  '{% trans "Cancelar" %}',
+                }).then(function(r) {
+                  if (r.isConfirmed) htmx.ajax('POST', '{% url "items:item_toggle" item.pk %}',
+                    { target: '#item-table', swap: 'innerHTML', values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                })">
+          <i class="bi bi-toggle-{% if item.is_active %}on{% else %}off{% endif %}"></i>
+        </button>
+        {# Delete #}
+        <button type="button" class="btn btn-outline-danger btn-sm"
+                onclick="Swal.fire({
+                  icon: 'warning',
+                  title: '{% trans "¿Eliminar artículo?" %}',
+                  html: '<strong>{{ item.name|escapejs }}</strong>',
+                  showCancelButton: true,
+                  confirmButtonText: '{% trans "Eliminar" %}',
+                  cancelButtonText:  '{% trans "Cancelar" %}',
+                  confirmButtonColor: '#dc3545',
+                }).then(function(r) {
+                  if (r.isConfirmed) htmx.ajax('POST', '{% url "items:item_delete" item.pk %}',
+                    { target: '#item-table', swap: 'innerHTML', values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                })">
+          <i class="bi bi-trash"></i>
+        </button>
       </td>
     </tr>
     {% empty %}
