@@ -1,54 +1,125 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags i18n %}
+{% load crispy_forms_tags i18n humanize %}
 
 {% block title %}{% trans "Editar secuencia NCF" %}{% endblock %}
 
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Editar secuencia NCF" %}</h1>
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{% trans "Editar secuencia NCF" %}</h1>
+    <p class="text-muted mb-0" style="font-size:.875rem">
+      {% trans "Actualiza los parámetros de la secuencia autorizada por la DGII." %}
+    </p>
+  </div>
   <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
   </a>
 </div>
 
-<div class="row g-3">
-  <div class="col-lg-6">
-    <div class="card shadow-sm">
-      <div class="card-body">
+<div class="row g-4">
+
+  {# ── Form ────────────────────────────────────────────────────────────────── #}
+  <div class="col-lg-7">
+    <div class="card border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body p-4">
+        <p class="fw-semibold mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:#6c757d">
+          {% trans "Parámetros" %}
+        </p>
         <form method="post">
           {% csrf_token %}
           {% crispy form %}
-          <div class="d-flex gap-2 mt-3">
-            <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
-            <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+          <div class="d-flex gap-2 pt-2 mt-1 border-top">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-check-lg me-1"></i>{% trans "Guardar cambios" %}
+            </button>
+            <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">
+              {% trans "Cancelar" %}
+            </a>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold small text-muted text-uppercase">
-        {% trans "Vista previa" %}
-      </div>
-      <div class="card-body">
-        <p class="small text-muted mb-1">{% trans "Próximo NCF a asignar:" %}</p>
-        <p class="font-monospace fs-5 mb-0 text-primary fw-bold">{{ object.preview_next }}</p>
-        <hr class="my-2">
-        <p class="small text-muted mb-1">{% trans "Disponibles:" %}</p>
-        <p class="mb-0 {% if object.remaining < 100 %}text-danger fw-bold{% elif object.remaining < 500 %}text-warning{% endif %}">
-          {{ object.remaining }}
+  {# ── Sidebar ─────────────────────────────────────────────────────────────── #}
+  <div class="col-lg-5 d-flex flex-column gap-3">
+
+    {# Sequence identity card #}
+    <div class="card border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body p-4">
+
+        {# Series pill + type name #}
+        <div class="d-flex align-items-center gap-2 mb-4">
+          {% if object.series == 'B' %}
+            <span class="d-inline-flex align-items-center px-2 py-1 rounded fw-semibold"
+                  style="font-size:.75rem;background:#E6F1FB;color:#185FA5;letter-spacing:.02em">B</span>
+          {% else %}
+            <span class="d-inline-flex align-items-center px-2 py-1 rounded fw-semibold"
+                  style="font-size:.75rem;background:#E1F5EE;color:#0F6E56;letter-spacing:.02em">E</span>
+          {% endif %}
+          <span class="fw-semibold" style="font-size:.9rem">{{ object.get_ncf_type_display }}</span>
+        </div>
+
+        {# Next NCF preview #}
+        <p class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">
+          {% trans "Próximo NCF a asignar" %}
         </p>
+        <code class="d-inline-block text-body fw-bold fs-5 bg-light border rounded-3 px-3 py-2 mb-4">{{ object.preview_next }}</code>
+
+        {# Capacity bar #}
+        <p class="text-muted mb-2" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">
+          {% trans "Capacidad" %}
+        </p>
+        <div class="d-flex justify-content-between align-items-baseline mb-1">
+          {% if object.remaining == 0 %}
+            <span class="fw-semibold" style="font-size:.875rem;color:#842029">{% trans "Agotada" %}</span>
+          {% elif object.remaining < 100 %}
+            <span class="fw-semibold" style="font-size:.875rem;color:#842029">
+              {{ object.remaining|intcomma }} {% trans "disponibles" %}
+            </span>
+          {% elif object.remaining < 500 %}
+            <span class="fw-semibold" style="font-size:.875rem;color:#856404">
+              {{ object.remaining|intcomma }} {% trans "disponibles" %}
+            </span>
+          {% else %}
+            <span class="fw-semibold" style="font-size:.875rem;color:#0A6640">
+              {{ object.remaining|intcomma }} {% trans "disponibles" %}
+            </span>
+          {% endif %}
+          <span class="text-muted" style="font-size:.75rem">{{ object.pct_used }}%</span>
+        </div>
+        <div class="rounded mb-1" style="height:6px;background:rgba(0,0,0,.07);overflow:hidden">
+          {% if object.remaining < 100 %}
+            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#E24B4A"></div>
+          {% elif object.remaining < 500 %}
+            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#BA7517"></div>
+          {% else %}
+            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#1D9E75"></div>
+          {% endif %}
+        </div>
+        <p class="text-muted mt-1 mb-0" style="font-size:.75rem">
+          {{ object.current_seq|intcomma }} {% trans "usados de" %} {{ object.max_seq|intcomma }}
+        </p>
+
       </div>
     </div>
-    <div class="alert alert-info mt-3 small">
-      <i class="bi bi-info-circle me-1"></i>
-      {% blocktrans trimmed %}
-        Serie <strong>B</strong>: tipos 01–16, formato <code>B0100000001</code> (8 dígitos).<br>
-        Serie <strong>E</strong>: tipos 31–47, formato <code>E310000000001</code> (10 dígitos).
-      {% endblocktrans %}
+
+    {# Reference callout #}
+    <div class="d-flex align-items-start gap-2 p-3 rounded-3 small"
+         style="background:#E6F1FB;border:0.5px solid #B5D4F4;color:#185FA5">
+      <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+      <span>
+        {% blocktrans trimmed %}
+          Serie <strong>B</strong>: tipos 01–16, formato <code>B0100000001</code> (8 dígitos).<br>
+          Serie <strong>E</strong>: tipos 31–47, formato <code>E310000000001</code> (10 dígitos).
+        {% endblocktrans %}
+      </span>
     </div>
+
   </div>
 </div>
+
 {% endblock %}

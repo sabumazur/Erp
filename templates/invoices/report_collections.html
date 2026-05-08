@@ -26,27 +26,7 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm mb-4 no-print">
-  <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Desde" %}</label>
-        <input type="date" name="date_from" value="{{ date_from }}"
-               class="form-control form-control-sm" required>
-      </div>
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Hasta" %}</label>
-        <input type="date" name="date_to" value="{{ date_to }}"
-               class="form-control form-control-sm" required>
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-info btn-sm">
-          <i class="bi bi-search me-1"></i>{% trans "Consultar" %}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include "invoices/partials/report_filter_panel.html" with show_dates=True btn_color="info" %}
 
 {% if error %}
 <div class="alert alert-danger">{{ error }}</div>

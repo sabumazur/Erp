@@ -68,6 +68,9 @@ from .reports import (
     ReportStatementView,
     ReportSalesByPeriodView,
     ReportCollectionsView,
+    ReportInvoicesByCustomerView,
+    ReportITBISView,
+    ReportSalesByNCFTypeView,
 )
 from .htmx import (
     CustomerDefaultsView,

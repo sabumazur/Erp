@@ -1,0 +1,76 @@
+<style>
+@media print {
+  @page { size: A4 landscape; }
+  .no-print { display: none !important; }
+  .print-header { display: block !important; }
+  .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  .badge-soft {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: 600;
+  }
+}
+.print-header { display: none; }
+
+.badge-soft {
+  font-size: .72rem;
+  font-weight: 500;
+  padding: .3em .65em;
+  border-radius: 6px;
+  display: inline-block;
+}
+.badge-confirmed { background: #E6F1FB; color: #185FA5; }
+.badge-sent      { background: #D1ECF1; color: #0C5460; }
+.badge-paid      { background: #D1E7DD; color: #0A6640; }
+.badge-overdue   { background: #F8D7DA; color: #842029; }
+.badge-cancelled { background: #E9ECEF; color: #495057; }
+.badge-default   { background: #E9ECEF; color: #495057; }
+.badge-invoice   { background: #E9ECEF; color: #495057; }
+.badge-payment   { background: #D1E7DD; color: #0A6640; }
+
+.metric-card {
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.metric-label {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.metric-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.customer-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: .85rem 1.1rem;
+  border-radius: 10px;
+  border: 0.5px solid rgba(0,0,0,.1);
+  background: #fff;
+  margin-bottom: 1rem;
+}
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #E6F1FB;
+  color: #185FA5;
+  font-weight: 600;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+</style>

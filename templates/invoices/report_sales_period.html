@@ -9,7 +9,11 @@
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
   <h1 class="print-title">{% trans "Ventas por Período" %}</h1>
-  {% if year %}<p class="print-meta">{% trans "Año" %} {{ year }}</p>{% endif %}
+  {% if year %}
+  <p class="print-meta">
+    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}
+  </p>
+  {% endif %}
 </div>
 
 {# ── Screen header (hidden on print) ─────────────────────────────────────── #}
@@ -26,23 +30,7 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm mb-4 no-print">
-  <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Año" %}</label>
-        <input type="number" name="year" value="{{ year_input|default:today.year }}"
-               min="2020" max="2099"
-               class="form-control form-control-sm" required>
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-success btn-sm">
-          <i class="bi bi-search me-1"></i>{% trans "Consultar" %}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include "invoices/partials/report_filter_panel.html" with show_year=True show_month=True btn_color="success" %}
 
 {% if year %}
 
@@ -63,7 +51,9 @@
   </div>
   <div class="col-6 col-sm-4">
     <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Neto del año" %}</div>
+      <div class="small text-muted text-uppercase" style="font-size:.68rem">
+        {% if by_day %}{% trans "Neto del mes" %}{% else %}{% trans "Neto del año" %}{% endif %}
+      </div>
       <div class="fw-bold fs-6 {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
         {{ totals.net|floatformat:2|intcomma }}
       </div>
@@ -71,22 +61,24 @@
   </div>
 </div>
 
-{# ── Monthly breakdown table ───────────────────────────────────────────────── #}
+{# ── Breakdown table ───────────────────────────────────────────────────────── #}
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <table class="table table-hover table-sm mb-0">
       <thead class="table-light">
         <tr>
-          <th>{% trans "Mes" %}</th>
+          <th>{% if by_day %}{% trans "Día" %}{% else %}{% trans "Mes" %}{% endif %}</th>
           <th class="text-end">{% trans "Facturado" %}</th>
           <th class="text-end">{% trans "Cobrado" %}</th>
-          <th class="text-end">{% trans "Neto del mes" %}</th>
+          <th class="text-end">{% trans "Neto" %}</th>
         </tr>
       </thead>
       <tbody>
         {% for row in rows %}
         <tr>
-          <td class="fw-semibold">{{ row.month|date:"F Y" }}</td>
+          <td class="fw-semibold">
+            {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
+          </td>
           <td class="text-end">{{ row.invoiced|floatformat:2|intcomma }}</td>
           <td class="text-end text-success">{{ row.collected|floatformat:2|intcomma }}</td>
           <td class="text-end fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-success{% endif %}">
@@ -111,7 +103,11 @@
 {% else %}
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
-  {% blocktrans with y=year %}No hay actividad registrada para el año {{ y }}.{% endblocktrans %}
+  {% if by_day %}
+    {% blocktrans with y=year m=month %}No hay actividad registrada para el mes {{ m }}/{{ y }}.{% endblocktrans %}
+  {% else %}
+    {% blocktrans with y=year %}No hay actividad registrada para el año {{ y }}.{% endblocktrans %}
+  {% endif %}
 </div>
 {% endif %}
 

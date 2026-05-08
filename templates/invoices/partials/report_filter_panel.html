@@ -1,0 +1,80 @@
+<div class="card border shadow-none mb-4 no-print" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+  <div class="card-body p-4">
+    <p class="fw-semibold mb-3" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:#6c757d">
+      Filtros
+    </p>
+    <form method="get" class="row g-3 align-items-end">
+
+      {% if show_customer %}
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Cliente</label>
+        <select name="customer" class="form-select form-select-sm"
+          {% if customer_required %}required
+          oninvalid="this.setCustomValidity('Debe seleccionar un cliente.')"
+          onchange="this.setCustomValidity('')"{% endif %}>
+          <option value="">{% if customer_required %}— Seleccionar —{% else %}— Todos los clientes —{% endif %}</option>
+          {% for c in customers %}
+          <option value="{{ c.pk }}"{% if c.pk|stringformat:"s" == customer_id %} selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      {% if show_dates %}
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" name="date_from" value="{{ date_from }}"
+               class="form-control form-control-sm" required
+               oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+               oninput="this.setCustomValidity('')">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="form-control form-control-sm" required
+               oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+               oninput="this.setCustomValidity('')">
+      </div>
+      {% endif %}
+
+      {% if show_year %}
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Año</label>
+        <input type="number" name="year" value="{{ year_input|default:today.year }}"
+               min="2020" max="2099"
+               class="form-control form-control-sm" required
+               oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+               oninput="this.setCustomValidity('')">
+      </div>
+      {% endif %}
+
+      {% if show_month %}
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Mes <span class="text-muted fw-normal">(opcional)</span></label>
+        <select name="month" class="form-select form-select-sm">
+          <option value="">— Todos —</option>
+          <option value="1"  {% if month_input == "1"  %}selected{% endif %}>Enero</option>
+          <option value="2"  {% if month_input == "2"  %}selected{% endif %}>Febrero</option>
+          <option value="3"  {% if month_input == "3"  %}selected{% endif %}>Marzo</option>
+          <option value="4"  {% if month_input == "4"  %}selected{% endif %}>Abril</option>
+          <option value="5"  {% if month_input == "5"  %}selected{% endif %}>Mayo</option>
+          <option value="6"  {% if month_input == "6"  %}selected{% endif %}>Junio</option>
+          <option value="7"  {% if month_input == "7"  %}selected{% endif %}>Julio</option>
+          <option value="8"  {% if month_input == "8"  %}selected{% endif %}>Agosto</option>
+          <option value="9"  {% if month_input == "9"  %}selected{% endif %}>Septiembre</option>
+          <option value="10" {% if month_input == "10" %}selected{% endif %}>Octubre</option>
+          <option value="11" {% if month_input == "11" %}selected{% endif %}>Noviembre</option>
+          <option value="12" {% if month_input == "12" %}selected{% endif %}>Diciembre</option>
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-{{ btn_color|default:'primary' }} btn-sm w-100">
+          <i class="bi bi-search me-1"></i>Consultar
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

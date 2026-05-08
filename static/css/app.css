@@ -298,6 +298,46 @@ body.sidebar-collapsed #sidebar {
   width: 360px;
 }
 
+/* ── Forms — compact, consistent with filter panels ───────── */
+
+/* Labels: small + semibold, tighter bottom margin */
+.form-label {
+  font-size: .8rem;
+  font-weight: 600;
+  margin-bottom: .3rem;
+  color: #495057;
+}
+
+/* Inputs & selects: sm-equivalent sizing globally */
+.form-control,
+.form-select {
+  font-size: .875rem;
+  padding: .25rem .5rem;
+  min-height: unset;
+}
+
+/* Textarea keeps a bit more padding for readability */
+textarea.form-control {
+  padding: .4rem .5rem;
+}
+
+.form-check-label {
+  font-size: .875rem;
+}
+
+.form-check-input {
+  margin-top: .2rem;
+}
+
+.form-text {
+  font-size: .75rem;
+}
+
+.invalid-feedback,
+.valid-feedback {
+  font-size: .75rem;
+}
+
 /* ── Print header (hidden on screen, shown on print) ───────── */
 
 .print-header {

@@ -92,13 +92,30 @@ Invoice.objects       # all doc_types (default)
 
 `InvoiceItem.save()` auto-calls `compute()` to populate `line_total`, `itbis_amount`, and `line_total_with_itbis`. After adding/removing items call `invoice.recompute_totals()`.
 
-Dominican fiscal identifiers (NCF/e-CF) are tracked in `NCFSequence` (one active sequence per org+NCF type). Non-fiscal document numbers (quotations/sale orders) use `DocumentSequence`.
+Dominican fiscal identifiers are tracked in `NCFSequence` (one active sequence per org+NCF type). Non-fiscal document numbers (quotations/sale orders) use `DocumentSequence`.
+
+**NCF series:** `NCFType` covers two series — physical (B) and electronic (E):
+
+- **B-series** (traditional comprobantes): codes 1–16, e.g. `B01_CREDITO_FISCAL`, `B02_CONSUMO`. Format: `B{type:02d}{seq:08d}` → `B0100000001`. Default `max_seq` = 99,999,999.
+- **E-series** (e-CF electrónico): codes 31–47, e.g. `CREDITO_FISCAL = 31`. Format: `E{type:02d}{seq:010d}` → `E310000000001`.
+
+`NCFSequence` exposes `NCFSequence.PHYSICAL_TYPES` and `NCFSequence.ELECTRONIC_TYPES` frozensets. The `Series` inner class has `PHYSICAL = "B"` and `ELECTRONIC = "E"`; default series is `PHYSICAL`. Helper properties: `preview_next` (next NCF string without incrementing), `remaining` (unused slots). Dev-mode fallback in `NCFService` generates a fake B-series 8-digit NCF so it never collides with real E-series sequences.
 
 ### Test factories
 
 All factories in `apps/accounts/tests/factories.py` and `apps/invoices/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Tests that specifically assert signal behaviour call `User.objects.create_user()` directly.
 
 Global fixtures (`user`, `org`, `owner_membership`, `admin_membership`, `member_membership`, `viewer_membership`) are defined in the root `conftest.py`.
+
+### Deletion pattern
+
+All delete views (`ItemDeleteView`, `CustomerDeleteView`, `NCFSequenceDeleteView`) are POST-only, `admin_required = True`. They guard against referential integrity before calling `model.delete()`:
+
+- `ItemDeleteView` — blocked if any `InvoiceItem` references the item.
+- `CustomerDeleteView` — blocked if the customer has invoices **or** payments.
+- `NCFSequenceDeleteView` — no guard; sequences can always be deleted (confirmation handled in the template).
+
+HTMX-aware: when `request.htmx` is truthy, deletion views return a partial response with `HX-Trigger` headers instead of a redirect. Success triggers `showToast`; blocked deletes trigger `showSwal` (SweetAlert2). Non-HTMX paths fall back to `messages` + redirect.
 
 ### Settings & i18n
 
@@ -107,3 +124,4 @@ Global fixtures (`user`, `org`, `owner_membership`, `admin_membership`, `member_
 - Crispy forms use the `bootstrap5` pack.
 - `MESSAGE_TAGS` maps `ERROR` → `"danger"` to match Bootstrap 5 alert classes.
 - `ANONYMOUS_USER_NAME = None` (disables the guardian anonymous user).
+- `django.contrib.humanize` is installed (use `{% load humanize %}` for `intcomma`, `naturaltime`, etc. in templates).

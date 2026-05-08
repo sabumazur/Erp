@@ -180,8 +180,8 @@ class Migration(migrations.Migration):
                     "id_type",
                     models.CharField(
                         choices=[
-                            ("RNC", "RNC (Empresa)"),
-                            ("CED", "Cédula (Persona física)"),
+                            ("RNC", "RNC"),
+                            ("CED", "Cédula"),
                             ("PAS", "Pasaporte"),
                             ("EXT", "Identificación extranjera"),
                         ],

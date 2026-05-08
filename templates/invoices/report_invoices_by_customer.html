@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{% trans "Facturas por Cliente" %}{% endblock %}
+
+{% block extra_css %}
+{% include "invoices/partials/report_shared_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+{# ── Print-only document header ───────────────────────────────────────────── #}
+<div class="print-header mb-4">
+  <p style="font-size:.8rem;color:#6c757d;margin:0">{{ organization.name }}</p>
+  <h1 style="font-size:1.2rem;font-weight:600;margin:.25rem 0">{% trans "Facturas por Cliente" %}</h1>
+  {% if customer %}
+  <p style="font-size:.8rem;color:#495057;margin:0">
+    {{ customer.name }}{% if customer.rnc_cedula %} · {{ customer.get_id_type_display }} {{ customer.rnc_cedula }}{% endif %}<br>
+    {% trans "Período" %}: {{ date_from }} — {{ date_to }}
+  </p>
+  {% endif %}
+</div>
+
+{# ── Screen header ────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom no-print flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{% trans "Facturas por Cliente" %}</h1>
+    <p class="text-muted mb-0" style="font-size:.875rem">
+      {% trans "Consulta el historial de facturación de un cliente en un período específico." %}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
+    </a>
+    {% if customer and invoices %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Filter form ──────────────────────────────────────────────────────────── #}
+{% include "invoices/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
+
+{# ── Validation error ─────────────────────────────────────────────────────── #}
+{% if error %}
+<div class="d-flex align-items-center gap-2 p-3 rounded-3 mb-4 no-print"
+     style="background:#F8D7DA;border:1px solid #F5C2C7;font-size:.875rem;color:#842029">
+  <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+  <span>{{ error }}</span>
+</div>
+{% endif %}
+
+{% if customer %}
+
+{# ── Customer info block ──────────────────────────────────────────────────── #}
+<div class="customer-block no-print">
+  <div class="customer-avatar">{{ customer.name|slice:":2"|upper }}</div>
+  <div class="flex-grow-1">
+    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ customer.name }}</p>
+    {% if customer.rnc_cedula %}
+    <p class="text-muted mb-0" style="font-size:.8rem">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
+    {% endif %}
+  </div>
+  {% if date_from and date_to %}
+  <span class="badge-soft badge-confirmed ms-auto">
+    <i class="bi bi-calendar3 me-1"></i>{{ date_from }} — {{ date_to }}
+  </span>
+  {% endif %}
+</div>
+
+{% if invoices %}
+
+{# ── Summary metric cards ─────────────────────────────────────────────────── #}
+<div class="row g-2 mb-4 no-print">
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#F8F9FA">
+      <span class="metric-label" style="color:#6c757d">{% trans "Facturas" %}</span>
+      <span class="metric-value">{{ invoices|length }}</span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#F8F9FA">
+      <span class="metric-label" style="color:#6c757d">{% trans "Subtotal" %}</span>
+      <span class="metric-value">{{ totals.subtotal|floatformat:2|intcomma }}</span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#FFF3CD">
+      <span class="metric-label" style="color:#856404">{% trans "ITBIS 18%" %}</span>
+      <span class="metric-value" style="color:#856404">{{ totals.itbis_18|floatformat:2|intcomma }}</span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#E6F1FB">
+      <span class="metric-label" style="color:#185FA5">{% trans "Total" %}</span>
+      <span class="metric-value" style="color:#185FA5">{{ totals.total|floatformat:2|intcomma }}</span>
+    </div>
+  </div>
+</div>
+
+{# ── Invoices table ───────────────────────────────────────────────────────── #}
+<div class="card border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
+        <thead style="background:#F8F9FA;border-bottom:1px solid rgba(0,0,0,.08)">
+          <tr>
+            <th class="ps-4 py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap">{% trans "NCF / Doc." %}</th>
+            <th class="py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Emisión" %}</th>
+            <th class="py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Vence" %}</th>
+            <th class="py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Condición" %}</th>
+            <th class="py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Subtotal" %}</th>
+            <th class="py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "ITBIS 18%" %}</th>
+            <th class="py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Total" %}</th>
+            <th class="pe-4 py-3 fw-semibold text-muted text-center" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Estado" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in invoices %}
+          <tr style="border-bottom:0.5px solid rgba(0,0,0,.06)">
+            <td class="ps-4 py-3 font-monospace fw-semibold" style="font-size:.82rem">
+              <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none" style="color:inherit">
+                <i class="bi bi-receipt me-1 text-muted" style="font-size:.75rem"></i>{{ inv.display_number }}
+              </a>
+            </td>
+            <td class="py-3">{{ inv.issue_date|date:"d/m/Y" }}</td>
+            <td class="py-3">
+              {% if inv.due_date %}
+                {% if inv.status == 'OVERDUE' %}
+                  <span class="text-danger fw-semibold"><i class="bi bi-exclamation-circle me-1" style="font-size:.75rem"></i>{{ inv.due_date|date:"d/m/Y" }}</span>
+                {% else %}
+                  {{ inv.due_date|date:"d/m/Y" }}
+                {% endif %}
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="py-3">{{ inv.get_payment_condition_display }}</td>
+            <td class="py-3 text-end font-monospace">{{ inv.subtotal|floatformat:2|intcomma }}</td>
+            <td class="py-3 text-end font-monospace">{{ inv.itbis_18|floatformat:2|intcomma }}</td>
+            <td class="py-3 text-end font-monospace fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
+            <td class="pe-4 py-3 text-center">
+              {% if inv.status == "CONFIRMED" %}<span class="badge-soft badge-confirmed">{% trans "Confirmada" %}</span>
+              {% elif inv.status == "SENT" %}<span class="badge-soft badge-sent">{% trans "Enviada" %}</span>
+              {% elif inv.status == "PAID" %}<span class="badge-soft badge-paid">{% trans "Pagada" %}</span>
+              {% elif inv.status == "OVERDUE" %}<span class="badge-soft badge-overdue">{% trans "Vencida" %}</span>
+              {% elif inv.status == "CANCELLED" %}<span class="badge-soft badge-cancelled">{% trans "Anulada" %}</span>
+              {% else %}<span class="badge-soft badge-default">{{ inv.get_status_display }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot style="background:#F8F9FA;border-top:2px solid rgba(0,0,0,.1)">
+          <tr>
+            <td class="ps-4 py-3 fw-semibold" colspan="4">{% trans "Total del período" %}</td>
+            <td class="py-3 text-end font-monospace fw-semibold">{{ totals.subtotal|floatformat:2|intcomma }}</td>
+            <td class="py-3 text-end font-monospace fw-semibold">{{ totals.itbis_18|floatformat:2|intcomma }}</td>
+            <td class="py-3 text-end font-monospace fw-bold" style="color:#185FA5">{{ totals.total|floatformat:2|intcomma }}</td>
+            <td class="pe-4"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+{# ── Empty state ──────────────────────────────────────────────────────────── #}
+<div class="d-flex flex-column align-items-center justify-content-center text-center py-5 no-print" style="gap:12px">
+  <div style="width:52px;height:52px;border-radius:14px;background:#F8F9FA;display:flex;align-items:center;justify-content:center">
+    <i class="bi bi-receipt" style="font-size:1.4rem;color:#adb5bd"></i>
+  </div>
+  <p class="fw-semibold mb-0" style="font-size:.95rem">{% trans "Sin resultados" %}</p>
+  <p class="text-muted mb-0" style="font-size:.85rem;max-width:320px">
+    {% trans "No hay facturas para el cliente y período seleccionados. Prueba con un rango de fechas diferente." %}
+  </p>
+</div>
+
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

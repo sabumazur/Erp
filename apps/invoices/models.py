@@ -89,8 +89,8 @@ class PaymentMethod(models.TextChoices):
 
 class Customer(ERPBaseModel):
     class IdType(models.TextChoices):
-        RNC = "RNC", _("RNC (Empresa)")
-        CEDULA = "CED", _("Cédula (Persona física)")
+        RNC = "RNC", _("RNC")
+        CEDULA = "CED", _("Cédula")
         PASAPORTE = "PAS", _("Pasaporte")
         EXTERIOR = "EXT", _("Identificación extranjera")
 
@@ -323,6 +323,13 @@ class NCFSequence(models.Model):
     @property
     def remaining(self) -> int:
         return max(0, self.max_seq - self.current_seq)
+
+    @property
+    def pct_used(self) -> float:
+        """Percentage of sequence already consumed (0–100), for progress bars."""
+        if self.max_seq == 0:
+            return 0.0
+        return min(100.0, round(self.current_seq / self.max_seq * 100, 2))
 
     @classmethod
     def generate(cls, organization, ncf_type: int) -> str:

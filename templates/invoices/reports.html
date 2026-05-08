@@ -1,187 +1,271 @@
 {% extends "base.html" %}
-{% load i18n %}
 
-{% block title %}{% trans "Reportes DGII" %}{% endblock %}
+{% block title %}Reportes de Facturación{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4">{% trans "Reportes DGII" %}</h1>
 
-<div class="row g-3">
-  <!-- Format 607 -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i>
-        {% trans "Formato 607 — Ventas" %}
-      </div>
-      <div class="card-body">
-        <p class="text-muted small">
-          {% trans "Reporte mensual de ventas para la DGII (Norma General 07-18). Incluye todas las facturas confirmadas del período excepto anuladas. Vence el día 15 del mes siguiente." %}
+{% comment %}Page header{% endcomment %}
+<div class="d-flex flex-column mb-4 pb-3 border-bottom">
+  <h1 class="h3 mb-1">Reportes de Facturación</h1>
+  <p class="text-muted mb-0" style="font-size:.875rem">Genera y descarga tus informes de facturación y cumplimiento fiscal.</p>
+</div>
+
+{% comment %}─── Section: Management reports ───{% endcomment %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <span class="text-muted fw-semibold text-uppercase"
+        style="font-size:.7rem;letter-spacing:.07em;white-space:nowrap">Informes de gestión</span>
+  <hr class="flex-grow-1 m-0 opacity-25">
+</div>
+
+<div class="row g-3 mb-5">
+
+  {% comment %}Facturas por cliente{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <div class="mb-3 report-icon-wrap" style="background:#E6F1FB">
+          <i class="bi bi-receipt" style="color:#185FA5"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Facturas por Cliente</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Listado de facturas emitidas a un cliente en un período: NCF, fechas, condición de pago, subtotal, ITBIS y total con estado.
         </p>
-        <form method="get" action="{% url 'invoices:report_607' %}">
+        <a href="{% url 'invoices:report_invoices_by_customer' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Antigüedad de cuentas por cobrar{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <div class="mb-3 report-icon-wrap" style="background:#FFF3CD">
+          <i class="bi bi-clock-history" style="color:#997404"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Antigüedad de Cuentas por Cobrar</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Saldo pendiente de todos los clientes desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y +90 días.
+        </p>
+        <a href="{% url 'invoices:report_aging' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Estado de cuenta{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <div class="mb-3 report-icon-wrap" style="background:#E6F1FB">
+          <i class="bi bi-person-lines-fill" style="color:#185FA5"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Estado de Cuenta</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo corriente con balance acumulado.
+        </p>
+        <a href="{% url 'invoices:report_statement' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Ventas por período{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <div class="mb-3 report-icon-wrap" style="background:#D1E7DD">
+          <i class="bi bi-bar-chart-line" style="color:#0A6640"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Ventas por Período</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Facturación y cobros mes a mes para un año seleccionado, con el neto del período (facturado − cobrado).
+        </p>
+        <a href="{% url 'invoices:report_sales_period' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Cobros del período{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <div class="mb-3 report-icon-wrap" style="background:#D1ECF1">
+          <i class="bi bi-cash-stack" style="color:#0C5460"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Cobros del Período</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Pagos recibidos en un rango de fechas agrupados por método de pago, con detalle por cliente.
+        </p>
+        <a href="{% url 'invoices:report_collections' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% comment %}─── Section: DGII reports ───{% endcomment %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <span class="text-muted fw-semibold text-uppercase"
+        style="font-size:.7rem;letter-spacing:.07em;white-space:nowrap">Reportes DGII</span>
+  <hr class="flex-grow-1 m-0 opacity-25">
+</div>
+
+<div class="row g-3 mb-4">
+
+  {% comment %}Resumen de ITBIS{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <span class="badge mb-3 align-self-start" style="background:#FFF3CD;color:#856404;font-weight:500;font-size:.7rem">
+          DGII · Obligatorio
+        </span>
+        <div class="mb-3 report-icon-wrap" style="background:#F8D7DA">
+          <i class="bi bi-percent" style="color:#842029"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Resumen de ITBIS</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Desglose de base imponible e ITBIS por tasa (Exento, 16%, 18%) agrupado por mes o por día, para verificar la declaración mensual.
+        </p>
+        <a href="{% url 'invoices:report_itbis' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Ventas por tipo de comprobante{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <span class="badge mb-3 align-self-start" style="background:#FFF3CD;color:#856404;font-weight:500;font-size:.7rem">
+          DGII · Obligatorio
+        </span>
+        <div class="mb-3 report-icon-wrap" style="background:#D1E7DD">
+          <i class="bi bi-tags" style="color:#0A6640"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Ventas por Tipo de Comprobante</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Totales facturados agrupados por tipo de NCF (B01 Crédito Fiscal, B02 Consumo, etc.) para un mes y año seleccionados.
+        </p>
+        <a href="{% url 'invoices:report_ncf_type' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% comment %}Formato 607{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <span class="badge mb-3 align-self-start" style="background:#FFF3CD;color:#856404;font-weight:500;font-size:.7rem">
+          DGII · Vence día 15
+        </span>
+        <div class="mb-3 report-icon-wrap" style="background:#D1E7DD">
+          <i class="bi bi-file-earmark-spreadsheet" style="color:#0A6640"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Formato 607 — Ventas</p>
+        <p class="text-muted small mb-3">
+          Reporte mensual de ventas para la DGII (Norma General 07-18). Incluye todas las facturas confirmadas del período excepto anuladas.
+        </p>
+        <form method="get" action="{% url 'invoices:report_607' %}" class="mt-auto">
           <div class="row g-2 align-items-end">
-            <div class="col-6">
-              <label class="form-label small">{% trans "Mes" %}</label>
+            <div class="col-7">
+              <label class="form-label small mb-1">Mes</label>
               <select name="month" class="form-select form-select-sm">
-                <option value="1">{% trans "Enero" %}</option>
-                <option value="2">{% trans "Febrero" %}</option>
-                <option value="3">{% trans "Marzo" %}</option>
-                <option value="4">{% trans "Abril" %}</option>
-                <option value="5">{% trans "Mayo" %}</option>
-                <option value="6">{% trans "Junio" %}</option>
-                <option value="7">{% trans "Julio" %}</option>
-                <option value="8">{% trans "Agosto" %}</option>
-                <option value="9">{% trans "Septiembre" %}</option>
-                <option value="10">{% trans "Octubre" %}</option>
-                <option value="11">{% trans "Noviembre" %}</option>
-                <option value="12">{% trans "Diciembre" %}</option>
+                {% for num, name in months %}
+                <option value="{{ num }}"{% if num == today.month %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
               </select>
             </div>
-            <div class="col-4">
-              <label class="form-label small">{% trans "Año" %}</label>
+            <div class="col-5">
+              <label class="form-label small mb-1">Año</label>
               <input type="number" name="year" value="{{ today.year }}" min="2020"
                      class="form-control form-control-sm">
             </div>
-            <div class="col-2">
-              <button type="submit" class="btn btn-success btn-sm w-100">
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
           </div>
+          <button type="submit" class="btn btn-sm mt-2 w-100"
+                  style="background:#D1E7DD;color:#0A6640;border:none;font-weight:500">
+            <i class="bi bi-download me-1"></i>Descargar CSV
+          </button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Format 608 -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-file-earmark-x me-1 text-danger"></i>
-        {% trans "Formato 608 — Comprobantes Anulados" %}
-      </div>
-      <div class="card-body">
-        <p class="text-muted small">
-          {% trans "Reporte mensual de e-NCF anulados durante el período. Debe incluirse en la remisión de datos a la DGII." %}
+  {% comment %}Formato 608{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <span class="badge mb-3 align-self-start" style="background:#FFF3CD;color:#856404;font-weight:500;font-size:.7rem">
+          DGII · Vence día 15
+        </span>
+        <div class="mb-3 report-icon-wrap" style="background:#F8D7DA">
+          <i class="bi bi-file-earmark-x" style="color:#842029"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Formato 608 — Comprobantes Anulados</p>
+        <p class="text-muted small mb-3">
+          Reporte mensual de e-NCF anulados durante el período. Debe incluirse en la remisión de datos a la DGII.
         </p>
-        <form method="get" action="{% url 'invoices:report_608' %}">
+        <form method="get" action="{% url 'invoices:report_608' %}" class="mt-auto">
           <div class="row g-2 align-items-end">
-            <div class="col-6">
-              <label class="form-label small">{% trans "Mes" %}</label>
+            <div class="col-7">
+              <label class="form-label small mb-1">Mes</label>
               <select name="month" class="form-select form-select-sm">
-                <option value="1">{% trans "Enero" %}</option>
-                <option value="2">{% trans "Febrero" %}</option>
-                <option value="3">{% trans "Marzo" %}</option>
-                <option value="4">{% trans "Abril" %}</option>
-                <option value="5">{% trans "Mayo" %}</option>
-                <option value="6">{% trans "Junio" %}</option>
-                <option value="7">{% trans "Julio" %}</option>
-                <option value="8">{% trans "Agosto" %}</option>
-                <option value="9">{% trans "Septiembre" %}</option>
-                <option value="10">{% trans "Octubre" %}</option>
-                <option value="11">{% trans "Noviembre" %}</option>
-                <option value="12">{% trans "Diciembre" %}</option>
+                {% for num, name in months %}
+                <option value="{{ num }}"{% if num == today.month %} selected{% endif %}>{{ name }}</option>
+                {% endfor %}
               </select>
             </div>
-            <div class="col-4">
-              <label class="form-label small">{% trans "Año" %}</label>
+            <div class="col-5">
+              <label class="form-label small mb-1">Año</label>
               <input type="number" name="year" value="{{ today.year }}" min="2020"
                      class="form-control form-control-sm">
             </div>
-            <div class="col-2">
-              <button type="submit" class="btn btn-danger btn-sm w-100">
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
           </div>
+          <button type="submit" class="btn btn-sm mt-2 w-100"
+                  style="background:#F8D7DA;color:#842029;border:none;font-weight:500">
+            <i class="bi bi-download me-1"></i>Descargar CSV
+          </button>
         </form>
       </div>
     </div>
   </div>
-</div>
-
-<h2 class="h5 mt-5 mb-3">{% trans "Informes de gestión" %}</h2>
-<div class="row g-3">
-
-  <!-- Aging receivables -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-clock-history me-1 text-warning"></i>
-        {% trans "Antigüedad de Cuentas por Cobrar" %}
-      </div>
-      <div class="card-body d-flex flex-column">
-        <p class="text-muted small flex-grow-1">
-          {% trans "Saldo pendiente de todos los clientes desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y más de 90 días." %}
-        </p>
-        <a href="{% url 'invoices:report_aging' %}" class="btn btn-warning btn-sm align-self-start">
-          <i class="bi bi-arrow-right me-1"></i>{% trans "Ver reporte" %}
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Account statement -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-person-lines-fill me-1 text-primary"></i>
-        {% trans "Estado de Cuenta" %}
-      </div>
-      <div class="card-body d-flex flex-column">
-        <p class="text-muted small flex-grow-1">
-          {% trans "Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo corriente con balance acumulado." %}
-        </p>
-        <a href="{% url 'invoices:report_statement' %}" class="btn btn-primary btn-sm align-self-start">
-          <i class="bi bi-arrow-right me-1"></i>{% trans "Ver reporte" %}
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sales by period -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-bar-chart-line me-1 text-success"></i>
-        {% trans "Ventas por Período" %}
-      </div>
-      <div class="card-body d-flex flex-column">
-        <p class="text-muted small flex-grow-1">
-          {% trans "Facturación y cobros mes a mes para un año seleccionado, con el neto del período (facturado − cobrado)." %}
-        </p>
-        <a href="{% url 'invoices:report_sales_period' %}" class="btn btn-success btn-sm align-self-start">
-          <i class="bi bi-arrow-right me-1"></i>{% trans "Ver reporte" %}
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Collections -->
-  <div class="col-md-6">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">
-        <i class="bi bi-cash-stack me-1 text-info"></i>
-        {% trans "Cobros del Período" %}
-      </div>
-      <div class="card-body d-flex flex-column">
-        <p class="text-muted small flex-grow-1">
-          {% trans "Pagos recibidos en un rango de fechas agrupados por método de pago, con detalle por cliente." %}
-        </p>
-        <a href="{% url 'invoices:report_collections' %}" class="btn btn-info btn-sm align-self-start">
-          <i class="bi bi-arrow-right me-1"></i>{% trans "Ver reporte" %}
-        </a>
-      </div>
-    </div>
-  </div>
 
 </div>
 
-<div class="alert alert-warning mt-4 small">
-  <i class="bi bi-exclamation-triangle me-1"></i>
-  {% blocktrans %}
-    Los archivos generados deben cargarse en la <strong>Oficina Virtual (OFV) de la DGII</strong> antes del día 15 del mes siguiente al período reportado. Verifique los datos antes de remitir.
-  {% endblocktrans %}
+{% comment %}DGII deadline notice{% endcomment %}
+<div class="d-flex align-items-start gap-2 p-3 rounded-3"
+     style="background:#EFF6FF;border:1px solid #BFDBFE;font-size:.875rem">
+  <i class="bi bi-calendar-event-fill mt-1 flex-shrink-0" style="color:#1D4ED8"></i>
+  <span style="color:#1E3A8A">
+    <strong>Próximo vencimiento DGII: {{ dgii_deadline|date:"j \d\e F \d\e Y" }}.</strong>
+    Los archivos generados deben cargarse en la <strong>Oficina Virtual (OFV) de la DGII</strong>.
+    Verifique los datos antes de remitir.
+  </span>
 </div>
+
+<style>
+.report-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.report-icon-wrap .bi {
+  font-size: 1.2rem;
+}
+</style>
+
 {% endblock %}
-

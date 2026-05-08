@@ -1,0 +1,7 @@
+<script>
+  document.getElementById('filter-form').addEventListener('htmx:afterRequest', function () {
+    var el = document.getElementById('filterOffcanvas');
+    var oc = bootstrap.Offcanvas.getInstance(el);
+    if (oc) oc.hide();
+  });
+</script>

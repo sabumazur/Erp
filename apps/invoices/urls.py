@@ -69,6 +69,9 @@ from .views import (
     ReportStatementView,
     ReportSalesByPeriodView,
     ReportCollectionsView,
+    ReportInvoicesByCustomerView,
+    ReportITBISView,
+    ReportSalesByNCFTypeView,
 )
 
 app_name = "invoices"
@@ -163,8 +166,11 @@ urlpatterns = [
     path("invoices/reports/608/",                  Report608View.as_view(),             name="report_608"),
 
     # ── Management reports ────────────────────────────────────────────────────
+    path("invoices/reports/invoices-by-customer/", ReportInvoicesByCustomerView.as_view(), name="report_invoices_by_customer"),
     path("invoices/reports/aging/",                ReportAgingView.as_view(),           name="report_aging"),
     path("invoices/reports/statement/",            ReportStatementView.as_view(),       name="report_statement"),
     path("invoices/reports/sales-by-period/",      ReportSalesByPeriodView.as_view(),   name="report_sales_period"),
-    path("invoices/reports/collections/",          ReportCollectionsView.as_view(),     name="report_collections"),
+    path("invoices/reports/collections/",          ReportCollectionsView.as_view(),          name="report_collections"),
+    path("invoices/reports/itbis/",                ReportITBISView.as_view(),                name="report_itbis"),
+    path("invoices/reports/ncf-type/",             ReportSalesByNCFTypeView.as_view(),       name="report_ncf_type"),
 ]

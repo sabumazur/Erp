@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 )),
                 ("name", models.CharField(max_length=255, verbose_name="nombre / razón social")),
                 ("id_type", models.CharField(
-                    choices=[("RNC", "RNC (Empresa)"), ("CED", "Cédula (Persona física)"),
+                    choices=[("RNC", "RNC"), ("CED", "Cédula"),
                              ("PAS", "Pasaporte"), ("EXT", "Identificación extranjera")],
                     default="RNC",
                     max_length=3,

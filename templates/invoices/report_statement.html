@@ -3,162 +3,176 @@
 
 {% block title %}{% trans "Estado de Cuenta" %}{% endblock %}
 
+{% block extra_css %}
+{% include "invoices/partials/report_shared_styles.html" %}
+{% endblock %}
+
 {% block content %}
 
 {# ── Print-only document header ───────────────────────────────────────────── #}
-<div class="print-header">
-  <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">{% trans "Estado de Cuenta" %}</h1>
+<div class="print-header mb-4">
+  <p style="font-size:.8rem;color:#6c757d;margin:0">{{ organization.name }}</p>
+  <h1 style="font-size:1.2rem;font-weight:600;margin:.25rem 0">{% trans "Estado de Cuenta" %}</h1>
   {% if customer %}
-  <p class="print-meta">
+  <p style="font-size:.8rem;color:#495057;margin:0">
     {{ customer.name }}{% if customer.rnc_cedula %} · {{ customer.get_id_type_display }} {{ customer.rnc_cedula }}{% endif %}<br>
     {% trans "Período" %}: {{ date_from }} — {{ date_to }}
   </p>
   {% endif %}
 </div>
 
-{# ── Screen header (hidden on print) ─────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
-  <h1 class="h3 mb-0">{% trans "Estado de Cuenta" %}</h1>
+{# ── Screen header ────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom no-print flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{% trans "Estado de Cuenta" %}</h1>
+    <p class="text-muted mb-0" style="font-size:.875rem">
+      {% trans "Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo acumulado." %}
+    </p>
+  </div>
   <div class="d-flex gap-2">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+    {% if customer and lines %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
+    {% endif %}
   </div>
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm mb-4 no-print">
-  <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">{% trans "Cliente" %}</label>
-        <select name="customer" class="form-select form-select-sm" required>
-          <option value="">{% trans "— Seleccionar —" %}</option>
-          {% for c in customers %}
-          <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == customer_id %}selected{% endif %}>
-            {{ c.name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Desde" %}</label>
-        <input type="date" name="date_from" value="{{ date_from }}"
-               class="form-control form-control-sm" required>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Hasta" %}</label>
-        <input type="date" name="date_to" value="{{ date_to }}"
-               class="form-control form-control-sm" required>
-      </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary btn-sm w-100">
-          <i class="bi bi-search me-1"></i>{% trans "Consultar" %}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include "invoices/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
 
+{# ── Validation error ─────────────────────────────────────────────────────── #}
 {% if error %}
-<div class="alert alert-danger">{{ error }}</div>
+<div class="d-flex align-items-center gap-2 p-3 rounded-3 mb-4 no-print"
+     style="background:#F8D7DA;border:1px solid #F5C2C7;font-size:.875rem;color:#842029">
+  <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+  <span>{{ error }}</span>
+</div>
 {% endif %}
 
 {% if customer %}
-{# ── Header ───────────────────────────────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-  <div>
-    <h5 class="mb-0">{{ customer.name }}</h5>
+
+{# ── Customer info block ──────────────────────────────────────────────────── #}
+<div class="customer-block no-print">
+  <div class="customer-avatar">{{ customer.name|slice:":2"|upper }}</div>
+  <div class="flex-grow-1">
+    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ customer.name }}</p>
     {% if customer.rnc_cedula %}
-      <small class="text-muted font-monospace">{{ customer.get_id_type_display }} · {{ customer.rnc_cedula }}</small>
+    <p class="text-muted mb-0" style="font-size:.8rem">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
     {% endif %}
   </div>
-  <div class="text-end small text-muted">
-    {% trans "Período" %}: {{ date_from }} — {{ date_to }}
+  {% if date_from and date_to %}
+  <span class="badge-soft badge-confirmed ms-auto">
+    <i class="bi bi-calendar3 me-1"></i>{{ date_from }} — {{ date_to }}
+  </span>
+  {% endif %}
+</div>
+
+{# ── Summary metric cards ─────────────────────────────────────────────────── #}
+<div class="row g-2 mb-4 no-print">
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#F8F9FA">
+      <span class="metric-label" style="color:#6c757d">{% trans "Saldo inicial" %}</span>
+      <span class="metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
+        {{ opening_balance|floatformat:2|intcomma }}
+      </span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#F8F9FA">
+      <span class="metric-label" style="color:#6c757d">{% trans "Facturado" %}</span>
+      <span class="metric-value">{{ period_invoiced|floatformat:2|intcomma }}</span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="metric-card" style="background:#D1E7DD">
+      <span class="metric-label" style="color:#0A6640">{% trans "Cobrado" %}</span>
+      <span class="metric-value" style="color:#0A6640">{{ period_collected|floatformat:2|intcomma }}</span>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    {% if closing_balance > 0 %}
+    <div class="metric-card" style="background:#FFF3CD">
+      <span class="metric-label" style="color:#856404">{% trans "Saldo final" %}</span>
+      <span class="metric-value" style="color:#856404">{{ closing_balance|floatformat:2|intcomma }}</span>
+    </div>
+    {% elif closing_balance < 0 %}
+    <div class="metric-card" style="background:#F8D7DA">
+      <span class="metric-label" style="color:#842029">{% trans "Saldo final" %}</span>
+      <span class="metric-value" style="color:#842029">{{ closing_balance|floatformat:2|intcomma }}</span>
+    </div>
+    {% else %}
+    <div class="metric-card" style="background:#D1E7DD">
+      <span class="metric-label" style="color:#0A6640">{% trans "Saldo final" %}</span>
+      <span class="metric-value" style="color:#0A6640">{{ closing_balance|floatformat:2|intcomma }}</span>
+    </div>
+    {% endif %}
   </div>
 </div>
 
-{# ── Summary pills ─────────────────────────────────────────────────────────── #}
-<div class="row g-2 mb-3">
-  <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Saldo inicial" %}</div>
-      <div class="fw-bold {% if opening_balance > 0 %}text-warning{% endif %}">{{ opening_balance|floatformat:2|intcomma }}</div>
-    </div>
-  </div>
-  <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Facturado" %}</div>
-      <div class="fw-bold">{{ period_invoiced|floatformat:2|intcomma }}</div>
-    </div>
-  </div>
-  <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Cobrado" %}</div>
-      <div class="fw-bold text-success">{{ period_collected|floatformat:2|intcomma }}</div>
-    </div>
-  </div>
-  <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Saldo final" %}</div>
-      <div class="fw-bold {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% endif %}">
-        {{ closing_balance|floatformat:2|intcomma }}
-      </div>
-    </div>
-  </div>
-</div>
-
-{# ── Statement table ───────────────────────────────────────────────────────── #}
 {% if lines %}
-<div class="card shadow-sm">
+
+{# ── Statement table ──────────────────────────────────────────────────────── #}
+<div class="card border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-sm table-hover mb-0">
-        <thead class="table-light">
+      <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
+        <thead style="background:#F8F9FA;border-bottom:1px solid rgba(0,0,0,.08)">
           <tr>
-            <th>{% trans "Fecha" %}</th>
-            <th>{% trans "Referencia" %}</th>
-            <th class="text-end">{% trans "Débito" %}</th>
-            <th class="text-end">{% trans "Crédito" %}</th>
-            <th class="text-end">{% trans "Saldo" %}</th>
+            <th class="ps-4 py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Fecha" %}</th>
+            <th class="py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Tipo" %}</th>
+            <th class="py-3 fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Referencia" %}</th>
+            <th class="py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Débito" %}</th>
+            <th class="py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Crédito" %}</th>
+            <th class="pe-4 py-3 fw-semibold text-muted text-end" style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">{% trans "Saldo" %}</th>
           </tr>
         </thead>
         <tbody>
-          <tr class="table-light">
-            <td colspan="4" class="text-muted small">{% trans "Saldo anterior al período" %}</td>
-            <td class="text-end fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}">
+          <tr style="background:#F8F9FA;border-bottom:0.5px solid rgba(0,0,0,.06)">
+            <td class="ps-4 py-2 text-muted" style="font-size:.8rem" colspan="5">{% trans "Saldo anterior al período" %}</td>
+            <td class="pe-4 py-2 text-end font-monospace fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}"
+                style="font-size:.8rem">
               {{ opening_balance|floatformat:2|intcomma }}
             </td>
           </tr>
           {% for line in lines %}
-          <tr>
-            <td class="text-nowrap small">{{ line.date|date:"d/m/Y" }}</td>
-            <td class="small">
-              <a href="{{ line.url }}" class="text-decoration-none font-monospace">{{ line.ref }}</a>
-              <span class="badge ms-1 {% if line.type == 'invoice' %}bg-secondary{% else %}bg-success{% endif %}" style="font-size:.6rem">
-                {% if line.type == 'invoice' %}{% trans "FAC" %}{% else %}{% trans "PAG" %}{% endif %}
-              </span>
+          <tr style="border-bottom:0.5px solid rgba(0,0,0,.06)">
+            <td class="ps-4 py-3 text-nowrap">{{ line.date|date:"d/m/Y" }}</td>
+            <td class="py-3" style="font-size:.82rem">
+              {% if line.type == 'invoice' %}
+                <span class="badge-soft badge-invoice">{% trans "Factura" %}</span>
+              {% else %}
+                <span class="badge-soft badge-payment">{% trans "Cobro" %}</span>
+              {% endif %}
             </td>
-            <td class="text-end small">
+            <td class="py-3">
+              <a href="{{ line.url }}" class="text-decoration-none font-monospace fw-semibold" style="color:inherit;font-size:.82rem">
+                {% if line.type == 'invoice' %}<i class="bi bi-receipt me-1 text-muted no-print" style="font-size:.75rem"></i>
+                {% else %}<i class="bi bi-cash me-1 text-muted no-print" style="font-size:.75rem"></i>{% endif %}
+                {{ line.ref }}
+              </a>
+            </td>
+            <td class="py-3 text-end font-monospace">
               {% if line.debit %}{{ line.debit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
             </td>
-            <td class="text-end small text-success">
+            <td class="py-3 text-end font-monospace" style="color:#0A6640">
               {% if line.credit %}{{ line.credit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
             </td>
-            <td class="text-end small fw-semibold {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
+            <td class="pe-4 py-3 text-end font-monospace fw-semibold
+              {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
               {{ line.balance|floatformat:2|intcomma }}
             </td>
           </tr>
           {% endfor %}
         </tbody>
-        <tfoot class="table-light fw-bold">
+        <tfoot style="background:#F8F9FA;border-top:2px solid rgba(0,0,0,.1)">
           <tr>
-            <td colspan="4" class="text-end">{% trans "Saldo final" %}</td>
-            <td class="text-end {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% endif %}">
+            <td class="ps-4 py-3 fw-semibold" colspan="5">{% trans "Saldo final" %}</td>
+            <td class="pe-4 py-3 text-end font-monospace fw-bold
+              {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
               {{ closing_balance|floatformat:2|intcomma }}
             </td>
           </tr>
@@ -167,11 +181,22 @@
     </div>
   </div>
 </div>
+
 {% else %}
-<div class="alert alert-info">
-  <i class="bi bi-info-circle me-1"></i>
-  {% trans "No hay movimientos en el período seleccionado." %}
+
+{# ── Empty state ──────────────────────────────────────────────────────────── #}
+<div class="d-flex flex-column align-items-center justify-content-center text-center py-5 no-print" style="gap:12px">
+  <div style="width:52px;height:52px;border-radius:14px;background:#F8F9FA;display:flex;align-items:center;justify-content:center">
+    <i class="bi bi-person-lines-fill" style="font-size:1.4rem;color:#adb5bd"></i>
+  </div>
+  <p class="fw-semibold mb-0" style="font-size:.95rem">{% trans "Sin movimientos" %}</p>
+  <p class="text-muted mb-0" style="font-size:.85rem;max-width:320px">
+    {% trans "No hay movimientos en el período seleccionado. Prueba con un rango de fechas diferente." %}
+  </p>
 </div>
+
 {% endif %}
+
 {% endif %}
+
 {% endblock %}
