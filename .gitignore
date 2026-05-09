@@ -23,6 +23,7 @@ db.sqlite3
 # IDE
 .vscode/
 .idea/
+.superpowers/
 
 # OS
 .DS_Store
