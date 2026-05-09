@@ -1,15 +1,16 @@
 import json
 
 from django.contrib import messages
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import TemplateView, UpdateView
+from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
+from apps.core.search import fts_search
 from .filters import ItemFilter
 from .forms import ItemForm
 from .models import Item
@@ -20,37 +21,70 @@ def _org(request):
 
 
 def _active_filter_count(request) -> int:
-    skip = {"q", "page", "csrfmiddlewaretoken"}
+    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
     return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
-
-
-def _item_table_response(request, msg, msg_type="success"):
-    """Return the full item table partial with an HX-Trigger toast."""
-    items = Item.objects.filter(organization=_org(request)).order_by("name")
-    resp = render(request, "items/partials/item_table.html", {"items": items})
-    resp["HX-Trigger"] = json.dumps({
-        "showToast": {"message": str(msg), "type": msg_type}
-    })
-    return resp
 
 
 # ── List + Create ─────────────────────────────────────────────────────────────
 
-class ItemListView(ERPBaseViewMixin, TemplateView):
+class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "items/item_list.html"
     required_module = "invoices"
+
+    dt_columns = [
+        DTColumn("code",       _("Código"),   sortable=True),
+        DTColumn("name",       _("Nombre"),   sortable=True),
+        DTColumn("item_type",  _("Tipo"),     sortable=True),
+        DTColumn("unit",       _("Unidad"),   sortable=False),
+        DTColumn("unit_price", _("P. Venta"), sortable=True,  numeric=True),
+        DTColumn("cost_price", _("P. Costo"), sortable=True,  numeric=True, visible=False),
+        DTColumn("itbis_rate", _("ITBIS"),    sortable=False),
+        DTColumn("is_active",  _("Estado"),   sortable=True),
+    ]
+    dt_default_sort = "name"
+    dt_page_size = 25
+    dt_url = "items:item_list"
+    dt_row_template = "items/partials/item_row.html"
+    dt_filter_template = "items/partials/item_filters.html"
+    dt_search_placeholder = _("Nombre o código…")
+
+    @classmethod
+    def refresh_table(cls, request, msg, msg_type="success"):
+        """
+        Called by action views (create / edit / toggle / delete) to refresh
+        the datatable after a mutation.  Returns a partial response that HTMX
+        swaps into #dt-results, with a toast notification.
+        """
+        qs = Item.objects.filter(organization=_org(request))
+        f = ItemFilter(request.GET, queryset=qs)
+        ctx = build_datatable_context(
+            request, f.qs, cls.dt_columns,
+            default_sort=cls.dt_default_sort,
+            page_size=cls.dt_page_size,
+            url=cls.dt_url,
+            row_template=cls.dt_row_template,
+            filter_template=cls.dt_filter_template,
+        )
+        ctx["filter"] = f
+        resp = render(request, "components/datatable/results.html", ctx)
+        resp["HX-Retarget"] = "#dt-results"
+        resp["HX-Reswap"]   = "innerHTML"
+        resp["HX-Trigger"]  = json.dumps(
+            {"showToast": {"message": str(msg), "type": msg_type}}
+        )
+        return resp
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         qs = Item.objects.filter(organization=_org(self.request))
         f  = ItemFilter(self.request.GET, queryset=qs)
-        ctx["filter"]               = f
-        ctx["items"]                = f.qs
-        ctx["active_filter_count"]  = _active_filter_count(self.request)
-        ctx["form"]                 = ItemForm()
-        ctx["create_url"]           = reverse("items:item_list")
-        ctx["submit_label"]         = _("Crear")
-        ctx["breadcrumbs"]          = [
+        ctx.update(self.apply_datatable(f.qs))
+        ctx["filter"]              = f
+        ctx["active_filter_count"] = _active_filter_count(self.request)
+        ctx["form"]                = ItemForm()
+        ctx["create_url"]          = reverse("items:item_list")
+        ctx["submit_label"]        = _("Crear")
+        ctx["breadcrumbs"]         = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Artículos")},
         ]
@@ -59,7 +93,7 @@ class ItemListView(ERPBaseViewMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
         if request.htmx:
-            return render(request, "items/partials/item_table.html", ctx)
+            return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
 
     def post(self, request):
@@ -69,11 +103,10 @@ class ItemListView(ERPBaseViewMixin, TemplateView):
             item.organization = _org(request)
             item.save()
             if request.htmx:
-                return _item_table_response(request, _("Artículo creado correctamente."))
+                return ItemListView.refresh_table(request, _("Artículo creado correctamente."))
             messages.success(request, _("Artículo creado correctamente."))
             return redirect("items:item_list")
 
-        # Validation failed — return form with errors back into the modal
         if request.htmx:
             resp = render(request, "items/partials/item_modal_form.html", {
                 "form":              form,
@@ -125,7 +158,6 @@ class ItemUpdateView(ERPBaseViewMixin, View):
                 "initial_item_type": item.item_type,
             })
 
-        # Non-HTMX fallback — full page
         return render(request, "items/item_form.html", self.get_context(
             form=form, item=item, action="edit",
             breadcrumbs=[
@@ -143,7 +175,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
         if form.is_valid():
             form.save()
             if request.htmx:
-                return _item_table_response(request, _("Artículo actualizado correctamente."))
+                return ItemListView.refresh_table(request, _("Artículo actualizado correctamente."))
             messages.success(request, _("Artículo actualizado correctamente."))
             return redirect("items:item_detail", pk=item.pk)
 
@@ -182,7 +214,7 @@ class ItemToggleView(ERPBaseViewMixin, View):
         msg   = _(f"Artículo {state}.")
 
         if request.htmx:
-            return _item_table_response(request, msg)
+            return ItemListView.refresh_table(request, msg)
 
         messages.success(request, msg)
         return redirect("items:item_detail", pk=item.pk)
@@ -200,19 +232,20 @@ class ItemDeleteView(ERPBaseViewMixin, View):
         if InvoiceItem.objects.filter(item=item).exists():
             if request.htmx:
                 resp = HttpResponse()
-                resp["HX-Reswap"] = "none"
+                resp["HX-Reswap"]  = "none"
                 resp["HX-Trigger"] = json.dumps({"showSwal": {
-                    "icon": "error",
+                    "icon":  "error",
                     "title": str(_("No se puede eliminar")),
-                    "text": str(_("Este artículo está siendo usado en uno o más documentos y no puede eliminarse.")),
+                    "text":  str(_("Este artículo está siendo usado en uno o más documentos y no puede eliminarse.")),
                 }})
                 return resp
             messages.error(request, _("Este artículo está siendo usado en documentos y no puede eliminarse."))
             return redirect("items:item_list")
+
         name = item.name
         item.delete()
         if request.htmx:
-            return _item_table_response(request, _(f"Artículo «{name}» eliminado."))
+            return ItemListView.refresh_table(request, _(f"Artículo «{name}» eliminado."))
         messages.success(request, _(f"Artículo «{name}» eliminado."))
         return redirect("items:item_list")
 
@@ -221,7 +254,7 @@ class ItemDeleteView(ERPBaseViewMixin, View):
 
 class ItemSearchView(ERPBaseViewMixin, View):
     """
-    Returns a list of matching items for the line-item autocomplete.
+    Returns matching items for the line-item autocomplete.
 
     GET params:
       q     — search string (min 2 chars)
@@ -243,8 +276,6 @@ class ItemSearchView(ERPBaseViewMixin, View):
         elif item_type == "PURCHASE":
             qs = qs.filter(item_type__in=[Item.ItemType.PURCHASE, Item.ItemType.BOTH])
 
-        qs = qs.filter(
-            Q(name__icontains=q) | Q(code__icontains=q)
-        )[:10]
+        qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["code"])[:10]
 
         return render(request, "items/partials/item_search_results.html", {"items": qs})

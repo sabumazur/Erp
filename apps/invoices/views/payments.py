@@ -2,14 +2,17 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import DecimalField, Sum
+from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
+from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.search import fts_search
 from ..filters import PaymentFilter
 from ..forms import PaymentHeaderForm, PaymentForm
 from ..models import Invoice, Payment, PaymentAllocation
@@ -17,37 +20,75 @@ from ..services import PaymentService
 from ._helpers import _org, _active_filter_count
 
 
-class PaymentListView(ERPBaseViewMixin, View):
+class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+    template_name = "invoices/payment_list.html"
     required_module = "invoices"
 
-    def get(self, request):
-        from django.db.models import Q
+    dt_columns = [
+        DTColumn("date",           _("Fecha"),    sortable=True),
+        DTColumn("customer__name", _("Cliente"),  sortable=True),
+        DTColumn("method",         _("Método"),   sortable=False),
+        DTColumn("amount",         _("Monto"),    sortable=True, numeric=True),
+        DTColumn("reference",      _("Referencia"),sortable=False, visible=False),
+        DTColumn("allocations",    _("Facturas"), sortable=False),
+    ]
+    dt_default_sort = "-date"
+    dt_url = "invoices:payment_list"
+    dt_row_template = "invoices/partials/payment_row.html"
+    dt_filter_template = "invoices/partials/payment_filters.html"
+    dt_search_placeholder = _("Cliente o referencia…")
+    dt_id = "payments"
+
+    def get(self, request, *args, **kwargs):
+        ctx = self.get_context_data(**kwargs)
+        if request.htmx:
+            return render(request, "components/datatable/results.html", ctx)
+        return self.render_to_response(ctx)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        org = _org(self.request)
         qs = (
-            Payment.objects.filter(organization=_org(request))
+            Payment.objects.filter(organization=org)
             .select_related("customer")
             .prefetch_related("allocations__invoice")
-            .order_by("-date", "-created_at")
         )
-        q = request.GET.get("q", "").strip()
+        q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(reference__icontains=q) | Q(customer__name__icontains=q))
-        f = PaymentFilter(request.GET, queryset=qs, organization=_org(request))
-        total = sum(p.amount for p in f.qs)
-        ctx = {
-            **self.get_context(
-                filter=f,
-                payments=f.qs,
-                total=total,
-                active_filter_count=_active_filter_count(request),
-                breadcrumbs=[
-                    {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                    {"label": _("Pagos")},
-                ],
-            ),
-        }
-        if request.htmx:
-            return render(request, "invoices/partials/payment_table.html", ctx)
-        return render(request, "invoices/payment_list.html", ctx)
+            qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["reference"])
+        f = PaymentFilter(self.request.GET, queryset=qs, organization=org)
+        ctx["filter"] = f
+        ctx.update(self.apply_datatable(f.qs))
+        ctx["active_filter_count"] = _active_filter_count(self.request)
+
+        today = date.today()
+        agg = Payment.objects.filter(organization=org).aggregate(
+            total_count=Count("id"),
+            total_amount=Sum("amount"),
+            month_count=Count("id", filter=Q(
+                date__month=today.month, date__year=today.year,
+            )),
+            month_amount=Sum("amount", filter=Q(
+                date__month=today.month, date__year=today.year,
+            )),
+        )
+        total_amount = agg["total_amount"] or Decimal("0.00")
+        month_amount = agg["month_amount"] or Decimal("0.00")
+        ctx["stats"] = [
+            {"label": _("Total pagos"),       "value": agg["total_count"],
+             "icon": "bi-cash-stack",         "color": "primary"},
+            {"label": _("Monto total"),        "value": f"RD$ {total_amount:,.2f}",
+             "icon": "bi-wallet2",             "color": "success"},
+            {"label": _("Pagos este mes"),     "value": agg["month_count"],
+             "icon": "bi-calendar-check",      "color": "info"},
+            {"label": _("Cobrado este mes"),   "value": f"RD$ {month_amount:,.2f}",
+             "icon": "bi-graph-up-arrow",      "color": "warning"},
+        ]
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Pagos")},
+        ]
+        return ctx
 
 
 class PaymentCreateView(ERPBaseViewMixin, View):

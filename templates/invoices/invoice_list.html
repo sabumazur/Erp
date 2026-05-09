@@ -4,63 +4,19 @@
 {% block title %}{% trans "Facturas" %}{% endblock %}
 
 {% block content %}
-<form id="filter-form" method="get"
-      hx-get="{% url 'invoices:invoice_list' %}"
-      hx-target="#invoice-table"
-      hx-push-url="true"
-      hx-trigger="submit, input delay:300ms from:[name='q']">
 
-  {# ── Row 1: title + action buttons ───────────────────────────────────────── #}
-  <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-    <h1 class="h3 mb-0">{% trans "Facturas" %}</h1>
-    <div class="d-flex gap-2 align-items-center">
-      <a href="{% url 'invoices:invoice_create' %}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva factura" %}
-      </a>
-    </div>
-  </div>
-
-  {% include "invoices/partials/list_search_controls.html" with search_placeholder="e-NCF o cliente…" list_url="invoices:invoice_list" %}
-
-  {# ── Filter offcanvas ─────────────────────────────────────────────────── #}
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas"
-       aria-labelledby="filterOffcanvasLabel">
-    <div class="offcanvas-header border-bottom">
-      <h5 class="offcanvas-title" id="filterOffcanvasLabel">
-        <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
-      </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Estado" %}</label>
-        {{ filter.form.status }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Tipo NCF" %}</label>
-        {{ filter.form.ncf_type }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Cliente" %}</label>
-        {{ filter.form.customer }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Fecha emisión" %}</label>
-        <div class="d-flex gap-2 align-items-center">
-          {{ filter.form.issue_date_after }}
-          <span class="text-muted small">—</span>
-          {{ filter.form.issue_date_before }}
-        </div>
-      </div>
-    </div>
-    {% include "invoices/partials/list_filter_footer.html" with list_url="invoices:invoice_list" %}
-  </div>
-</form>
-
-{# ── Table ────────────────────────────────────────────────────────────────── #}
-<div id="invoice-table">
-  {% include "invoices/partials/invoice_table.html" %}
+{# ── Page header ───────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{% trans "Facturas" %}</h1>
+  <a href="{% url 'invoices:invoice_create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva factura" %}
+  </a>
 </div>
 
-{% include "invoices/partials/list_filter_script.html" %}
+{# ── KPI cards ─────────────────────────────────────────────────────────────── #}
+{% include "components/_kpi_cards.html" with stats=stats %}
+
+{# ── DataTable widget ──────────────────────────────────────────────────────── #}
+{% include "components/datatable/wrapper.html" %}
+
 {% endblock %}

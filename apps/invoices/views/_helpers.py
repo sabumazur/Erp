@@ -10,7 +10,7 @@ def _org(request):
 
 
 def _active_filter_count(request) -> int:
-    skip = {"q", "page", "csrfmiddlewaretoken"}
+    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
     return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
 
 

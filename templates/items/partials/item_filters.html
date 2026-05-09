@@ -1,0 +1,27 @@
+{% load i18n %}
+{#
+  Filter-offcanvas body for the item list.
+  Rendered inside the dt-form by the datatable wrapper via dt_filter_template.
+  Has access to 'filter' (ItemFilter) from the view context.
+#}
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">
+    {% trans "Tipo" %}
+  </label>
+  {{ filter.form.item_type }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">
+    {% trans "ITBIS" %}
+  </label>
+  {{ filter.form.itbis_rate }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">
+    {% trans "Estado" %}
+  </label>
+  {{ filter.form.is_active }}
+</div>

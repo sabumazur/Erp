@@ -1,6 +1,8 @@
 import json
+from datetime import date
 
 from django.contrib import messages
+from django.db.models import Count, Exists, OuterRef
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,34 +11,89 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
+from apps.core.search import fts_search
 from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
 from ..models import Customer, CustomerDepartment
 from ._helpers import _org, _active_filter_count, _customers_with_depts
 
 
-class CustomerListView(ERPBaseViewMixin, TemplateView):
+class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "invoices/customer_list.html"
     required_module = "invoices"
+
+    dt_columns = [
+        DTColumn("name",             _("Nombre"),   sortable=True),
+        DTColumn("rnc_cedula",       _("RNC/Cédula"),sortable=True),
+        DTColumn("email",            _("Correo"),   sortable=False, visible=False),
+        DTColumn("phone",            _("Teléfono"), sortable=False, visible=False),
+        DTColumn("default_ncf_type", _("Tipo NCF"), sortable=False),
+    ]
+    dt_default_sort = "name"
+    dt_url = "invoices:customer_list"
+    dt_row_template = "invoices/partials/customer_row.html"
+    dt_filter_template = "invoices/partials/customer_filters.html"
+    dt_search_placeholder = _("Nombre o RNC…")
+    dt_id = "customers"
+
+    @classmethod
+    def _refresh_table(cls, request, msg, msg_type="success"):
+        qs = _customers_with_depts(_org(request))
+        q = request.GET.get("q", "").strip()
+        if q:
+            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
+        f = CustomerFilter(request.GET, queryset=qs)
+        ctx = build_datatable_context(
+            request, f.qs, cls.dt_columns,
+            default_sort=cls.dt_default_sort,
+            page_size=cls.dt_page_size,
+            url=cls.dt_url,
+            row_template=cls.dt_row_template,
+            filter_template=cls.dt_filter_template,
+        )
+        ctx["filter"] = f
+        resp = render(request, "components/datatable/results.html", ctx)
+        resp["HX-Retarget"] = "#dt-results"
+        resp["HX-Trigger"] = json.dumps({"showToast": {"message": msg, "type": msg_type}})
+        return resp
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
         if request.htmx:
-            return render(request, "invoices/partials/customer_table.html", ctx)
+            return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
 
     def get_context_data(self, **kwargs):
-        from django.db.models import Q
         ctx = super().get_context_data(**kwargs)
-        qs = _customers_with_depts(_org(self.request))
+        org = _org(self.request)
+        qs = _customers_with_depts(org)
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(rnc_cedula__icontains=q))
+            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         f = CustomerFilter(self.request.GET, queryset=qs)
         ctx["filter"] = f
-        ctx["customers"] = f.qs
+        ctx.update(self.apply_datatable(f.qs))
         ctx["form"] = CustomerForm()
         ctx["active_filter_count"] = _active_filter_count(self.request)
+
+        today = date.today()
+        active_dept = CustomerDepartment.objects.filter(
+            customer=OuterRef("pk"), deleted_at__isnull=True, is_active=True,
+        )
+        stats_qs = Customer.objects.filter(organization=org)
+        ctx["stats"] = [
+            {"label": _("Total clientes"),     "value": stats_qs.count(),
+             "icon": "bi-people",              "color": "primary"},
+            {"label": _("Con límite de crédito"),"value": stats_qs.filter(credit_limit__isnull=False).count(),
+             "icon": "bi-credit-card",         "color": "info"},
+            {"label": _("Con departamentos"),  "value": stats_qs.filter(Exists(active_dept)).count(),
+             "icon": "bi-building",            "color": "secondary"},
+            {"label": _("Nuevos este mes"),    "value": stats_qs.filter(
+                created_at__month=today.month, created_at__year=today.year,
+             ).count(),
+             "icon": "bi-person-plus",         "color": "success"},
+        ]
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Clientes")},
@@ -50,20 +107,7 @@ class CustomerListView(ERPBaseViewMixin, TemplateView):
             customer.organization = _org(request)
             customer.save()
             if request.htmx:
-                resp = render(
-                    request,
-                    "invoices/partials/customer_table.html",
-                    {"customers": _customers_with_depts(_org(request))},
-                )
-                resp["HX-Trigger"] = json.dumps(
-                    {
-                        "showToast": {
-                            "message": str(_("Cliente creado correctamente.")),
-                            "type": "success",
-                        }
-                    }
-                )
-                return resp
+                return self._refresh_table(request, str(_("Cliente creado correctamente.")))
             messages.success(request, _("Cliente creado correctamente."))
             return redirect("invoices:customer_list")
 
@@ -75,6 +119,7 @@ class CustomerListView(ERPBaseViewMixin, TemplateView):
                     "form": form,
                     "action_url": reverse("invoices:customer_list"),
                     "submit_label": _("Crear"),
+                    "hx_target": "#dt-results",
                 },
             )
             resp["HX-Retarget"] = "#customer-modal-body"
@@ -129,9 +174,12 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
         response = super().form_valid(form)
         if self.request.htmx:
             hx_target = self.request.POST.get("_hx_target", "#customer-table")
+            if hx_target == "#dt-results":
+                return CustomerListView._refresh_table(
+                    self.request, str(_("Cliente actualizado.")),
+                )
             if hx_target != "#customer-table":
                 messages.success(self.request, _("Cliente actualizado."))
-                from django.http import HttpResponse
                 resp = HttpResponse()
                 resp["HX-Refresh"] = "true"
                 return resp
@@ -269,13 +317,9 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
         name = customer.name
         customer.delete()
         if request.htmx:
-            resp = render(request, "invoices/partials/customer_table.html",
-                          {"customers": _customers_with_depts(_org(request))})
-            resp["HX-Trigger"] = json.dumps({"showToast": {
-                "message": str(_(f"Cliente «{name}» eliminado.")),
-                "type": "success",
-            }})
-            return resp
+            return CustomerListView._refresh_table(
+                request, str(_(f"Cliente «{name}» eliminado.")),
+            )
         messages.success(request, _(f"Cliente «{name}» eliminado."))
         return redirect("invoices:customer_list")
 

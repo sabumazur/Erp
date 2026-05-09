@@ -1,0 +1,31 @@
+{% load i18n humanize %}
+{% comment %}Per-row partial for the quotation datatable. Variable: row = Invoice (quotation).{% endcomment %}
+<tr>
+
+  <td data-col="doc_number" class="font-monospace fw-semibold">
+    <a href="{% url 'invoices:quotation_detail' row.pk %}" class="text-decoration-none">
+      {{ row.display_number }}
+    </a>
+  </td>
+
+  <td data-col="customer__name">{{ row.customer.name }}</td>
+
+  <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
+
+  <td data-col="valid_until" class="small">
+    {% if row.valid_until %}
+      <span class="{% if row.status == 'EXPIRED' %}text-danger{% endif %}">
+        {{ row.valid_until|date:"d/m/Y" }}
+      </span>
+    {% else %}
+      <span class="text-muted">—</span>
+    {% endif %}
+  </td>
+
+  <td data-col="total" class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
+
+  <td data-col="status" class="text-center">
+    {% include "invoices/partials/status_badge.html" with status=row.status %}
+  </td>
+
+</tr>

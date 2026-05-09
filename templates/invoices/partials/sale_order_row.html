@@ -1,0 +1,33 @@
+{% load i18n humanize %}
+{% comment %}Per-row partial for the sale-order datatable. Variable: row = Invoice (sale_order).{% endcomment %}
+<tr>
+
+  <td data-col="doc_number" class="font-monospace fw-semibold">
+    <a href="{% url 'invoices:sale_order_detail' row.pk %}" class="text-decoration-none">
+      {{ row.display_number }}
+    </a>
+  </td>
+
+  <td data-col="customer__name">{{ row.customer.name }}</td>
+
+  <td data-col="department__name">
+    {% if row.department %}
+      <span class="badge bg-info text-dark">{{ row.department.name }}</span>
+    {% else %}
+      <span class="text-muted small">—</span>
+    {% endif %}
+  </td>
+
+  <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
+
+  <td data-col="delivery_date" class="small">
+    {{ row.delivery_date|date:"d/m/Y"|default:"—" }}
+  </td>
+
+  <td data-col="total" class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
+
+  <td data-col="status" class="text-center">
+    {% include "invoices/partials/status_badge.html" with status=row.status %}
+  </td>
+
+</tr>

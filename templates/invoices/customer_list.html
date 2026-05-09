@@ -5,96 +5,27 @@
 
 {% block content %}
 
-{# ── Row 1: title + action buttons ─────────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
+<div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3 mb-0">{% trans "Clientes" %}</h1>
-  <div class="d-flex gap-2 align-items-center">
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customerModal">
-      <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
-    </button>
-  </div>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customerModal">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
+  </button>
 </div>
 
-{# ── Row 2: search + filter controls ─────────────────────────────────────────── #}
-<form id="filter-form" method="get"
-      hx-get="{% url 'invoices:customer_list' %}"
-      hx-target="#customer-table"
-      hx-push-url="true"
-      hx-trigger="submit, input delay:300ms from:[name='q']">
-  <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
-    <div class="input-group" style="max-width:280px">
-      <span class="input-group-text bg-transparent border-end-0">
-        <i class="bi bi-search text-muted"></i>
-      </span>
-      <input type="search" name="q" value="{{ request.GET.q }}"
-             class="form-control border-start-0 ps-0"
-             autocomplete="off"
-             placeholder="{% trans 'Nombre o RNC…' %}">
-    </div>
-    <button type="button"
-            class="btn btn-outline-secondary btn-sm"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#filterOffcanvas">
-      <i class="bi bi-funnel{% if active_filter_count %}-fill{% endif %} me-1"></i>
-      {% trans "Filtros" %}
-      {% if active_filter_count %}
-        <span class="badge bg-primary rounded-pill ms-1">{{ active_filter_count }}</span>
-      {% endif %}
-    </button>
-    {% if active_filter_count or request.GET.q %}
-    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm" title="{% trans 'Limpiar filtros' %}">
-      <i class="bi bi-x-lg"></i>
-    </a>
-    {% endif %}
-  </div>
+{% include "components/_kpi_cards.html" with stats=stats %}
 
-  {# ── Filter offcanvas ─────────────────────────────────────────────────── #}
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas"
-       aria-labelledby="filterOffcanvasLabel">
-    <div class="offcanvas-header border-bottom">
-      <h5 class="offcanvas-title" id="filterOffcanvasLabel">
-        <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
-      </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Tipo NCF" %}</label>
-        {{ filter.form.default_ncf_type }}
-      </div>
-    </div>
-    <div class="p-3 border-top">
-      <div class="d-grid gap-2">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-circle me-1"></i>{% trans "Aplicar filtros" %}
-        </button>
-        <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
-        </a>
-      </div>
-    </div>
-  </div>
-</form>
+{% include "components/datatable/wrapper.html" %}
 
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div id="customer-table">
-      {% include "invoices/partials/customer_table.html" %}
-    </div>
-  </div>
-</div>
-
-{# Blank form — inert template, browser never autofills or caches it #}
+{# Blank create-form template (browser never autofills or caches it) #}
 <template id="customer-blank-tpl">
   <form hx-post="{% url 'invoices:customer_list' %}"
-        hx-target="#customer-table"
+        hx-target="#dt-results"
         hx-swap="innerHTML"
         hx-on::after-request="if(event.detail.successful && event.target === this) bootstrap.Modal.getInstance('#customerModal').hide()"
         class="d-flex flex-column flex-grow-1 overflow-hidden">
     {% csrf_token %}
-    <div class="modal-body">
-      {% crispy form %}
-    </div>
+    <input type="hidden" name="_hx_target" value="#dt-results">
+    <div class="modal-body">{% crispy form %}</div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
       <button type="submit" class="btn btn-primary">{% trans "Crear" %}</button>
@@ -102,7 +33,6 @@
   </form>
 </template>
 
-<!-- Customer Modal (add & edit) -->
 <div class="modal fade" id="customerModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -115,87 +45,73 @@
   </div>
 </div>
 
+{% endblock %}
+
 {% block extra_js %}
 <script>
-  // Auto-close offcanvas after filter submit
-  document.getElementById('filter-form').addEventListener('htmx:afterRequest', function () {
-    var el = document.getElementById('filterOffcanvas');
-    var oc = bootstrap.Offcanvas.getInstance(el);
-    if (oc) oc.hide();
-  });
-
-  // ── Department popovers ───────────────────────────────────────────────────
-  function initDeptPopovers(root) {
-    (root || document).querySelectorAll('.dept-popover').forEach(function (el) {
-      // Dispose any existing instance first (re-init after HTMX swap)
-      var existing = bootstrap.Popover.getInstance(el);
-      if (existing) existing.dispose();
-
-      var depts = [];
-      try { depts = JSON.parse(el.dataset.departments || '[]'); } catch (e) {}
-
-      var html = '<ul class="mb-0 ps-3 small">'
-        + depts.map(function (d) {
-            return '<li>' + d.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>';
-          }).join('')
-        + '</ul>';
-
-      new bootstrap.Popover(el, {
-        title:     '{% trans "Departamentos" %}',
-        content:   html,
-        html:      true,
-        trigger:   'hover focus',
-        placement: 'left',
-        container: 'body',
-      });
+function initDeptPopovers(root) {
+  (root || document).querySelectorAll('.dept-popover').forEach(function (el) {
+    var existing = bootstrap.Popover.getInstance(el);
+    if (existing) existing.dispose();
+    var depts = [];
+    try { depts = JSON.parse(el.dataset.departments || '[]'); } catch (e) {}
+    var html = '<ul class="mb-0 ps-3 small">'
+      + depts.map(function (d) {
+          return '<li>' + d.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>';
+        }).join('') + '</ul>';
+    new bootstrap.Popover(el, {
+      title:     '{% trans "Departamentos" %}',
+      content:   html,
+      html:      true,
+      trigger:   'hover focus',
+      placement: 'left',
+      container: 'body',
     });
+  });
+}
+
+initDeptPopovers();
+
+document.body.addEventListener('htmx:afterSwap', function (evt) {
+  if (evt.detail && evt.detail.target && evt.detail.target.id === 'dt-results') {
+    initDeptPopovers(evt.detail.target);
   }
+});
 
-  initDeptPopovers();
+function restoreBlank() {
+  var body = document.getElementById('customer-modal-body');
+  body.innerHTML = '';
+  body.appendChild(document.getElementById('customer-blank-tpl').content.cloneNode(true));
+  document.getElementById('customerModalTitle').textContent = '{% trans "Nuevo cliente" %}';
+  htmx.process(body);
+}
+restoreBlank();
+document.getElementById('customerModal').addEventListener('hidden.bs.modal', restoreBlank);
 
-  // Re-init after every HTMX table swap (event fires on the requesting element,
-  // not the target, so listen on body and check the target)
-  document.body.addEventListener('htmx:afterSwap', function (evt) {
-    if (evt.detail && evt.detail.target && evt.detail.target.id === 'customer-table') {
-      initDeptPopovers(evt.detail.target);
+document.body.addEventListener('rncFound', function (evt) {
+  var d = evt.detail;
+  Swal.fire({
+    icon: 'success',
+    title: '{% trans "RNC encontrado" %}',
+    html: '<p class="mb-1"><strong>' + d.name + '</strong></p><small class="text-muted">RNC ' + d.value + '</small>',
+    showCancelButton: true,
+    confirmButtonText: '{% trans "Aceptar" %}',
+    cancelButtonText:  '{% trans "Cancelar" %}',
+  }).then(function (result) {
+    if (result.isConfirmed) {
+      var f = (document.querySelector('.modal.show') || document).querySelector('[name=name]');
+      if (f) f.value = d.name;
     }
   });
+});
 
-  function restoreBlank() {
-    var body = document.getElementById('customer-modal-body');
-    body.innerHTML = '';
-    body.appendChild(document.getElementById('customer-blank-tpl').content.cloneNode(true));
-    document.getElementById('customerModalTitle').textContent = '{% trans "Nuevo cliente" %}';
-    htmx.process(body);
-  }
-  restoreBlank();
-  document.getElementById('customerModal').addEventListener('hidden.bs.modal', restoreBlank);
-
-  document.body.addEventListener("rncFound", function (evt) {
-    var d = evt.detail;
-    Swal.fire({
-      icon: "success",
-      title: '{% trans "RNC encontrado" %}',
-      html: `<p class="mb-1"><strong>${d.name}</strong></p><small class="text-muted">RNC ${d.value}</small>`,
-      showCancelButton: true,
-      confirmButtonText: '{% trans "Aceptar" %}',
-      cancelButtonText:  '{% trans "Cancelar" %}',
-    }).then(function (result) {
-      if (result.isConfirmed) {
-        var f = (document.querySelector('.modal.show') || document).querySelector('[name=name]');
-        if (f) f.value = d.name;
-      }
-    });
+document.body.addEventListener('rncNotFound', function () {
+  Swal.fire({
+    icon: 'warning',
+    title: '{% trans "No encontrado" %}',
+    text:  '{% trans "Este RNC/Cédula no está registrado en el registro oficial." %}',
+    confirmButtonText: '{% trans "Cerrar" %}',
   });
-
-  document.body.addEventListener("rncNotFound", function () {
-    Swal.fire({
-      icon: "warning",
-      title: '{% trans "No encontrado" %}',
-      text:  '{% trans "Este RNC/Cédula no está registrado en el registro oficial." %}',
-      confirmButtonText: '{% trans "Cerrar" %}',
-    });
-  });
+});
 </script>
-{% endblock %}
 {% endblock %}

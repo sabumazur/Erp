@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
@@ -172,6 +174,11 @@ class Item(ERPBaseModel):
         verbose_name = _("artículo")
         verbose_name_plural = _("artículos")
         ordering = ["name"]
+        indexes = [
+            GinIndex(SearchVector("name", config="spanish"), name="item_name_fts_idx"),
+            GinIndex(fields=["name"], opclasses=["gin_trgm_ops"], name="item_name_trgm_idx"),
+            GinIndex(fields=["code"], opclasses=["gin_trgm_ops"], name="item_code_trgm_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "code"],

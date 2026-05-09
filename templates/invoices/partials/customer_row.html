@@ -1,0 +1,64 @@
+{% load i18n %}
+{% comment %}
+  Per-row partial for the customer datatable. Variable: row = Customer.
+  Requires active_depts and dept_count annotations from _customers_with_depts().
+{% endcomment %}
+<tr>
+
+  <td data-col="name" class="fw-semibold">
+    <a href="{% url 'invoices:customer_detail' row.pk %}" class="text-decoration-none">
+      {{ row.name }}
+    </a>
+  </td>
+
+  <td data-col="rnc_cedula" class="font-monospace small text-nowrap">
+    {{ row.rnc_cedula|default:"—" }}
+  </td>
+
+  <td data-col="email" class="small text-muted">{{ row.email|default:"—" }}</td>
+
+  <td data-col="phone" class="small text-muted">{{ row.phone|default:"—" }}</td>
+
+  <td data-col="default_ncf_type">
+    <span class="badge bg-secondary">{{ row.get_default_ncf_type_display }}</span>
+  </td>
+
+  <td class="text-center" style="width:80px">
+    {% if row.active_depts %}
+      <span class="badge bg-info text-dark dept-popover"
+            tabindex="0" style="cursor:pointer"
+            data-departments="[{% for d in row.active_depts %}&quot;{{ d.name|escapejs }}&quot;{% if not forloop.last %},{% endif %}{% endfor %}]">
+        {{ row.dept_count }}
+      </span>
+    {% else %}
+      <span class="text-muted small">—</span>
+    {% endif %}
+  </td>
+
+  <td class="text-end">
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            hx-get="{% url 'invoices:customer_edit' row.pk %}?hx_target=%23dt-results"
+            hx-target="#customer-modal-body"
+            hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
+                                  bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
+      <i class="bi bi-pencil"></i>
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            onclick="Swal.fire({
+              icon: 'warning',
+              title: '{% trans "¿Eliminar cliente?" %}',
+              html: '<strong>{{ row.name|escapejs }}</strong>',
+              showCancelButton: true,
+              confirmButtonText: '{% trans "Eliminar" %}',
+              cancelButtonText:  '{% trans "Cancelar" %}',
+              confirmButtonColor: '#dc3545',
+            }).then(function (r) {
+              if (r.isConfirmed) htmx.ajax('POST', '{% url "invoices:customer_delete" row.pk %}',
+                { target: '#dt-results', swap: 'innerHTML',
+                  values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+            })">
+      <i class="bi bi-trash"></i>
+    </button>
+  </td>
+
+</tr>

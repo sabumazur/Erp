@@ -1,0 +1,49 @@
+{% load i18n humanize %}
+{% comment %}
+  Per-row partial for the invoice datatable.
+  Rendered by components/datatable/results.html with 'row' = Invoice instance.
+{% endcomment %}
+<tr>
+
+  <td data-col="encf" class="font-monospace fw-semibold">
+    <a href="{% url 'invoices:invoice_detail' row.pk %}" class="text-decoration-none">
+      {{ row.display_number }}
+    </a>
+    <small class="text-muted d-block">{{ row.get_ncf_type_display }}</small>
+  </td>
+
+  <td data-col="customer__name">{{ row.customer.name }}</td>
+
+  <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
+
+  <td data-col="due_date" class="small">
+    {% if row.due_date %}
+      <span class="{% if row.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
+        {{ row.due_date|date:"d/m/Y" }}
+      </span>
+    {% else %}
+      <span class="text-muted">—</span>
+    {% endif %}
+  </td>
+
+  <td data-col="total" class="text-end fw-semibold">
+    {{ row.total|floatformat:2|intcomma }}
+  </td>
+
+  <td data-col="status" class="text-center">
+    {% if row.status == "DRAFT" %}
+      <span class="badge bg-secondary">{% trans "Borrador" %}</span>
+    {% elif row.status == "CONFIRMED" %}
+      <span class="badge bg-primary">{% trans "Confirmada" %}</span>
+    {% elif row.status == "SENT" %}
+      <span class="badge bg-info text-dark">{% trans "Enviada" %}</span>
+    {% elif row.status == "PAID" %}
+      <span class="badge bg-success">{% trans "Pagada" %}</span>
+    {% elif row.status == "OVERDUE" %}
+      <span class="badge bg-danger">{% trans "Vencida" %}</span>
+    {% elif row.status == "CANCELLED" %}
+      <span class="badge bg-dark">{% trans "Anulada" %}</span>
+    {% endif %}
+  </td>
+
+</tr>

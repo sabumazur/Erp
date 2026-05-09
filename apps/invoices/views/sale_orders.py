@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +9,8 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, ConsolidateForm
 from ..models import Invoice, InvoiceItem, CustomerDepartment
@@ -15,31 +18,65 @@ from ..services import SaleOrderService
 from ._helpers import _org, _active_filter_count, _sale_items_json, _customer_defaults_json
 
 
-class SaleOrderListView(ERPBaseViewMixin, TemplateView):
+class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "invoices/sale_order_list.html"
     required_module = "invoices"
+
+    dt_columns = [
+        DTColumn("doc_number",     _("Número"),     sortable=True),
+        DTColumn("customer__name", _("Cliente"),    sortable=True),
+        DTColumn("department__name",_("Depto."),    sortable=True, visible=False),
+        DTColumn("issue_date",     _("Emisión"),    sortable=True),
+        DTColumn("delivery_date",  _("Entrega"),    sortable=True),
+        DTColumn("total",          _("Total"),      sortable=True, numeric=True),
+        DTColumn("status",         _("Estado"),     sortable=False),
+    ]
+    dt_default_sort = "-delivery_date"
+    dt_url = "invoices:sale_order_list"
+    dt_row_template = "invoices/partials/sale_order_row.html"
+    dt_filter_template = "invoices/partials/sale_order_filters.html"
+    dt_search_placeholder = _("Número o cliente…")
+    dt_id = "sale_orders"
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
         if request.htmx:
-            return render(request, "invoices/partials/sale_order_table.html", ctx)
+            return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
 
     def get_context_data(self, **kwargs):
-        from django.db.models import Q
         ctx = super().get_context_data(**kwargs)
+        org = _org(self.request)
         qs = (
-            Invoice.sale_orders.filter(organization=_org(self.request))
+            Invoice.sale_orders.filter(organization=org)
             .select_related("customer", "department")
-            .order_by("-delivery_date", "-created_at")
         )
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(doc_number__icontains=q) | Q(customer__name__icontains=q))
-        f = SaleOrderFilter(self.request.GET, queryset=qs, organization=_org(self.request))
+            qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
+        f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        ctx["orders"] = f.qs
+        ctx.update(self.apply_datatable(f.qs))
         ctx["active_filter_count"] = _active_filter_count(self.request)
+
+        agg = Invoice.sale_orders.filter(organization=org).aggregate(
+            total_count=Count("id"),
+            pending_count=Count("id", filter=Q(status__in=[
+                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
+            ])),
+            delivered_count=Count("id", filter=Q(status=Invoice.Status.DELIVERED)),
+            invoiced_count=Count("id", filter=Q(status=Invoice.Status.INVOICED)),
+        )
+        ctx["stats"] = [
+            {"label": _("Total órdenes"),   "value": agg["total_count"],
+             "icon": "bi-cart3",            "color": "primary"},
+            {"label": _("Pendientes"),      "value": agg["pending_count"],
+             "icon": "bi-hourglass-split",  "color": "warning"},
+            {"label": _("Entregadas"),      "value": agg["delivered_count"],
+             "icon": "bi-truck",            "color": "info"},
+            {"label": _("Facturadas"),      "value": agg["invoiced_count"],
+             "icon": "bi-receipt-cutoff",   "color": "success"},
+        ]
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Órdenes de venta")},

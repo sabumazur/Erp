@@ -9,7 +9,13 @@
       "Bash(grep -v \"^$\")",
       "PowerShell(Start-Process powershell -Verb RunAs -ArgumentList \"-NoProfile -Command `\"Start-Service postgresql-x64-17; Start-Sleep 3; \\(Get-Service postgresql-x64-17\\).Status`\"\" -Wait 2>&1)",
       "Bash(python3 -c \"import sys; sys.path.insert\\(0, '/c/Users/sabum/sabsys'\\); from config.settings import development\")",
-      "Bash(Remove-Item \"c:\\\\Users\\\\sabum\\\\sabsys\\\\templates\\\\invoices\\\\partials\\\\report_customer_filter.html\")"
+      "Bash(Remove-Item \"c:\\\\Users\\\\sabum\\\\sabsys\\\\templates\\\\invoices\\\\partials\\\\report_customer_filter.html\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sabum\\\\sabsys\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sabum\\\\sabsys\" -Recurse -Filter \"item_list.html\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\templates\" -Recurse -File)",
+      "Bash(Sort-Object)"
     ]
   }
 }

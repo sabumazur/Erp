@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
@@ -155,6 +157,11 @@ class Customer(ERPBaseModel):
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("cliente")
         verbose_name_plural = _("clientes")
+        indexes = [
+            GinIndex(SearchVector("name", config="spanish"), name="customer_name_fts_idx"),
+            GinIndex(fields=["name"], opclasses=["gin_trgm_ops"], name="customer_name_trgm_idx"),
+            GinIndex(fields=["rnc_cedula"], opclasses=["gin_trgm_ops"], name="customer_rnc_trgm_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "rnc_cedula"],
@@ -758,6 +765,8 @@ class Invoice(ERPBaseModel):
                 fields=["organization", "due_date", "status"],
                 name="invoice_org_duedate_status_idx",
             ),
+            GinIndex(fields=["encf"], opclasses=["gin_trgm_ops"], name="invoice_encf_trgm_idx"),
+            GinIndex(fields=["doc_number"], opclasses=["gin_trgm_ops"], name="invoice_doc_number_trgm_idx"),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -1028,6 +1037,9 @@ class Payment(ERPBaseModel):
         verbose_name = _("pago")
         verbose_name_plural = _("pagos")
         ordering = ["-date", "-created_at"]
+        indexes = [
+            GinIndex(fields=["reference"], opclasses=["gin_trgm_ops"], name="payment_reference_trgm_idx"),
+        ]
 
     def __str__(self):
         return f"Pago {self.amount} – {self.customer} ({self.date})"

@@ -4,104 +4,25 @@
 {% block title %}{% trans "Artículos" %}{% endblock %}
 
 {% block content %}
-<form id="filter-form" method="get"
-      hx-get="{% url 'items:item_list' %}"
-      hx-target="#item-table"
-      hx-push-url="true"
-      hx-trigger="submit, input delay:300ms from:[name='q']">
 
-  {# ── Row 1: title + action buttons ───────────────────────────────────────── #}
-  <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-    <h1 class="h3 mb-0">{% trans "Artículos" %}</h1>
-    <div class="d-flex gap-2 align-items-center">
-      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#itemModal">
-        <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo artículo" %}
-      </button>
-    </div>
-  </div>
-
-  {# ── Row 2: search + filter controls ─────────────────────────────────────── #}
-  <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
-    <div class="input-group" style="max-width:280px">
-      <span class="input-group-text bg-transparent border-end-0">
-        <i class="bi bi-search text-muted"></i>
-      </span>
-      <input type="search" name="q" value="{{ request.GET.q }}"
-             class="form-control border-start-0 ps-0"
-             autocomplete="off"
-             placeholder="{% trans 'Nombre o código…' %}">
-    </div>
-    <button type="button"
-            class="btn btn-outline-secondary btn-sm"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#filterOffcanvas">
-      <i class="bi bi-funnel{% if active_filter_count %}-fill{% endif %} me-1"></i>
-      {% trans "Filtros" %}
-      {% if active_filter_count %}
-        <span class="badge bg-primary rounded-pill ms-1">{{ active_filter_count }}</span>
-      {% endif %}
-    </button>
-    {% if active_filter_count or request.GET.q %}
-    <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm" title="{% trans 'Limpiar filtros' %}">
-      <i class="bi bi-x-lg"></i>
-    </a>
-    {% endif %}
-  </div>
-
-  {# ── Filter offcanvas ─────────────────────────────────────────────────── #}
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas"
-       aria-labelledby="filterOffcanvasLabel">
-    <div class="offcanvas-header border-bottom">
-      <h5 class="offcanvas-title" id="filterOffcanvasLabel">
-        <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
-      </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Tipo" %}</label>
-        {{ filter.form.item_type }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "ITBIS" %}</label>
-        {{ filter.form.itbis_rate }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Estado" %}</label>
-        {{ filter.form.is_active }}
-      </div>
-    </div>
-    <div class="p-3 border-top">
-      <div class="d-grid gap-2">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-circle me-1"></i>{% trans "Aplicar filtros" %}
-        </button>
-        <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
-        </a>
-      </div>
-    </div>
-  </div>
-</form>
-
-{# ── Table (HTMX-swappable) ───────────────────────────────────────────────── #}
-<div class="card shadow-sm">
-  <div class="card-body p-0" id="item-table">
-    {% include "items/partials/item_table.html" %}
-  </div>
-  {% if items %}
-  <div class="card-footer text-muted small">
-    {{ items|length }} {% trans "artículo(s)" %}
-  </div>
-  {% endif %}
+{# ── Page header ───────────────────────────────────────────────────────────── #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{% trans "Artículos" %}</h1>
+  <button type="button" class="btn btn-primary btn-sm"
+          data-bs-toggle="modal" data-bs-target="#itemModal">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo artículo" %}
+  </button>
 </div>
 
-{# ── Blank form template (cloned into modal on open / reset) ─────────────────── #}
+{# ── DataTable widget ──────────────────────────────────────────────────────── #}
+{% include "components/datatable/wrapper.html" %}
+
+{# ── Blank form template (cloned into the modal on open / reset) ───────────── #}
 <template id="item-blank-tpl">
   {% include "items/partials/item_modal_form.html" with form=form action_url=create_url submit_label=submit_label initial_item_type="BOTH" %}
 </template>
 
-{# ── Item Modal (create & edit) ──────────────────────────────────────────────── #}
+{# ── Item Modal (shared by create and edit) ────────────────────────────────── #}
 <div class="modal fade" id="itemModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -116,16 +37,10 @@
 
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
-  // Auto-close offcanvas after filter submit
-  document.getElementById('filter-form').addEventListener('htmx:afterRequest', function () {
-    var el = document.getElementById('filterOffcanvas');
-    var oc = bootstrap.Offcanvas.getInstance(el);
-    if (oc) oc.hide();
-  });
-
-// ── Alpine component for item form (used inside modal) ────────────────────────
+/* ── Alpine component for the item form (rendered inside the modal) ─────────── */
 function itemForm(initialType) {
   return {
     itemType: initialType,
@@ -133,29 +48,26 @@ function itemForm(initialType) {
     get autoCode() {
       return this.itemType === 'SALE' || this.itemType === 'BOTH';
     },
-
     get codeHint() {
       return this.autoCode
         ? "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}"
         : "{% trans 'Código interno / SKU opcional.' %}";
     },
-
     get codePlaceholder() {
       return this.autoCode
         ? "{% trans 'Automático (ART-XXXX)' %}"
         : "{% trans 'Código manual (opcional)' %}";
     },
-
     init() {
       const sel = this.$el.querySelector('[name="item_type"]');
       if (sel) this.itemType = sel.value;
     },
-  }
+  };
 }
 
-// ── Clone blank form into modal body & re-init HTMX + Alpine ─────────────────
+/* ── Restore blank create-form into the modal on open / after close ─────────── */
 function restoreBlank() {
-  var body = document.getElementById('item-modal-body');
+  const body = document.getElementById('item-modal-body');
   body.innerHTML = '';
   body.appendChild(document.getElementById('item-blank-tpl').content.cloneNode(true));
   document.getElementById('itemModalLabel').textContent = '{% trans "Nuevo artículo" %}';
@@ -163,11 +75,10 @@ function restoreBlank() {
   if (typeof Alpine !== 'undefined') Alpine.initTree(body);
 }
 
-// ── Boot on page load & restore on every modal close ─────────────────────────
 restoreBlank();
 document.getElementById('itemModal').addEventListener('hidden.bs.modal', restoreBlank);
 
-// ── After HTMX loads the edit form, update title & re-init Alpine ─────────────
+/* ── Re-initialise Alpine after HTMX loads the edit form into the modal ─────── */
 document.body.addEventListener('htmx:afterSwap', function (e) {
   if (e.detail.target && e.detail.target.id === 'item-modal-body') {
     document.getElementById('itemModalLabel').textContent = '{% trans "Editar artículo" %}';

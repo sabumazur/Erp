@@ -4,59 +4,16 @@
 {% block title %}{% trans "Pagos" %}{% endblock %}
 
 {% block content %}
-<form id="filter-form" method="get"
-      hx-get="{% url 'invoices:payment_list' %}"
-      hx-target="#payment-table"
-      hx-push-url="true"
-      hx-trigger="submit, input delay:300ms from:[name='q']">
 
-  {# ── Row 1: title + action buttons ───────────────────────────────────────── #}
-  <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-    <h1 class="h3 mb-0">{% trans "Pagos" %}</h1>
-    <div class="d-flex gap-2 align-items-center">
-      <a href="{% url 'invoices:payment_create' %}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i>{% trans "Registrar pago" %}
-      </a>
-    </div>
-  </div>
-
-  {% include "invoices/partials/list_search_controls.html" with search_placeholder="Cliente o referencia…" list_url="invoices:payment_list" %}
-
-  {# ── Filter offcanvas ─────────────────────────────────────────────────── #}
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas"
-       aria-labelledby="filterOffcanvasLabel">
-    <div class="offcanvas-header border-bottom">
-      <h5 class="offcanvas-title" id="filterOffcanvasLabel">
-        <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
-      </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Cliente" %}</label>
-        {{ filter.form.customer }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Método" %}</label>
-        {{ filter.form.method }}
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Fecha" %}</label>
-        <div class="d-flex gap-2 align-items-center">
-          {{ filter.form.date_after }}
-          <span class="text-muted small">—</span>
-          {{ filter.form.date_before }}
-        </div>
-      </div>
-    </div>
-    {% include "invoices/partials/list_filter_footer.html" with list_url="invoices:payment_list" %}
-  </div>
-</form>
-
-{# ── Table ────────────────────────────────────────────────────────────────── #}
-<div id="payment-table">
-  {% include "invoices/partials/payment_table.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{% trans "Pagos" %}</h1>
+  <a href="{% url 'invoices:payment_create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>{% trans "Registrar pago" %}
+  </a>
 </div>
 
-{% include "invoices/partials/list_filter_script.html" %}
+{% include "components/_kpi_cards.html" with stats=stats %}
+
+{% include "components/datatable/wrapper.html" %}
+
 {% endblock %}

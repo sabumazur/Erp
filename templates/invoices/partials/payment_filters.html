@@ -1,0 +1,21 @@
+{% load i18n %}
+{% comment %}Filter offcanvas body for the payment datatable. Requires 'filter' (PaymentFilter).{% endcomment %}
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Cliente" %}</label>
+  {{ filter.form.customer }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Método" %}</label>
+  {{ filter.form.method }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Fecha" %}</label>
+  <div class="d-flex gap-2 align-items-center">
+    {{ filter.form.date_after }}
+    <span class="text-muted small">—</span>
+    {{ filter.form.date_before }}
+  </div>
+</div>

@@ -1,0 +1,256 @@
+{% load i18n %}
+{% comment %} 
+  Reusable DataTable wrapper.
+  Include this in any list-view template after setting the DataTableMixin on the view.
+
+  Required context (all provided by DataTableMixin.apply_datatable()):
+    dt_columns           list[DTColumn]
+    dt_sort              str              current sort field, e.g. "name" or "-name"
+    dt_page_obj          Page
+    dt_total             int
+    dt_page_range        list             compact page range (ints + None for "…")
+    dt_url               str              URL name for HTMX requests
+    dt_row_template      str              path to the per-row partial (uses 'row' var)
+    dt_q                 str              current search query
+    dt_id                str              unique key for localStorage (default "main")
+    dt_search_placeholder str
+
+  Optional context:
+    dt_filter_template   str              path to filter-fields partial (offcanvas body)
+    filter               FilterSet        needed if dt_filter_template is set
+    active_filter_count  int              badge count on the Filtros button
+ {% endcomment %}
+<div id="dt-wrapper"
+     x-data="dtTable(
+       '{{ dt_id }}',
+       [{% for col in dt_columns %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+       [{% for col in dt_columns %}{% if col.visible %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}]
+     )"
+     x-init="init()">
+
+  {# ── Filter form — wraps search, hidden state inputs, and the offcanvas ──── #}
+  <form id="dt-form" method="get"
+        hx-get="{% url dt_url %}"
+        hx-target="#dt-results"
+        hx-push-url="true"
+        hx-trigger="submit, input delay:350ms from:[name='q']">
+
+    {# Hidden state — JS writes these before triggering form submit #}
+    <input type="hidden" name="sort" id="dt-sort-input" value="{{ dt_sort }}">
+    <input type="hidden" name="page" id="dt-page-input" value="{{ dt_page_obj.number }}">
+
+    {# ── Toolbar ──────────────────────────────────────────────────────────── #}
+    <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+
+      {# Search input #}
+      <div class="input-group" style="max-width:280px">
+        <span class="input-group-text bg-transparent border-end-0">
+          <i class="bi bi-search text-muted small"></i>
+        </span>
+        <input type="search" name="q" value="{{ dt_q }}"
+               class="form-control border-start-0 ps-0"
+               autocomplete="off"
+               placeholder="{{ dt_search_placeholder }}">
+      </div>
+
+      {# Filter offcanvas trigger #}
+      {% if dt_filter_template %}
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+              data-bs-toggle="offcanvas" data-bs-target="#dt-filter-offcanvas">
+        <i class="bi bi-funnel{% if active_filter_count %}-fill{% endif %} me-1"></i>
+        {% trans "Filtros" %}
+        {% if active_filter_count %}
+          <span class="badge bg-primary rounded-pill ms-1">{{ active_filter_count }}</span>
+        {% endif %}
+      </button>
+      {% endif %}
+
+      {# Clear search + filters #}
+      {% if active_filter_count or dt_q %}
+      <a href="{% url dt_url %}" class="btn btn-outline-secondary btn-sm"
+         title="{% trans 'Limpiar búsqueda y filtros' %}">
+        <i class="bi bi-x-lg"></i>
+      </a>
+      {% endif %}
+
+      {# Column-visibility dropdown (Alpine-driven, persisted to localStorage) #}
+      <div class="dropdown ms-auto">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                title="{% trans 'Columnas visibles' %}">
+          <i class="bi bi-layout-three-columns"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:180px" @click.stop>
+          {% for col in dt_columns %}
+          <li>
+            <label class="dropdown-item rounded py-1 px-2 d-flex align-items-center gap-2"
+                   style="cursor:pointer">
+              <input type="checkbox" class="form-check-input mt-0 flex-shrink-0"
+                     :checked="visible.includes('{{ col.key }}')"
+                     @change="toggleCol('{{ col.key }}')">
+              <span class="small">{{ col.label }}</span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {# Selection summary badge (visible only when checkboxes are ticked) #}
+      <div x-show="selected.length > 0" x-cloak class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary fs-6 fw-normal"
+              x-text="selected.length + ' {% trans "seleccionados" %}'"></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                @click="selected = []" title="{% trans 'Deseleccionar todo' %}">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+    </div>{# /toolbar #}
+
+    {# ── Filter offcanvas (populated by dt_filter_template) ────────────────── #}
+    {% if dt_filter_template %}
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="dt-filter-offcanvas"
+         aria-labelledby="dt-filter-offcanvas-label">
+      <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title" id="dt-filter-offcanvas-label">
+          <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body">
+        {% include dt_filter_template %}
+      </div>
+      <div class="p-3 border-top">
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-check-circle me-1"></i>{% trans "Aplicar filtros" %}
+          </button>
+          <a href="{% url dt_url %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </form>{# /dt-form #}
+
+  {# ── Table card — #dt-results is the HTMX swap target ───────────────────── #}
+  <div class="card shadow-sm">
+    <div id="dt-results" class="card-body p-0">
+      {% include "components/datatable/results.html" %}
+    </div>
+  </div>
+
+</div>{# /dt-wrapper #}
+
+
+{# ── Alpine component + global JS helpers ────────────────────────────────────── #}
+<script>
+/* dtTable — Alpine component factory for a single DataTable instance. */
+function dtTable(tableId, allCols, defaultVisible) {
+  return {
+    tableId,
+    allCols,
+    visible: [],
+    selected: [],
+
+    init() {
+      /* Restore column visibility from localStorage. */
+      const saved = localStorage.getItem('dt-visible-' + tableId);
+      this.visible = saved ? JSON.parse(saved) : [...defaultVisible];
+      this.$nextTick(() => this.applyColVisibility());
+
+      /* Re-apply col visibility and clear selection after every HTMX swap. */
+      document.addEventListener('htmx:afterSwap', (e) => {
+        if (e.detail.target && e.detail.target.id === 'dt-results') {
+          this.applyColVisibility();
+          this.selected = [];
+        }
+      });
+
+      /* Reset page to 1 on any form submit UNLESS dtPage() set the flag. */
+      const form = document.getElementById('dt-form');
+      form.addEventListener('htmx:configRequest', () => {
+        if (!form._dtKeepPage) {
+          document.getElementById('dt-page-input').value = '1';
+        }
+        form._dtKeepPage = false;
+      });
+    },
+
+    /* ── Column visibility ─────────────────────────────────────────────── */
+
+    toggleCol(key) {
+      if (this.visible.includes(key)) {
+        this.visible = this.visible.filter(k => k !== key);
+      } else {
+        this.visible.push(key);
+      }
+      localStorage.setItem('dt-visible-' + this.tableId, JSON.stringify(this.visible));
+      this.applyColVisibility();
+    },
+
+    applyColVisibility() {
+      this.allCols.forEach(col => {
+        const show = this.visible.includes(col);
+        document.querySelectorAll('[data-col="' + col + '"]').forEach(el => {
+          el.style.display = show ? '' : 'none';
+        });
+      });
+    },
+
+    /* ── Row checkboxes ────────────────────────────────────────────────── */
+
+    get allOnPageChecked() {
+      const boxes = [...document.querySelectorAll('.dt-row-check')];
+      return boxes.length > 0 && boxes.every(b => this.selected.includes(b.value));
+    },
+
+    toggleAll() {
+      const boxes = [...document.querySelectorAll('.dt-row-check')];
+      const pageIds = boxes.map(b => b.value);
+      if (this.allOnPageChecked) {
+        this.selected = this.selected.filter(id => !pageIds.includes(id));
+      } else {
+        pageIds.forEach(id => { if (!this.selected.includes(id)) this.selected.push(id); });
+      }
+    },
+  };
+}
+
+/* ── Sort — called from sort-header buttons inside #dt-results ─────────────── */
+function dtSort(key, currentSort) {
+  const form   = document.getElementById('dt-form');
+  const sortEl = document.getElementById('dt-sort-input');
+  /* Toggle direction if same column, else sort ascending. */
+  if (currentSort === key) {
+    sortEl.value = '-' + key;
+  } else if (currentSort === '-' + key) {
+    sortEl.value = key;
+  } else {
+    sortEl.value = key;
+  }
+  document.getElementById('dt-page-input').value = '1';
+  htmx.trigger(form, 'submit');
+}
+
+/* ── Pagination — called from pagination buttons inside #dt-results ─────────── */
+function dtPage(n) {
+  const form = document.getElementById('dt-form');
+  form._dtKeepPage = true;          /* Tell htmx:configRequest not to reset page. */
+  document.getElementById('dt-page-input').value = n;
+  htmx.trigger(form, 'submit');
+}
+
+/* ── Auto-close filter offcanvas after HTMX request ────────────────────────── */
+document.addEventListener('htmx:afterRequest', function (e) {
+  if (e.detail.elt && e.detail.elt.id === 'dt-form') {
+    const canvas = document.getElementById('dt-filter-offcanvas');
+    if (canvas) {
+      const oc = bootstrap.Offcanvas.getInstance(canvas);
+      if (oc) oc.hide();
+    }
+  }
+});
+</script>

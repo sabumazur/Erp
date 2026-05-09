@@ -1,6 +1,7 @@
 import django_filters
-from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.search import fts_search
 
 from .models import Item
 
@@ -36,10 +37,7 @@ class ItemFilter(django_filters.FilterSet):
         fields = ["q", "item_type", "itbis_rate", "is_active"]
 
     def search_filter(self, queryset, name, value):
-        return queryset.filter(
-            Q(name__icontains=value)
-            | Q(code__icontains=value)
-        )
+        return fts_search(queryset, value, fts_fields=["name"], trgm_fields=["code"])
 
     def active_filter(self, queryset, name, value):
         if value == "true":

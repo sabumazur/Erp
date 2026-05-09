@@ -1,7 +1,9 @@
 import json
 from datetime import date
+from decimal import Decimal
 
 from django.contrib import messages
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -10,6 +12,8 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.search import fts_search
 from ..filters import InvoiceFilter
 from ..forms import (
     InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
@@ -20,31 +24,69 @@ from ..services import NCFService
 from ._helpers import _org, _active_filter_count, _sale_items_json, _customer_defaults_json
 
 
-class InvoiceListView(ERPBaseViewMixin, TemplateView):
+class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "invoices/invoice_list.html"
     required_module = "invoices"
+
+    dt_columns = [
+        DTColumn("encf",          _("e-NCF"),   sortable=True),
+        DTColumn("customer__name",_("Cliente"), sortable=True),
+        DTColumn("issue_date",    _("Fecha"),   sortable=True),
+        DTColumn("due_date",      _("Vence"),   sortable=True),
+        DTColumn("total",         _("Total"),   sortable=True, numeric=True),
+        DTColumn("status",        _("Estado"),  sortable=False),
+    ]
+    dt_default_sort = "-issue_date"
+    dt_url = "invoices:invoice_list"
+    dt_row_template = "invoices/partials/invoice_row.html"
+    dt_filter_template = "invoices/partials/invoice_filters.html"
+    dt_search_placeholder = _("e-NCF o cliente…")
+    dt_id = "invoices"
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
         if request.htmx:
-            return render(request, "invoices/partials/invoice_table.html", ctx)
+            return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
 
     def get_context_data(self, **kwargs):
-        from django.db.models import Q
         ctx = super().get_context_data(**kwargs)
-        qs = (
-            Invoice.invoices.filter(organization=_org(self.request))
-            .select_related("customer")
-            .order_by("-issue_date", "-created_at")
-        )
+        org = _org(self.request)
+        qs = Invoice.invoices.filter(organization=org).select_related("customer")
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = qs.filter(Q(encf__icontains=q) | Q(customer__name__icontains=q))
-        f = InvoiceFilter(self.request.GET, queryset=qs, organization=_org(self.request))
+            qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["encf"])
+        f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        ctx["invoices"] = f.qs
+        ctx.update(self.apply_datatable(f.qs))
         ctx["active_filter_count"] = _active_filter_count(self.request)
+
+        today = date.today()
+        agg = Invoice.invoices.filter(organization=org).aggregate(
+            total_count=Count("id"),
+            pending_count=Count("id", filter=Q(status__in=[
+                Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE,
+            ])),
+            overdue_count=Count("id", filter=Q(status=Invoice.Status.OVERDUE)),
+            paid_month=Sum("total", filter=Q(
+                status=Invoice.Status.PAID,
+                issue_date__month=today.month,
+                issue_date__year=today.year,
+            )),
+        )
+        paid_total = agg["paid_month"] or Decimal("0.00")
+        ctx["stats"] = [
+            {"label": _("Total facturas"),      "value": agg["total_count"],
+             "icon": "bi-receipt",              "color": "primary"},
+            {"label": _("Pendientes de cobro"), "value": agg["pending_count"],
+             "icon": "bi-hourglass-split",      "color": "info"},
+            {"label": _("Vencidas"),            "value": agg["overdue_count"],
+             "icon": "bi-exclamation-circle",   "color": "danger",
+             "trend": _("requieren atención") if agg["overdue_count"] else None,
+             "trend_up": False if agg["overdue_count"] else None},
+            {"label": _("Cobrado este mes"),    "value": f"RD$ {paid_total:,.2f}",
+             "icon": "bi-cash-coin",            "color": "success"},
+        ]
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Facturas")},

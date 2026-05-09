@@ -1,0 +1,30 @@
+{% load i18n %}
+{% comment %}
+  Filter offcanvas body for the invoice datatable.
+  Included by components/datatable/wrapper.html via dt_filter_template.
+  Requires 'filter' (InvoiceFilter) in context.
+{% endcomment %}
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Estado" %}</label>
+  {{ filter.form.status }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Tipo NCF" %}</label>
+  {{ filter.form.ncf_type }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Cliente" %}</label>
+  {{ filter.form.customer }}
+</div>
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Fecha emisión" %}</label>
+  <div class="d-flex gap-2 align-items-center">
+    {{ filter.form.issue_date_after }}
+    <span class="text-muted small">—</span>
+    {{ filter.form.issue_date_before }}
+  </div>
+</div>

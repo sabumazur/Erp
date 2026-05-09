@@ -1,0 +1,7 @@
+{% load i18n %}
+{% comment %}Filter offcanvas body for the customer datatable. Requires 'filter' (CustomerFilter).{% endcomment %}
+
+<div class="mb-3">
+  <label class="form-label small text-muted text-uppercase fw-semibold">{% trans "Tipo NCF" %}</label>
+  {{ filter.form.default_ncf_type }}
+</div>

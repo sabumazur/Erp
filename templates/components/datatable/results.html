@@ -1,0 +1,71 @@
+{% load i18n %}
+{% comment %} 
+  HTMX swap target — rendered server-side on every search / sort / page change.
+  Swapped into #dt-results by the wrapper form's hx-target.
+
+  Context provided by build_datatable_context():
+    dt_columns, dt_sort, dt_page_obj, dt_total, dt_page_range,
+    dt_row_template, dt_q
+ {% endcomment %}
+<table class="table table-hover table-sm mb-0">
+  <thead class="table-light">
+    <tr>
+      {# Optional checkbox column — rendered if any row template adds .dt-row-check #}
+      <th style="width:40px" class="dt-check-col" x-show="false">
+        <input type="checkbox" class="form-check-input"
+               :checked="allOnPageChecked"
+               @change="toggleAll()">
+      </th>
+      {% for col in dt_columns %}
+      <th data-col="{{ col.key }}"
+          {% if col.numeric %}class="text-end"{% endif %}>
+        {% if col.sortable %}
+        <button type="button"
+                class="btn btn-link p-0 text-decoration-none text-reset fw-semibold small"
+                onclick="dtSort('{{ col.key }}', '{{ dt_sort }}')">
+          {{ col.label }}
+          {% if dt_sort == col.key %}
+            <i class="bi bi-sort-up-alt ms-1 text-primary"></i>
+          {% elif dt_sort == '-'|add:col.key %}
+            <i class="bi bi-sort-down-alt ms-1 text-primary"></i>
+          {% else %}
+            <i class="bi bi-arrow-down-up ms-1 text-muted opacity-25"></i>
+          {% endif %}
+        </button>
+        {% else %}
+        <span class="small fw-semibold">{{ col.label }}</span>
+        {% endif %}
+      </th>
+      {% endfor %}
+      {# Actions column placeholder — row templates add their own actions cell #}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in dt_page_obj %}
+      {% include dt_row_template %}
+    {% empty %}
+    <tr>
+      <td colspan="{{ dt_columns|length|add:2 }}" class="text-center text-muted py-5">
+        <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+        {% if dt_q %}
+          {% blocktrans with q=dt_q %}Sin resultados para «{{ q }}».{% endblocktrans %}
+        {% else %}
+          {% trans "No hay registros." %}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{# ── Footer: row count + pagination ──────────────────────────────────────────── #}
+{% if dt_total %}
+<div class="d-flex align-items-center justify-content-between px-3 py-2 border-top small text-muted">
+  <span>
+    {% with start=dt_page_obj.start_index end=dt_page_obj.end_index %}
+      {% blocktrans %}{{ start }}–{{ end }} de {{ dt_total }}{% endblocktrans %}
+    {% endwith %}
+  </span>
+  {% include "components/datatable/pagination.html" %}
+</div>
+{% endif %}
