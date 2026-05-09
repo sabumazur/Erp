@@ -17,7 +17,7 @@ from ..filters import PaymentFilter
 from ..forms import PaymentHeaderForm, PaymentForm
 from ..models import Invoice, Payment, PaymentAllocation
 from ..services import PaymentService
-from ._helpers import _org, _active_filter_count
+from ._helpers import _org
 
 
 class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -59,7 +59,6 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = PaymentFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["active_filter_count"] = _active_filter_count(self.request)
 
         today = date.today()
         agg = Payment.objects.filter(organization=org).aggregate(

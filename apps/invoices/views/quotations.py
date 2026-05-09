@@ -13,7 +13,7 @@ from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet
 from ..models import Invoice, NCFType
 from ..services import QuotationService
-from ._helpers import _org, _active_filter_count, _sale_items_json, _customer_defaults_json
+from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
 
 class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -26,7 +26,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("issue_date",    _("Emisión"),     sortable=True),
         DTColumn("valid_until",   _("Válida hasta"),sortable=True),
         DTColumn("total",         _("Total"),       sortable=True, numeric=True),
-        DTColumn("status",        _("Estado"),      sortable=False),
+        DTColumn("status",        _("Estado"),      sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-issue_date"
     dt_url = "invoices:quotation_list"
@@ -51,7 +51,6 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = QuotationFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["active_filter_count"] = _active_filter_count(self.request)
 
         agg = Invoice.quotations.filter(organization=org).aggregate(
             total_count=Count("id"),

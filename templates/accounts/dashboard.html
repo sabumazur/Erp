@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}Dashboard — {{ organization.name }}{% endblock %}
 
@@ -22,7 +22,7 @@
         <div class="d-flex align-items-start justify-content-between">
           <div>
             <div class="text-muted small mb-1">{% trans "Facturado (mes actual)" %}</div>
-            <div class="fs-4 fw-bold">{{ month_invoiced|floatformat:2 }}</div>
+            <div class="fs-4 fw-bold">{{ month_invoiced|floatformat:2|intcomma }}</div>
           </div>
           <div class="bg-primary bg-opacity-10 rounded-3 p-2">
             <i class="bi bi-receipt text-primary fs-5"></i>
@@ -38,7 +38,7 @@
         <div class="d-flex align-items-start justify-content-between">
           <div>
             <div class="text-muted small mb-1">{% trans "Cobrado (mes actual)" %}</div>
-            <div class="fs-4 fw-bold text-success">{{ month_collected|floatformat:2 }}</div>
+            <div class="fs-4 fw-bold text-success">{{ month_collected|floatformat:2|intcomma }}</div>
           </div>
           <div class="bg-success bg-opacity-10 rounded-3 p-2">
             <i class="bi bi-cash-stack text-success fs-5"></i>
@@ -54,7 +54,7 @@
         <div class="d-flex align-items-start justify-content-between">
           <div>
             <div class="text-muted small mb-1">{% trans "Por cobrar" %}</div>
-            <div class="fs-4 fw-bold text-warning">{{ outstanding|floatformat:2 }}</div>
+            <div class="fs-4 fw-bold text-warning">{{ outstanding|floatformat:2|intcomma }}</div>
           </div>
           <div class="bg-warning bg-opacity-10 rounded-3 p-2">
             <i class="bi bi-hourglass-split text-warning fs-5"></i>
@@ -70,14 +70,14 @@
         <div class="d-flex align-items-start justify-content-between">
           <div>
             <div class="text-muted small mb-1">{% trans "Vencido" %}</div>
-            <div class="fs-4 fw-bold {% if overdue_total %}text-danger{% endif %}">{{ overdue_total|floatformat:2 }}</div>
+            <div class="fs-4 fw-bold {% if overdue_total %}text-danger{% endif %}">{{ overdue_total|floatformat:2|intcomma }}</div>
           </div>
           <div class="bg-danger bg-opacity-10 rounded-3 p-2">
             <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
           </div>
         </div>
         {% if overdue_count %}
-        <div class="mt-2 text-danger small">{{ overdue_count }} {% trans "factura(s) vencida(s)" %}</div>
+        <div class="mt-2 text-danger small">{{ overdue_count|intcomma }} {% trans "factura(s) vencida(s)" %}</div>
         {% endif %}
       </div>
     </div>
@@ -93,7 +93,7 @@
           <i class="bi bi-people text-info fs-5"></i>
         </div>
         <div>
-          <div class="fs-5 fw-bold">{{ customer_count }}</div>
+          <div class="fs-5 fw-bold">{{ customer_count|intcomma }}</div>
           <div class="text-muted small">{% trans "Clientes" %}</div>
         </div>
         <a href="{% url 'invoices:customer_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
@@ -107,7 +107,7 @@
           <i class="bi bi-file-earmark-text text-primary fs-5"></i>
         </div>
         <div>
-          <div class="fs-5 fw-bold">{{ pending_quotations }}</div>
+          <div class="fs-5 fw-bold">{{ pending_quotations|intcomma }}</div>
           <div class="text-muted small">{% trans "Cotizaciones activas" %}</div>
         </div>
         <a href="{% url 'invoices:quotation_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
@@ -121,7 +121,7 @@
           <i class="bi bi-cart text-warning fs-5"></i>
         </div>
         <div>
-          <div class="fs-5 fw-bold">{{ pending_sale_orders }}</div>
+          <div class="fs-5 fw-bold">{{ pending_sale_orders|intcomma }}</div>
           <div class="text-muted small">{% trans "Órdenes pendientes" %}</div>
         </div>
         <a href="{% url 'invoices:sale_order_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
@@ -206,7 +206,7 @@
               <span class="badge bg-secondary">{{ inv.get_status_display }}</span>
             {% endif %}
           </td>
-          <td class="text-end fw-semibold">{{ inv.total|floatformat:2 }}</td>
+          <td class="text-end fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay facturas registradas." %}</td></tr>
@@ -244,7 +244,7 @@
               </td>
               <td class="small">{{ inv.customer.name }}</td>
               <td class="text-end small text-danger fw-semibold">{{ inv.days_overdue }}</td>
-              <td class="text-end fw-semibold small">{{ inv.total|floatformat:2 }}</td>
+              <td class="text-end fw-semibold small">{{ inv.total|floatformat:2|intcomma }}</td>
             </tr>
             {% empty %}
             <tr>
@@ -287,7 +287,7 @@
                   {{ pmt.get_method_display }}
                 </span>
               </td>
-              <td class="text-end fw-semibold text-success small">{{ pmt.amount|floatformat:2 }}</td>
+              <td class="text-end fw-semibold text-success small">{{ pmt.amount|floatformat:2|intcomma }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="4" class="text-center text-muted py-4">{% trans "Sin pagos recientes." %}</td></tr>

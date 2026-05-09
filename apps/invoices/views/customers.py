@@ -16,7 +16,7 @@ from apps.core.search import fts_search
 from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
 from ..models import Customer, CustomerDepartment
-from ._helpers import _org, _active_filter_count, _customers_with_depts
+from ._helpers import _org, _customers_with_depts
 
 
 class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -29,6 +29,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("email",            _("Correo"),   sortable=False, visible=False),
         DTColumn("phone",            _("Teléfono"), sortable=False, visible=False),
         DTColumn("default_ncf_type", _("Tipo NCF"), sortable=False),
+        DTColumn("depts",            _("Depts."),   sortable=False),
     ]
     dt_default_sort = "name"
     dt_url = "invoices:customer_list"
@@ -75,7 +76,6 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
         ctx["form"] = CustomerForm()
-        ctx["active_filter_count"] = _active_filter_count(self.request)
 
         today = date.today()
         active_dept = CustomerDepartment.objects.filter(

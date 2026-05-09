@@ -9,9 +9,18 @@ def _org(request):
     return request.organization
 
 
-def _active_filter_count(request) -> int:
-    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
-    return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
+# Escape characters that could break out of a <script> block.
+# json.dumps() does NOT escape < > & by default, so a value like
+# "</script><script>alert(1)" would close the tag and execute arbitrary JS.
+_JSON_HTML_ESCAPES = str.maketrans({
+    ord("<"): "\\u003C",
+    ord(">"): "\\u003E",
+    ord("&"): "\\u0026",
+})
+
+
+def _html_safe_json(obj) -> str:
+    return json.dumps(obj, ensure_ascii=False).translate(_JSON_HTML_ESCAPES)
 
 
 def _customers_with_depts(organization):
@@ -39,7 +48,7 @@ def _customer_defaults_json(request) -> str:
     qs = Customer.objects.filter(
         organization=_org(request),
     ).select_related("payment_term")
-    return json.dumps(
+    return _html_safe_json(
         {
             str(c.pk): {
                 "ncf_type": c.default_ncf_type,
@@ -55,8 +64,7 @@ def _customer_defaults_json(request) -> str:
                 ),
             }
             for c in qs
-        },
-        ensure_ascii=False,
+        }
     )
 
 
@@ -72,7 +80,7 @@ def _sale_items_json(request) -> str:
         is_active=True,
         item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH],
     ).order_by("name")
-    return json.dumps(
+    return _html_safe_json(
         [
             {
                 "pk": str(item.pk),
@@ -82,6 +90,5 @@ def _sale_items_json(request) -> str:
                 "itbis_rate": item.itbis_rate,
             }
             for item in qs
-        ],
-        ensure_ascii=False,
+        ]
     )

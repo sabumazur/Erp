@@ -20,10 +20,6 @@ def _org(request):
     return request.organization
 
 
-def _active_filter_count(request) -> int:
-    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
-    return sum(1 for k, v in request.GET.items() if k not in skip and v.strip())
-
 
 # ── List + Create ─────────────────────────────────────────────────────────────
 
@@ -79,9 +75,8 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = Item.objects.filter(organization=_org(self.request))
         f  = ItemFilter(self.request.GET, queryset=qs)
         ctx.update(self.apply_datatable(f.qs))
-        ctx["filter"]              = f
-        ctx["active_filter_count"] = _active_filter_count(self.request)
-        ctx["form"]                = ItemForm()
+        ctx["filter"] = f
+        ctx["form"]   = ItemForm()
         ctx["create_url"]          = reverse("items:item_list")
         ctx["submit_label"]        = _("Crear")
         ctx["breadcrumbs"]         = [

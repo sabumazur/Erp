@@ -95,15 +95,16 @@
         </ul>
       </div>
 
-      {# Selection summary badge (visible only when checkboxes are ticked) #}
+      {% comment %} TODO: bulk-selection badge — uncomment when bulk actions are implemented
       <div x-show="selected.length > 0" x-cloak class="d-flex align-items-center gap-2">
         <span class="badge bg-primary fs-6 fw-normal"
-              x-text="selected.length + ' {% trans "seleccionados" %}'"></span>
+              x-text="selected.length + ' seleccionados'"></span>
         <button type="button" class="btn btn-sm btn-outline-secondary"
-                @click="selected = []" title="{% trans 'Deseleccionar todo' %}">
+                @click="selected = []" title="Deseleccionar todo">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
+      {% endcomment %}
 
     </div>{# /toolbar #}
 
@@ -153,7 +154,8 @@ function dtTable(tableId, allCols, defaultVisible) {
     tableId,
     allCols,
     visible: [],
-    selected: [],
+    // TODO: bulk-selection — uncomment when bulk actions are implemented
+    // selected: [],
 
     init() {
       /* Restore column visibility from localStorage. */
@@ -165,7 +167,7 @@ function dtTable(tableId, allCols, defaultVisible) {
       document.addEventListener('htmx:afterSwap', (e) => {
         if (e.detail.target && e.detail.target.id === 'dt-results') {
           this.applyColVisibility();
-          this.selected = [];
+          // this.selected = [];  // TODO: bulk-selection
         }
       });
 
@@ -200,8 +202,7 @@ function dtTable(tableId, allCols, defaultVisible) {
       });
     },
 
-    /* ── Row checkboxes ────────────────────────────────────────────────── */
-
+    /* TODO: bulk-selection — uncomment when bulk actions are implemented
     get allOnPageChecked() {
       const boxes = [...document.querySelectorAll('.dt-row-check')];
       return boxes.length > 0 && boxes.every(b => this.selected.includes(b.value));
@@ -216,6 +217,7 @@ function dtTable(tableId, allCols, defaultVisible) {
         pageIds.forEach(id => { if (!this.selected.includes(id)) this.selected.push(id); });
       }
     },
+    */
   };
 }
 

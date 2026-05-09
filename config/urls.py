@@ -18,5 +18,7 @@ urlpatterns = [
     path("", include("apps.invoices.urls", namespace="invoices")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve user-uploaded media files in all environments.
+# For local production this is acceptable; replace with a dedicated nginx
+# location block if the deployment grows beyond a few concurrent users.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

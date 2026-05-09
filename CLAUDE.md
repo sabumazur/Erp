@@ -101,6 +101,66 @@ Dominican fiscal identifiers are tracked in `NCFSequence` (one active sequence p
 
 `NCFSequence` exposes `NCFSequence.PHYSICAL_TYPES` and `NCFSequence.ELECTRONIC_TYPES` frozensets. The `Series` inner class has `PHYSICAL = "B"` and `ELECTRONIC = "E"`; default series is `PHYSICAL`. Helper properties: `preview_next` (next NCF string without incrementing), `remaining` (unused slots). Dev-mode fallback in `NCFService` generates a fake B-series 8-digit NCF so it never collides with real E-series sequences.
 
+### DataTable system (`apps/core/datatable.py`)
+
+All list views use a shared datatable pattern for sorting, pagination, and HTMX filtering.
+
+**`DataTableMixin`** — add to any `ListView`/`View` and set these class attributes:
+
+```python
+dt_columns: list[DTColumn]     # column definitions (key, label, sortable, visible, numeric)
+dt_default_sort: str           # e.g. "name" or "-created_at"
+dt_page_size: int              # rows per page (default 25)
+dt_url: str                    # URL name for HTMX refreshes, e.g. "items:item_list"
+dt_row_template: str           # per-row partial template path
+dt_filter_template: str        # filter offcanvas body template path (optional)
+dt_search_placeholder: str     # search input placeholder
+dt_id: str                     # localStorage key for column visibility
+```
+
+Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. For HTMX requests return `components/datatable/results.html`. Use `build_datatable_context()` directly in action views that need a table refresh after a CRUD op.
+
+Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
+
+### Full-text search (`apps/core/search.py`)
+
+```python
+fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish")
+```
+
+- `fts_fields` — natural-language text columns (SearchVector / SearchRank via `pg_trgm` + FTS).
+- `trgm_fields` — codes / IDs (reliable `icontains` matching).
+- `q < 3 chars` → plain `icontains` on all fields; `q >= 3` → FTS ranked + trigram fallback.
+- Requires `django.contrib.postgres` and the `pg_trgm` extension (migration `core/0003_pg_trgm`).
+- GIN indexes for FTS and trigram are added per-model in migrations `invoices/0018` and `items/0006`.
+
+All customer, invoice, payment, quotation, sale order, and item list views already call `fts_search`.
+
+### Reports (`apps/invoices/views/reports.py`)
+
+All report views are `admin_required = True`, module `"invoices"`. Available reports:
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `ReportIndexView` | `invoices:reports` | Report hub with DGII deadline reminder |
+| `Report607View` | `invoices:report_607` | DGII 607 CSV (sales by month/year) |
+| `Report608View` | `invoices:report_608` | DGII 608 CSV (purchases by month/year) |
+| `ReportAgingView` | `invoices:report_aging` | AR aging buckets (current, 1–30, 31–60, 61–90, 90+) |
+| `ReportStatementView` | `invoices:report_statement` | Customer account statement |
+| `ReportSalesByPeriodView` | `invoices:report_sales_period` | Sales summary by day/month |
+| `ReportInvoicesByCustomerView` | `invoices:report_invoices_by_customer` | Invoices grouped by customer |
+| `ReportCollectionsView` | `invoices:report_collections` | Collections / payments received |
+| `ReportITBISView` | `invoices:report_itbis` | ITBIS (VAT) summary by period |
+| `ReportSalesByNCFTypeView` | `invoices:report_ncf_type` | Sales grouped by NCF type |
+
+### KPI cards (`templates/components/_kpi_cards.html`)
+
+Reusable partial for summary metric grids. Include with:
+```django
+{% include "components/_kpi_cards.html" with cards=kpi_cards %}
+```
+Each card in `kpi_cards` is a dict with keys `label`, `value`, `icon`, `color` (Bootstrap color name), and optional `url`.
+
 ### Test factories
 
 All factories in `apps/accounts/tests/factories.py` and `apps/invoices/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Tests that specifically assert signal behaviour call `User.objects.create_user()` directly.
@@ -116,6 +176,12 @@ All delete views (`ItemDeleteView`, `CustomerDeleteView`, `NCFSequenceDeleteView
 - `NCFSequenceDeleteView` — no guard; sequences can always be deleted (confirmation handled in the template).
 
 HTMX-aware: when `request.htmx` is truthy, deletion views return a partial response with `HX-Trigger` headers instead of a redirect. Success triggers `showToast`; blocked deletes trigger `showSwal` (SweetAlert2). Non-HTMX paths fall back to `messages` + redirect.
+
+### Items app (`apps/items/`)
+
+`Item` has an `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes are auto-generated for `SALE` and `BOTH` items via `ItemCodeSequence.generate()` when left blank. `cost_price` is nullable/optional; `margin` property is only valid when set. `InvoiceItem` FK to `Item` is optional — line items can be free-text.
+
+Search is indexed: GIN trgm on `name`/`code` (migration `items/0006`); the item list uses `fts_search` with `fts_fields=["name"]` and `trgm_fields=["code"]`.
 
 ### Settings & i18n
 

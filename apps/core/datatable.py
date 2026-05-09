@@ -20,6 +20,7 @@ class DTColumn:
     sortable: bool = True
     visible: bool = True
     numeric: bool = False
+    classes: str = ""
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
@@ -98,6 +99,11 @@ def build_datatable_context(
     paginator = Paginator(qs, page_size)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
+    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
+    active_filter_count = sum(
+        1 for k, v in request.GET.items() if k not in skip and v.strip()
+    )
+
     return {
         "dt_columns": columns,
         "dt_sort": sort if (explicit_sort or not q) else "",
@@ -110,6 +116,7 @@ def build_datatable_context(
         "dt_search_placeholder": search_placeholder,
         "dt_id": dt_id,
         "dt_q": q,
+        "active_filter_count": active_filter_count,
     }
 
 

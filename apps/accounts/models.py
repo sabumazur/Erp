@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import ERPBaseModel, SoftDeleteQuerySet
+from .validators import validate_image_size
 
 
 class UserManager(BaseUserManager):
@@ -33,7 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin, ERPBaseModel):
     email = models.EmailField(unique=True, verbose_name=_("correo electrónico"))
     first_name = models.CharField(max_length=150, blank=True, verbose_name=_("nombre"))
     last_name = models.CharField(max_length=150, blank=True, verbose_name=_("apellido"))
-    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, verbose_name=_("foto de perfil"))
+    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, verbose_name=_("foto de perfil"), validators=[validate_image_size])
     is_active = models.BooleanField(default=True, verbose_name=_("activo"))
     is_staff = models.BooleanField(default=False, verbose_name=_("estado de staff"))
 
@@ -63,7 +64,7 @@ class Organization(ERPBaseModel):
         related_name="owned_organizations",
         verbose_name=_("propietario"),
     )
-    logo = models.ImageField(upload_to="org_logos/", null=True, blank=True, verbose_name=_("logotipo"))
+    logo = models.ImageField(upload_to="org_logos/", null=True, blank=True, verbose_name=_("logotipo"), validators=[validate_image_size])
     is_active = models.BooleanField(default=True, verbose_name=_("activo"))
 
     # Contact & identity

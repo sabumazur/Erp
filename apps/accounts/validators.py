@@ -1,5 +1,15 @@
 import re
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+_MAX_IMAGE_BYTES = 2 * 1024 * 1024  # 2 MB
+
+
+def validate_image_size(image):
+    if image.size > _MAX_IMAGE_BYTES:
+        raise ValidationError(
+            _("El archivo de imagen es demasiado grande (máx. 2 MB).")
+        )
 
 
 class HasLetterValidator:

@@ -15,7 +15,17 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sabum\\\\sabsys\" -Recurse -Filter \"item_list.html\")",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\templates\" -Recurse -File)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(python -c \"import simple_history; print\\(simple_history.__version__\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -u -c ' *)",
+      "Bash(python manage.py reset_and_seed_db --no-input)",
+      "Bash(python -c \"from apps.invoices.models import Customer; print\\([f.name for f in Customer._meta.get_fields\\(\\)]\\)\")",
+      "Bash(python -c \"import django; import os; os.environ.setdefault\\('DJANGO_SETTINGS_MODULE','config.settings.development'\\); django.setup\\(\\); from apps.invoices.models import Customer; print\\([f.name for f in Customer._meta.concrete_fields]\\)\")",
+      "Bash(python manage.py showmigrations invoices)",
+      "Bash(pip install *)",
+      "Bash(pip-audit -r requirements.txt)",
+      "Bash(git -C c:/Users/sabum/sabsys log --all --full-history -- \".env\")"
     ]
   }
 }

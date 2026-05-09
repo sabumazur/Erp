@@ -13,6 +13,7 @@ and window.ITEM_CATALOG on page load:
 """
 import json
 
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views import View
 
@@ -62,30 +63,43 @@ class ItemCatalogView(ERPBaseViewMixin, View):
 
     def get(self, request):
         from apps.items.models import Item
+        from django.db.models import Q
 
         q = request.GET.get("q", "").strip()
+        org = _org(request)
+
+        # Cache the full unfiltered catalog per org — the most common hit is
+        # the form page loading the complete list on startup (q="").
+        # Search queries are not cached to avoid a key-per-term explosion.
+        cache_key = f"item_catalog:{org.pk}"
+        if not q:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return JsonResponse(cached, safe=False)
+
         qs = Item.objects.filter(
-            organization=_org(request),
+            organization=org,
             is_active=True,
             item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH],
         ).order_by("name")
 
         if q:
-            from django.db.models import Q
             qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
 
-        qs = qs[:50]  # cap results to avoid large responses
+        qs = qs[:50]
 
-        return JsonResponse(
-            [
-                {
-                    "pk": str(item.pk),
-                    "code": item.code,
-                    "name": item.name,
-                    "unit_price": str(item.unit_price),
-                    "itbis_rate": item.itbis_rate,
-                }
-                for item in qs
-            ],
-            safe=False,
-        )
+        result = [
+            {
+                "pk": str(item.pk),
+                "code": item.code,
+                "name": item.name,
+                "unit_price": str(item.unit_price),
+                "itbis_rate": item.itbis_rate,
+            }
+            for item in qs
+        ]
+
+        if not q:
+            cache.set(cache_key, result, timeout=300)
+
+        return JsonResponse(result, safe=False)

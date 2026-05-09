@@ -52,9 +52,11 @@ def fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish"):
 
         # Include FTS hits and trigram-similar hits on the same text fields
         # (catches partial-word matches that FTS stemming misses).
+        # trigram_similar doesn't support JOIN traversal, so FK fields fall back to icontains.
         match_filter = Q(search_rank__gt=0)
         for field in fts_fields:
-            match_filter |= Q(**{f"{field}__trigram_similar": q})
+            lookup = "icontains" if "__" in field else "trigram_similar"
+            match_filter |= Q(**{f"{field}__{lookup}": q})
         for field in trgm_fields:
             match_filter |= Q(**{f"{field}__icontains": q})
 

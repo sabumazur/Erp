@@ -5,7 +5,7 @@ from django.contrib.messages import constants as message_constants
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv()) + ["healthcheck.railway.app"]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost,127.0.0.1")
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -42,6 +42,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -114,8 +115,18 @@ LOGOUT_REDIRECT_URL = "account_login"
 LOGIN_URL = "account_login"
 
 ACCOUNT_RATE_LIMITS = {
-    "login_failed": "5/300s",  # lock out after 5 failed attempts within 5 minutes
+    "login_failed":          "5/300s",   # 5 failed attempts → 5-minute lockout
+    "signup":                "10/hour",
+    "confirm_email":         "5/hour",
+    "password_reset":        "5/hour",
+    "password_reset_by_key": "5/hour",
+    "password_change":       "5/hour",
 }
+
+# ── File upload limits ────────────────────────────────────────────────────────
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 MB per file before spooling to disk
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 MB total non-file POST body
 
 # ── Crispy ────────────────────────────────────────────────────────────────────
 
@@ -151,3 +162,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ── Messages ──────────────────────────────────────────────────────────────────
 
 MESSAGE_TAGS = {message_constants.ERROR: "danger"}
+
+# ── Content Security Policy ───────────────────────────────────────────────────
+# 'unsafe-inline' is required for the app's inline <script> blocks and Alpine's
+# x-show inline styles. Replace it with nonces for stronger protection.
+
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src":    ["'self'"],
+        "script-src":     ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+        "style-src":      ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        "font-src":       ["'self'", "https://cdn.jsdelivr.net"],
+        "img-src":        ["'self'", "data:"],
+        "connect-src":    ["'self'"],
+        "form-action":    ["'self'"],
+        "frame-ancestors":["'none'"],
+        "base-uri":       ["'self'"],
+        "object-src":     ["'none'"],
+    }
+}

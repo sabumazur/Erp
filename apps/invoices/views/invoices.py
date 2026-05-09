@@ -21,7 +21,7 @@ from ..forms import (
 )
 from ..models import Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
 from ..services import NCFService
-from ._helpers import _org, _active_filter_count, _sale_items_json, _customer_defaults_json
+from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
 
 class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -34,7 +34,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("issue_date",    _("Fecha"),   sortable=True),
         DTColumn("due_date",      _("Vence"),   sortable=True),
         DTColumn("total",         _("Total"),   sortable=True, numeric=True),
-        DTColumn("status",        _("Estado"),  sortable=False),
+        DTColumn("status",        _("Estado"),  sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-issue_date"
     dt_url = "invoices:invoice_list"
@@ -59,7 +59,6 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["active_filter_count"] = _active_filter_count(self.request)
 
         today = date.today()
         agg = Invoice.invoices.filter(organization=org).aggregate(
@@ -517,6 +516,7 @@ class RNCLookupView(ERPBaseViewMixin, View):
 
     def get(self, request):
         import json as _json
+        from django.core.cache import cache
         from ..validators import lookup_name, _digits_only
 
         value = (request.GET.get("rnc_cedula") or "").strip()
@@ -529,7 +529,17 @@ class RNCLookupView(ERPBaseViewMixin, View):
         if id_type not in ("RNC", "CED") and len(digits) not in (9, 11):
             return HttpResponse("")
 
-        name, source = lookup_name(value, id_type)
+        # DGII records are stable — cache successful lookups for 24 hours so
+        # repeated lookups of the same RNC/cédula skip the external API call.
+        cache_key = f"rnc_lookup:{digits}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            name, source = cached
+        else:
+            name, source = lookup_name(value, id_type)
+            if name:
+                cache.set(cache_key, (name, source), timeout=86400)
+
         resp = HttpResponse("")
         if name:
             resp["HX-Trigger"] = _json.dumps({"rncFound": {"name": name, "value": value}})

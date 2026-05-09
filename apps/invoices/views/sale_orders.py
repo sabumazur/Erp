@@ -15,7 +15,7 @@ from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, ConsolidateForm
 from ..models import Invoice, InvoiceItem, CustomerDepartment
 from ..services import SaleOrderService
-from ._helpers import _org, _active_filter_count, _sale_items_json, _customer_defaults_json
+from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
 
 class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -29,7 +29,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("issue_date",     _("Emisión"),    sortable=True),
         DTColumn("delivery_date",  _("Entrega"),    sortable=True),
         DTColumn("total",          _("Total"),      sortable=True, numeric=True),
-        DTColumn("status",         _("Estado"),     sortable=False),
+        DTColumn("status",         _("Estado"),     sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-delivery_date"
     dt_url = "invoices:sale_order_list"
@@ -57,7 +57,6 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["active_filter_count"] = _active_filter_count(self.request)
 
         agg = Invoice.sale_orders.filter(organization=org).aggregate(
             total_count=Count("id"),

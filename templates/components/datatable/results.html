@@ -10,15 +10,16 @@
 <table class="table table-hover table-sm mb-0">
   <thead class="table-light">
     <tr>
-      {# Optional checkbox column — rendered if any row template adds .dt-row-check #}
+      {% comment %} TODO: bulk-selection checkbox column — uncomment when bulk actions are implemented
       <th style="width:40px" class="dt-check-col" x-show="false">
         <input type="checkbox" class="form-check-input"
                :checked="allOnPageChecked"
                @change="toggleAll()">
       </th>
+      {% endcomment %}
       {% for col in dt_columns %}
       <th data-col="{{ col.key }}"
-          {% if col.numeric %}class="text-end"{% endif %}>
+          {% if col.numeric %}class="text-end"{% elif col.classes %}class="{{ col.classes }}"{% endif %}>
         {% if col.sortable %}
         <button type="button"
                 class="btn btn-link p-0 text-decoration-none text-reset fw-semibold small"
@@ -37,7 +38,8 @@
         {% endif %}
       </th>
       {% endfor %}
-      {# Actions column placeholder — row templates add their own actions cell #}
+      <th></th>
+      {% comment %} actions — row templates add the cell {% endcomment %}
     </tr>
   </thead>
   <tbody>
