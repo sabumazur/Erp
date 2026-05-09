@@ -3,301 +3,413 @@
 
 {% block title %}Dashboard — {{ organization.name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ── KPI Cards ─────────────────────────── */
+.db-kpi-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 16px 14px;
+  border-left: 4px solid transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+.db-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+}
+.db-kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  line-height: 1;
+}
+.db-kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+.db-kpi-icon {
+  position: absolute; bottom: 12px; right: 14px;
+  font-size: 28px; opacity: .10; line-height: 1;
+}
+.db-kpi-blue  { border-left-color: #0d6efd; }
+.db-kpi-blue .db-kpi-value  { color: #0d6efd; }
+.db-kpi-blue .db-kpi-icon   { color: #0d6efd; }
+.db-kpi-green { border-left-color: #198754; }
+.db-kpi-green .db-kpi-value { color: #198754; }
+.db-kpi-green .db-kpi-icon  { color: #198754; }
+.db-kpi-amber { border-left-color: #f59e0b; }
+.db-kpi-amber .db-kpi-value { color: #b45309; }
+.db-kpi-amber .db-kpi-icon  { color: #f59e0b; }
+.db-kpi-red   { border-left-color: #dc3545; }
+.db-kpi-red .db-kpi-value   { color: #dc3545; }
+.db-kpi-red .db-kpi-icon    { color: #dc3545; }
+
+/* ── Stat pills ────────────────────────── */
+.db-stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border-top: 3px solid transparent;
+  height: 100%;
+}
+.db-stat-card.db-teal   { border-top-color: #0ea5e9; }
+.db-stat-card.db-indigo { border-top-color: #6366f1; }
+.db-stat-card.db-orange { border-top-color: #f97316; }
+.db-stat-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 18px;
+}
+.db-teal   .db-stat-icon { background: #f0f9ff; color: #0ea5e9; }
+.db-indigo .db-stat-icon { background: #eef2ff; color: #6366f1; }
+.db-orange .db-stat-icon { background: #fff7ed; color: #f97316; }
+.db-stat-num { font-size: 20px; font-weight: 800; color: #0f172a; }
+.db-stat-lbl { font-size: 11px; color: #64748b; }
+.db-stat-link {
+  margin-left: auto; font-size: 11px; color: #64748b;
+  border: 1px solid #e2e8f0; padding: 4px 10px;
+  border-radius: 6px; text-decoration: none;
+  white-space: nowrap; flex-shrink: 0;
+}
+.db-stat-link:hover { background: #f8fafc; color: #374151; }
+
+/* ── Panels (charts + tables) ──────────── */
+.db-panel {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  overflow: hidden;
+  height: 100%;
+}
+.db-panel-header {
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.db-panel-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+.db-panel-badge {
+  font-size: 10px; color: #64748b;
+  background: #f1f5f9; padding: 2px 8px; border-radius: 10px;
+}
+.db-panel-body { padding: 14px 16px; }
+
+/* ── Tables ────────────────────────────── */
+.db-table { width: 100%; border-collapse: collapse; }
+.db-table thead th {
+  padding: 8px 12px;
+  font-size: 11px; font-weight: 600; color: #64748b;
+  text-transform: uppercase; letter-spacing: .4px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+.db-table tbody tr { border-bottom: 1px solid #f8fafc; }
+.db-table tbody tr:last-child { border-bottom: none; }
+.db-table tbody td { padding: 9px 12px; font-size: 12.5px; color: #334155; }
+.db-table tbody tr:hover td { background: #fafbfc; }
+
+/* Soft badges */
+.db-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 10px; display: inline-block;
+}
+.db-badge-paid    { background: #dcfce7; color: #166534; }
+.db-badge-sent    { background: #e0f2fe; color: #0369a1; }
+.db-badge-overdue { background: #fee2e2; color: #991b1b; }
+.db-badge-confirm { background: #eff6ff; color: #1e40af; }
+.db-badge-draft   { background: #f1f5f9; color: #64748b; }
+
+/* Payment method chips */
+.db-method {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 10px; display: inline-block;
+}
+.db-method-transfer { background: #e0f2fe; color: #0369a1; }
+.db-method-cash     { background: #dcfce7; color: #166534; }
+.db-method-check    { background: #f1f5f9; color: #475569; }
+
+/* ── Page header ───────────────────────── */
+.db-page-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 20px;
+}
+.db-page-title { font-size: 18px; font-weight: 800; color: #0f172a; margin: 0; }
+.db-page-org   { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.db-date-chip  {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 6px; padding: 5px 12px;
+  font-size: 12px; color: #64748b; font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.db-section { margin-bottom: 16px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+
+{# ── Page header ── #}
+<div class="db-page-header">
   <div>
-    <h4 class="mb-0 fw-bold">Dashboard</h4>
-    <span class="text-muted small">
-      <i class="bi bi-building me-1"></i>{{ organization.name }}
-    </span>
+    <h4 class="db-page-title">{% trans "Dashboard" %}</h4>
+    <div class="db-page-org"><i class="bi bi-building me-1"></i>{{ organization.name }}</div>
   </div>
-  <span class="text-muted small">{{ today|date:"d/m/Y" }}</span>
+  <div class="db-date-chip">{{ today|date:"d/m/Y" }}</div>
 </div>
 
-<!-- KPI Cards -->
-<div class="row g-3 mb-4">
+{# ── KPI Cards ── #}
+<div class="row g-3 db-section">
   <div class="col-sm-6 col-xl-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="d-flex align-items-start justify-content-between">
-          <div>
-            <div class="text-muted small mb-1">{% trans "Facturado (mes actual)" %}</div>
-            <div class="fs-4 fw-bold">{{ month_invoiced|floatformat:2|intcomma }}</div>
-          </div>
-          <div class="bg-primary bg-opacity-10 rounded-3 p-2">
-            <i class="bi bi-receipt text-primary fs-5"></i>
-          </div>
-        </div>
-      </div>
+    <div class="db-kpi-card db-kpi-blue">
+      <div class="db-kpi-label">{% trans "Facturado (mes actual)" %}</div>
+      <div class="db-kpi-value">{{ month_invoiced|floatformat:2|intcomma }}</div>
+      <div class="db-kpi-sub">{% trans "Mes en curso" %}</div>
+      <div class="db-kpi-icon"><i class="bi bi-receipt"></i></div>
     </div>
   </div>
 
   <div class="col-sm-6 col-xl-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="d-flex align-items-start justify-content-between">
-          <div>
-            <div class="text-muted small mb-1">{% trans "Cobrado (mes actual)" %}</div>
-            <div class="fs-4 fw-bold text-success">{{ month_collected|floatformat:2|intcomma }}</div>
-          </div>
-          <div class="bg-success bg-opacity-10 rounded-3 p-2">
-            <i class="bi bi-cash-stack text-success fs-5"></i>
-          </div>
-        </div>
-      </div>
+    <div class="db-kpi-card db-kpi-green">
+      <div class="db-kpi-label">{% trans "Cobrado (mes actual)" %}</div>
+      <div class="db-kpi-value">{{ month_collected|floatformat:2|intcomma }}</div>
+      <div class="db-kpi-sub">{% trans "Pagos recibidos" %}</div>
+      <div class="db-kpi-icon"><i class="bi bi-cash-stack"></i></div>
     </div>
   </div>
 
   <div class="col-sm-6 col-xl-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="d-flex align-items-start justify-content-between">
-          <div>
-            <div class="text-muted small mb-1">{% trans "Por cobrar" %}</div>
-            <div class="fs-4 fw-bold text-warning">{{ outstanding|floatformat:2|intcomma }}</div>
-          </div>
-          <div class="bg-warning bg-opacity-10 rounded-3 p-2">
-            <i class="bi bi-hourglass-split text-warning fs-5"></i>
-          </div>
-        </div>
-      </div>
+    <div class="db-kpi-card db-kpi-amber">
+      <div class="db-kpi-label">{% trans "Por cobrar" %}</div>
+      <div class="db-kpi-value">{{ outstanding|floatformat:2|intcomma }}</div>
+      <div class="db-kpi-sub">{% trans "Pendiente de pago" %}</div>
+      <div class="db-kpi-icon"><i class="bi bi-hourglass-split"></i></div>
     </div>
   </div>
 
   <div class="col-sm-6 col-xl-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="d-flex align-items-start justify-content-between">
-          <div>
-            <div class="text-muted small mb-1">{% trans "Vencido" %}</div>
-            <div class="fs-4 fw-bold {% if overdue_total %}text-danger{% endif %}">{{ overdue_total|floatformat:2|intcomma }}</div>
-          </div>
-          <div class="bg-danger bg-opacity-10 rounded-3 p-2">
-            <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
-          </div>
-        </div>
-        {% if overdue_count %}
-        <div class="mt-2 text-danger small">{{ overdue_count|intcomma }} {% trans "factura(s) vencida(s)" %}</div>
-        {% endif %}
-      </div>
+    <div class="db-kpi-card db-kpi-red">
+      <div class="db-kpi-label">{% trans "Vencido" %}</div>
+      <div class="db-kpi-value">{{ overdue_total|floatformat:2|intcomma }}</div>
+      {% if overdue_count %}
+      <div class="db-kpi-sub" style="color:#dc3545;">{{ overdue_count }} {% trans "factura(s) vencida(s)" %}</div>
+      {% else %}
+      <div class="db-kpi-sub">{% trans "Sin facturas vencidas" %}</div>
+      {% endif %}
+      <div class="db-kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
     </div>
   </div>
 </div>
 
-<!-- Stat pills -->
-<div class="row g-3 mb-4">
+{# ── Stat pills ── #}
+<div class="row g-3 db-section">
   <div class="col-sm-4">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body d-flex align-items-center gap-3 py-3">
-        <div class="bg-info bg-opacity-10 rounded-3 p-2">
-          <i class="bi bi-people text-info fs-5"></i>
-        </div>
-        <div>
-          <div class="fs-5 fw-bold">{{ customer_count|intcomma }}</div>
-          <div class="text-muted small">{% trans "Clientes" %}</div>
-        </div>
-        <a href="{% url 'invoices:customer_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+    <div class="db-stat-card db-teal">
+      <div class="db-stat-icon"><i class="bi bi-people"></i></div>
+      <div>
+        <div class="db-stat-num">{{ customer_count|intcomma }}</div>
+        <div class="db-stat-lbl">{% trans "Clientes" %}</div>
       </div>
+      <a href="{% url 'invoices:customer_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body d-flex align-items-center gap-3 py-3">
-        <div class="bg-primary bg-opacity-10 rounded-3 p-2">
-          <i class="bi bi-file-earmark-text text-primary fs-5"></i>
-        </div>
-        <div>
-          <div class="fs-5 fw-bold">{{ pending_quotations|intcomma }}</div>
-          <div class="text-muted small">{% trans "Cotizaciones activas" %}</div>
-        </div>
-        <a href="{% url 'invoices:quotation_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+    <div class="db-stat-card db-indigo">
+      <div class="db-stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+      <div>
+        <div class="db-stat-num">{{ pending_quotations|intcomma }}</div>
+        <div class="db-stat-lbl">{% trans "Cotizaciones activas" %}</div>
       </div>
+      <a href="{% url 'invoices:quotation_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body d-flex align-items-center gap-3 py-3">
-        <div class="bg-warning bg-opacity-10 rounded-3 p-2">
-          <i class="bi bi-cart text-warning fs-5"></i>
-        </div>
-        <div>
-          <div class="fs-5 fw-bold">{{ pending_sale_orders|intcomma }}</div>
-          <div class="text-muted small">{% trans "Órdenes pendientes" %}</div>
-        </div>
-        <a href="{% url 'invoices:sale_order_list' %}" class="ms-auto btn btn-sm btn-outline-secondary">{% trans "Ver" %}</a>
+    <div class="db-stat-card db-orange">
+      <div class="db-stat-icon"><i class="bi bi-cart"></i></div>
+      <div>
+        <div class="db-stat-num">{{ pending_sale_orders|intcomma }}</div>
+        <div class="db-stat-lbl">{% trans "Órdenes pendientes" %}</div>
       </div>
+      <a href="{% url 'invoices:sale_order_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
 </div>
 
-<!-- Charts -->
-<div class="row g-3 mb-4">
+{# ── Charts ── #}
+<div class="row g-3 db-section">
   <div class="col-lg-5">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-transparent py-3">
-        <span class="fw-semibold">{% trans "Facturación vs Cobros (últimos 6 meses)" %}</span>
+    <div class="db-panel">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Facturación vs Cobros" %}</span>
+        <span class="db-panel-badge">{% trans "Últimos 6 meses" %}</span>
       </div>
-      <div class="card-body">
+      <div class="db-panel-body">
         <canvas id="revenueChart"></canvas>
       </div>
     </div>
   </div>
   <div class="col-lg-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-transparent py-3">
-        <span class="fw-semibold">{% trans "Facturación por cliente (últimos 6 meses)" %}</span>
+    <div class="db-panel">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Facturación por cliente" %}</span>
+        <span class="db-panel-badge">{% trans "Top 6 · 6 meses" %}</span>
       </div>
-      <div class="card-body">
+      <div class="db-panel-body">
         <canvas id="customerChart"></canvas>
       </div>
     </div>
   </div>
   <div class="col-lg-3">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-transparent py-3">
-        <span class="fw-semibold">{% trans "Estado de facturas" %}</span>
+    <div class="db-panel">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Estado de facturas" %}</span>
       </div>
-      <div class="card-body d-flex align-items-center justify-content-center">
-        <canvas id="statusChart" style="max-height:240px"></canvas>
+      <div class="db-panel-body d-flex align-items-center justify-content-center">
+        <canvas id="statusChart" style="max-height:220px"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Recent invoices -->
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
-    <span class="fw-semibold">{% trans "Facturas recientes" %}</span>
-    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-sm btn-outline-primary">{% trans "Ver todas" %}</a>
+{# ── Recent invoices ── #}
+<div class="db-panel db-section">
+  <div class="db-panel-header">
+    <span class="db-panel-title">{% trans "Facturas recientes" %}</span>
+    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-sm btn-outline-primary" style="font-size:11px;">{% trans "Ver todas" %} →</a>
   </div>
-  <div class="card-body p-0">
-    <table class="table table-hover table-sm mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>{% trans "N° Factura" %}</th>
-          <th>{% trans "Cliente" %}</th>
-          <th>{% trans "Emisión" %}</th>
-          <th>{% trans "Vence" %}</th>
-          <th>{% trans "Estado" %}</th>
-          <th class="text-end">{% trans "Total" %}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for inv in recent_invoices %}
-        <tr>
-          <td class="font-monospace fw-semibold">
-            <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none">{{ inv.display_number }}</a>
-          </td>
-          <td>{{ inv.customer.name }}</td>
-          <td class="small text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
-          <td class="small text-nowrap {% if inv.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
-            {{ inv.due_date|date:"d/m/Y"|default:"—" }}
-          </td>
-          <td>
-            {% if inv.status == 'PAID' %}
-              <span class="badge bg-success">{{ inv.get_status_display }}</span>
-            {% elif inv.status == 'OVERDUE' %}
-              <span class="badge bg-danger">{{ inv.get_status_display }}</span>
-            {% elif inv.status == 'CONFIRMED' %}
-              <span class="badge bg-primary">{{ inv.get_status_display }}</span>
-            {% elif inv.status == 'SENT' %}
-              <span class="badge bg-info text-dark">{{ inv.get_status_display }}</span>
-            {% else %}
-              <span class="badge bg-secondary">{{ inv.get_status_display }}</span>
-            {% endif %}
-          </td>
-          <td class="text-end fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay facturas registradas." %}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <table class="db-table">
+    <thead>
+      <tr>
+        <th>{% trans "N° Factura" %}</th>
+        <th>{% trans "Cliente" %}</th>
+        <th>{% trans "Emisión" %}</th>
+        <th>{% trans "Vence" %}</th>
+        <th>{% trans "Estado" %}</th>
+        <th class="text-end">{% trans "Total" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in recent_invoices %}
+      <tr>
+        <td class="font-monospace fw-semibold" style="font-size:11px;">
+          <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none" style="color:#0d6efd;">{{ inv.display_number }}</a>
+        </td>
+        <td>{{ inv.customer.name }}</td>
+        <td class="text-nowrap" style="color:#64748b;font-size:12px;">{{ inv.issue_date|date:"d/m/Y" }}</td>
+        <td class="text-nowrap {% if inv.status == 'OVERDUE' %}fw-semibold{% endif %}"
+            style="{% if inv.status == 'OVERDUE' %}color:#dc3545;{% else %}color:#64748b;{% endif %}font-size:12px;">
+          {{ inv.due_date|date:"d/m/Y"|default:"—" }}
+        </td>
+        <td>
+          {% if inv.status == 'PAID' %}<span class="db-badge db-badge-paid">{{ inv.get_status_display }}</span>
+          {% elif inv.status == 'OVERDUE' %}<span class="db-badge db-badge-overdue">{{ inv.get_status_display }}</span>
+          {% elif inv.status == 'CONFIRMED' %}<span class="db-badge db-badge-confirm">{{ inv.get_status_display }}</span>
+          {% elif inv.status == 'SENT' %}<span class="db-badge db-badge-sent">{{ inv.get_status_display }}</span>
+          {% else %}<span class="db-badge db-badge-draft">{{ inv.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td class="text-end fw-bold">{{ inv.total|floatformat:2|intcomma }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center py-4" style="color:#94a3b8;">{% trans "No hay facturas registradas." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Overdue + Recent payments -->
+{# ── Overdue + Recent payments ── #}
 <div class="row g-3">
   <div class="col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
-        <span class="fw-semibold text-danger"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}</span>
+    <div class="db-panel">
+      <div class="db-panel-header">
+        <span class="db-panel-title" style="color:#dc3545;">
+          <i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}
+        </span>
         {% if overdue_count > 6 %}
-        <a href="{% url 'invoices:invoice_list' %}?status=OVERDUE" class="btn btn-sm btn-outline-danger">{% trans "Ver todas" %}</a>
+        <a href="{% url 'invoices:invoice_list' %}?status=OVERDUE"
+           style="font-size:11px;color:#dc3545;border:1px solid #fecaca;background:#fff5f5;padding:4px 10px;border-radius:6px;text-decoration:none;">
+          {% trans "Ver todas" %} →
+        </a>
         {% endif %}
       </div>
-      <div class="card-body p-0">
-        <table class="table table-hover table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "Factura" %}</th>
-              <th>{% trans "Cliente" %}</th>
-              <th class="text-end">{% trans "Días" %}</th>
-              <th class="text-end">{% trans "Total" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for inv in overdue_invoices %}
-            <tr>
-              <td class="font-monospace small">
-                <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none text-danger">{{ inv.display_number }}</a>
-              </td>
-              <td class="small">{{ inv.customer.name }}</td>
-              <td class="text-end small text-danger fw-semibold">{{ inv.days_overdue }}</td>
-              <td class="text-end fw-semibold small">{{ inv.total|floatformat:2|intcomma }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" class="text-center text-muted py-4">
-                <i class="bi bi-check-circle text-success me-1"></i>{% trans "Sin facturas vencidas." %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <table class="db-table">
+        <thead>
+          <tr>
+            <th>{% trans "Factura" %}</th>
+            <th>{% trans "Cliente" %}</th>
+            <th class="text-end">{% trans "Días" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in overdue_invoices %}
+          <tr>
+            <td class="font-monospace" style="font-size:11px;">
+              <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none" style="color:#dc3545;">{{ inv.display_number }}</a>
+            </td>
+            <td style="font-size:12px;">{{ inv.customer.name }}</td>
+            <td class="text-end fw-bold" style="color:#dc3545;font-size:12px;">{{ inv.days_overdue }}</td>
+            <td class="text-end fw-bold" style="font-size:12px;">{{ inv.total|floatformat:2|intcomma }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center py-4" style="color:#94a3b8;">
+              <i class="bi bi-check-circle text-success me-1"></i>{% trans "Sin facturas vencidas." %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="col-lg-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
-        <span class="fw-semibold">{% trans "Pagos recientes" %}</span>
-        <a href="{% url 'invoices:payment_list' %}" class="btn btn-sm btn-outline-secondary">{% trans "Ver todos" %}</a>
+    <div class="db-panel">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Pagos recientes" %}</span>
+        <a href="{% url 'invoices:payment_list' %}" class="btn btn-sm btn-outline-secondary" style="font-size:11px;">{% trans "Ver todos" %} →</a>
       </div>
-      <div class="card-body p-0">
-        <table class="table table-hover table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "Fecha" %}</th>
-              <th>{% trans "Cliente" %}</th>
-              <th>{% trans "Método" %}</th>
-              <th class="text-end">{% trans "Monto" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for pmt in recent_payments %}
-            <tr>
-              <td class="small text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
-              <td class="small">
-                <a href="{% url 'invoices:customer_detail' pmt.customer.pk %}" class="text-decoration-none">{{ pmt.customer.name }}</a>
-              </td>
-              <td class="small">
-                <span class="badge {% if pmt.method == 'TRANSFER' %}bg-info text-dark{% elif pmt.method == 'CASH' %}bg-success{% else %}bg-secondary{% endif %}">
-                  {{ pmt.get_method_display }}
-                </span>
-              </td>
-              <td class="text-end fw-semibold text-success small">{{ pmt.amount|floatformat:2|intcomma }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-center text-muted py-4">{% trans "Sin pagos recientes." %}</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <table class="db-table">
+        <thead>
+          <tr>
+            <th>{% trans "Fecha" %}</th>
+            <th>{% trans "Cliente" %}</th>
+            <th>{% trans "Método" %}</th>
+            <th class="text-end">{% trans "Monto" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pmt in recent_payments %}
+          <tr>
+            <td class="text-nowrap" style="color:#64748b;font-size:12px;">{{ pmt.date|date:"d/m/Y" }}</td>
+            <td style="font-size:12px;">
+              <a href="{% url 'invoices:customer_detail' pmt.customer.pk %}" class="text-decoration-none" style="color:#334155;">{{ pmt.customer.name }}</a>
+            </td>
+            <td>
+              {% if pmt.method == 'TRANSFER' %}<span class="db-method db-method-transfer">{{ pmt.get_method_display }}</span>
+              {% elif pmt.method == 'CASH' %}<span class="db-method db-method-cash">{{ pmt.get_method_display }}</span>
+              {% else %}<span class="db-method db-method-check">{{ pmt.get_method_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end fw-bold" style="color:#198754;font-size:12px;">{{ pmt.amount|floatformat:2|intcomma }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center py-4" style="color:#94a3b8;">{% trans "Sin pagos recientes." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -311,31 +423,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-  var months      = JSON.parse(document.getElementById('chart-months').textContent);
-  var invoiced    = JSON.parse(document.getElementById('chart-invoiced').textContent);
-  var collected   = JSON.parse(document.getElementById('chart-collected').textContent);
-  var stLabels    = JSON.parse(document.getElementById('chart-status-labels').textContent);
-  var stCounts    = JSON.parse(document.getElementById('chart-status-counts').textContent);
-  var stColors       = JSON.parse(document.getElementById('chart-status-colors').textContent);
-  var custDatasets   = JSON.parse(document.getElementById('chart-customer-datasets').textContent);
+  var months       = JSON.parse(document.getElementById('chart-months').textContent);
+  var invoiced     = JSON.parse(document.getElementById('chart-invoiced').textContent);
+  var collected    = JSON.parse(document.getElementById('chart-collected').textContent);
+  var stLabels     = JSON.parse(document.getElementById('chart-status-labels').textContent);
+  var stCounts     = JSON.parse(document.getElementById('chart-status-counts').textContent);
+  var stColors     = JSON.parse(document.getElementById('chart-status-colors').textContent);
+  var custDatasets = JSON.parse(document.getElementById('chart-customer-datasets').textContent);
 
   new Chart(document.getElementById('revenueChart'), {
     type: 'bar',
     data: {
       labels: months,
       datasets: [
-        {
-          label: '{% trans "Facturado" %}',
-          data: invoiced,
-          backgroundColor: 'rgba(13,110,253,0.75)',
-          borderRadius: 4,
-        },
-        {
-          label: '{% trans "Cobrado" %}',
-          data: collected,
-          backgroundColor: 'rgba(25,135,84,0.75)',
-          borderRadius: 4,
-        },
+        { label: '{% trans "Facturado" %}', data: invoiced,   backgroundColor: 'rgba(13,110,253,0.75)', borderRadius: 4 },
+        { label: '{% trans "Cobrado" %}',   data: collected,  backgroundColor: 'rgba(25,135,84,0.75)',  borderRadius: 4 },
       ],
     },
     options: {
@@ -348,38 +450,26 @@
   if (stCounts.length) {
     new Chart(document.getElementById('statusChart'), {
       type: 'doughnut',
-      data: {
-        labels: stLabels,
-        datasets: [{ data: stCounts, backgroundColor: stColors, borderWidth: 2 }],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } },
-      },
+      data: { labels: stLabels, datasets: [{ data: stCounts, backgroundColor: stColors, borderWidth: 2 }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } },
     });
   } else {
-    document.getElementById('statusChart').closest('.card-body').innerHTML =
+    document.getElementById('statusChart').closest('.db-panel-body').innerHTML =
       '<p class="text-muted small text-center mb-0">{% trans "Sin facturas registradas." %}</p>';
   }
 
   if (custDatasets.length) {
     new Chart(document.getElementById('customerChart'), {
       type: 'bar',
-      data: {
-        labels: months,
-        datasets: custDatasets,
-      },
+      data: { labels: months, datasets: custDatasets },
       options: {
         responsive: true,
         plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
-        scales: {
-          x: { stacked: true },
-          y: { stacked: true, beginAtZero: true, ticks: { maxTicksLimit: 6 } },
-        },
+        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { maxTicksLimit: 6 } } },
       },
     });
   } else {
-    document.getElementById('customerChart').closest('.card-body').innerHTML =
+    document.getElementById('customerChart').closest('.db-panel-body').innerHTML =
       '<p class="text-muted small text-center py-3 mb-0">{% trans "Sin datos de clientes." %}</p>';
   }
 })();
