@@ -4,19 +4,26 @@
 {% block title %}{% trans "Facturas" %}{% endblock %}
 
 {% block content %}
+<div class="module-invoice">
 
-{# ── Page header ───────────────────────────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">{% trans "Facturas" %}</h1>
-  <a href="{% url 'invoices:invoice_create' %}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva factura" %}
-  </a>
+  {# ── Page header ─────────────────────────────────────────────── #}
+  <div class="module-page-header">
+    <div class="module-page-title">
+      <span class="module-eyebrow">{% trans "Facturación" %}</span>
+      <h1>{% trans "Facturas" %}</h1>
+    </div>
+    <a href="{% url 'invoices:invoice_create' %}" class="btn btn-module-accent btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva factura" %}
+    </a>
+  </div>
+
+  {# ── KPI cards ────────────────────────────────────────────────── #}
+  <div class="module-kpi">
+    {% include "components/_kpi_cards.html" with stats=stats %}
+  </div>
+
+  {# ── DataTable widget ─────────────────────────────────────────── #}
+  {% include "components/datatable/wrapper.html" %}
+
 </div>
-
-{# ── KPI cards ─────────────────────────────────────────────────────────────── #}
-{% include "components/_kpi_cards.html" with stats=stats %}
-
-{# ── DataTable widget ──────────────────────────────────────────────────────── #}
-{% include "components/datatable/wrapper.html" %}
-
 {% endblock %}

@@ -26,6 +26,8 @@ python manage.py seed_modules          # Populate core.Module registry
 python manage.py configure_site        # Set django.contrib.sites entry
 python manage.py mark_overdue_invoices # Transition SENT → OVERDUE past due_date
 python manage.py expire_quotations     # Transition SENT/CONFIRMED → EXPIRED past valid_until
+python manage.py reset_and_seed_db     # Wipe all data (keep superuser) and seed 25 DR sample records per model
+python manage.py reset_and_seed_db --no-input  # Skip confirmation prompt
 ```
 
 Settings are split across `config/settings/base.py`, `development.py`, and `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Environment variables are loaded via `python-decouple` (`.env` file or environment). The development settings use PostgreSQL by default; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
@@ -182,6 +184,26 @@ HTMX-aware: when `request.htmx` is truthy, deletion views return a partial respo
 `Item` has an `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes are auto-generated for `SALE` and `BOTH` items via `ItemCodeSequence.generate()` when left blank. `cost_price` is nullable/optional; `margin` property is only valid when set. `InvoiceItem` FK to `Item` is optional — line items can be free-text.
 
 Search is indexed: GIN trgm on `name`/`code` (migration `items/0006`); the item list uses `fts_search` with `fts_fields=["name"]` and `trgm_fields=["code"]`.
+
+### CI / CD
+
+`.github/workflows/ci.yml` runs on every push/PR to `main`:
+
+1. **Security audit** (`pip-audit`) — scans `requirements.txt` for known vulnerabilities.
+2. **Tests** — spins up a `postgres:16-alpine` service container and runs `pytest` against it using `config.settings.development`.
+
+Required CI env vars (set in the workflow): `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_KEY`, `ALLOWED_HOSTS`.
+
+### Production deployment
+
+`docker-compose.prod.yml` runs two services:
+
+- **`db`** — `postgres:16-alpine` with a named `postgres_data` volume; requires `DB_PASSWORD` env var.
+- **`app`** — built from `Dockerfile`; reads `.env` via `env_file`; uses `config.settings.production`; exposes port 8000; mounts `media/` and `logs/` volumes.
+
+Start with: `docker compose -f docker-compose.prod.yml up -d`
+
+Custom error pages live at `templates/404.html` and `templates/500.html` (Bootstrap 5, no JS dependencies).
 
 ### Settings & i18n
 

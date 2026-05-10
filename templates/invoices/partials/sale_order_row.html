@@ -3,16 +3,28 @@
 <tr>
 
   <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'invoices:sale_order_detail' row.pk %}" class="text-decoration-none">
+    <a href="{% url 'invoices:sale_order_detail' row.pk %}" class="text-decoration-none text-reset">
       {{ row.display_number }}
     </a>
+    <span class="dt-hover-actions">
+      <a href="{% url 'invoices:sale_order_detail' row.pk %}"
+         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
+        <i class="bi bi-eye"></i>
+      </a>
+      {% if row.status == 'DRAFT' %}
+      <a href="{% url 'invoices:sale_order_edit' row.pk %}"
+         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem">
+        <i class="bi bi-pencil"></i>
+      </a>
+      {% endif %}
+    </span>
   </td>
 
   <td data-col="customer__name">{{ row.customer.name }}</td>
 
   <td data-col="department__name">
     {% if row.department %}
-      <span class="badge bg-info text-dark">{{ row.department.name }}</span>
+      <span class="badge bg-info text-dark status-badge">{{ row.department.name }}</span>
     {% else %}
       <span class="text-muted small">—</span>
     {% endif %}
@@ -24,10 +36,18 @@
     {{ row.delivery_date|date:"d/m/Y"|default:"—" }}
   </td>
 
-  <td data-col="total" class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
+  <td data-col="total" class="text-end fw-semibold font-monospace">{{ row.total|floatformat:2|intcomma }}</td>
 
   <td data-col="status" class="text-center">
     {% include "invoices/partials/status_badge.html" with status=row.status %}
+  </td>
+
+  <td class="text-end" style="width:60px">
+    <a href="{% url 'invoices:sale_order_detail' row.pk %}"
+       class="btn btn-outline-secondary btn-sm py-0 px-1 dt-hover-actions"
+       title="{% trans 'Ver' %}" style="font-size:0.75rem">
+      <i class="bi bi-arrow-right"></i>
+    </a>
   </td>
 
 </tr>

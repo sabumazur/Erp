@@ -518,3 +518,432 @@ textarea.form-control {
   /* ─ Tighten vertical spacing ─ */
   .mb-4 { margin-bottom: 0.8rem !important; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SabSys ERP — Commercial Module Design System
+   Quotation · Sale Order · Invoice
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Global typography ──────────────────────────────────────── */
+
+body {
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem;
+  letter-spacing: -0.006em;
+}
+
+.font-monospace,
+code,
+.font-mono {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace !important;
+  letter-spacing: 0 !important;
+}
+
+/* ── Module accent CSS variable system ──────────────────────── */
+
+:root {
+  --module-accent:        #0d6efd;
+  --module-accent-dark:   #0a58ca;
+  --module-accent-subtle: rgba(13, 110, 253, 0.07);
+  --module-accent-border: rgba(13, 110, 253, 0.18);
+}
+
+.module-quotation {
+  --module-accent:        #f59e0b;
+  --module-accent-dark:   #d97706;
+  --module-accent-subtle: rgba(245, 158, 11, 0.07);
+  --module-accent-border: rgba(245, 158, 11, 0.22);
+}
+
+.module-sale-order {
+  --module-accent:        #6366f1;
+  --module-accent-dark:   #4f46e5;
+  --module-accent-subtle: rgba(99, 102, 241, 0.07);
+  --module-accent-border: rgba(99, 102, 241, 0.22);
+}
+
+.module-invoice {
+  --module-accent:        #10b981;
+  --module-accent-dark:   #059669;
+  --module-accent-subtle: rgba(16, 185, 129, 0.07);
+  --module-accent-border: rgba(16, 185, 129, 0.22);
+}
+
+/* ── Module page header ─────────────────────────────────────── */
+
+.module-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.module-page-title {
+  border-left: 4px solid var(--module-accent);
+  padding-left: 12px;
+  line-height: 1.1;
+}
+
+.module-eyebrow {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--module-accent);
+  margin-bottom: 3px;
+}
+
+.module-page-title h1 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1;
+}
+
+/* ── KPI cards — module-aware ───────────────────────────────── */
+
+.module-kpi .card {
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 12px rgba(0,0,0,0.04) !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.module-kpi .card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--module-accent);
+}
+
+.kpi-value {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  font-size: 1.85rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a !important;
+}
+
+/* ── Document paper card (detail pages) ─────────────────────── */
+
+.doc-paper {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.06);
+  border-top: 4px solid var(--module-accent);
+  overflow: hidden;
+}
+
+/* ── Document header ────────────────────────────────────────── */
+
+.doc-header {
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid #f1f3f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.doc-type-eyebrow {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--module-accent);
+  margin-bottom: 4px;
+}
+
+.doc-ref-number {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1;
+}
+
+/* ── Status stamp ───────────────────────────────────────────── */
+
+.doc-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid currentColor;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  border-radius: 3px;
+  padding: 5px 11px;
+  transform: rotate(-5deg);
+  white-space: nowrap;
+  margin-top: 6px;
+  opacity: 0.82;
+}
+
+.doc-stamp-draft     { color: #94a3b8; }
+.doc-stamp-confirmed { color: #3b82f6; }
+.doc-stamp-sent      { color: #06b6d4; }
+.doc-stamp-paid      { color: #10b981; }
+.doc-stamp-overdue   { color: #ef4444; }
+.doc-stamp-cancelled { color: #64748b; }
+.doc-stamp-accepted  { color: #10b981; }
+.doc-stamp-rejected  { color: #ef4444; }
+.doc-stamp-expired   { color: #f97316; }
+.doc-stamp-converted { color: #8b5cf6; }
+.doc-stamp-delivered { color: #06b6d4; }
+.doc-stamp-invoiced  { color: #3b82f6; }
+
+/* ── Document meta grid ─────────────────────────────────────── */
+
+.doc-meta-grid {
+  padding: 18px 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px 24px;
+  border-bottom: 1px solid #f1f3f7;
+  background: #fafbfd;
+}
+
+.doc-meta-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  margin-bottom: 3px;
+}
+
+.doc-meta-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+/* ── Document items table ───────────────────────────────────── */
+
+.doc-items-table .table {
+  margin-bottom: 0;
+}
+
+.doc-items-table .table th {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #94a3b8;
+  border-top: none;
+  border-bottom: 1px solid #eef0f6;
+  padding: 10px 12px;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.doc-items-table .table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f5f7fb;
+  font-size: 0.875rem;
+  vertical-align: middle;
+  color: #334155;
+}
+
+.doc-items-table .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Document totals block ──────────────────────────────────── */
+
+.doc-totals-block {
+  padding: 16px 28px 20px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f1f3f7;
+}
+
+.doc-totals-inner {
+  min-width: 240px;
+}
+
+.doc-total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 0.875rem;
+  gap: 32px;
+}
+
+.doc-total-line .total-label { color: #64748b; }
+.doc-total-line .total-value { font-weight: 600; color: #1e293b; }
+
+.doc-total-line.grand-total {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #0f172a;
+}
+
+.doc-total-line.grand-total .total-label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f172a;
+}
+
+.doc-total-line.grand-total .total-value {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* ── Status sidebar card ────────────────────────────────────── */
+
+.doc-status-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.doc-status-card-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f3f7;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+  background: #fafbfd;
+}
+
+.doc-status-card-body {
+  padding: 16px;
+}
+
+/* ── DataTable: row hover actions ───────────────────────────── */
+
+.dt-hover-actions {
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+tr:hover .dt-hover-actions {
+  opacity: 1;
+}
+
+/* ── Table header style ─────────────────────────────────────── */
+
+.table th .btn-link {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.05em;
+}
+
+/* ── Sticky form footer ─────────────────────────────────────── */
+
+.form-sticky-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: #fff;
+  border-top: 1px solid #eef0f4;
+  box-shadow: 0 -2px 14px rgba(0,0,0,0.07);
+  padding: 10px 0;
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Module accent buttons ──────────────────────────────────── */
+
+.btn-module-accent {
+  background-color: var(--module-accent) !important;
+  border-color: var(--module-accent) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.btn-module-accent:hover,
+.btn-module-accent:focus {
+  background-color: var(--module-accent-dark) !important;
+  border-color: var(--module-accent-dark) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.2rem var(--module-accent-border) !important;
+}
+
+.btn-outline-module-accent {
+  border-color: var(--module-accent) !important;
+  color: var(--module-accent) !important;
+  background: transparent !important;
+}
+
+.btn-outline-module-accent:hover {
+  background-color: var(--module-accent-subtle) !important;
+  color: var(--module-accent-dark) !important;
+}
+
+/* ── Card refinements ───────────────────────────────────────── */
+
+.card.shadow-sm {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 8px rgba(0,0,0,0.04) !important;
+  border: 1px solid #eef0f6;
+  border-radius: 10px;
+}
+
+/* ── Status badge refinement ────────────────────────────────── */
+
+.badge.status-badge {
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+}
+
+/* ── Notes / terms section ──────────────────────────────────── */
+
+.doc-notes-section {
+  padding: 14px 28px 16px;
+  border-top: 1px solid #f1f3f7;
+}
+
+.doc-notes-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+/* ── Detail page action bar ─────────────────────────────────── */
+
+.doc-action-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}

@@ -6,10 +6,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">
-    {% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}
-  </h1>
+<div class="module-quotation">
+
+<div class="module-page-header mb-4">
+  <div class="module-page-title">
+    <span class="module-eyebrow">{% trans "Cotización" %}</span>
+    <h1>{% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}</h1>
+  </div>
   <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
   </a>
@@ -18,19 +21,19 @@
 <form method="post">
   {% csrf_token %}
 
-  <!-- Header fields -->
+  {# Header fields #}
   <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold">{% trans "Datos de la cotización" %}</div>
+    <div class="card-header">{% trans "Datos de la cotización" %}</div>
     <div class="card-body">
       {% crispy form %}
     </div>
   </div>
 
-  <!-- Items -->
+  {# Line items #}
   <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold d-flex justify-content-between">
+    <div class="card-header d-flex justify-content-between align-items-center">
       <span>{% trans "Líneas" %}</span>
-      <button type="button" class="btn btn-outline-primary btn-sm"
+      <button type="button" class="btn btn-outline-module-accent btn-sm"
               hx-get="{% url 'invoices:item_row' %}?form_index={{ formset.total_form_count }}"
               hx-target="#item-tbody"
               hx-swap="beforeend"
@@ -49,7 +52,7 @@
         <table class="table table-sm mb-0">
           <thead class="table-light">
             <tr>
-              <th>{% trans "Artículo / Descripción" %}</th>
+              <th style="width:44px"></th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
               <th style="width:130px">{% trans "P. Unitario" %}</th>
               <th style="width:130px">{% trans "ITBIS" %}</th>
@@ -67,26 +70,26 @@
         </table>
       </div>
 
-      <!-- Grand total footer -->
-      <div class="border-top p-3">
+      {# Grand total footer #}
+      <div class="border-top p-3 bg-light">
         <div class="row justify-content-end">
           <div class="col-md-4">
             <table class="table table-sm mb-0">
               <tr>
-                <td class="text-muted">{% trans "Subtotal" %}</td>
-                <td class="text-end fw-semibold"><span id="grand-subtotal">0.00</span></td>
+                <td class="text-muted small">{% trans "Subtotal" %}</td>
+                <td class="text-end fw-semibold font-monospace"><span id="grand-subtotal">0.00</span></td>
               </tr>
               <tr>
-                <td class="text-muted">{% trans "ITBIS 18%" %}</td>
-                <td class="text-end"><span id="grand-itbis18">0.00</span></td>
+                <td class="text-muted small">{% trans "ITBIS 18%" %}</td>
+                <td class="text-end font-monospace"><span id="grand-itbis18">0.00</span></td>
               </tr>
               <tr>
-                <td class="text-muted">{% trans "ITBIS 16%" %}</td>
-                <td class="text-end"><span id="grand-itbis16">0.00</span></td>
+                <td class="text-muted small">{% trans "ITBIS 16%" %}</td>
+                <td class="text-end font-monospace"><span id="grand-itbis16">0.00</span></td>
               </tr>
-              <tr class="table-light fw-bold fs-5">
-                <td>{% trans "Total" %}</td>
-                <td class="text-end"><span id="grand-total">0.00</span></td>
+              <tr>
+                <td style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">{% trans "Total" %}</td>
+                <td class="text-end font-monospace fw-bold fs-5"><span id="grand-total">0.00</span></td>
               </tr>
             </table>
           </div>
@@ -95,11 +98,12 @@
     </div>
   </div>
 
-  <div class="d-flex gap-2 mb-4">
-    <button type="submit" class="btn btn-primary">
+  {# Sticky action bar #}
+  <div class="form-sticky-bar">
+    <button type="submit" class="btn btn-module-accent btn-sm">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
+    <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </form>
 
@@ -124,4 +128,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% include "invoices/partials/item_js.html" %}
+
+</div>{# /module-quotation #}
 {% endblock %}

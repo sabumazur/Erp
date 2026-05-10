@@ -550,19 +550,10 @@ class InvoiceItemForm(forms.ModelForm):
                     "class": "form-control form-control-sm",
                 }
             ),
-            "quantity": forms.NumberInput(
-                attrs={
-                    "step": "0.0001",
-                    "min": "0.0001",
-                    "class": "form-control form-control-sm text-end",
-                    "x-model": "qty",
-                    "x-on:input": "recalc()",
-                }
-            ),
             "unit_price": forms.NumberInput(
                 attrs={
                     "step": "0.01",
-                    "min": "0",
+                    "min": "1",
                     "class": "form-control form-control-sm text-end",
                     "x-model": "price",
                     "x-on:input": "recalc()",
@@ -580,11 +571,35 @@ class InvoiceItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["item"].required = False
+        self.fields["quantity"] = forms.IntegerField(
+            min_value=1,
+            widget=forms.NumberInput(
+                attrs={
+                    "step": "1",
+                    "min": "1",
+                    "class": "form-control form-control-sm text-end",
+                    "x-model": "qty",
+                    "x-on:input": "recalc()",
+                }
+            ),
+        )
         # Match the Alpine.js defaults so an untouched extra row is treated
         # as unchanged by has_changed() and silently skipped by the formset.
         self.initial.setdefault("quantity", 1)
         self.initial.setdefault("unit_price", 0)
         self.initial.setdefault("itbis_rate", "RATE_18")
+
+    def clean_quantity(self):
+        qty = self.cleaned_data.get("quantity")
+        if qty is not None and qty < 1:
+            raise forms.ValidationError(_("La cantidad debe ser mayor o igual a 1."))
+        return qty
+
+    def clean_unit_price(self):
+        price = self.cleaned_data.get("unit_price")
+        if price is not None and price < 1:
+            raise forms.ValidationError(_("El precio unitario debe ser mayor o igual a 1."))
+        return price
 
 
 InvoiceItemFormSet = inlineformset_factory(

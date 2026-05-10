@@ -4,14 +4,15 @@
 {% block title %}{{ quotation }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h1 class="h3 mb-0">
-      {{ quotation.doc_number|default:"Borrador" }}
-      <small class="text-muted fs-6 ms-2">{% trans "Cotización" %}</small>
-    </h1>
+<div class="module-quotation">
+
+{# ── Page header + actions ────────────────────────────────────── #}
+<div class="module-page-header mb-4">
+  <div class="module-page-title">
+    <span class="module-eyebrow">{% trans "Cotización" %}</span>
+    <h1>{{ quotation.doc_number|default:"Borrador" }}</h1>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
+  <div class="doc-action-row">
     <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -20,13 +21,13 @@
     </a>
 
     {% if quotation.status == "DRAFT" %}
-      <a href="{% url 'invoices:quotation_edit' quotation.pk %}" class="btn btn-outline-primary btn-sm">
+      <a href="{% url 'invoices:quotation_edit' quotation.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
       <form method="post" action="{% url 'invoices:quotation_confirm' quotation.pk %}"
-            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#0d6efd', ok:'Sí, confirmar'})">
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#f59e0b', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-primary btn-sm">
+        <button class="btn btn-module-accent btn-sm">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
@@ -60,7 +61,7 @@
       </form>
 
     {% elif quotation.status == "ACCEPTED" %}
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#convertModal">
+      <button class="btn btn-module-accent btn-sm" data-bs-toggle="modal" data-bs-target="#convertModal">
         <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir a factura" %}
       </button>
     {% endif %}
@@ -68,36 +69,69 @@
 </div>
 
 <div class="row g-3">
+
+  {# ── Left: Document paper ─────────────────────────────────────── #}
   <div class="col-lg-8">
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <p class="text-muted small mb-0">{% trans "Cliente" %}</p>
-            <p class="fw-semibold mb-0">{{ quotation.customer.name }}</p>
-            {% if quotation.customer.rnc_cedula %}
-              <p class="text-muted small mb-0">
-                {{ quotation.customer.get_id_type_display }}: {{ quotation.customer.rnc_cedula }}
-              </p>
+    <div class="doc-paper mb-3">
+
+      {# Document header #}
+      <div class="doc-header">
+        <div>
+          <div class="doc-type-eyebrow">{% trans "Cotización" %} · {{ quotation.currency }}</div>
+          <div class="doc-ref-number">{{ quotation.doc_number|default:"—" }}</div>
+          <div class="text-muted mt-1" style="font-size:0.82rem">{{ quotation.customer.name }}</div>
+        </div>
+        <div class="text-end">
+          <div class="doc-stamp
+            {% if quotation.status == 'DRAFT' %}doc-stamp-draft
+            {% elif quotation.status == 'CONFIRMED' %}doc-stamp-confirmed
+            {% elif quotation.status == 'SENT' %}doc-stamp-sent
+            {% elif quotation.status == 'ACCEPTED' %}doc-stamp-accepted
+            {% elif quotation.status == 'REJECTED' %}doc-stamp-rejected
+            {% elif quotation.status == 'EXPIRED' %}doc-stamp-expired
+            {% elif quotation.status == 'CONVERTED' %}doc-stamp-converted
+            {% endif %}">
+            {% if quotation.status == 'DRAFT' %}{% trans "Borrador" %}
+            {% elif quotation.status == 'CONFIRMED' %}{% trans "Confirmada" %}
+            {% elif quotation.status == 'SENT' %}{% trans "Enviada" %}
+            {% elif quotation.status == 'ACCEPTED' %}{% trans "Aceptada" %}
+            {% elif quotation.status == 'REJECTED' %}{% trans "Rechazada" %}
+            {% elif quotation.status == 'EXPIRED' %}{% trans "Expirada" %}
+            {% elif quotation.status == 'CONVERTED' %}{% trans "Convertida" %}
             {% endif %}
           </div>
-          <div class="col-md-3">
-            <p class="text-muted small mb-0">{% trans "Emisión" %}</p>
-            <p class="fw-semibold mb-0">{{ quotation.issue_date|date:"d/m/Y" }}</p>
-          </div>
-          <div class="col-md-3">
-            <p class="text-muted small mb-0">{% trans "Válida hasta" %}</p>
-            <p class="fw-semibold mb-0">{{ quotation.valid_until|date:"d/m/Y"|default:"—" }}</p>
-          </div>
-          <div class="col-md-3">
-            <p class="text-muted small mb-0">{% trans "Condición pago" %}</p>
-            <p class="mb-0">{{ quotation.get_payment_condition_display }}</p>
-          </div>
         </div>
+      </div>
 
-        <!-- Items table -->
-        <table class="table table-sm">
-          <thead class="table-light">
+      {# Meta info #}
+      <div class="doc-meta-grid">
+        <div>
+          <div class="doc-meta-label">{% trans "Cliente" %}</div>
+          <div class="doc-meta-value">{{ quotation.customer.name }}</div>
+          {% if quotation.customer.rnc_cedula %}
+          <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">
+            {{ quotation.customer.get_id_type_display }}: {{ quotation.customer.rnc_cedula }}
+          </div>
+          {% endif %}
+        </div>
+        <div>
+          <div class="doc-meta-label">{% trans "Fecha de emisión" %}</div>
+          <div class="doc-meta-value">{{ quotation.issue_date|date:"d/m/Y" }}</div>
+        </div>
+        <div>
+          <div class="doc-meta-label">{% trans "Válida hasta" %}</div>
+          <div class="doc-meta-value">{{ quotation.valid_until|date:"d/m/Y"|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="doc-meta-label">{% trans "Condición de pago" %}</div>
+          <div class="doc-meta-value">{{ quotation.get_payment_condition_display }}</div>
+        </div>
+      </div>
+
+      {# Items table #}
+      <div class="doc-items-table">
+        <table class="table table-sm mb-0">
+          <thead>
             <tr>
               <th>{% trans "Descripción" %}</th>
               <th class="text-end">{% trans "Cant." %}</th>
@@ -112,68 +146,75 @@
             <tr>
               <td>{{ item.description }}</td>
               <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
-              <td class="text-end">{{ item.unit_price|floatformat:2|intcomma }}</td>
+              <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
               <td class="text-center">
-                <span class="badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
+                <span class="badge status-badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
                   {{ item.get_itbis_rate_display }}
                 </span>
               </td>
-              <td class="text-end">{{ item.line_total|floatformat:2|intcomma }}</td>
-              <td class="text-end fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+              <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
+              <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
           </tbody>
-          <tfoot class="table-light">
-            <tr>
-              <td colspan="4" class="text-end text-muted">{% trans "Subtotal" %}</td>
-              <td colspan="2" class="text-end fw-semibold">{{ quotation.subtotal|floatformat:2|intcomma }}</td>
-            </tr>
-            {% if quotation.itbis_18 %}
-            <tr>
-              <td colspan="4" class="text-end text-muted">{% trans "ITBIS 18%" %}</td>
-              <td colspan="2" class="text-end">{{ quotation.itbis_18|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endif %}
-            {% if quotation.itbis_16 %}
-            <tr>
-              <td colspan="4" class="text-end text-muted">{% trans "ITBIS 16%" %}</td>
-              <td colspan="2" class="text-end">{{ quotation.itbis_16|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endif %}
-            <tr>
-              <td colspan="4" class="text-end fw-bold fs-5">{% trans "TOTAL" %}</td>
-              <td colspan="2" class="text-end fw-bold fs-5">{{ quotation.total|floatformat:2|intcomma }}</td>
-            </tr>
-          </tfoot>
         </table>
+      </div>
 
-        {% if quotation.notes %}
-        <div class="mt-3">
-          <p class="text-muted small mb-1">{% trans "Notas" %}</p>
-          <p class="small">{{ quotation.notes }}</p>
+      {# Totals #}
+      <div class="doc-totals-block">
+        <div class="doc-totals-inner">
+          <div class="doc-total-line">
+            <span class="total-label">{% trans "Subtotal" %}</span>
+            <span class="total-value font-monospace">{{ quotation.subtotal|floatformat:2|intcomma }}</span>
+          </div>
+          {% if quotation.itbis_18 %}
+          <div class="doc-total-line">
+            <span class="total-label">{% trans "ITBIS 18%" %}</span>
+            <span class="total-value font-monospace">{{ quotation.itbis_18|floatformat:2|intcomma }}</span>
+          </div>
+          {% endif %}
+          {% if quotation.itbis_16 %}
+          <div class="doc-total-line">
+            <span class="total-label">{% trans "ITBIS 16%" %}</span>
+            <span class="total-value font-monospace">{{ quotation.itbis_16|floatformat:2|intcomma }}</span>
+          </div>
+          {% endif %}
+          <div class="doc-total-line grand-total">
+            <span class="total-label">{% trans "Total" %}</span>
+            <span class="total-value">{{ quotation.total|floatformat:2|intcomma }}</span>
+          </div>
         </div>
+      </div>
+
+      {# Notes / Terms #}
+      {% if quotation.notes or quotation.terms %}
+      <div class="doc-notes-section">
+        {% if quotation.notes %}
+        <div class="doc-notes-label">{% trans "Notas" %}</div>
+        <p class="small mb-2">{{ quotation.notes }}</p>
         {% endif %}
         {% if quotation.terms %}
-        <div class="mt-2">
-          <p class="text-muted small mb-1">{% trans "Términos y condiciones" %}</p>
-          <p class="small">{{ quotation.terms }}</p>
-        </div>
+        <div class="doc-notes-label mt-2">{% trans "Términos y condiciones" %}</div>
+        <p class="small mb-0">{{ quotation.terms }}</p>
         {% endif %}
       </div>
-    </div>
+      {% endif %}
+
+    </div>{# /doc-paper #}
   </div>
 
+  {# ── Right: Status + Meta ─────────────────────────────────────── #}
   <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small">{% trans "Estado" %}</h6>
-        <p class="mb-3 fs-6">
+    <div class="doc-status-card mb-3">
+      <div class="doc-status-card-header">{% trans "Estado del documento" %}</div>
+      <div class="doc-status-card-body">
+        <div class="mb-3">
           {% include "invoices/partials/status_badge.html" with status=quotation.status %}
-        </p>
-        <hr>
+        </div>
+        <hr class="my-2" style="border-color:#f1f3f7">
         <dl class="row small mb-0">
           <dt class="col-6 text-muted">{% trans "Número" %}</dt>
-          <dd class="col-6 font-monospace">{{ quotation.doc_number|default:"—" }}</dd>
+          <dd class="col-6 font-monospace fw-semibold">{{ quotation.doc_number|default:"—" }}</dd>
           <dt class="col-6 text-muted">{% trans "Moneda" %}</dt>
           <dd class="col-6">{{ quotation.currency }}</dd>
           {% if quotation.currency != "DOP" %}
@@ -188,9 +229,10 @@
       </div>
     </div>
   </div>
-</div>
 
-<!-- Convert modal -->
+</div>{# /row #}
+
+{# ── Convert modal ────────────────────────────────────────────── #}
 {% if quotation.status == "ACCEPTED" %}
 <div class="modal fade" id="convertModal" tabindex="-1">
   <div class="modal-dialog">
@@ -215,7 +257,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-module-accent">
             <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir" %}
           </button>
         </div>
@@ -224,4 +266,6 @@
   </div>
 </div>
 {% endif %}
+
+</div>{# /module-quotation #}
 {% endblock %}

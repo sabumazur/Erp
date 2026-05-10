@@ -3,10 +3,7 @@
      id="itemPickerModal"
      tabindex="-1"
      aria-labelledby="itemPickerModalLabel"
-     aria-hidden="true"
-     x-data="itemPickerModal()"
-     x-on:shown.bs.modal="$refs.searchInput.focus(); query = ''; selectedPk = null"
-     x-on:hidden.bs.modal="selectedPk = null">
+     aria-hidden="true">
 
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -22,10 +19,9 @@
 
         <div class="p-3 border-bottom">
           <input type="text"
+                 id="picker-search"
                  class="form-control"
                  placeholder="{% trans 'Buscar por nombre, código o descripción…' %}"
-                 x-ref="searchInput"
-                 x-model="query"
                  autocomplete="off">
         </div>
 
@@ -38,41 +34,21 @@
                 <th class="text-end" style="width:120px">{% trans "Precio" %}</th>
               </tr>
             </thead>
-            <tbody>
-              <template x-for="item in filtered" :key="item.pk">
-                <tr style="cursor:pointer"
-                    :class="selectedPk === item.pk ? 'table-primary' : ''"
-                    x-on:click="selectedPk = item.pk"
-                    x-on:dblclick="select(item.pk)">
-                  <td class="text-muted small font-monospace" x-text="item.code || '—'"></td>
-                  <td>
-                    <div class="fw-semibold" x-text="item.name"></div>
-                  </td>
-                  <td class="text-end"
-                      x-text="parseFloat(item.unit_price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></td>
-                </tr>
-              </template>
-              <tr x-show="filtered.length === 0">
-                <td colspan="3" class="text-center text-muted py-4">
-                  <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron artículos." %}
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="picker-tbody"></tbody>
           </table>
         </div>
 
       </div>
 
       <div class="modal-footer">
-        <small class="text-muted me-auto"
-               x-text="`${filtered.length} {% trans 'artículo(s)' %}`"></small>
+        <small class="text-muted me-auto" id="picker-count"></small>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
           {% trans "Cancelar" %}
         </button>
         <button type="button"
                 class="btn btn-primary btn-sm"
-                :disabled="!selectedPk"
-                x-on:click="select(selectedPk)">
+                id="picker-select-btn"
+                disabled>
           <i class="bi bi-check-lg me-1"></i>{% trans "Seleccionar" %}
         </button>
       </div>

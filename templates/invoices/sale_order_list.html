@@ -4,21 +4,31 @@
 {% block title %}{% trans "Órdenes de venta" %}{% endblock %}
 
 {% block content %}
+<div class="module-sale-order">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">{% trans "Órdenes de venta" %}</h1>
-  <div class="d-flex gap-2">
-    <a href="{% url 'invoices:sale_order_consolidate' %}" class="btn btn-outline-success btn-sm">
-      <i class="bi bi-receipt me-1"></i>{% trans "Consolidar" %}
-    </a>
-    <a href="{% url 'invoices:sale_order_create' %}" class="btn btn-primary btn-sm">
-      <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva orden" %}
-    </a>
+  {# ── Page header ─────────────────────────────────────────────── #}
+  <div class="module-page-header">
+    <div class="module-page-title">
+      <span class="module-eyebrow">{% trans "Facturación" %}</span>
+      <h1>{% trans "Órdenes de venta" %}</h1>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'invoices:sale_order_consolidate' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-receipt me-1"></i>{% trans "Consolidar" %}
+      </a>
+      <a href="{% url 'invoices:sale_order_create' %}" class="btn btn-module-accent btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva orden" %}
+      </a>
+    </div>
   </div>
+
+  {# ── KPI cards ────────────────────────────────────────────────── #}
+  <div class="module-kpi">
+    {% include "components/_kpi_cards.html" with stats=stats %}
+  </div>
+
+  {# ── DataTable widget ─────────────────────────────────────────── #}
+  {% include "components/datatable/wrapper.html" %}
+
 </div>
-
-{% include "components/_kpi_cards.html" with stats=stats %}
-
-{% include "components/datatable/wrapper.html" %}
-
 {% endblock %}

@@ -1,36 +1,41 @@
 {% load i18n %}
-<tr x-data="itemRow()" class="align-middle">
-  <td>
-    <div class="d-flex gap-1 align-items-center">
-      <button type="button"
-              class="btn btn-outline-secondary btn-sm flex-shrink-0"
-              title="{% trans 'Buscar en catálogo' %}"
-              x-on:click="openItemPicker($el.closest('tr'))">
-        <i class="bi bi-search"></i>
-      </button>
-      {{ form.description }}
-    </div>
+<tr x-data="itemRow()" class="align-middle item-row-main border-bottom-0">
+  <td class="border-bottom-0" style="width:44px">
+    <button type="button"
+            class="btn btn-outline-secondary btn-sm"
+            title="{% trans 'Buscar en catálogo' %}"
+            onclick="openItemPicker(this.closest('.item-row-main'))">
+      <i class="bi bi-search"></i>
+    </button>
     {{ form.item }}
   </td>
-  <td style="width:110px">{{ form.quantity }}</td>
-  <td style="width:130px">{{ form.unit_price }}</td>
-  <td style="width:130px">{{ form.itbis_rate }}</td>
-  <td class="text-end fw-semibold" style="width:130px">
-    <span x-text="fmtSubtotal()">0.00</span>
+  <td class="border-bottom-0" style="width:110px">
+    {{ form.quantity }}
+    <small class="qty-warning text-danger d-none" style="font-size:.7rem">Solo enteros positivos</small>
   </td>
-  <td class="text-end text-muted" style="width:110px">
-    <span x-text="fmtItbis()">0.00</span>
+  <td class="border-bottom-0" style="width:130px">{{ form.unit_price }}</td>
+  <td class="border-bottom-0" style="width:130px">{{ form.itbis_rate }}</td>
+  <td class="text-end fw-semibold border-bottom-0" style="width:130px">
+    <span class="row-subtotal">0.00</span>
   </td>
-  <td class="text-end fw-semibold" style="width:130px">
-    <span x-text="fmtTotal()">0.00</span>
+  <td class="text-end text-muted border-bottom-0" style="width:110px">
+    <span class="row-itbis">0.00</span>
   </td>
-  <td style="width:40px">
+  <td class="text-end fw-semibold border-bottom-0" style="width:130px">
+    <span class="row-total">0.00</span>
+  </td>
+  <td class="border-bottom-0" style="width:40px">
     <div style="display:none">{{ form.DELETE }}</div>
     <button type="button"
             class="btn btn-outline-danger btn-sm"
-            x-on:click="deleteRow($el)">
+            onclick="deleteRow(this)">
       <i class="bi bi-trash"></i>
     </button>
   </td>
   {{ form.id }}
+</tr>
+<tr class="item-row-desc">
+  <td colspan="8" class="pt-0 pb-2">
+    {{ form.description }}
+  </td>
 </tr>

@@ -25,7 +25,20 @@
       "Bash(python manage.py showmigrations invoices)",
       "Bash(pip install *)",
       "Bash(pip-audit -r requirements.txt)",
-      "Bash(git -C c:/Users/sabum/sabsys log --all --full-history -- \".env\")"
+      "Bash(git -C c:/Users/sabum/sabsys log --all --full-history -- \".env\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\AppData\\\\Roaming\\\\Code\\\\logs\" -Recurse -Filter \"*claude*\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\AppData\\\\Roaming\\\\Code\\\\logs\" -Recurse -Filter \"*.log\" -ErrorAction SilentlyContinue)",
+      "Bash(Sort-Object LastWriteTime -Descending)",
+      "Bash(Select-Object FullName -First 20)",
+      "PowerShell(claude --version 2>&1)",
+      "PowerShell(node --version 2>&1)",
+      "PowerShell(npm --version 2>&1)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python manage.py check --deploy)",
+      "Bash(python manage.py check)",
+      "Bash(python -m pytest --co -q)"
     ]
   }
 }
