@@ -4,7 +4,7 @@
 {% block title %}Ventas por Tipo de Comprobante{% endblock %}
 
 {% block extra_css %}
-<style>@media print { @page { size: A4 landscape; } }</style>
+{% include "invoices/partials/report_shared_styles.html" %}
 {% endblock %}
 
 {% block content %}
@@ -19,14 +19,17 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
-  <h1 class="h3 mb-0">Ventas por Tipo de Comprobante</h1>
-  <div class="d-flex gap-2">
+<div class="rpt-header no-print">
+  <div>
+    <h1 class="rpt-header-title">Ventas por Tipo de Comprobante</h1>
+    {% if month and year %}<p class="rpt-header-sub">{{ today|date:"F" }} {{ year }}</p>{% endif %}
+  </div>
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>Reportes
     </a>
     {% if rows %}
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
       <i class="bi bi-printer me-1"></i>Imprimir
     </button>
     {% endif %}
@@ -34,114 +37,75 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm mb-4 no-print">
-  <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small fw-semibold">Mes</label>
-        <select name="month" class="form-select form-select-sm" required
-                oninvalid="this.setCustomValidity('Debe seleccionar un mes.')"
-                onchange="this.setCustomValidity('')">
-          <option value="">— Seleccionar —</option>
-          <option value="1"  {% if month_input == "1"  %}selected{% endif %}>Enero</option>
-          <option value="2"  {% if month_input == "2"  %}selected{% endif %}>Febrero</option>
-          <option value="3"  {% if month_input == "3"  %}selected{% endif %}>Marzo</option>
-          <option value="4"  {% if month_input == "4"  %}selected{% endif %}>Abril</option>
-          <option value="5"  {% if month_input == "5"  %}selected{% endif %}>Mayo</option>
-          <option value="6"  {% if month_input == "6"  %}selected{% endif %}>Junio</option>
-          <option value="7"  {% if month_input == "7"  %}selected{% endif %}>Julio</option>
-          <option value="8"  {% if month_input == "8"  %}selected{% endif %}>Agosto</option>
-          <option value="9"  {% if month_input == "9"  %}selected{% endif %}>Septiembre</option>
-          <option value="10" {% if month_input == "10" %}selected{% endif %}>Octubre</option>
-          <option value="11" {% if month_input == "11" %}selected{% endif %}>Noviembre</option>
-          <option value="12" {% if month_input == "12" %}selected{% endif %}>Diciembre</option>
-        </select>
-      </div>
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small fw-semibold">Año</label>
-        <input type="number" name="year" value="{{ year_input|default:today.year }}"
-               min="2020" max="2099" class="form-control form-control-sm" required
-               oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
-               oninput="this.setCustomValidity('')">
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-success btn-sm">
-          <i class="bi bi-search me-1"></i>Consultar
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+{% include "invoices/partials/report_filter_panel.html" with show_year=True show_month=True month_required=True %}
 
 {% if month and year %}
 {% if rows %}
 
-{# ── Summary pills ─────────────────────────────────────────────────────────── #}
+{# ── Summary metric cards ──────────────────────────────────────────────────── #}
 <div class="row g-2 mb-3 no-print">
   <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">Tipos usados</div>
-      <div class="fw-bold fs-6">{{ rows|length }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value">{{ rows|length }}</div>
+      <div class="rpt-metric-label">Tipos usados</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">Documentos</div>
-      <div class="fw-bold fs-6">{{ total_count }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value">{{ total_count }}</div>
+      <div class="rpt-metric-label">Documentos</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">Total ITBIS</div>
-      <div class="fw-bold fs-6 text-danger">{{ totals.itbis|floatformat:2|intcomma }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value text-danger">{{ totals.itbis|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">Total ITBIS</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">Total facturado</div>
-      <div class="fw-bold fs-6 text-success">{{ totals.total|floatformat:2|intcomma }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value text-success">{{ totals.total|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">Total facturado</div>
     </div>
   </div>
 </div>
 
 {# ── Table ─────────────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover table-sm mb-0">
-        <thead class="table-light">
-          <tr>
-            <th style="width:5%">#</th>
-            <th>Tipo de Comprobante</th>
-            <th class="text-center">Documentos</th>
-            <th class="text-end">Subtotal</th>
-            <th class="text-end text-danger">ITBIS</th>
-            <th class="text-end fw-semibold">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td class="text-muted font-monospace">{{ row.ncf_type|stringformat:"02d" }}</td>
-            <td>{{ row.ncf_label }}</td>
-            <td class="text-center">{{ row.count }}</td>
-            <td class="text-end">{{ row.subtotal|floatformat:2|intcomma }}</td>
-            <td class="text-end text-danger">{{ row.itbis|floatformat:2|intcomma }}</td>
-            <td class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot class="table-light fw-bold">
-          <tr>
-            <td colspan="2">Total</td>
-            <td class="text-center">{{ total_count }}</td>
-            <td class="text-end">{{ totals.subtotal|floatformat:2|intcomma }}</td>
-            <td class="text-end text-danger">{{ totals.itbis|floatformat:2|intcomma }}</td>
-            <td class="text-end">{{ totals.total|floatformat:2|intcomma }}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+<div class="rpt-table-wrap">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead>
+        <tr>
+          <th style="width:5%">#</th>
+          <th>Tipo de Comprobante</th>
+          <th class="text-center">Documentos</th>
+          <th class="text-end">Subtotal</th>
+          <th class="text-end text-danger">ITBIS</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="text-muted font-monospace">{{ row.ncf_type|stringformat:"02d" }}</td>
+          <td>{{ row.ncf_label }}</td>
+          <td class="text-center">{{ row.count }}</td>
+          <td class="text-end font-monospace">{{ row.subtotal|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace text-danger">{{ row.itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Total</td>
+          <td class="text-center">{{ total_count }}</td>
+          <td class="text-end font-monospace">{{ totals.subtotal|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace text-danger">{{ totals.itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace">{{ totals.total|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
 </div>
 
