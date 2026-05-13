@@ -3,6 +3,10 @@
 
 {% block title %}{% trans "Ventas por Período" %}{% endblock %}
 
+{% block extra_css %}
+{% include "invoices/partials/report_shared_styles.html" %}
+{% endblock %}
+
 {% block content %}
 
 {# ── Print-only document header ───────────────────────────────────────────── #}
@@ -16,89 +20,90 @@
   {% endif %}
 </div>
 
-{# ── Screen header (hidden on print) ─────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
-  <h1 class="h3 mb-0">{% trans "Ventas por Período" %}</h1>
-  <div class="d-flex gap-2">
+{# ── Screen header ────────────────────────────────────────────────────────── #}
+<div class="rpt-header no-print">
+  <div>
+    <h1 class="rpt-header-title">{% trans "Ventas por Período" %}</h1>
+    {% if year %}<p class="rpt-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}</p>{% endif %}
+  </div>
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
   </div>
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-{% include "invoices/partials/report_filter_panel.html" with show_year=True show_month=True btn_color="success" %}
+{% include "invoices/partials/report_filter_panel.html" with show_year=True show_month=True %}
 
 {% if year %}
 
 {% if rows %}
-{# ── Summary pills ─────────────────────────────────────────────────────────── #}
-<div class="row g-2 mb-3">
+{# ── Summary metric cards ──────────────────────────────────────────────────── #}
+<div class="row g-2 mb-3 no-print">
   <div class="col-6 col-sm-4">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total facturado" %}</div>
-      <div class="fw-bold fs-6">{{ totals.invoiced|floatformat:2|intcomma }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value">{{ totals.invoiced|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">{% trans "Total facturado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">{% trans "Total cobrado" %}</div>
-      <div class="fw-bold fs-6 text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">{% trans "Total cobrado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
-    <div class="card border-0 bg-light text-center py-2">
-      <div class="small text-muted text-uppercase" style="font-size:.68rem">
-        {% if by_day %}{% trans "Neto del mes" %}{% else %}{% trans "Neto del año" %}{% endif %}
-      </div>
-      <div class="fw-bold fs-6 {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
         {{ totals.net|floatformat:2|intcomma }}
+      </div>
+      <div class="rpt-metric-label">
+        {% if by_day %}{% trans "Neto del mes" %}{% else %}{% trans "Neto del año" %}{% endif %}
       </div>
     </div>
   </div>
 </div>
 
 {# ── Breakdown table ───────────────────────────────────────────────────────── #}
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <table class="table table-hover table-sm mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>{% if by_day %}{% trans "Día" %}{% else %}{% trans "Mes" %}{% endif %}</th>
-          <th class="text-end">{% trans "Facturado" %}</th>
-          <th class="text-end">{% trans "Cobrado" %}</th>
-          <th class="text-end">{% trans "Neto" %}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in rows %}
-        <tr>
-          <td class="fw-semibold">
-            {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
-          </td>
-          <td class="text-end">{{ row.invoiced|floatformat:2|intcomma }}</td>
-          <td class="text-end text-success">{{ row.collected|floatformat:2|intcomma }}</td>
-          <td class="text-end fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-success{% endif %}">
-            {{ row.net|floatformat:2|intcomma }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot class="table-light fw-bold">
-        <tr>
-          <td>{% trans "Total" %}</td>
-          <td class="text-end">{{ totals.invoiced|floatformat:2|intcomma }}</td>
-          <td class="text-end text-success">{{ totals.collected|floatformat:2|intcomma }}</td>
-          <td class="text-end {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-success{% endif %}">
-            {{ totals.net|floatformat:2|intcomma }}
-          </td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+<div class="rpt-table-wrap">
+  <table class="table table-hover table-sm mb-0">
+    <thead>
+      <tr>
+        <th>{% if by_day %}{% trans "Día" %}{% else %}{% trans "Mes" %}{% endif %}</th>
+        <th class="text-end">{% trans "Facturado" %}</th>
+        <th class="text-end">{% trans "Cobrado" %}</th>
+        <th class="text-end">{% trans "Neto" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="fw-semibold">
+          {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
+        </td>
+        <td class="text-end font-monospace">{{ row.invoiced|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace text-success">{{ row.collected|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-danger{% endif %}">
+          {{ row.net|floatformat:2|intcomma }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>{% trans "Total" %}</td>
+        <td class="text-end font-monospace">{{ totals.invoiced|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace text-success">{{ totals.collected|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+          {{ totals.net|floatformat:2|intcomma }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
 </div>
 {% else %}
 <div class="alert alert-info">
