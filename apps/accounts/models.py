@@ -118,6 +118,15 @@ class Team(ERPBaseModel):
     def __str__(self):
         return f"{self.organization.name} › {self.name}"
 
+    def delete(self, *args, **kwargs):
+        active = self.memberships.filter(deleted_at__isnull=True).count()
+        if active:
+            raise ValueError(
+                f"No se puede eliminar el equipo «{self.name}» porque tiene "
+                f"{active} miembro(s) activo(s). Reasígnelos primero."
+            )
+        return super().delete(*args, **kwargs)
+
 
 class Membership(ERPBaseModel):
     class Role(models.TextChoices):

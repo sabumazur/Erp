@@ -30,9 +30,10 @@
 
               {% with placeholder="https://ui-avatars.com/api/?name={{ organization.name|urlencode }}&size=80&background=0d6efd&color=fff&rounded=false" %}
               <div class="d-flex align-items-center gap-4 mb-4"
-                   x-data="avatarHandler('{% if organization.logo %}{{ organization.logo.url }}{% endif %}', '{{ placeholder }}')">
+                   x-data="avatarHandler('{{ organization_logo_url|escapejs }}', '{{ placeholder|escapejs }}')">
                 <div class="position-relative">
-                  <img :src="previewSrc"
+                  <img src="{% if organization_logo_url %}{{ organization_logo_url }}{% else %}{{ placeholder }}{% endif %}"
+                       :src="previewSrc"
                        alt="Logotipo"
                        width="80" height="80"
                        class="rounded-3 object-fit-cover border shadow-sm">
@@ -107,28 +108,4 @@
 
   </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function avatarHandler(currentUrl, placeholderUrl) {
-  return {
-    previewSrc: currentUrl || placeholderUrl,
-    hasAvatar:  !!currentUrl,
-    change(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      this.previewSrc = URL.createObjectURL(file);
-      this.hasAvatar = true;
-      this.$refs.clearInput.checked = false;
-    },
-    clear() {
-      this.previewSrc = placeholderUrl;
-      this.hasAvatar = false;
-      this.$refs.fileInput.value = '';
-      this.$refs.clearInput.checked = true;
-    },
-  };
-}
-</script>
 {% endblock %}

@@ -38,7 +38,23 @@
       "Bash(git commit -m ' *)",
       "Bash(python manage.py check --deploy)",
       "Bash(python manage.py check)",
-      "Bash(python -m pytest --co -q)"
+      "Bash(python -m pytest --co -q)",
+      "Bash(python -m pytest --tb=short -q)",
+      "Bash(python -m pytest apps/invoices/tests/test_models.py::TestRNCValidator --tb=short -q)",
+      "Bash(python -m pytest apps/invoices/tests/test_services.py::TestPaymentServiceDelete apps/invoices/tests/test_services.py::TestPaymentServiceRegister::test_multi_invoice_payment --tb=short -q)",
+      "Bash(python -m pytest apps/invoices/tests/test_services.py::TestPaymentServiceDelete::test_deletes_payment_and_reopens_invoice --tb=long -s)",
+      "Bash(git commit *)",
+      "PowerShell(python manage.py check 2>&1)",
+      "PowerShell(git add templates/invoices/partials/report_filter_panel.html)",
+      "PowerShell(git commit -m \"style: update report_filter_panel.html - new rpt-filter-panel style, dark submit btn, month_required flag\")",
+      "PowerShell(git add templates/invoices/report_sales_period.html)",
+      "PowerShell(git commit -m \"style: redesign report_sales_period - rpt-header, rpt-metric-card, rpt-table-wrap\")",
+      "PowerShell(git add templates/invoices/report_collections.html)",
+      "PowerShell(git commit -m \"style: redesign report_collections - rpt-header, rpt-metric-card, rpt-table-wrap\")",
+      "PowerShell(git add templates/invoices/report_statement.html)",
+      "PowerShell(git commit -m \"style: redesign report_statement - rpt-header, rpt-metric-card, rpt-table-wrap, strip inline th styles\")",
+      "PowerShell(git add templates/invoices/report_invoices_by_customer.html)",
+      "PowerShell(git commit -m \"style: redesign report_invoices_by_customer - rpt-header, rpt-metric-card, rpt-table-wrap, strip inline th styles\")"
     ]
   }
 }

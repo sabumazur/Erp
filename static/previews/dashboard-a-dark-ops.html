@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard A — Dark Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #07080f;
+  --surface:  #0c0e1a;
+  --border:   #1a1f38;
+  --cyan:     #00e5ff;
+  --green:    #00ff88;
+  --amber:    #ffb340;
+  --red:      #ff3b5c;
+  --text:     #c8d0e7;
+  --muted:    #3d4566;
+  --label:    #6b7299;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  min-height: 100vh;
+  padding: 28px;
+  /* subtle grid texture */
+  background-image:
+    linear-gradient(rgba(0,229,255,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.header-left .label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+.header-left h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.5px;
+}
+.header-left .org {
+  font-size: 11px;
+  color: var(--label);
+  margin-top: 3px;
+}
+.header-left .org span { color: var(--cyan); }
+
+.date-chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--label);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  background: var(--surface);
+  letter-spacing: .04em;
+}
+
+/* ── KPI GRID ────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.kpi {
+  background: var(--surface);
+  padding: 20px 20px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: background .2s;
+}
+.kpi:hover { background: #0f1225; }
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+}
+.kpi-cyan::before  { background: var(--cyan);  box-shadow: 0 0 12px var(--cyan);  }
+.kpi-green::before { background: var(--green); box-shadow: 0 0 12px var(--green); }
+.kpi-amber::before { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+.kpi-red::before   { background: var(--red);   box-shadow: 0 0 12px var(--red);   }
+
+.kpi-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--label);
+  margin-bottom: 12px;
+}
+.kpi-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.5px;
+}
+.kpi-cyan  .kpi-value { color: var(--cyan);  text-shadow: 0 0 20px rgba(0,229,255,.4); }
+.kpi-green .kpi-value { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,.4); }
+.kpi-amber .kpi-value { color: var(--amber); text-shadow: 0 0 20px rgba(255,179,64,.3); }
+.kpi-red   .kpi-value { color: var(--red);   text-shadow: 0 0 20px rgba(255,59,92,.4); }
+
+.kpi-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: .02em;
+}
+.kpi-red .kpi-sub { color: rgba(255,59,92,.6); }
+
+/* ── MAIN ROW ────────────────────────────────────────────── */
+.main-row {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── PANELS ──────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.panel-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: .05em;
+}
+.panel-body { padding: 16px; }
+
+/* ── CHART ───────────────────────────────────────────────── */
+.chart-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  padding-bottom: 4px;
+}
+.chart-group {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+.bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  transition: opacity .2s;
+  min-height: 4px;
+}
+.bar:hover { opacity: .8; }
+.bar-inv  { background: var(--cyan);  opacity: .7; }
+.bar-col  { background: var(--green); opacity: .6; }
+.chart-labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chart-labels span {
+  flex: 1;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  color: var(--muted);
+  letter-spacing: .05em;
+}
+
+/* ── STATS ───────────────────────────────────────────────── */
+.stat-list { display: flex; flex-direction: column; gap: 1px; }
+.stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.stat-item:last-child { border-bottom: none; }
+.stat-item:hover { background: #0f1225; }
+.stat-item-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.stat-item-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.db-table { width: 100%; border-collapse: collapse; }
+.db-table thead th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.db-table tbody tr {
+  border-bottom: 1px solid rgba(26,31,56,.6);
+  transition: background .1s;
+}
+.db-table tbody tr:last-child { border-bottom: none; }
+.db-table tbody tr:hover td { background: rgba(0,229,255,.03); }
+.db-table tbody td {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  padding: 9px 14px;
+  color: var(--text);
+}
+.db-table .text-right { text-align: right; }
+.db-table .muted { color: var(--label); font-size: 10.5px; }
+.link { color: var(--cyan); text-decoration: none; }
+.link:hover { text-shadow: 0 0 8px var(--cyan); }
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.badge {
+  font-family: 'Manrope', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  display: inline-block;
+}
+.badge-paid    { background: rgba(0,255,136,.12); color: var(--green); border: 1px solid rgba(0,255,136,.25); }
+.badge-sent    { background: rgba(0,229,255,.10); color: var(--cyan);  border: 1px solid rgba(0,229,255,.2);  }
+.badge-overdue { background: rgba(255,59,92,.12); color: var(--red);   border: 1px solid rgba(255,59,92,.25); }
+.badge-confirm { background: rgba(0,229,255,.08); color: var(--cyan);  border: 1px solid rgba(0,229,255,.15); }
+
+/* ── BOTTOM ──────────────────────────────────────────────── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── LEGEND ──────────────────────────────────────────────── */
+.legend { display: flex; gap: 14px; margin-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--label); letter-spacing: .06em; }
+.legend-dot { width: 8px; height: 3px; border-radius: 1px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="label">ERP · Sistema de Facturación</div>
+    <h1>DASHBOARD</h1>
+    <div class="org"><span>▸</span> Empresa Dominicana S.A.</div>
+  </div>
+  <div class="date-chip">2026-05-13</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-cyan">
+    <div class="kpi-label">Facturado · Mes actual</div>
+    <div class="kpi-value">1,240,500</div>
+    <div class="kpi-sub">Mes en curso</div>
+  </div>
+  <div class="kpi kpi-green">
+    <div class="kpi-label">Cobrado · Mes actual</div>
+    <div class="kpi-value">920,800</div>
+    <div class="kpi-sub">Pagos recibidos</div>
+  </div>
+  <div class="kpi kpi-amber">
+    <div class="kpi-label">Por cobrar</div>
+    <div class="kpi-value">319,700</div>
+    <div class="kpi-sub">Pendiente de pago</div>
+  </div>
+  <div class="kpi kpi-red">
+    <div class="kpi-label">Vencido</div>
+    <div class="kpi-value">85,300</div>
+    <div class="kpi-sub">4 factura(s) vencida(s)</div>
+  </div>
+</div>
+
+<div class="main-row">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Facturación_vs_Cobros</span>
+      <span class="panel-badge">últimos_6_meses</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-area">
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:42%"></div>
+          <div class="bar bar-col" style="height:38%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:58%"></div>
+          <div class="bar bar-col" style="height:50%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:72%"></div>
+          <div class="bar bar-col" style="height:65%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:55%"></div>
+          <div class="bar bar-col" style="height:48%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:88%"></div>
+          <div class="bar bar-col" style="height:79%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:100%"></div>
+          <div class="bar bar-col" style="height:74%"></div>
+        </div>
+      </div>
+      <div class="chart-labels">
+        <span>Dic</span><span>Ene</span><span>Feb</span>
+        <span>Mar</span><span>Abr</span><span>May</span>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,229,255,.7)"></div>Facturado</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,255,136,.6)"></div>Cobrado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Contadores</span>
+    </div>
+    <div class="stat-list">
+      <div class="stat-item">
+        <div class="stat-item-label">Clientes</div>
+        <div class="stat-item-val">48</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Cotizaciones activas</div>
+        <div class="stat-item-val" style="color:var(--amber)">7</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Órdenes pendientes</div>
+        <div class="stat-item-val" style="color:var(--amber)">3</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-label">Facturas vencidas</div>
+        <div class="stat-item-val" style="color:var(--red)">4</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:16px">
+  <div class="panel-header">
+    <span class="panel-title">Facturas_Recientes</span>
+    <span class="panel-badge">→ ver_todas</span>
+  </div>
+  <table class="db-table">
+    <thead>
+      <tr>
+        <th>N° Factura</th><th>Cliente</th><th>Emisión</th>
+        <th>Vence</th><th>Estado</th><th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="link">E310000042</a></td>
+        <td>Colmado El Buen Precio</td>
+        <td class="muted">13/05/2026</td>
+        <td class="muted">27/05/2026</td>
+        <td><span class="badge badge-sent">Enviada</span></td>
+        <td class="text-right" style="color:var(--cyan)">45,200.00</td>
+      </tr>
+      <tr>
+        <td><a class="link">E310000041</a></td>
+        <td>Distribuidora Norte S.R.L.</td>
+        <td class="muted">12/05/2026</td>
+        <td class="muted">26/05/2026</td>
+        <td><span class="badge badge-paid">Pagada</span></td>
+        <td class="text-right" style="color:var(--green)">128,900.00</td>
+      </tr>
+      <tr>
+        <td><a class="link">E310000040</a></td>
+        <td>Importadora Caribe</td>
+        <td class="muted">10/05/2026</td>
+        <td class="muted">24/05/2026</td>
+        <td><span class="badge badge-confirm">Confirmada</span></td>
+        <td class="text-right" style="color:var(--cyan)">67,450.00</td>
+      </tr>
+      <tr>
+        <td><a class="link">E310000039</a></td>
+        <td>Suplidora General C.A.</td>
+        <td class="muted">05/05/2026</td>
+        <td class="muted">03/05/2026</td>
+        <td><span class="badge badge-overdue">Vencida</span></td>
+        <td class="text-right" style="color:var(--red)">22,800.00</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="bottom-row">
+  <div class="panel" style="margin-bottom:0">
+    <div class="panel-header">
+      <span class="panel-title" style="color:var(--red)">⚠ Facturas_Vencidas</span>
+    </div>
+    <table class="db-table">
+      <thead>
+        <tr><th>Factura</th><th>Cliente</th><th class="text-right">Días</th><th class="text-right">Total</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="link" style="color:var(--red)">E310000039</a></td>
+          <td class="muted">Suplidora General</td>
+          <td class="text-right" style="color:var(--red);font-weight:600">10</td>
+          <td class="text-right" style="color:var(--red)">22,800.00</td>
+        </tr>
+        <tr>
+          <td><a class="link" style="color:var(--red)">E310000035</a></td>
+          <td class="muted">La Casa del Mueble</td>
+          <td class="text-right" style="color:var(--red);font-weight:600">22</td>
+          <td class="text-right" style="color:var(--red)">18,600.00</td>
+        </tr>
+        <tr>
+          <td><a class="link" style="color:var(--red)">E310000031</a></td>
+          <td class="muted">Ferretería El Clavo</td>
+          <td class="text-right" style="color:var(--red);font-weight:600">38</td>
+          <td class="text-right" style="color:var(--red)">43,900.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" style="margin-bottom:0">
+    <div class="panel-header">
+      <span class="panel-title">Pagos_Recientes</span>
+    </div>
+    <table class="db-table">
+      <thead>
+        <tr><th>Fecha</th><th>Cliente</th><th>Método</th><th class="text-right">Monto</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="muted">13/05</td>
+          <td style="font-size:11px">Distribuidora Norte</td>
+          <td><span class="badge badge-sent">Transferencia</span></td>
+          <td class="text-right" style="color:var(--green)">128,900.00</td>
+        </tr>
+        <tr>
+          <td class="muted">11/05</td>
+          <td style="font-size:11px">Importadora Caribe</td>
+          <td><span class="badge badge-paid">Efectivo</span></td>
+          <td class="text-right" style="color:var(--green)">32,000.00</td>
+        </tr>
+        <tr>
+          <td class="muted">09/05</td>
+          <td style="font-size:11px">Colmado El Buen</td>
+          <td><span class="badge" style="background:rgba(200,208,231,.08);color:#8892a4;border:1px solid #3d4566">Cheque</span></td>
+          <td class="text-right" style="color:var(--green)">15,400.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

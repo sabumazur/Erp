@@ -3,26 +3,37 @@
 
 {% block title %}{% trans "Consolidar órdenes en factura" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Consolidar órdenes en factura" %}</h1>
-  <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-  </a>
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Consolidar órdenes en factura" %}</h4>
+    <p class="rpt-header-sub">{% trans "Órdenes de venta" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
 </div>
 
-<p class="text-muted">
+<p class="text-muted small mb-3">
   {% trans "Seleccione un cliente, departamento (opcional) y período. El sistema mostrará todas las órdenes entregadas pendientes de facturar." %}
 </p>
 
 <div class="row g-3">
   <div class="col-lg-7">
-    <div class="card shadow-sm mb-3">
-      <div class="card-header fw-semibold">{% trans "Parámetros" %}</div>
-      <div class="card-body">
+    <div class="rpt-table-wrap mb-3">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Parámetros" %}
+      </div>
+      <div class="p-3">
         <form method="post" id="consolidate-form">
           {% csrf_token %}
-          {# Wrap the customer and date fields so HTMX can trigger the preview #}
           <div
             hx-get="{% url 'invoices:sale_order_consolidate' %}?preview=1"
             hx-trigger="change from:#consolidate-form input, change from:#consolidate-form select"
@@ -31,7 +42,7 @@
             {% crispy form %}
           </div>
           <hr>
-          <button type="submit" class="btn btn-success">
+          <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
             <i class="bi bi-receipt me-1"></i>{% trans "Generar factura consolidada" %}
           </button>
         </form>
@@ -40,9 +51,11 @@
   </div>
 
   <div class="col-lg-5">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">{% trans "Vista previa" %}</div>
-      <div class="card-body p-0" id="consolidate-preview">
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Vista previa" %}
+      </div>
+      <div id="consolidate-preview">
         <div class="text-center text-muted py-4 small">
           <i class="bi bi-search me-1"></i>
           {% trans "Seleccione un cliente y período para ver las órdenes pendientes." %}
@@ -53,26 +66,9 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var custSel = document.getElementById('id_customer');
-  if (!custSel) return;
-
-  custSel.addEventListener('change', function () {
-    var pk = this.value;
-    var deptSel = document.getElementById('id_department');
-    if (!deptSel) return;
-
-    deptSel.value = '';
-
-    if (pk) {
-      htmx.ajax('GET', '{% url "invoices:departments_for_customer" %}?customer=' + pk, {
-        target: '#id_department',
-        swap:   'innerHTML',
-      });
-    } else {
-      deptSel.innerHTML = '<option value="">— {% trans "Todos los departamentos" %} —</option>';
-    }
-  });
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  departmentsForCustomerUrl: "{% url 'invoices:departments_for_customer' %}",
+  allDepartmentsOption: '<option value="">-- {% trans "Todos los departamentos" %} --</option>'
 });
 </script>
 {% endblock %}

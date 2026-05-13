@@ -3,25 +3,41 @@
 
 {% block title %}{% trans "Editar cliente" %}{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Editar cliente" %}</h1>
-  <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-  </a>
-</div>
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
 
-<div class="card shadow-sm">
-  <div class="card-body">
-    <form method="post">
-      {% csrf_token %}
-      {% crispy form %}
-      <hr>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">{% trans "Guardar cambios" %}</button>
-        <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
-      </div>
-    </form>
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Editar cliente" %}</h4>
+    <p class="rpt-header-sub">{% trans "Clientes" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
   </div>
 </div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="rpt-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      {% trans "Datos del cliente" %}
+    </div>
+    <div class="p-3">
+      {% crispy form %}
+    </div>
+  </div>
+
+  <div class="form-sticky-bar">
+    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
+    </button>
+    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+  </div>
+</form>
+
 {% endblock %}

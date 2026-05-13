@@ -302,20 +302,21 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         customer = get_object_or_404(Customer, pk=pk, organization=_org(request))
-        if customer.invoices.exists() or customer.payments.exists():
+        name = customer.name
+        try:
+            customer.delete()
+        except ValueError as exc:
             if request.htmx:
                 resp = HttpResponse()
                 resp["HX-Reswap"] = "none"
                 resp["HX-Trigger"] = json.dumps({"showSwal": {
                     "icon": "error",
                     "title": str(_("No se puede eliminar")),
-                    "text": str(_("Este cliente tiene documentos o pagos asociados y no puede eliminarse.")),
+                    "text": str(exc),
                 }})
                 return resp
-            messages.error(request, _("No se puede eliminar un cliente con documentos o pagos asociados."))
+            messages.error(request, str(exc))
             return redirect("invoices:customer_list")
-        name = customer.name
-        customer.delete()
         if request.htmx:
             return CustomerListView._refresh_table(
                 request, str(_(f"Cliente «{name}» eliminado.")),

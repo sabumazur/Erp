@@ -199,6 +199,14 @@ class Item(ERPBaseModel):
             self.code = ItemCodeSequence.generate(self.organization)
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        from apps.invoices.models import InvoiceItem
+        if InvoiceItem.objects.filter(item=self).exists():
+            raise ValueError(
+                f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos."
+            )
+        return super().delete(*args, **kwargs)
+
     @property
     def display_price(self):
         """Price formatted for display."""

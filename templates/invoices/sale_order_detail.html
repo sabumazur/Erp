@@ -3,20 +3,35 @@
 
 {% block title %}{{ order }}{% endblock %}
 
-{% block content %}
-<div class="module-sale-order">
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 35%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
 
-{# ── Page header + actions ────────────────────────────────────── #}
-<div class="module-page-header mb-4">
-  <div class="module-page-title">
-    <span class="module-eyebrow">{% trans "Orden de Venta" %}</span>
-    <h1>{{ order.doc_number|default:"Borrador" }}</h1>
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{{ order.doc_number|default:"Borrador" }}</h4>
+    <p class="rpt-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
   </div>
-  <div class="doc-action-row">
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <a href="{% url 'invoices:sale_order_print' order.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'invoices:sale_order_print' order.pk %}" target="_blank"
+       class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
     <form method="post" action="{% url 'invoices:sale_order_clone' order.pk %}"
@@ -35,7 +50,7 @@
       <form method="post" action="{% url 'invoices:sale_order_confirm' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar orden?" %}', {icon:'question', color:'#6366f1', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-module-accent btn-sm">
+        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
@@ -46,7 +61,8 @@
       </form>
 
     {% elif order.status == "CONFIRMED" %}
-      <button class="btn btn-module-accent btn-sm" data-bs-toggle="modal" data-bs-target="#deliverModal">
+      <button class="btn btn-sm" style="background:#1e2130;color:#fff"
+              data-bs-toggle="modal" data-bs-target="#deliverModal">
         <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}
       </button>
       <form method="post" action="{% url 'invoices:sale_order_cancel' order.pk %}"
@@ -69,201 +85,198 @@
 
 <div class="row g-3">
 
-  {# ── Left: Document paper ─────────────────────────────────────── #}
+  {# ── Left: Document ── #}
   <div class="col-lg-8">
-    <div class="doc-paper mb-3">
 
-      {# Document header #}
-      <div class="doc-header">
-        <div>
-          <div class="doc-type-eyebrow">{% trans "Orden de Venta" %} · {{ order.currency }}</div>
-          <div class="doc-ref-number">{{ order.doc_number|default:"—" }}</div>
-          <div class="text-muted mt-1" style="font-size:0.82rem">{{ order.customer.name }}</div>
-        </div>
-        <div class="text-end">
-          <div class="doc-stamp
-            {% if order.status == 'DRAFT' %}doc-stamp-draft
-            {% elif order.status == 'CONFIRMED' %}doc-stamp-confirmed
-            {% elif order.status == 'DELIVERED' %}doc-stamp-delivered
-            {% elif order.status == 'INVOICED' %}doc-stamp-invoiced
-            {% elif order.status == 'CANCELLED' %}doc-stamp-cancelled
-            {% endif %}">
-            {% if order.status == 'DRAFT' %}{% trans "Borrador" %}
-            {% elif order.status == 'CONFIRMED' %}{% trans "Confirmada" %}
-            {% elif order.status == 'DELIVERED' %}{% trans "Entregada" %}
-            {% elif order.status == 'INVOICED' %}{% trans "Facturada" %}
-            {% elif order.status == 'CANCELLED' %}{% trans "Anulada" %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      {# Meta info #}
-      <div class="doc-meta-grid">
-        <div>
-          <div class="doc-meta-label">{% trans "Cliente" %}</div>
-          <div class="doc-meta-value">{{ order.customer.name }}</div>
-          {% if order.customer.rnc_cedula %}
-          <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">
-            {{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}
-          </div>
+    {# Meta info #}
+    <div class="rpt-table-wrap mb-3">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Cliente" %}</th>
+            <td>
+              {{ order.customer.name }}
+              {% if order.customer.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
+            <td class="font-monospace">{{ order.issue_date|date:"d/m/Y" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha de entrega" %}</th>
+            <td class="font-monospace">{{ order.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+          </tr>
+          {% if order.department %}
+          <tr>
+            <th class="detail-key">{% trans "Departamento" %}</th>
+            <td>
+              <span class="badge-soft badge-sent">{{ order.department.name }}</span>
+              {% if order.department.contact_name %}
+                <span class="text-muted small ms-1">{{ order.department.contact_name }}{% if order.department.phone %} · {{ order.department.phone }}{% endif %}</span>
+              {% endif %}
+            </td>
+          </tr>
           {% endif %}
-        </div>
-        <div>
-          <div class="doc-meta-label">{% trans "Fecha de emisión" %}</div>
-          <div class="doc-meta-value">{{ order.issue_date|date:"d/m/Y" }}</div>
-        </div>
-        <div>
-          <div class="doc-meta-label">{% trans "Fecha de entrega" %}</div>
-          <div class="doc-meta-value">{{ order.delivery_date|date:"d/m/Y"|default:"—" }}</div>
-        </div>
-        {% if order.department %}
-        <div>
-          <div class="doc-meta-label">{% trans "Departamento" %}</div>
-          <div class="doc-meta-value">{{ order.department.name }}</div>
-          {% if order.department.contact_name %}
-          <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">
-            {{ order.department.contact_name }}{% if order.department.phone %} · {{ order.department.phone }}{% endif %}
-          </div>
+          {% if order.signed_by %}
+          <tr>
+            <th class="detail-key">{% trans "Recibido por" %}</th>
+            <td>{{ order.signed_by }}</td>
+          </tr>
           {% endif %}
-        </div>
-        {% endif %}
-        {% if order.signed_by %}
-        <div>
-          <div class="doc-meta-label">{% trans "Recibido por" %}</div>
-          <div class="doc-meta-value">{{ order.signed_by }}</div>
-        </div>
-        {% endif %}
-        <div>
-          <div class="doc-meta-label">{% trans "Condición de pago" %}</div>
-          <div class="doc-meta-value">{{ order.get_payment_condition_display }}</div>
-        </div>
-      </div>
+          <tr>
+            <th class="detail-key">{% trans "Condición de pago" %}</th>
+            <td>{{ order.get_payment_condition_display }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-      {# Items table #}
-      <div class="doc-items-table">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th>{% trans "Descripción" %}</th>
-              <th class="text-end">{% trans "Cant." %}</th>
-              <th class="text-end">{% trans "P. Unit." %}</th>
-              <th class="text-center">{% trans "ITBIS" %}</th>
-              <th class="text-end">{% trans "Subtotal" %}</th>
-              <th class="text-end">{% trans "Total" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in items %}
-            <tr>
-              <td>{{ item.description }}</td>
-              <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
-              <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
-              <td class="text-center">
-                <span class="badge status-badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
-                  {{ item.get_itbis_rate_display }}
-                </span>
-              </td>
-              <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
-              <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      {# Totals #}
-      <div class="doc-totals-block">
-        <div class="doc-totals-inner">
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "Subtotal" %}</span>
-            <span class="total-value font-monospace">{{ order.subtotal|floatformat:2|intcomma }}</span>
-          </div>
+    {# Items table #}
+    <div class="rpt-table-wrap mb-3">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Descripción" %}</th>
+            <th class="text-end">{% trans "Cant." %}</th>
+            <th class="text-end">{% trans "P. Unit." %}</th>
+            <th class="text-center">{% trans "ITBIS" %}</th>
+            <th class="text-end">{% trans "Subtotal" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ item.description }}</td>
+            <td class="text-end font-monospace">{{ item.quantity|floatformat:"-4" }}</td>
+            <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
+            <td class="text-center">
+              {% if item.itbis_rate == 'RATE_18' %}
+                <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
+              {% elif item.itbis_rate == 'RATE_16' %}
+                <span class="badge-soft badge-confirmed">{{ item.get_itbis_rate_display }}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "Subtotal" %}</td>
+            <td class="text-end font-monospace">{{ order.subtotal|floatformat:2|intcomma }}</td>
+          </tr>
           {% if order.itbis_18 %}
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "ITBIS 18%" %}</span>
-            <span class="total-value font-monospace">{{ order.itbis_18|floatformat:2|intcomma }}</span>
-          </div>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 18%" %}</td>
+            <td class="text-end font-monospace">{{ order.itbis_18|floatformat:2|intcomma }}</td>
+          </tr>
           {% endif %}
           {% if order.itbis_16 %}
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "ITBIS 16%" %}</span>
-            <span class="total-value font-monospace">{{ order.itbis_16|floatformat:2|intcomma }}</span>
-          </div>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 16%" %}</td>
+            <td class="text-end font-monospace">{{ order.itbis_16|floatformat:2|intcomma }}</td>
+          </tr>
           {% endif %}
-          <div class="doc-total-line grand-total">
-            <span class="total-label">{% trans "Total" %}</span>
-            <span class="total-value">{{ order.total|floatformat:2|intcomma }}</span>
-          </div>
-        </div>
-      </div>
+          <tr>
+            <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
+            <td class="text-end font-monospace fw-bold">{{ order.total|floatformat:2|intcomma }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
 
-      {% if order.notes %}
-      <div class="doc-notes-section">
-        <div class="doc-notes-label">{% trans "Notas" %}</div>
-        <p class="small mb-0">{{ order.notes }}</p>
+    {% if order.notes %}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Notas" %}
       </div>
-      {% endif %}
+      <div class="p-3 small text-muted">{{ order.notes }}</div>
+    </div>
+    {% endif %}
 
-    </div>{# /doc-paper #}
   </div>
 
-  {# ── Right: Status + Meta ─────────────────────────────────────── #}
-  <div class="col-lg-4">
-    <div class="doc-status-card mb-3">
-      <div class="doc-status-card-header">{% trans "Estado del documento" %}</div>
-      <div class="doc-status-card-body">
+  {# ── Right: Status sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value" style="color:#16a34a">{{ order.total|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">{% trans "Total" %} {{ order.currency }}</div>
+    </div>
+
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Estado del documento" %}
+      </div>
+      <div class="p-3">
         <div class="mb-3">
           {% include "invoices/partials/status_badge.html" with status=order.status %}
         </div>
-        <hr class="my-2" style="border-color:#f1f3f7">
-        <dl class="row small mb-0">
-          <dt class="col-6 text-muted">{% trans "Número" %}</dt>
-          <dd class="col-6 font-monospace fw-semibold">{{ order.doc_number|default:"—" }}</dd>
-          {% if order.department %}
-          <dt class="col-6 text-muted">{% trans "Departamento" %}</dt>
-          <dd class="col-6">
-            <span class="badge bg-info text-dark status-badge">{{ order.department.name }}</span>
-          </dd>
-          {% endif %}
-          <dt class="col-6 text-muted">{% trans "Moneda" %}</dt>
-          <dd class="col-6">{{ order.currency }}</dd>
-          <dt class="col-6 text-muted">{% trans "Creada" %}</dt>
-          <dd class="col-6">{{ order.created_at|date:"d/m/Y H:i" }}</dd>
-          <dt class="col-6 text-muted">{% trans "Actualizada" %}</dt>
-          <dd class="col-6">{{ order.updated_at|date:"d/m/Y H:i" }}</dd>
-        </dl>
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Número" %}</td>
+              <td class="text-end font-monospace fw-semibold">{{ order.doc_number|default:"—" }}</td>
+            </tr>
+            {% if order.department %}
+            <tr>
+              <td class="text-muted">{% trans "Departamento" %}</td>
+              <td class="text-end"><span class="badge-soft badge-sent">{{ order.department.name }}</span></td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-muted">{% trans "Moneda" %}</td>
+              <td class="text-end">{{ order.currency }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Creada" %}</td>
+              <td class="text-end font-monospace">{{ order.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Actualizada" %}</td>
+              <td class="text-end font-monospace">{{ order.updated_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
     {% if order.consolidated_into %}
-    <div class="doc-status-card border-start border-3" style="border-color: var(--module-accent) !important;">
-      <div class="doc-status-card-header" style="color:var(--module-accent)">{% trans "Factura consolidada" %}</div>
-      <div class="doc-status-card-body">
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Factura consolidada" %}
+      </div>
+      <div class="p-3">
         <a href="{% url 'invoices:invoice_detail' order.consolidated_into.pk %}"
-           class="font-monospace fw-semibold text-decoration-none" style="color:var(--module-accent)">
+           class="font-monospace fw-semibold text-decoration-none" style="color:#1e2130">
           {{ order.consolidated_into.display_number }}
         </a>
-        <p class="text-muted small mb-0 mt-1">
-          {{ order.consolidated_into.issue_date|date:"d/m/Y" }}
-        </p>
+        <p class="text-muted small mb-0 mt-1">{{ order.consolidated_into.issue_date|date:"d/m/Y" }}</p>
       </div>
     </div>
     {% endif %}
+
   </div>
 
-</div>{# /row #}
+</div>
 
-{# ── Deliver modal ────────────────────────────────────────────── #}
+{# Deliver modal #}
 {% if order.status == "CONFIRMED" %}
 <div class="modal fade" id="deliverModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
       <form method="post" action="{% url 'invoices:sale_order_deliver' order.pk %}">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-box-seam me-2"></i>{% trans "Registrar entrega" %}
+        <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+          <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
+            <i class="bi bi-box-seam me-2" style="color:#6b7280"></i>{% trans "Registrar entrega" %}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
@@ -273,9 +286,9 @@
           </p>
           {% crispy deliver_form %}
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-module-accent">
+        <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+          <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
             <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar entrega" %}
           </button>
         </div>
@@ -285,5 +298,4 @@
 </div>
 {% endif %}
 
-</div>{# /module-sale-order #}
 {% endblock %}

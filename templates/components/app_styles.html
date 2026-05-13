@@ -1,0 +1,136 @@
+<style>
+/* ── Print ───────────────────────────────────────────────── */
+.print-header { display: none; }
+@media print {
+  @page { size: A4 landscape; }
+  .no-print { display: none !important; }
+  .print-header { display: block !important; }
+  .rpt-table-wrap { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  .rpt-metric-card { border: 1px solid #dee2e6 !important; }
+  .badge-soft { background: none !important; border: none !important; padding: 0 !important; color: inherit !important; font-weight: 600; }
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.rpt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #1e2130;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.rpt-header-title { font-size: 1.2rem; font-weight: 700; color: #111827; letter-spacing: -.2px; margin: 0; }
+.rpt-header-sub { font-size: .8rem; color: #6b7280; margin: 3px 0 0; }
+.rpt-header-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+
+/* ── Filter panel ────────────────────────────────────────── */
+.rpt-filter-panel {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 1rem;
+}
+.rpt-filter-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+/* ── Metric cards ────────────────────────────────────────── */
+.rpt-metric-card {
+  text-align: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+}
+.rpt-metric-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
+}
+.rpt-metric-label {
+  font-size: 9px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 3px;
+}
+
+/* ── Table wrapper ───────────────────────────────────────── */
+.rpt-table-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.rpt-table-wrap .table { margin-bottom: 0; font-size: .875rem; }
+.rpt-table-wrap thead th {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  padding-top: .65rem;
+  padding-bottom: .65rem;
+}
+.rpt-table-wrap tfoot td,
+.rpt-table-wrap tfoot th {
+  background: #f9fafb;
+  border-top: 2px solid #1e2130;
+  font-weight: 700;
+}
+.rpt-table-wrap tbody tr:nth-child(even) { background: #fafafa; }
+
+/* ── Status badges (class names unchanged) ───────────────── */
+.badge-soft {
+  font-size: .72rem;
+  font-weight: 500;
+  padding: .3em .65em;
+  border-radius: 6px;
+  display: inline-block;
+}
+.badge-confirmed { background: #E6F1FB; color: #185FA5; }
+.badge-sent      { background: #D1ECF1; color: #0C5460; }
+.badge-paid      { background: #D1E7DD; color: #0A6640; }
+.badge-overdue   { background: #F8D7DA; color: #842029; }
+.badge-cancelled { background: #E9ECEF; color: #495057; }
+.badge-default   { background: #E9ECEF; color: #495057; }
+.badge-invoice   { background: #E9ECEF; color: #495057; }
+.badge-payment   { background: #D1E7DD; color: #0A6640; }
+
+/* ── Customer block (class names unchanged) ──────────────── */
+.customer-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: .85rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  margin-bottom: 1rem;
+}
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+</style>

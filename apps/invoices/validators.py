@@ -28,10 +28,19 @@ def _digits_only(value: str) -> str:
     return re.sub(r"\D", "", value)
 
 
+_RNC_WEIGHTS = [7, 9, 8, 6, 5, 4, 3, 2]
+
+
 def validate_rnc(value: str) -> tuple[bool, str]:
     digits = _digits_only(value)
     if len(digits) != 9:
         return False, _("El RNC debe tener exactamente 9 dígitos (recibido: %(n)s).") % {"n": len(digits)}
+    if len(set(digits)) == 1:
+        return False, _("RNC inválido.")
+    total = sum(int(d) * w for d, w in zip(digits, _RNC_WEIGHTS))
+    expected = (10 - total % 10) % 10
+    if int(digits[8]) != expected:
+        return False, _("El dígito verificador del RNC es incorrecto.")
     return True, ""
 
 
@@ -39,6 +48,17 @@ def validate_cedula(value: str) -> tuple[bool, str]:
     digits = _digits_only(value)
     if len(digits) != 11:
         return False, _("La cédula debe tener exactamente 11 dígitos (recibido: %(n)s).") % {"n": len(digits)}
+    if len(set(digits)) == 1:
+        return False, _("Cédula inválida.")
+    total = 0
+    for i, d in enumerate(digits[:10]):
+        v = int(d) * (2 if i % 2 == 1 else 1)
+        if v > 9:
+            v -= 9
+        total += v
+    expected = (10 - total % 10) % 10
+    if int(digits[10]) != expected:
+        return False, _("El dígito verificador de la cédula es incorrecto.")
     return True, ""
 
 

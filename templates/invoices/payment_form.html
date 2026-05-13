@@ -3,23 +3,32 @@
 
 {% block title %}{% trans "Registrar pago" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Registrar pago" %}</h1>
-  <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left"></i>
-  </a>
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Registrar pago" %}</h4>
+    <p class="rpt-header-sub">{% trans "Pagos" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
 </div>
 
 <form method="post" id="payment-form">
   {% csrf_token %}
 
-  {# ── Header ──────────────────────────────────────────────────────────────── #}
-  <div class="card shadow-sm mb-4">
-    <div class="card-header fw-semibold small text-uppercase text-muted">
+  <div class="rpt-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
       {% trans "Datos del pago" %}
     </div>
-    <div class="card-body">
+    <div class="p-3">
       {% if form.non_field_errors %}
         <div class="alert alert-danger py-2">
           {% for err in form.non_field_errors %}{{ err }}{% endfor %}
@@ -29,86 +38,52 @@
     </div>
   </div>
 
-  {# ── Allocation table ─────────────────────────────────────────────────────── #}
-  <div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span class="fw-semibold small text-uppercase text-muted">{% trans "Facturas a cubrir" %}</span>
+  <div class="rpt-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas a cubrir" %}</span>
       <span class="small text-muted">{% trans "Seleccione un cliente para ver sus facturas pendientes." %}</span>
     </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "NCF" %}</th>
-              <th>{% trans "Emisión" %}</th>
-              <th>{% trans "Vence" %}</th>
-              <th class="text-center">{% trans "Aging" %}</th>
-              <th class="text-end">{% trans "Total" %}</th>
-              <th class="text-end">{% trans "Saldo" %}</th>
-              <th class="text-end" style="width:130px">{% trans "Aplicar" %}</th>
-            </tr>
-          </thead>
-          <tbody id="allocation-tbody">
-            {# HTMX fills this when customer is selected #}
-            <tr id="allocation-empty-row">
-              <td colspan="7" class="text-center text-muted py-3 small">
-                <i class="bi bi-arrow-up me-1"></i>{% trans "Seleccione un cliente para cargar sus facturas pendientes." %}
-              </td>
-            </tr>
-          </tbody>
-          <tfoot class="table-light">
-            <tr>
-              <td colspan="6" class="text-end fw-bold">{% trans "Total del pago" %}</td>
-              <td class="text-end fw-bold">
-                <span id="payment-total" class="text-success fs-6">0.00</span>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "NCF" %}</th>
+            <th>{% trans "Emisión" %}</th>
+            <th>{% trans "Vence" %}</th>
+            <th class="text-center">{% trans "Aging" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+            <th class="text-end">{% trans "Saldo" %}</th>
+            <th class="text-end" style="width:130px">{% trans "Aplicar" %}</th>
+          </tr>
+        </thead>
+        <tbody id="allocation-tbody">
+          <tr id="allocation-empty-row">
+            <td colspan="7" class="text-center text-muted py-4 small">
+              <i class="bi bi-arrow-up me-1"></i>{% trans "Seleccione un cliente para cargar sus facturas pendientes." %}
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6" class="text-end">{% trans "Total del pago" %}</td>
+            <td class="text-end" style="width:130px">
+              <span id="payment-total" class="fw-bold fs-5 font-monospace" style="color:#16a34a">0.00</span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   </div>
 
-  {# ── Actions ──────────────────────────────────────────────────────────────── #}
-  <div class="d-flex justify-content-end gap-2">
-    <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary">
-      {% trans "Cancelar" %}
-    </a>
-    <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+  <div class="form-sticky-bar">
+    <button type="submit" class="btn btn-sm" id="submit-btn" disabled
+            style="background:#1e2130;color:#fff">
       <i class="bi bi-check-circle me-1"></i>{% trans "Registrar pago" %}
     </button>
+    <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      {% trans "Cancelar" %}
+    </a>
   </div>
 </form>
 
-<script>
-  // Update the running total and enable/disable submit whenever
-  // allocation inputs change or HTMX loads new rows into the tbody.
-  function updateTotal() {
-    let sum = 0;
-    document.querySelectorAll('[name="alloc_amounts"]').forEach(function(el) {
-      const v = parseFloat(el.value.replace(',', '.')) || 0;
-      if (v > 0) sum += v;
-    });
-    document.getElementById('payment-total').textContent = sum.toFixed(2);
-    document.getElementById('submit-btn').disabled = (sum <= 0);
-  }
-
-  // Re-bind listeners after HTMX swaps in new rows
-  document.addEventListener('htmx:afterSettle', function(evt) {
-    if (evt.target && evt.target.id === 'allocation-tbody') {
-      document.querySelectorAll('[name="alloc_amounts"]').forEach(function(el) {
-        el.addEventListener('input', updateTotal);
-      });
-      updateTotal();
-    }
-  });
-
-  // Also catch manual input changes (in case re-HTMX doesn't fire)
-  document.getElementById('payment-form').addEventListener('input', function(e) {
-    if (e.target && e.target.name === 'alloc_amounts') {
-      updateTotal();
-    }
-  });
-</script>
 {% endblock %}

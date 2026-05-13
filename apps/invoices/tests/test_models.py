@@ -45,6 +45,10 @@ class TestNCFSequence:
         with pytest.raises(ValueError, match="agotada"):
             NCFSequence.generate(seq.organization, 31)
 
+
+@pytest.mark.django_db(transaction=True)
+class TestNCFConcurrency:
+
     def test_concurrent_generation_produces_unique_encfs(self):
         """Two threads must never get the same e-NCF."""
         seq = NCFSequenceFactory(ncf_type=31, current_seq=0, max_seq=100)
@@ -161,8 +165,7 @@ class TestNCFService:
         invoice = self._invoice_with_item()
         NCFService.confirm(invoice)
         NCFService.mark_sent(invoice)
-        payment = PaymentFactory(invoice=invoice, organization=invoice.organization)
-        NCFService.mark_paid(invoice, payment)
+        NCFService.mark_paid(invoice)
         assert invoice.status == Invoice.Status.PAID
 
     def test_cancel_sets_cancelled_status(self):
@@ -175,8 +178,7 @@ class TestNCFService:
         invoice = self._invoice_with_item()
         NCFService.confirm(invoice)
         NCFService.mark_sent(invoice)
-        payment = PaymentFactory(invoice=invoice, organization=invoice.organization)
-        NCFService.mark_paid(invoice, payment)
+        NCFService.mark_paid(invoice)
         with pytest.raises(ValueError, match="Nota de Crédito"):
             NCFService.cancel(invoice)
 

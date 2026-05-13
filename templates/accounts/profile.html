@@ -85,29 +85,3 @@
   </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-function avatarHandler(currentUrl, placeholderUrl) {
-  return {
-    previewSrc: currentUrl || placeholderUrl,
-    hasAvatar:  !!currentUrl,
-
-    change(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      this.previewSrc = URL.createObjectURL(file);
-      this.hasAvatar = true;
-      this.$refs.clearInput.checked = false;
-    },
-
-    clear() {
-      this.previewSrc = placeholderUrl;
-      this.hasAvatar = false;
-      this.$refs.fileInput.value = '';
-      this.$refs.clearInput.checked = true;
-    },
-  };
-}
-</script>
-{% endblock %}

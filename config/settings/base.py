@@ -170,11 +170,11 @@ MESSAGE_TAGS = {message_constants.ERROR: "danger"}
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src":    ["'self'"],
-        "script-src":     ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
-        "style-src":      ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        "font-src":       ["'self'", "https://cdn.jsdelivr.net"],
-        "img-src":        ["'self'", "data:"],
-        "connect-src":    ["'self'"],
+        "script-src":     ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+        "style-src":      ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+        "font-src":       ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"],
+        "img-src":        ["'self'", "data:", "blob:", "https://ui-avatars.com"],
+        "connect-src":    ["'self'", "https://cdn.jsdelivr.net"],
         "form-action":    ["'self'"],
         "frame-ancestors":["'none'"],
         "base-uri":       ["'self'"],

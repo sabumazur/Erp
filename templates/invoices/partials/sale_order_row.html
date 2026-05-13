@@ -3,7 +3,8 @@
 <tr>
 
   <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'invoices:sale_order_detail' row.pk %}" class="text-decoration-none text-reset">
+    <a href="{% url 'invoices:sale_order_detail' row.pk %}"
+       class="text-decoration-none" style="color:#1e2130">
       {{ row.display_number }}
     </a>
     <span class="dt-hover-actions">
@@ -24,7 +25,7 @@
 
   <td data-col="department__name">
     {% if row.department %}
-      <span class="badge bg-info text-dark status-badge">{{ row.department.name }}</span>
+      <span class="badge-soft badge-sent">{{ row.department.name }}</span>
     {% else %}
       <span class="text-muted small">—</span>
     {% endif %}
@@ -32,9 +33,7 @@
 
   <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
 
-  <td data-col="delivery_date" class="small">
-    {{ row.delivery_date|date:"d/m/Y"|default:"—" }}
-  </td>
+  <td data-col="delivery_date" class="small">{{ row.delivery_date|date:"d/m/Y"|default:"—" }}</td>
 
   <td data-col="total" class="text-end fw-semibold font-monospace">{{ row.total|floatformat:2|intcomma }}</td>
 
@@ -44,8 +43,8 @@
 
   <td class="text-end" style="width:60px">
     <a href="{% url 'invoices:sale_order_detail' row.pk %}"
-       class="btn btn-outline-secondary btn-sm py-0 px-1 dt-hover-actions"
-       title="{% trans 'Ver' %}" style="font-size:0.75rem">
+       class="btn btn-outline-secondary btn-sm py-0 px-1"
+       title="{% trans 'Ver' %}">
       <i class="bi bi-arrow-right"></i>
     </a>
   </td>

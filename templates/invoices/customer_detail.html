@@ -1,21 +1,41 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{{ customer }}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 35%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+
+<div class="rpt-header">
   <div>
-    <h1 class="h3 mb-0">{{ customer.name }}</h1>
-    {% if customer.rnc_cedula %}
-      <span class="text-muted font-monospace small">{{ customer.get_id_type_display }} · {{ customer.rnc_cedula }}</span>
-    {% endif %}
+    <h4 class="rpt-header-title">{{ customer.name }}</h4>
+    <p class="rpt-header-sub">
+      {% trans "Clientes" %}
+      {% if customer.rnc_cedula %}
+        · <span class="font-monospace">{{ customer.get_id_type_display }}: {{ customer.rnc_cedula }}</span>
+      {% endif %}
+    </p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <button type="button" class="btn btn-outline-primary btn-sm"
+    <button type="button" class="btn btn-outline-secondary btn-sm"
             hx-get="{% url 'invoices:customer_edit' customer.pk %}?hx_target=refresh"
             hx-target="#customer-modal-body"
             hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
@@ -26,85 +46,93 @@
 </div>
 
 <div class="row g-3">
-  {# ── Contact & fiscal card ─────────────────────────────────────────────────── #}
-  <div class="col-lg-8">
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Información de contacto" %}</h6>
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Correo electrónico" %}</p>
-            <p class="mb-0">{{ customer.email|default:"—" }}</p>
-          </div>
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Teléfono" %}</p>
-            <p class="mb-0">{{ customer.phone|default:"—" }}</p>
-          </div>
+
+  {# ── Main column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
+
+    {# Contact & fiscal info #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Información de contacto" %}
+      </div>
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Correo electrónico" %}</th>
+            <td>{{ customer.email|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Teléfono" %}</th>
+            <td>{{ customer.phone|default:"—" }}</td>
+          </tr>
           {% if customer.contact_name %}
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Persona de contacto" %}</p>
-            <p class="mb-0">{{ customer.contact_name }}</p>
-          </div>
+          <tr>
+            <th class="detail-key">{% trans "Persona de contacto" %}</th>
+            <td>{{ customer.contact_name }}</td>
+          </tr>
           {% endif %}
           {% if customer.contact_number %}
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Número de contacto" %}</p>
-            <p class="mb-0">{{ customer.contact_number }}</p>
-          </div>
+          <tr>
+            <th class="detail-key">{% trans "Número de contacto" %}</th>
+            <td>{{ customer.contact_number }}</td>
+          </tr>
           {% endif %}
-        </div>
-
-        {% if customer.address or customer.city or customer.province %}
-        <hr>
-        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Dirección" %}</h6>
-        <div class="row g-3">
-          {% if customer.address %}
-          <div class="col-12">
-            <p class="text-muted small mb-0">{% trans "Dirección" %}</p>
-            <p class="mb-0">{{ customer.address }}</p>
-          </div>
+          {% if customer.address or customer.city %}
+          <tr>
+            <th class="detail-key">{% trans "Dirección" %}</th>
+            <td>
+              {% if customer.address %}{{ customer.address }}{% endif %}
+              {% if customer.city %}<span class="text-muted small"> · {{ customer.city }}</span>{% endif %}
+              {% if customer.province %}<span class="text-muted small">, {{ customer.province }}</span>{% endif %}
+              {% if customer.country %}<span class="text-muted small">, {{ customer.country }}</span>{% endif %}
+            </td>
+          </tr>
           {% endif %}
-          <div class="col-sm-4">
-            <p class="text-muted small mb-0">{% trans "Ciudad" %}</p>
-            <p class="mb-0">{{ customer.city|default:"—" }}</p>
-          </div>
-          <div class="col-sm-4">
-            <p class="text-muted small mb-0">{% trans "Provincia" %}</p>
-            <p class="mb-0">{{ customer.province|default:"—" }}</p>
-          </div>
-          <div class="col-sm-4">
-            <p class="text-muted small mb-0">{% trans "País" %}</p>
-            <p class="mb-0">{{ customer.country|default:"—" }}</p>
-          </div>
-        </div>
-        {% endif %}
+          <tr>
+            <th class="detail-key">{% trans "Tipo NCF por defecto" %}</th>
+            <td>{{ customer.get_default_ncf_type_display }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Término de pago" %}</th>
+            <td>{{ customer.payment_term|default:"—" }}</td>
+          </tr>
+        </tbody>
+      </table>
+      {% if customer.notes %}
+      <div class="p-3 small text-muted" style="border-top:1px solid #e5e7eb">{{ customer.notes }}</div>
+      {% endif %}
+    </div>
 
-        <hr>
-        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Configuración fiscal" %}</h6>
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Tipo de comprobante por defecto" %}</p>
-            <span class="badge bg-secondary">{{ customer.get_default_ncf_type_display }}</span>
-          </div>
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Término de pago" %}</p>
-            <p class="mb-0">{{ customer.payment_term|default:"—" }}</p>
-          </div>
+    {# Account summary mini-kpis #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Resumen de cuenta" %}
+      </div>
+      <div class="row g-0">
+        <div class="col-6 col-sm-3 p-3" style="border-right:1px solid #e5e7eb">
+          <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280" class="mb-1">{% trans "Facturado" %}</div>
+          <div class="fw-bold font-monospace" style="font-size:1.1rem;color:#1e2130">{{ total_invoiced|floatformat:2|intcomma }}</div>
         </div>
-
-        {% if customer.notes %}
-        <hr>
-        <p class="text-muted small mb-1">{% trans "Notas internas" %}</p>
-        <p class="small mb-0">{{ customer.notes }}</p>
-        {% endif %}
+        <div class="col-6 col-sm-3 p-3" style="border-right:1px solid #e5e7eb">
+          <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280" class="mb-1">{% trans "Pagado" %}</div>
+          <div class="fw-bold font-monospace" style="font-size:1.1rem;color:#16a34a">{{ total_paid|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="col-6 col-sm-3 p-3" style="border-right:1px solid #e5e7eb">
+          <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280" class="mb-1">{% trans "Saldo" %}</div>
+          <div class="fw-bold font-monospace" style="font-size:1.1rem;color:{% if balance > 0 %}#d97706{% else %}#6b7280{% endif %}">{{ balance|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="col-6 col-sm-3 p-3">
+          <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280" class="mb-1">{% trans "Vencido" %}</div>
+          <div class="fw-bold font-monospace" style="font-size:1.1rem;color:{% if overdue > 0 %}#dc2626{% else %}#6b7280{% endif %}">{{ overdue|floatformat:2|intcomma }}</div>
+        </div>
       </div>
     </div>
 
-    {# ── Departments card ─────────────────────────────────────────────────────── #}
-    <div class="card shadow-sm mb-3">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold text-uppercase small">{% trans "Departamentos de entrega" %}</span>
-        <button type="button" class="btn btn-outline-primary btn-sm"
+    {# Departments #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Departamentos de entrega" %}</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
                 hx-get="{% url 'invoices:department_create' customer.pk %}"
                 hx-target="#dept-modal-body"
                 hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Nuevo departamento" %}';
@@ -112,186 +140,153 @@
           <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
         </button>
       </div>
-      <div class="card-body p-0">
-        <div id="dept-table-wrapper">
-          {% include "invoices/partials/department_table.html" with departments=departments customer=customer %}
-        </div>
+      <div id="dept-table-wrapper">
+        {% include "invoices/partials/department_table.html" with departments=departments customer=customer %}
       </div>
     </div>
 
-    {# ── Account summary cards ────────────────────────────────────────────────── #}
-    <div class="row g-2 mb-3">
-      <div class="col-6 col-sm-3">
-        <div class="card shadow-sm text-center h-100">
-          <div class="card-body py-2 px-2">
-            <p class="text-muted small mb-1 text-uppercase" style="font-size:.68rem;letter-spacing:.5px">{% trans "Facturado" %}</p>
-            <p class="fw-bold mb-0 fs-6">{{ total_invoiced|floatformat:2 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-sm-3">
-        <div class="card shadow-sm text-center h-100 border-success">
-          <div class="card-body py-2 px-2">
-            <p class="text-muted small mb-1 text-uppercase" style="font-size:.68rem;letter-spacing:.5px">{% trans "Pagado" %}</p>
-            <p class="fw-bold mb-0 fs-6 text-success">{{ total_paid|floatformat:2 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-sm-3">
-        <div class="card shadow-sm text-center h-100 {% if balance > 0 %}border-warning{% endif %}">
-          <div class="card-body py-2 px-2">
-            <p class="text-muted small mb-1 text-uppercase" style="font-size:.68rem;letter-spacing:.5px">{% trans "Saldo" %}</p>
-            <p class="fw-bold mb-0 fs-6 {% if balance > 0 %}text-warning{% endif %}">{{ balance|floatformat:2 }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-sm-3">
-        <div class="card shadow-sm text-center h-100 {% if overdue > 0 %}border-danger{% endif %}">
-          <div class="card-body py-2 px-2">
-            <p class="text-muted small mb-1 text-uppercase" style="font-size:.68rem;letter-spacing:.5px">{% trans "Vencido" %}</p>
-            <p class="fw-bold mb-0 fs-6 {% if overdue > 0 %}text-danger{% endif %}">{{ overdue|floatformat:2 }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# ── Invoices with balance ─────────────────────────────────────────────────── #}
+    {# Invoices #}
     {% if invoices %}
-    <div class="card shadow-sm mb-3">
-      <div class="card-body p-0">
-        <div class="px-3 pt-3 pb-2 d-flex justify-content-between align-items-center">
-          <h6 class="card-title text-muted text-uppercase small mb-0">{% trans "Facturas" %}</h6>
-          <a href="{% url 'invoices:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-receipt me-1"></i>{% trans "Ver todas" %}
-          </a>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover table-sm mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>{% trans "NCF" %}</th>
-                <th>{% trans "Fecha" %}</th>
-                <th>{% trans "Vence" %}</th>
-                <th class="text-end">{% trans "Total" %}</th>
-                <th class="text-end">{% trans "Pagado" %}</th>
-                <th class="text-end">{% trans "Saldo" %}</th>
-                <th class="text-center">{% trans "Estado" %}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for inv in invoices %}
-              <tr>
-                <td>
-                  <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace small">
-                    {{ inv.display_number }}
-                  </a>
-                </td>
-                <td class="small text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
-                <td class="small text-nowrap">{{ inv.due_date|date:"d/m/Y"|default:"—" }}</td>
-                <td class="text-end small">{{ inv.total|floatformat:2 }}</td>
-                <td class="text-end small text-success">{{ inv.paid_amount|floatformat:2 }}</td>
-                <td class="text-end small fw-semibold {% if inv.status == 'OVERDUE' %}text-danger{% elif inv.line_balance <= 0 %}text-muted{% else %}text-warning{% endif %}">
-                  {{ inv.line_balance|floatformat:2 }}
-                </td>
-                <td class="text-center">
-                  {% include "invoices/partials/status_badge.html" with status=inv.status %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas" %}</span>
+        <a href="{% url 'invoices:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-receipt me-1"></i>{% trans "Ver todas" %}
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>{% trans "NCF" %}</th>
+              <th>{% trans "Fecha" %}</th>
+              <th>{% trans "Vence" %}</th>
+              <th class="text-end">{% trans "Total" %}</th>
+              <th class="text-end">{% trans "Pagado" %}</th>
+              <th class="text-end">{% trans "Saldo" %}</th>
+              <th class="text-center">{% trans "Estado" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in invoices %}
+            <tr>
+              <td>
+                <a href="{% url 'invoices:invoice_detail' inv.pk %}"
+                   class="text-decoration-none font-monospace small" style="color:#1e2130">
+                  {{ inv.display_number }}
+                </a>
+              </td>
+              <td class="small text-nowrap text-muted">{{ inv.issue_date|date:"d/m/Y" }}</td>
+              <td class="small text-nowrap text-muted">{{ inv.due_date|date:"d/m/Y"|default:"—" }}</td>
+              <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
+              <td class="text-end small font-monospace" style="color:#16a34a">{{ inv.paid_amount|floatformat:2|intcomma }}</td>
+              <td class="text-end small fw-semibold font-monospace"
+                  style="color:{% if inv.status == 'OVERDUE' %}#dc2626{% elif inv.line_balance <= 0 %}#6b7280{% else %}#d97706{% endif %}">
+                {{ inv.line_balance|floatformat:2|intcomma }}
+              </td>
+              <td class="text-center">
+                {% include "invoices/partials/status_badge.html" with status=inv.status %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
     {% endif %}
 
-    {# ── Payment history ──────────────────────────────────────────────────────── #}
+    {# Recent payments #}
     {% if recent_payments %}
-    <div class="card shadow-sm">
-      <div class="card-body p-0">
-        <div class="px-3 pt-3 pb-2">
-          <h6 class="card-title text-muted text-uppercase small mb-0">{% trans "Últimos pagos" %}</h6>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover table-sm mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>{% trans "Fecha" %}</th>
-                <th>{% trans "Factura" %}</th>
-                <th>{% trans "Forma" %}</th>
-                <th>{% trans "Referencia" %}</th>
-                <th class="text-end">{% trans "Monto" %}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for pmt in recent_payments %}
-              <tr>
-                <td class="small text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
-                <td class="small">
-                  {% for alloc in pmt.allocations.all %}
-                    <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
-                       class="text-decoration-none font-monospace d-block small">
-                      {{ alloc.invoice.display_number }}
-                      <span class="text-muted">({{ alloc.amount|floatformat:2 }})</span>
-                    </a>
-                  {% endfor %}
-                </td>
-                <td class="small">{{ pmt.get_method_display }}</td>
-                <td class="small text-muted">{{ pmt.reference|default:"—" }}</td>
-                <td class="text-end small fw-semibold text-success">{{ pmt.amount|floatformat:2 }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Últimos pagos" %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>{% trans "Fecha" %}</th>
+              <th>{% trans "Factura" %}</th>
+              <th>{% trans "Forma" %}</th>
+              <th>{% trans "Referencia" %}</th>
+              <th class="text-end">{% trans "Monto" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pmt in recent_payments %}
+            <tr>
+              <td class="small text-nowrap text-muted">{{ pmt.date|date:"d/m/Y" }}</td>
+              <td class="small">
+                {% for alloc in pmt.allocations.all %}
+                  <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
+                     class="text-decoration-none font-monospace d-block small" style="color:#1e2130">
+                    {{ alloc.invoice.display_number }}
+                    <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
+                  </a>
+                {% endfor %}
+              </td>
+              <td class="small">{{ pmt.get_method_display }}</td>
+              <td class="small text-muted font-monospace">{{ pmt.reference|default:"—" }}</td>
+              <td class="text-end small fw-semibold font-monospace" style="color:#16a34a">{{ pmt.amount|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
     {% endif %}
+
   </div>
 
-  {# ── Sidebar cards ────────────────────────────────────────────────────────── #}
-  <div class="col-lg-4">
+  {# ── Sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
 
-    {# Credit limit card #}
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Crédito" %}</h6>
-        <dl class="row small mb-0">
-          <dt class="col-7 text-muted">{% trans "Límite de crédito" %}</dt>
-          <dd class="col-5 text-end fw-semibold">
+    {# Credit #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Crédito" %}
+      </div>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Límite de crédito" %}</td>
+              <td class="text-end fw-semibold">
+                {% if customer.credit_limit %}
+                  {{ customer.credit_limit|floatformat:2|intcomma }}
+                {% else %}
+                  <span class="text-muted">{% trans "Sin límite" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Saldo pendiente" %}</td>
+              <td class="text-end fw-semibold" style="color:{% if balance > 0 %}#d97706{% else %}inherit{% endif %}">
+                {{ balance|floatformat:2|intcomma }}
+              </td>
+            </tr>
             {% if customer.credit_limit %}
-              {{ customer.credit_limit|floatformat:2 }}
-            {% else %}
-              <span class="text-muted">{% trans "Sin límite" %}</span>
+            <tr>
+              <td class="text-muted">{% trans "Disponible" %}</td>
+              <td class="text-end fw-semibold" style="color:{% if balance > customer.credit_limit %}#dc2626{% else %}#16a34a{% endif %}">
+                {{ credit_available|floatformat:2|intcomma }}
+              </td>
+            </tr>
             {% endif %}
-          </dd>
-          <dt class="col-7 text-muted">{% trans "Saldo pendiente" %}</dt>
-          <dd class="col-5 text-end fw-semibold {% if balance > 0 %}text-warning{% endif %}">
-            {{ balance|floatformat:2 }}
-          </dd>
-          {% if customer.credit_limit %}
-          <dt class="col-7 text-muted">{% trans "Disponible" %}</dt>
-          <dd class="col-5 text-end fw-semibold {% if balance > customer.credit_limit %}text-danger{% else %}text-success{% endif %}">
-            {{ credit_available|floatformat:2 }}
-          </dd>
-          {% endif %}
-          <dt class="col-7 text-muted">{% trans "Última factura" %}</dt>
-          <dd class="col-5 text-end">
-            {% if invoices %}
-              {{ invoices.0.issue_date|date:"d/m/Y" }}
-            {% else %}
-              <span class="text-muted">—</span>
-            {% endif %}
-          </dd>
-          <dt class="col-7 text-muted">{% trans "Último pago" %}</dt>
-          <dd class="col-5 text-end">
-            {% if recent_payments %}
-              {{ recent_payments.0.date|date:"d/m/Y" }}
-            {% else %}
-              <span class="text-muted">—</span>
-            {% endif %}
-          </dd>
-        </dl>
+            <tr>
+              <td class="text-muted">{% trans "Última factura" %}</td>
+              <td class="text-end">
+                {% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Último pago" %}</td>
+              <td class="text-end">
+                {% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
         {% if customer.credit_limit and balance > customer.credit_limit %}
         <div class="alert alert-danger py-1 px-2 mt-2 mb-0 small">
           <i class="bi bi-exclamation-triangle me-1"></i>{% trans "Límite de crédito excedido" %}
@@ -300,51 +295,69 @@
       </div>
     </div>
 
-    {# Aging breakdown card #}
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small mb-3">{% trans "Antigüedad de saldos" %}</h6>
-        <dl class="row small mb-0">
-          {% for row in aging_breakdown %}
-          <dt class="col-7 text-muted">{{ row.label }}</dt>
-          <dd class="col-5 text-end fw-semibold
-            {% if row.bucket == 'current' %}text-success
-            {% elif row.bucket == '1_30' %}text-warning
-            {% elif row.bucket == '31_60' %}text-warning
-            {% elif row.bucket == '61_90' %}text-danger
-            {% else %}text-danger{% endif %}">
-            {{ row.amount|floatformat:2 }}
-          </dd>
-          {% endfor %}
-          <dt class="col-7 fw-semibold border-top pt-2 mt-1">{% trans "Total" %}</dt>
-          <dd class="col-5 text-end fw-bold border-top pt-2 mt-1 {% if balance > 0 %}text-warning{% endif %}">
-            {{ balance|floatformat:2 }}
-          </dd>
-        </dl>
+    {# Aging breakdown #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Antigüedad de saldos" %}
+      </div>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            {% for row in aging_breakdown %}
+            <tr>
+              <td class="text-muted">{{ row.label }}</td>
+              <td class="text-end fw-semibold"
+                  style="color:{% if row.bucket == 'current' %}#16a34a{% elif row.bucket == '1_30' %}#d97706{% elif row.bucket == '31_60' %}#d97706{% else %}#dc2626{% endif %}">
+                {{ row.amount|floatformat:2|intcomma }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>{% trans "Total" %}</td>
+              <td class="text-end" style="color:{% if balance > 0 %}#d97706{% else %}inherit{% endif %}">
+                {{ balance|floatformat:2|intcomma }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
 
-    {# Audit card #}
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small">{% trans "Auditoría" %}</h6>
-        <dl class="row small mb-0">
-          <dt class="col-6 text-muted">{% trans "Creado" %}</dt>
-          <dd class="col-6">{{ customer.created_at|date:"d/m/Y H:i" }}</dd>
-          <dt class="col-6 text-muted">{% trans "Actualizado" %}</dt>
-          <dd class="col-6">{{ customer.updated_at|date:"d/m/Y H:i" }}</dd>
-        </dl>
+    {# Audit #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Auditoría" %}
+      </div>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Creado" %}</td>
+              <td class="text-end font-monospace">{{ customer.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Actualizado" %}</td>
+              <td class="text-end font-monospace">{{ customer.updated_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
   </div>
+
 </div>
 
-{# ── Customer edit modal ──────────────────────────────────────────────────── #}
+{# ── Customer edit modal ── #}
 <div class="modal fade" id="customerModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="customerModalTitle">{% trans "Editar cliente" %}</h5>
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="customerModalTitle" style="font-size:.95rem">
+          {% trans "Editar cliente" %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div id="customer-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
@@ -352,12 +365,14 @@
   </div>
 </div>
 
-{# ── Department modal ─────────────────────────────────────────────────────── #}
+{# ── Department modal ── #}
 <div class="modal fade" id="deptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deptModalTitle">{% trans "Departamento" %}</h5>
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="deptModalTitle" style="font-size:.95rem">
+          {% trans "Departamento" %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div id="dept-modal-body"></div>
@@ -365,10 +380,4 @@
   </div>
 </div>
 
-<script>
-  // Close dept modal when a successful create/update returns closeDeptModal trigger
-  document.body.addEventListener("closeDeptModal", function () {
-    bootstrap.Modal.getOrCreateInstance(document.getElementById("deptModal")).hide();
-  });
-</script>
 {% endblock %}

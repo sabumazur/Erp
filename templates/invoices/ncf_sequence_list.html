@@ -3,49 +3,48 @@
 
 {% block title %}{% trans "Secuencias NCF" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
 
-{# ── Page header ──────────────────────────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom flex-wrap gap-2">
+<div class="rpt-header">
   <div>
-    <h1 class="h3 mb-1">{% trans "Secuencias NCF" %}</h1>
-    <p class="text-muted mb-0" style="font-size:.875rem">
-      {% trans "Secuencias autorizadas por la DGII para cada tipo de comprobante." %}
-    </p>
+    <h4 class="rpt-header-title">{% trans "Secuencias NCF" %}</h4>
+    <p class="rpt-header-sub">{% trans "Comprobantes autorizados por la DGII" %}</p>
   </div>
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ncfSequenceModal">
-    <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva secuencia" %}
-  </button>
+  <div class="rpt-header-actions">
+    <button class="btn btn-sm" style="background:#1e2130;color:#fff"
+            data-bs-toggle="modal" data-bs-target="#ncfSequenceModal">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva secuencia" %}
+    </button>
+  </div>
 </div>
 
-{# ── Sequence table (HTMX target) ─────────────────────────────────────────── #}
-<div id="ncf-sequence-table" class="mb-4">
+<div id="ncf-sequence-table" class="mb-3">
   {% include "invoices/partials/ncf_sequence_table.html" %}
 </div>
 
-{# ── Callouts ─────────────────────────────────────────────────────────────── #}
-<div class="d-flex align-items-start gap-2 p-3 rounded-3 mb-2 small"
-     style="background:#FFF3CD;border:0.5px solid #FFCA2C;color:#856404">
+<div class="alert alert-warning d-flex align-items-start gap-2 small py-2 px-3">
   <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
   <span>
     {% trans "Solo puede <strong>eliminarse</strong> una secuencia que no haya sido utilizada (secuencia actual = 0)." %}
   </span>
 </div>
 
-<div class="d-flex align-items-start gap-2 p-3 rounded-3 small"
-     style="background:#E6F1FB;border:0.5px solid #B5D4F4;color:#185FA5">
+<div class="alert alert-info d-flex align-items-start gap-2 small py-2 px-3">
   <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
   <span>
     {% blocktrans trimmed %}
-      El número de secuencia actual es el último número <strong>ya utilizado</strong>.
+      El número de secuencia actual es el último número ya utilizado.
       Para una secuencia nueva, déjelo en 0.
-      Serie <strong>B</strong> = comprobantes físicos (tipos 01–16, 8 dígitos).
-      Serie <strong>E</strong> = comprobantes electrónicos (tipos 31–47, 10 dígitos).
+      Serie B = comprobantes físicos (tipos 01-16, 8 dígitos).
+      Serie E = comprobantes electrónicos (tipos 31-47, 10 dígitos).
     {% endblocktrans %}
   </span>
 </div>
 
-{# ── Blank form template (inert — browser never autofills or caches it) ───── #}
 <template id="ncf-blank-tpl">
   <form hx-post="{% url 'invoices:ncf_sequences' %}"
         hx-target="#ncf-sequence-table"
@@ -56,24 +55,23 @@
     <div class="modal-body">
       {% crispy form %}
     </div>
-    <div class="modal-footer border-top" style="background:#F8F9FA">
+    <div class="modal-footer border-top" style="background:#f9fafb">
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
         {% trans "Cancelar" %}
       </button>
-      <button type="submit" class="btn btn-primary btn-sm">
+      <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
         {% trans "Registrar" %}
       </button>
     </div>
   </form>
 </template>
 
-{# ── Modal ─────────────────────────────────────────────────────────────────── #}
 <div class="modal fade" id="ncfSequenceModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content border-0" style="border-radius:14px;overflow:hidden">
-      <div class="modal-header border-bottom" style="background:#F8F9FA">
-        <h5 class="modal-title fw-semibold" style="font-size:.95rem">
-          <i class="bi bi-upc-scan me-2 text-muted"></i>{% trans "Nueva secuencia NCF" %}
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
+          <i class="bi bi-upc-scan me-2" style="color:#6b7280"></i>{% trans "Nueva secuencia NCF" %}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
@@ -86,27 +84,11 @@
 
 {% block extra_js %}
 <script>
-  function restoreBlank() {
-    var body = document.getElementById('ncf-modal-body');
-    body.innerHTML = '';
-    body.appendChild(document.getElementById('ncf-blank-tpl').content.cloneNode(true));
-    htmx.process(body);
-  }
-  restoreBlank();
-  document.getElementById('ncfSequenceModal').addEventListener('hidden.bs.modal', restoreBlank);
-
-  function confirmDeleteNCF(btn) {
-    Swal.fire({
-      icon: 'warning',
-      title: '{% trans "¿Eliminar secuencia?" %}',
-      text: '{% trans "Esta acción no se puede deshacer." %}',
-      showCancelButton: true,
-      confirmButtonText: '{% trans "Sí, eliminar" %}',
-      cancelButtonText: '{% trans "Cancelar" %}',
-      confirmButtonColor: '#dc3545',
-    }).then(function (result) {
-      if (result.isConfirmed) btn.closest('form').submit();
-    });
-  }
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  ncfDeleteTitle: "{% trans '¿Eliminar secuencia?' %}",
+  ncfDeleteText: "{% trans 'Esta acción no se puede deshacer.' %}",
+  ncfDeleteConfirm: "{% trans 'Sí, eliminar' %}",
+  cancelText: "{% trans 'Cancelar' %}"
+});
 </script>
 {% endblock %}

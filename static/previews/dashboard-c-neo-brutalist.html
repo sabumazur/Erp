@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard C — Neo-Brutalist</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #edeae4;
+  --paper:   #f8f5ef;
+  --ink:     #111010;
+  --border:  2px solid #111010;
+  --fire:    #e63400;
+  --green:   #1a6b3a;
+  --amber:   #c47a00;
+  --muted:   #6b6560;
+  --hairline: 1px solid #c8c2b8;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.header {
+  background: var(--ink);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 4px solid var(--fire);
+}
+.header-left { display: flex; align-items: baseline; gap: 20px; }
+.header-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--fire);
+  border: 1px solid var(--fire);
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+.header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.header-org {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #888;
+  letter-spacing: .04em;
+}
+.date-block {
+  text-align: right;
+}
+.date-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.5px;
+  line-height: 1;
+}
+.date-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────── */
+.wrap { padding: 28px 32px; }
+
+/* ── KPI GRID ────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: var(--border);
+  margin-bottom: 24px;
+}
+.kpi {
+  background: var(--paper);
+  padding: 22px 20px 18px;
+  border-right: var(--border);
+  position: relative;
+}
+.kpi:last-child { border-right: none; }
+
+.kpi-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.kpi-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2.4rem;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: var(--ink);
+}
+.kpi-billing .kpi-value { color: var(--ink); }
+.kpi-collect .kpi-value { color: var(--green); }
+.kpi-pending .kpi-value { color: var(--amber); }
+.kpi-overdue .kpi-value { color: var(--fire); }
+
+.kpi-sub {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.kpi-overdue .kpi-sub { color: var(--fire); }
+
+/* bold stripe on top */
+.kpi::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 3px;
+  margin-bottom: 14px;
+}
+.kpi-billing::before { background: var(--ink); }
+.kpi-collect::before { background: var(--green); }
+.kpi-pending::before { background: var(--amber); }
+.kpi-overdue::before { background: var(--fire); }
+
+/* ── STAT ROW ────────────────────────────────────────────── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat {
+  background: var(--paper);
+  border: var(--border);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1;
+  letter-spacing: -.5px;
+  color: var(--ink);
+}
+.stat-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.stat-link {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  border: var(--border);
+  padding: 4px 10px;
+  flex-shrink: 0;
+  background: var(--bg);
+  transition: background .1s;
+}
+.stat-link:hover { background: var(--ink); color: #fff; }
+
+/* ── CONTENT ROW ─────────────────────────────────────────── */
+.content-row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ── PANELS ──────────────────────────────────────────────── */
+.panel {
+  background: var(--paper);
+  border: var(--border);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: var(--border);
+  background: var(--ink);
+}
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #fff;
+}
+.panel-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: #666;
+}
+.panel-body { padding: 18px; }
+
+/* ── CHART ───────────────────────────────────────────────── */
+.chart-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  border-bottom: 1px solid var(--ink);
+}
+.chart-group { flex: 1; display: flex; gap: 2px; align-items: flex-end; }
+.bar { flex: 1; min-height: 2px; border-top: 1px solid var(--ink); }
+.bar-inv { background: var(--ink); }
+.bar-col { background: var(--fire); }
+.chart-labels {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+.chart-labels span {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.db-table { width: 100%; border-collapse: collapse; }
+.db-table thead th {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 9px 18px;
+  background: var(--ink);
+  text-align: left;
+  border-bottom: var(--border);
+}
+.db-table tbody tr { border-bottom: var(--hairline); }
+.db-table tbody tr:last-child { border-bottom: none; }
+.db-table tbody tr:hover td { background: #f0ede7; }
+.db-table tbody td {
+  font-size: 12.5px;
+  padding: 11px 18px;
+  color: var(--ink);
+  vertical-align: middle;
+}
+.db-table .text-right { text-align: right; }
+.db-table .muted-td   { color: var(--muted); font-size: 11.5px; }
+
+.inv-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 500;
+}
+.inv-num:hover { color: var(--fire); }
+
+.amount {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: -.3px;
+}
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  display: inline-block;
+  border: 1px solid;
+}
+.badge-paid    { border-color: var(--green); color: var(--green); }
+.badge-sent    { border-color: var(--ink);   color: var(--ink);   }
+.badge-overdue { border-color: var(--fire);  color: var(--fire);  background: rgba(230,52,0,.06); }
+.badge-confirm { border-color: var(--amber); color: var(--amber); }
+
+/* ── BOTTOM ──────────────────────────────────────────────── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.panel-header-danger {
+  background: var(--fire);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-tag">ERP v2</div>
+    <h1>Dashboard</h1>
+    <div class="header-org">Empresa Dominicana S.A.</div>
+  </div>
+  <div class="date-block">
+    <div class="date-num">13/05/2026</div>
+    <div class="date-sub">Hoy</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<div class="kpi-grid">
+  <div class="kpi kpi-billing">
+    <div class="kpi-label">Facturado · Mes actual</div>
+    <div class="kpi-value">1,240,500</div>
+    <div class="kpi-sub">Mes en curso</div>
+  </div>
+  <div class="kpi kpi-collect">
+    <div class="kpi-label">Cobrado · Mes actual</div>
+    <div class="kpi-value">920,800</div>
+    <div class="kpi-sub">Pagos recibidos</div>
+  </div>
+  <div class="kpi kpi-pending">
+    <div class="kpi-label">Por cobrar</div>
+    <div class="kpi-value">319,700</div>
+    <div class="kpi-sub">Pendiente de pago</div>
+  </div>
+  <div class="kpi kpi-overdue">
+    <div class="kpi-label">Vencido</div>
+    <div class="kpi-value">85,300</div>
+    <div class="kpi-sub">4 factura(s) vencida(s)</div>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat">
+    <div>
+      <div class="stat-num">48</div>
+      <div class="stat-lbl">Clientes</div>
+    </div>
+    <a href="#" class="stat-link">Ver →</a>
+  </div>
+  <div class="stat">
+    <div>
+      <div class="stat-num">7</div>
+      <div class="stat-lbl">Cotizaciones activas</div>
+    </div>
+    <a href="#" class="stat-link">Ver →</a>
+  </div>
+  <div class="stat">
+    <div>
+      <div class="stat-num">3</div>
+      <div class="stat-lbl">Órdenes pendientes</div>
+    </div>
+    <a href="#" class="stat-link">Ver →</a>
+  </div>
+</div>
+
+<div class="content-row">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Facturación vs Cobros</span>
+      <span class="panel-sub">últimos 6 meses</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-area">
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:42%"></div>
+          <div class="bar bar-col" style="height:38%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:58%"></div>
+          <div class="bar bar-col" style="height:51%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:72%"></div>
+          <div class="bar bar-col" style="height:64%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:54%"></div>
+          <div class="bar bar-col" style="height:47%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:86%"></div>
+          <div class="bar bar-col" style="height:78%"></div>
+        </div>
+        <div class="chart-group">
+          <div class="bar bar-inv" style="height:100%"></div>
+          <div class="bar bar-col" style="height:74%"></div>
+        </div>
+      </div>
+      <div class="chart-labels">
+        <span>Dic</span><span>Ene</span><span>Feb</span>
+        <span>Mar</span><span>Abr</span><span>May</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header panel-header-danger">
+      <span class="panel-title">Facturas vencidas</span>
+    </div>
+    <table class="db-table">
+      <thead>
+        <tr><th>Factura</th><th>Cliente</th><th class="text-right">Días</th><th class="text-right">Total</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="inv-num" style="color:var(--fire)">E310000039</a></td>
+          <td class="muted-td">Suplidora Gral.</td>
+          <td class="text-right" style="color:var(--fire);font-weight:700;font-family:'Syne',sans-serif">10</td>
+          <td class="text-right"><span class="amount" style="color:var(--fire)">22,800</span></td>
+        </tr>
+        <tr>
+          <td><a class="inv-num" style="color:var(--fire)">E310000035</a></td>
+          <td class="muted-td">Casa del Mueble</td>
+          <td class="text-right" style="color:var(--fire);font-weight:700;font-family:'Syne',sans-serif">22</td>
+          <td class="text-right"><span class="amount" style="color:var(--fire)">18,600</span></td>
+        </tr>
+        <tr>
+          <td><a class="inv-num" style="color:var(--fire)">E310000031</a></td>
+          <td class="muted-td">Ferretería El Clavo</td>
+          <td class="text-right" style="color:var(--fire);font-weight:700;font-family:'Syne',sans-serif">38</td>
+          <td class="text-right"><span class="amount" style="color:var(--fire)">43,900</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:24px">
+  <div class="panel-header">
+    <span class="panel-title">Facturas recientes</span>
+    <span class="panel-sub">Ver todas →</span>
+  </div>
+  <table class="db-table">
+    <thead>
+      <tr>
+        <th>N° Factura</th><th>Cliente</th><th>Emisión</th>
+        <th>Vence</th><th>Estado</th><th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="inv-num">E310000042</a></td>
+        <td>Colmado El Buen Precio</td>
+        <td class="muted-td">13/05/2026</td>
+        <td class="muted-td">27/05/2026</td>
+        <td><span class="badge badge-sent">Enviada</span></td>
+        <td class="text-right"><span class="amount">45,200.00</span></td>
+      </tr>
+      <tr>
+        <td><a class="inv-num">E310000041</a></td>
+        <td>Distribuidora Norte S.R.L.</td>
+        <td class="muted-td">12/05/2026</td>
+        <td class="muted-td">26/05/2026</td>
+        <td><span class="badge badge-paid">Pagada</span></td>
+        <td class="text-right"><span class="amount" style="color:var(--green)">128,900.00</span></td>
+      </tr>
+      <tr>
+        <td><a class="inv-num">E310000040</a></td>
+        <td>Importadora Caribe</td>
+        <td class="muted-td">10/05/2026</td>
+        <td class="muted-td">24/05/2026</td>
+        <td><span class="badge badge-confirm">Confirmada</span></td>
+        <td class="text-right"><span class="amount">67,450.00</span></td>
+      </tr>
+      <tr>
+        <td><a class="inv-num" style="color:var(--fire)">E310000039</a></td>
+        <td>Suplidora General C.A.</td>
+        <td class="muted-td">05/05/2026</td>
+        <td class="muted-td" style="color:var(--fire);font-weight:600">03/05/2026</td>
+        <td><span class="badge badge-overdue">Vencida</span></td>
+        <td class="text-right"><span class="amount" style="color:var(--fire)">22,800.00</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="bottom-row">
+  <div class="panel" style="margin-bottom:0">
+    <div class="panel-header">
+      <span class="panel-title">Pagos recientes</span>
+      <span class="panel-sub">Ver todos →</span>
+    </div>
+    <table class="db-table">
+      <thead>
+        <tr><th>Fecha</th><th>Cliente</th><th>Método</th><th class="text-right">Monto</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="muted-td">13/05</td>
+          <td style="font-size:12px">Distribuidora Norte</td>
+          <td><span class="badge badge-sent">Transf.</span></td>
+          <td class="text-right"><span class="amount" style="color:var(--green)">128,900.00</span></td>
+        </tr>
+        <tr>
+          <td class="muted-td">11/05</td>
+          <td style="font-size:12px">Importadora Caribe</td>
+          <td><span class="badge badge-paid">Efectivo</span></td>
+          <td class="text-right"><span class="amount" style="color:var(--green)">32,000.00</span></td>
+        </tr>
+        <tr>
+          <td class="muted-td">09/05</td>
+          <td style="font-size:12px">Colmado El Buen</td>
+          <td><span class="badge" style="border-color:var(--muted);color:var(--muted)">Cheque</span></td>
+          <td class="text-right"><span class="amount" style="color:var(--green)">15,400.00</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;border:var(--border);background:var(--paper);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em">
+    [ Estado de facturas · Chart.js ]
+  </div>
+</div>
+
+</div>
+</body>
+</html>

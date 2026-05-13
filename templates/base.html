@@ -16,7 +16,6 @@
 </head>
 <body class="bg-light">
 
-<!-- Dynamic HTMX toast container -->
 <div id="htmx-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100"></div>
 
 {% block body %}
@@ -42,115 +41,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 {% block extra_js %}{% endblock %}
-
-<script>
-  /* ── Toast auto-show (Django messages) ──────────────────── */
-  document.querySelectorAll('.toast-container .toast').forEach(el =>
-    bootstrap.Toast.getOrCreateInstance(el).show()
-  );
-
-  /* ── Dynamic HTMX toasts ─────────────────────────────────── */
-  var TOAST_ICONS = {
-    success: "bi-check-circle-fill",
-    danger:  "bi-exclamation-circle-fill",
-    warning: "bi-exclamation-triangle-fill",
-    info:    "bi-info-circle-fill",
-  };
-  document.body.addEventListener("showToast", function (evt) {
-    var msg  = evt.detail.message || "";
-    var type = evt.detail.type    || "success";
-    var icon = TOAST_ICONS[type]  || TOAST_ICONS.info;
-    var el = document.createElement("div");
-    el.className = "toast align-items-center border-0 text-bg-" + type;
-    el.setAttribute("role", "alert");
-    el.setAttribute("data-bs-autohide", "true");
-    el.setAttribute("data-bs-delay", "4500");
-    el.innerHTML =
-      '<div class="d-flex">' +
-        '<div class="toast-body d-flex align-items-center gap-2">' +
-          '<i class="bi ' + icon + '"></i>' + msg +
-        '</div>' +
-        '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
-      '</div>';
-    document.getElementById("htmx-toast-container").appendChild(el);
-    bootstrap.Toast.getOrCreateInstance(el).show();
-    el.addEventListener("hidden.bs.toast", function () { el.remove(); });
-  });
-
-  /* ── HTMX SweetAlert trigger ─────────────────────────────── */
-  document.body.addEventListener("showSwal", function (evt) {
-    Swal.fire({
-      icon:             evt.detail.icon  || "error",
-      title:            evt.detail.title || "",
-      text:             evt.detail.text  || "",
-      confirmButtonText: evt.detail.confirmButtonText || "OK",
-    });
-  });
-
-  /* ── Password visibility toggle ─────────────────────────── */
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('input[type="password"]').forEach(input => {
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'relative';
-      input.parentElement.insertBefore(wrapper, input);
-      wrapper.appendChild(input);
-      input.style.paddingRight = '2.5rem';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-link position-absolute top-50 end-0 translate-middle-y pe-2 text-muted';
-      btn.style.zIndex = '10';
-      btn.innerHTML = '<i class="bi bi-eye"></i>';
-      btn.setAttribute('tabindex', '-1');
-      btn.addEventListener('click', () => {
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
-      });
-      wrapper.appendChild(btn);
-    });
-  });
-
-  /* ── SweetAlert2 confirm helper ─────────────────────────── */
-  function swalConfirm(form, message, opts) {
-    opts = opts || {};
-    Swal.fire({
-      text:               message,
-      icon:               opts.icon  || 'question',
-      showCancelButton:   true,
-      confirmButtonText:  opts.ok    || 'Sí, continuar',
-      cancelButtonText:   'Cancelar',
-      confirmButtonColor: opts.color || '#0d6efd',
-      cancelButtonColor:  '#6c757d',
-      reverseButtons:     true,
-    }).then(function (r) { if (r.isConfirmed) form.submit(); });
-  }
-
-  /* ── Sidebar toggle ──────────────────────────────────────── */
-  function toggleSidebar() {
-    const isDesktop = window.innerWidth >= 992;
-    if (isDesktop) {
-      document.body.classList.toggle('sidebar-collapsed');
-      localStorage.setItem('sidebarCollapsed',
-        document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
-    } else {
-      document.body.classList.toggle('sidebar-open');
-    }
-  }
-
-  /* Restore desktop collapse preference */
-  (function () {
-    if (window.innerWidth >= 992 && localStorage.getItem('sidebarCollapsed') === '1') {
-      document.body.classList.add('sidebar-collapsed');
-    }
-  })();
-
-  /* Close mobile sidebar on resize to desktop */
-  window.addEventListener('resize', () => {
-    if (window.innerWidth >= 992) {
-      document.body.classList.remove('sidebar-open');
-    }
-  });
-</script>
+<script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

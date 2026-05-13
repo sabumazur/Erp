@@ -3,16 +3,28 @@
 
 {% block title %}{% trans "Pagos" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">{% trans "Pagos" %}</h1>
-  <a href="{% url 'invoices:payment_create' %}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>{% trans "Registrar pago" %}
-  </a>
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Pagos" %}</h4>
+    <p class="rpt-header-sub">{% trans "Cobros" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'invoices:payment_create' %}" class="btn btn-sm"
+       style="background:#1e2130;color:#fff">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Registrar pago" %}
+    </a>
+  </div>
 </div>
 
-{% include "components/_kpi_cards.html" with stats=stats %}
+<div class="mb-3">
+  {% include "components/_kpi_cards.html" with stats=stats %}
+</div>
 
 {% include "components/datatable/wrapper.html" %}
 

@@ -1,8 +1,8 @@
 {% load i18n humanize %}
-<div class="card shadow-sm">
-  <div class="card-body p-0">
+<div class="rpt-table-wrap">
+  <div class="table-responsive">
     <table class="table table-hover table-sm mb-0">
-      <thead class="table-light">
+      <thead>
         <tr>
           <th>{% trans "Número" %}</th>
           <th>{% trans "Cliente" %}</th>
@@ -16,26 +16,29 @@
         {% for q in quotations %}
         <tr>
           <td class="font-monospace fw-semibold">
-            <a href="{% url 'invoices:quotation_detail' q.pk %}" class="text-decoration-none">
+            <a href="{% url 'invoices:quotation_detail' q.pk %}"
+               class="text-decoration-none" style="color:#1e2130">
               {{ q.display_number }}
             </a>
           </td>
           <td>{{ q.customer.name }}</td>
-          <td class="text-nowrap">{{ q.issue_date|date:"d/m/Y" }}</td>
-          <td class="text-nowrap">
+          <td class="text-nowrap small text-muted">{{ q.issue_date|date:"d/m/Y" }}</td>
+          <td class="text-nowrap small">
             {% if q.valid_until %}
               <span class="{% if q.status == 'EXPIRED' %}text-danger{% endif %}">
                 {{ q.valid_until|date:"d/m/Y" }}
               </span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-end fw-semibold">{{ q.total|floatformat:2|intcomma }}</td>
+          <td class="text-end fw-semibold font-monospace">{{ q.total|floatformat:2|intcomma }}</td>
           <td class="text-center">
             {% include "invoices/partials/status_badge.html" with status=q.status %}
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">{% trans "No hay cotizaciones." %}</td></tr>
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">{% trans "No hay cotizaciones." %}</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>

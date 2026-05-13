@@ -2,36 +2,33 @@
 {% if invoices %}
   {% for inv in invoices %}
   <tr>
-    {# Hidden fields sent on form submit #}
     <input type="hidden" name="alloc_invoices" value="{{ inv.pk }}">
     <td>
       <a href="{% url 'invoices:invoice_detail' inv.pk %}"
-         class="text-decoration-none font-monospace small" target="_blank">
+         class="text-decoration-none font-monospace small" style="color:#1e2130" target="_blank">
         {{ inv.display_number }}
       </a>
     </td>
-    <td class="small text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
-    <td class="small text-nowrap">{{ inv.due_date|date:"d/m/Y"|default:"—" }}</td>
+    <td class="small text-nowrap text-muted">{{ inv.issue_date|date:"d/m/Y" }}</td>
+    <td class="small text-nowrap text-muted">{{ inv.due_date|date:"d/m/Y"|default:"—" }}</td>
     <td class="text-center">
       {% with bucket=inv.aging_bucket %}
         {% if bucket == "current" %}
-          <span class="badge bg-success">{% trans "Corriente" %}</span>
+          <span class="badge-soft badge-paid">{% trans "Corriente" %}</span>
         {% elif bucket == "1_30" %}
-          <span class="badge bg-warning text-dark">{% trans "1–30 días" %}</span>
+          <span class="badge-soft badge-default">{% trans "1–30 días" %}</span>
         {% elif bucket == "31_60" %}
-          <span class="badge text-white" style="background-color:#fd7e14">{% trans "31–60 días" %}</span>
+          <span class="badge-soft badge-sent">{% trans "31–60 días" %}</span>
         {% elif bucket == "61_90" %}
-          <span class="badge bg-danger">{% trans "61–90 días" %}</span>
+          <span class="badge-soft badge-overdue">{% trans "61–90 días" %}</span>
         {% else %}
-          <span class="badge bg-dark">{% trans "+90 días" %}</span>
+          <span class="badge-soft badge-overdue">{% trans "+90 días" %}</span>
         {% endif %}
       {% endwith %}
     </td>
-    <td class="text-end small">{{ inv.total|floatformat:2|intcomma }}</td>
-    <td class="text-end small fw-semibold
-        {% if inv.aging_bucket == 'current' %}text-body
-        {% elif inv.aging_bucket == '1_30' %}text-warning
-        {% else %}text-danger{% endif %}">
+    <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
+    <td class="text-end small fw-semibold font-monospace"
+        style="color:{% if inv.aging_bucket == 'current' %}#16a34a{% elif inv.aging_bucket == '1_30' %}#856404{% else %}#dc2626{% endif %}">
       {{ inv.line_balance|floatformat:2|intcomma }}
     </td>
     <td class="text-end">
@@ -50,7 +47,7 @@
 {% else %}
   <tr>
     <td colspan="7" class="text-center text-muted py-3 small">
-      <i class="bi bi-check-circle text-success me-1"></i>
+      <i class="bi bi-check-circle me-1" style="color:#16a34a"></i>
       {% trans "Este cliente no tiene facturas pendientes de pago." %}
     </td>
   </tr>

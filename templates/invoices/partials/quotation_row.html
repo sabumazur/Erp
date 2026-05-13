@@ -3,7 +3,8 @@
 <tr>
 
   <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'invoices:quotation_detail' row.pk %}" class="text-decoration-none text-reset">
+    <a href="{% url 'invoices:quotation_detail' row.pk %}"
+       class="text-decoration-none" style="color:#1e2130">
       {{ row.display_number }}
     </a>
     <span class="dt-hover-actions">
@@ -42,8 +43,8 @@
 
   <td class="text-end" style="width:60px">
     <a href="{% url 'invoices:quotation_detail' row.pk %}"
-       class="btn btn-outline-secondary btn-sm py-0 px-1 dt-hover-actions"
-       title="{% trans 'Ver' %}" style="font-size:0.75rem">
+       class="btn btn-outline-secondary btn-sm py-0 px-1"
+       title="{% trans 'Ver' %}">
       <i class="bi bi-arrow-right"></i>
     </a>
   </td>

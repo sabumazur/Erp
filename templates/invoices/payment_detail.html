@@ -1,15 +1,32 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{% trans "Pago" %} — {{ payment.date|date:"d/m/Y" }}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 38%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div class="rpt-header">
   <div>
-    <h1 class="h3 mb-0">{% trans "Recibo de pago" %}</h1>
-    <span class="text-muted small">{{ payment.date|date:"d/m/Y" }} · {{ payment.customer.name }}</span>
+    <h4 class="rpt-header-title">{% trans "Recibo de pago" %}</h4>
+    <p class="rpt-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -25,118 +42,164 @@
 </div>
 
 <div class="row g-3">
-  {# ── Header info ──────────────────────────────────────────────────────────── #}
-  <div class="col-lg-8">
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Cliente" %}</p>
-            <p class="fw-semibold mb-0">
-              <a href="{% url 'invoices:customer_detail' payment.customer.pk %}"
-                 class="text-decoration-none">
-                {{ payment.customer.name }}
-              </a>
-            </p>
-            {% if payment.customer.rnc_cedula %}
-              <p class="text-muted small mb-0">{{ payment.customer.get_id_type_display }}: {{ payment.customer.rnc_cedula }}</p>
-            {% endif %}
-          </div>
-          <div class="col-sm-3">
-            <p class="text-muted small mb-0">{% trans "Fecha" %}</p>
-            <p class="fw-semibold mb-0">{{ payment.date|date:"d/m/Y" }}</p>
-          </div>
-          <div class="col-sm-3">
-            <p class="text-muted small mb-0">{% trans "Forma de pago" %}</p>
-            <span class="badge {% if payment.method == 'TRANSFER' %}bg-info text-dark{% else %}bg-secondary{% endif %} fs-6">
-              {{ payment.get_method_display }}
-            </span>
-          </div>
-          {% if payment.reference %}
-          <div class="col-sm-6">
-            <p class="text-muted small mb-0">{% trans "Referencia" %}</p>
-            <p class="fw-semibold font-monospace mb-0">{{ payment.reference }}</p>
-          </div>
-          {% endif %}
-          {% if payment.notes %}
-          <div class="col-12">
-            <p class="text-muted small mb-0">{% trans "Notas" %}</p>
-            <p class="small mb-0">{{ payment.notes }}</p>
-          </div>
-          {% endif %}
-        </div>
+
+  {# ── Left: Document ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
+
+    {# Amount hero #}
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value" style="color:#16a34a;font-size:2rem">
+        RD$&nbsp;{{ payment.amount|floatformat:2|intcomma }}
+      </div>
+      <div class="rpt-metric-label">
+        {% trans "Monto total" %} ·
+        {% if payment.method == 'TRANSFER' %}
+          <span class="badge-soft badge-sent">{{ payment.get_method_display }}</span>
+        {% elif payment.method == 'CHECK' %}
+          <span class="badge-soft badge-confirmed">{{ payment.get_method_display }}</span>
+        {% else %}
+          <span class="badge-soft badge-paid">{{ payment.get_method_display }}</span>
+        {% endif %}
       </div>
     </div>
 
-    {# ── Allocations ──────────────────────────────────────────────────────────── #}
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold small text-uppercase text-muted">
-        {% trans "Facturas cubiertas" %}
+    {# Meta info #}
+    <div class="rpt-table-wrap">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Cliente" %}</th>
+            <td>
+              <a href="{% url 'invoices:customer_detail' payment.customer.pk %}"
+                 class="fw-semibold text-decoration-none" style="color:#1e2130">
+                {{ payment.customer.name }}
+              </a>
+              {% if payment.customer.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ payment.customer.get_id_type_display }}: {{ payment.customer.rnc_cedula }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha" %}</th>
+            <td class="font-monospace">{{ payment.date|date:"d/m/Y" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Forma de pago" %}</th>
+            <td>{{ payment.get_method_display }}</td>
+          </tr>
+          {% if payment.reference %}
+          <tr>
+            <th class="detail-key">{% trans "Referencia" %}</th>
+            <td class="font-monospace">{{ payment.reference }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th class="detail-key">{% trans "Facturas cubiertas" %}</th>
+            <td>{{ payment.allocations.count }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Registrado" %}</th>
+            <td class="font-monospace">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {# Allocations table #}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Facturas aplicadas" %}
       </div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "NCF" %}</th>
-              <th>{% trans "Emisión" %}</th>
-              <th>{% trans "Vence" %}</th>
-              <th class="text-end">{% trans "Total factura" %}</th>
-              <th class="text-end">{% trans "Monto aplicado" %}</th>
-              <th class="text-center">{% trans "Estado" %}</th>
-            </tr>
-          </thead>
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "NCF" %}</th>
+            <th>{% trans "Emisión" %}</th>
+            <th>{% trans "Vence" %}</th>
+            <th class="text-end">{% trans "Total factura" %}</th>
+            <th class="text-end">{% trans "Monto aplicado" %}</th>
+            <th class="text-center">{% trans "Estado" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alloc in payment.allocations.all %}
+          <tr>
+            <td>
+              <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
+                 class="text-decoration-none font-monospace small" style="color:#1e2130">
+                {{ alloc.invoice.display_number }}
+              </a>
+            </td>
+            <td class="small text-nowrap text-muted">{{ alloc.invoice.issue_date|date:"d/m/Y" }}</td>
+            <td class="small text-nowrap text-muted">{{ alloc.invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
+            <td class="text-end small font-monospace">{{ alloc.invoice.total|floatformat:2|intcomma }}</td>
+            <td class="text-end small fw-semibold font-monospace" style="color:#16a34a">
+              {{ alloc.amount|floatformat:2|intcomma }}
+            </td>
+            <td class="text-center">
+              {% include "invoices/partials/status_badge.html" with status=alloc.invoice.status %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4 small">
+              {% trans "Sin aplicaciones registradas." %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="text-end">{% trans "Total pagado" %}</td>
+            <td class="text-end font-monospace" style="color:#16a34a">{{ payment.amount|floatformat:2|intcomma }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% if payment.notes %}
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Notas" %}
+      </div>
+      <div class="p-3 small text-muted">{{ payment.notes }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Sidebar ── #}
+  <div class="col-lg-4">
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Resumen" %}
+      </div>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
           <tbody>
-            {% for alloc in payment.allocations.all %}
             <tr>
-              <td>
-                <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
-                   class="text-decoration-none font-monospace small">
-                  {{ alloc.invoice.display_number }}
-                </a>
-              </td>
-              <td class="small text-nowrap">{{ alloc.invoice.issue_date|date:"d/m/Y" }}</td>
-              <td class="small text-nowrap">{{ alloc.invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
-              <td class="text-end small">{{ alloc.invoice.total|floatformat:2 }}</td>
-              <td class="text-end small fw-semibold text-success">{{ alloc.amount|floatformat:2 }}</td>
-              <td class="text-center">
-                {% include "invoices/partials/status_badge.html" with status=alloc.invoice.status %}
-              </td>
+              <td class="text-muted">{% trans "Cliente" %}</td>
+              <td class="text-end fw-semibold">{{ payment.customer.name }}</td>
             </tr>
-            {% empty %}
             <tr>
-              <td colspan="6" class="text-center text-muted py-3">{% trans "Sin aplicaciones registradas." %}</td>
+              <td class="text-muted">{% trans "Facturas" %}</td>
+              <td class="text-end">{{ payment.allocations.count }}</td>
             </tr>
-            {% endfor %}
+            <tr>
+              <td class="text-muted">{% trans "Método" %}</td>
+              <td class="text-end">{{ payment.get_method_display }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Organización" %}</td>
+              <td class="text-end small">{{ payment.organization.name }}</td>
+            </tr>
           </tbody>
-          <tfoot class="table-light">
-            <tr>
-              <td colspan="4" class="text-end fw-bold">{% trans "Total pagado" %}</td>
-              <td class="text-end fw-bold text-success fs-6">{{ payment.amount|floatformat:2 }}</td>
-              <td></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </div>
   </div>
 
-  {# ── Sidebar ──────────────────────────────────────────────────────────────── #}
-  <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="card-title text-muted text-uppercase small">{% trans "Resumen" %}</h6>
-        <dl class="row small mb-0">
-          <dt class="col-6 text-muted">{% trans "Monto total" %}</dt>
-          <dd class="col-6 fw-bold text-success fs-5">{{ payment.amount|floatformat:2 }}</dd>
-          <dt class="col-6 text-muted">{% trans "Facturas" %}</dt>
-          <dd class="col-6">{{ payment.allocations.count }}</dd>
-          <dt class="col-6 text-muted">{% trans "Creado" %}</dt>
-          <dd class="col-6">{{ payment.created_at|date:"d/m/Y H:i" }}</dd>
-          <dt class="col-6 text-muted">{% trans "Organización" %}</dt>
-          <dd class="col-6">{{ payment.organization.name }}</dd>
-        </dl>
-      </div>
-    </div>
-  </div>
 </div>
+
 {% endblock %}

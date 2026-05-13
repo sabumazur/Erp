@@ -21,7 +21,11 @@ from .factories import (
 
 def make_confirmed_invoice(organization, customer, total=Decimal("1000.00")):
     """Return a CONFIRMED invoice with a single line item totalling `total`."""
-    seq = NCFSequenceFactory(organization=organization, ncf_type=31, current_seq=0)
+    from apps.invoices.models import NCFSequence as _NCFSeq
+    _NCFSeq.objects.get_or_create(
+        organization=organization, ncf_type=31, is_active=True,
+        defaults={"current_seq": 0, "max_seq": 9999999999, "series": "E"},
+    )
     inv = InvoiceFactory(
         organization=organization,
         customer=customer,

@@ -1,141 +1,106 @@
 {% load i18n humanize %}
-<div class="card border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
+<div class="rpt-table-wrap">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
 
-        <thead style="background:#F8F9FA;border-bottom:1px solid rgba(0,0,0,.08)">
-          <tr>
-            <th class="ps-4 py-3 fw-semibold text-muted"
-                style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap">
-              {% trans "Tipo de comprobante" %}
-            </th>
-            <th class="py-3 fw-semibold text-muted"
-                style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap">
-              {% trans "Próximo NCF" %}
-            </th>
-            <th class="py-3 fw-semibold text-muted"
-                style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;min-width:180px">
-              {% trans "Capacidad" %}
-            </th>
-            <th class="py-3 fw-semibold text-muted text-center"
-                style="font-size:.7rem;letter-spacing:.04em;text-transform:uppercase">
-              {% trans "Estado" %}
-            </th>
-            <th class="pe-4 py-3"></th>
-          </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th>{% trans "Tipo de comprobante" %}</th>
+          <th>{% trans "Próximo NCF" %}</th>
+          <th style="min-width:180px">{% trans "Capacidad" %}</th>
+          <th class="text-center">{% trans "Estado" %}</th>
+          <th></th>
+        </tr>
+      </thead>
 
-        <tbody>
-          {% for seq in sequences %}
-          <tr style="border-bottom:0.5px solid rgba(0,0,0,.06)">
+      <tbody>
+        {% for seq in sequences %}
+        <tr>
 
-            {# ── Tipo + Serie ── #}
-            <td class="ps-4 py-3">
-              {% if seq.series == 'B' %}
-                <span class="me-2 d-inline-flex align-items-center px-2 py-1 rounded fw-semibold"
-                      style="font-size:.72rem;background:#E6F1FB;color:#185FA5;letter-spacing:.02em">B</span>
+          <td class="py-3">
+            {% if seq.series == 'B' %}
+              <span class="badge-soft badge-confirmed me-1">B</span>
+            {% else %}
+              <span class="badge-soft badge-sent me-1">E</span>
+            {% endif %}
+            {{ seq.get_ncf_type_display }}
+          </td>
+
+          <td class="py-3">
+            <code class="font-monospace fw-semibold px-2 py-1 rounded"
+                  style="font-size:.8rem;background:#f9fafb;border:1px solid #e5e7eb">
+              {{ seq.preview_next }}
+            </code>
+          </td>
+
+          <td class="py-3">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              {% if seq.remaining == 0 %}
+                <span class="fw-semibold" style="font-size:.8rem;color:#dc2626">{% trans "Agotada" %}</span>
+              {% elif seq.remaining < 100 %}
+                <span class="fw-semibold" style="font-size:.8rem;color:#dc2626">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+              {% elif seq.remaining < 500 %}
+                <span class="fw-semibold" style="font-size:.8rem;color:#856404">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+              {% elif seq.current_seq == 0 %}
+                <span style="font-size:.8rem;color:#6b7280">{% trans "Sin usar" %}</span>
               {% else %}
-                <span class="me-2 d-inline-flex align-items-center px-2 py-1 rounded fw-semibold"
-                      style="font-size:.72rem;background:#E1F5EE;color:#0F6E56;letter-spacing:.02em">E</span>
+                <span class="fw-semibold" style="font-size:.8rem;color:#16a34a">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% endif %}
-              <span style="font-size:.875rem">{{ seq.get_ncf_type_display }}</span>
-            </td>
-
-            {# ── Próximo NCF ── #}
-            <td class="py-3">
-              <code class="px-2 py-1 rounded font-monospace fw-semibold"
-                    style="font-size:.8rem;background:#F8F9FA;color:inherit;border:0.5px solid rgba(0,0,0,.1)">
-                {{ seq.preview_next }}
-              </code>
-            </td>
-
-            {# ── Capacity bar ── #}
-            <td class="py-3">
-              <div class="d-flex justify-content-between align-items-baseline mb-1">
-                {% if seq.remaining == 0 %}
-                  <span class="fw-semibold" style="font-size:.8rem;color:#842029">{% trans "Agotada" %}</span>
-                {% elif seq.remaining < 100 %}
-                  <span class="fw-semibold" style="font-size:.8rem;color:#842029">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
-                {% elif seq.remaining < 500 %}
-                  <span class="fw-semibold" style="font-size:.8rem;color:#856404">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
-                {% elif seq.current_seq == 0 %}
-                  <span style="font-size:.8rem;color:#6c757d">{% trans "Sin usar" %}</span>
-                {% else %}
-                  <span class="fw-semibold" style="font-size:.8rem;color:#0A6640">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
-                {% endif %}
-              </div>
-              <div class="rounded" style="height:4px;background:rgba(0,0,0,.08);overflow:hidden">
-                {% if seq.remaining < 100 %}
-                  <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#E24B4A"></div>
-                {% elif seq.remaining < 500 %}
-                  <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#BA7517"></div>
-                {% else %}
-                  <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#1D9E75"></div>
-                {% endif %}
-              </div>
-              <div class="mt-1 text-muted" style="font-size:.72rem">
-                {{ seq.current_seq|intcomma }} {% trans "usados de" %} {{ seq.max_seq|intcomma }}
-              </div>
-            </td>
-
-            {# ── Status dot ── #}
-            <td class="py-3 text-center">
-              {% if seq.is_active %}
-                <span class="d-inline-flex align-items-center gap-1"
-                      style="font-size:.8rem;font-weight:500;color:#0A6640">
-                  <span style="width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0;display:inline-block"></span>
-                  {% trans "Activa" %}
-                </span>
+            </div>
+            <div class="rounded" style="height:4px;background:rgba(0,0,0,.08);overflow:hidden">
+              {% if seq.remaining < 100 %}
+                <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#dc2626"></div>
+              {% elif seq.remaining < 500 %}
+                <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#d97706"></div>
               {% else %}
-                <span class="d-inline-flex align-items-center gap-1"
-                      style="font-size:.8rem;color:#6c757d">
-                  <span style="width:8px;height:8px;border-radius:50%;background:#adb5bd;flex-shrink:0;display:inline-block"></span>
-                  {% trans "Inactiva" %}
-                </span>
+                <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#16a34a"></div>
               {% endif %}
-            </td>
+            </div>
+            <div class="mt-1 text-muted" style="font-size:.72rem">
+              {{ seq.current_seq|intcomma }} {% trans "usados de" %} {{ seq.max_seq|intcomma }}
+            </div>
+          </td>
 
-            {# ── Actions ── #}
-            <td class="pe-4 py-3 text-end" style="white-space:nowrap">
-              <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
-                 class="d-inline-flex align-items-center justify-content-center rounded border text-muted"
-                 style="width:30px;height:30px;border-color:rgba(0,0,0,.12)!important;background:transparent"
-                 title="{% trans 'Editar' %}">
-                <i class="bi bi-pencil" style="font-size:.8rem"></i>
-              </a>
-              {% if seq.current_seq == 0 %}
-              <form method="post" action="{% url 'invoices:ncf_sequence_delete' seq.pk %}"
-                    class="d-inline ms-1">
-                {% csrf_token %}
-                <button type="button"
-                        class="d-inline-flex align-items-center justify-content-center rounded border"
-                        style="width:30px;height:30px;background:transparent;border-color:rgba(226,75,74,.3)!important;color:#E24B4A"
-                        title="{% trans 'Eliminar' %}"
-                        onclick="confirmDeleteNCF(this)">
-                  <i class="bi bi-trash" style="font-size:.8rem"></i>
-                </button>
-              </form>
-              {% endif %}
-            </td>
+          <td class="py-3 text-center">
+            {% if seq.is_active %}
+              <span class="badge-soft badge-paid">{% trans "Activa" %}</span>
+            {% else %}
+              <span class="badge-soft badge-default">{% trans "Inactiva" %}</span>
+            {% endif %}
+          </td>
 
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="py-5 text-center">
-              <div class="d-flex flex-column align-items-center gap-2">
-                <div style="width:48px;height:48px;border-radius:12px;background:#F8F9FA;display:flex;align-items:center;justify-content:center">
-                  <i class="bi bi-upc-scan" style="font-size:1.3rem;color:#adb5bd"></i>
-                </div>
-                <p class="fw-semibold mb-0" style="font-size:.9rem">{% trans "Sin secuencias registradas" %}</p>
-                <p class="text-muted mb-0" style="font-size:.82rem">{% trans "Crea tu primera secuencia NCF con el botón de arriba." %}</p>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
+          <td class="py-3 text-end" style="white-space:nowrap">
+            <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
+               class="btn btn-outline-secondary btn-sm"
+               title="{% trans 'Editar' %}">
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% if seq.current_seq == 0 %}
+            <form method="post" action="{% url 'invoices:ncf_sequence_delete' seq.pk %}"
+                  class="d-inline ms-1">
+              {% csrf_token %}
+              <button type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      title="{% trans 'Eliminar' %}"
+                      onclick="confirmDeleteNCF(this)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
 
-      </table>
-    </div>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="py-5 text-center text-muted">
+            <i class="bi bi-upc-scan d-block mb-2" style="font-size:1.5rem;color:#d1d5db"></i>
+            <div class="fw-semibold mb-1" style="font-size:.9rem;color:#374151">{% trans "Sin secuencias registradas" %}</div>
+            <div style="font-size:.82rem">{% trans "Crea tu primera secuencia NCF con el botón de arriba." %}</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
   </div>
 </div>

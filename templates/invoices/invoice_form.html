@@ -3,41 +3,49 @@
 
 {% block title %}{% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}{% endblock %}
 
-{% block content %}
-<div class="module-invoice">
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
 
-<div class="module-page-header mb-4">
-  <div class="module-page-title">
-    <span class="module-eyebrow">{% trans "Factura" %}</span>
-    <h1>{% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}</h1>
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">
+      {% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}
+    </h4>
+    <p class="rpt-header-sub">{% trans "Facturas" %}</p>
   </div>
-  <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-  </a>
+  <div class="rpt-header-actions">
+    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
 </div>
 
 <form method="post" id="invoice-form" x-data="invoiceForm()">
   {% csrf_token %}
 
-  <div class="card shadow-sm mb-3">
-    <div class="card-header">{% trans "Datos generales" %}</div>
-    <div class="card-body">
+  <div class="rpt-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      {% trans "Datos generales" %}
+    </div>
+    <div class="p-3">
       {% crispy form %}
     </div>
   </div>
 
-  <div class="card shadow-sm mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span>{% trans "Líneas de factura" %}</span>
-      <button type="button"
-              class="btn btn-outline-module-accent btn-sm"
+  <div class="rpt-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas de factura" %}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm"
               hx-get="{% url 'invoices:item_row' %}?form_index={{ formset.total_form_count }}"
               hx-target="#item-tbody"
               hx-swap="beforeend">
         <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
       </button>
     </div>
-    <div class="card-body p-0">
+    <div>
       {{ formset.management_form }}
       {% if formset.non_form_errors %}
         <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
@@ -46,7 +54,7 @@
       {% endif %}
       <div class="table-responsive">
         <table class="table table-sm mb-0">
-          <thead class="table-light">
+          <thead>
             <tr>
               <th style="width:44px"></th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
@@ -66,24 +74,24 @@
         </table>
       </div>
 
-      <div class="border-top p-3 bg-light">
+      <div class="border-top p-3" style="background:#f9fafb">
         <div class="row justify-content-end">
           <div class="col-md-4">
-            <table class="table table-sm mb-0">
+            <table class="table table-sm mb-0" style="font-size:.85rem">
               <tr>
-                <td class="text-muted small">{% trans "Subtotal" %}</td>
-                <td class="text-end fw-semibold font-monospace"><span id="grand-subtotal">0.00</span></td>
+                <td class="text-muted">{% trans "Subtotal" %}</td>
+                <td class="text-end font-monospace"><span id="grand-subtotal">0.00</span></td>
               </tr>
               <tr>
-                <td class="text-muted small">{% trans "ITBIS 18%" %}</td>
+                <td class="text-muted">{% trans "ITBIS 18%" %}</td>
                 <td class="text-end font-monospace"><span id="grand-itbis18">0.00</span></td>
               </tr>
               <tr>
-                <td class="text-muted small">{% trans "ITBIS 16%" %}</td>
+                <td class="text-muted">{% trans "ITBIS 16%" %}</td>
                 <td class="text-end font-monospace"><span id="grand-itbis16">0.00</span></td>
               </tr>
-              <tr>
-                <td style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">{% trans "Total" %}</td>
+              <tr style="border-top:2px solid #1e2130">
+                <td class="fw-bold">{% trans "Total" %}</td>
                 <td class="text-end font-monospace fw-bold fs-5"><span id="grand-total">0.00</span></td>
               </tr>
             </table>
@@ -94,7 +102,7 @@
   </div>
 
   <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-module-accent btn-sm">
+    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
     <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
@@ -106,37 +114,7 @@
 <script>
 window.ITEM_CATALOG      = {{ sale_items_json|safe }};
 window.CUSTOMER_DEFAULTS = {{ customer_defaults_json|safe }};
-
-document.addEventListener('DOMContentLoaded', function () {
-  var custSel = document.querySelector('[name="customer"]');
-  if (!custSel) return;
-
-  function applyCustomerDefaults(pk) {
-    var defaults = (window.CUSTOMER_DEFAULTS || {})[pk];
-    if (!defaults) return;
-
-    var condSel = document.querySelector('[name="payment_condition"]');
-    if (condSel && defaults.payment_condition) condSel.value = defaults.payment_condition;
-
-    var daysDue = defaults.days_due || 0;
-    if (daysDue > 0) {
-      var issueDateEl = document.querySelector('[name="issue_date"]');
-      var dueDateEl   = document.querySelector('[name="due_date"]');
-      if (issueDateEl && dueDateEl) {
-        var base = issueDateEl.value ? new Date(issueDateEl.value) : new Date();
-        base.setDate(base.getDate() + daysDue);
-        var yyyy = base.getFullYear();
-        var mm   = String(base.getMonth() + 1).padStart(2, '0');
-        var dd   = String(base.getDate()).padStart(2, '0');
-        dueDateEl.value = yyyy + '-' + mm + '-' + dd;
-      }
-    }
-  }
-
-  custSel.addEventListener('change', function () { applyCustomerDefaults(this.value); });
-});
 </script>
 {% include "invoices/partials/item_js.html" %}
 
-</div>{# /module-invoice #}
 {% endblock %}

@@ -69,39 +69,3 @@
   </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-function passwordChecker() {
-  return {
-    password: '',
-    confirm: '',
-    get rules() {
-      return {
-        length:    this.password.length >= 8,
-        hasLetter: /[a-zA-Z]/.test(this.password),
-        hasNumber: /\d/.test(this.password),
-        hasSymbol: /[^a-zA-Z0-9]/.test(this.password),
-        matches:   this.password === this.confirm && this.confirm.length > 0,
-      };
-    },
-    get strengthPct() {
-      const { length, hasLetter, hasNumber, hasSymbol } = this.rules;
-      const met = [length, hasLetter, hasNumber, hasSymbol].filter(Boolean).length;
-      return Math.round((met / 4) * 100);
-    },
-    get strengthColor() {
-      if (this.strengthPct <= 33) return 'bg-danger';
-      if (this.strengthPct <= 66) return 'bg-warning';
-      return 'bg-success';
-    },
-    init() {
-      const p1 = document.getElementById('id_password1');
-      const p2 = document.getElementById('id_password2');
-      if (p1) p1.addEventListener('input', e => this.password = e.target.value);
-      if (p2) p2.addEventListener('input', e => this.confirm  = e.target.value);
-    },
-  };
-}
-</script>
-{% endblock %}

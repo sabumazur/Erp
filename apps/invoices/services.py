@@ -590,7 +590,7 @@ class PaymentService:
             payment.allocations.select_related("invoice").values_list("invoice_id", flat=True)
         )
 
-        payment.delete()   # CASCADE deletes PaymentAllocation rows
+        payment.hard_delete()  # real SQL DELETE → CASCADE removes allocations
 
         # Re-open invoices whose coverage is now incomplete
         for inv_pk in affected:

@@ -1,4 +1,4 @@
-{% load i18n humanize %}<!DOCTYPE html>
+{% load i18n humanize static %}<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -66,7 +66,7 @@
     .print-btn:hover { background: #333; }
   </style>
 </head>
-<body>
+<body data-auto-print="true">
 
   <button class="print-btn no-print" onclick="window.print()">
     &#128438; {% trans "Imprimir" %}
@@ -217,8 +217,6 @@
     &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}
   </div>
 
-  <script>
-    window.addEventListener('load', function () { window.print(); });
-  </script>
+  <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

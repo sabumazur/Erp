@@ -3,16 +3,30 @@
 
 {% block title %}{{ invoice }}{% endblock %}
 
-{% block content %}
-<div class="module-invoice">
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 35%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
 
-{# ── Page header + actions ────────────────────────────────────── #}
-<div class="module-page-header mb-4">
-  <div class="module-page-title">
-    <span class="module-eyebrow">{% trans "Factura" %} · {{ invoice.get_ncf_type_display }}</span>
-    <h1>{{ invoice.encf|default:"Borrador" }}</h1>
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{{ invoice.encf|default:"Borrador" }}</h4>
+    <p class="rpt-header-sub">{% trans "Factura" %}{% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %} · {{ invoice.customer.name }}</p>
   </div>
-  <div class="doc-action-row">
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -25,7 +39,7 @@
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}', {icon:'warning', color:'#10b981', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-module-accent btn-sm">
+        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
@@ -39,19 +53,21 @@
     {% elif invoice.status == "CONFIRMED" %}
       <form method="post" action="{% url 'invoices:invoice_send' invoice.pk %}">
         {% csrf_token %}
-        <button class="btn btn-info btn-sm text-white">
+        <button class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-send me-1"></i>{% trans "Marcar enviada" %}
         </button>
       </form>
     {% endif %}
 
     {% if invoice.status in "CONFIRMED,SENT,OVERDUE" %}
-      <button class="btn btn-module-accent btn-sm" data-bs-toggle="modal" data-bs-target="#payModal">
+      <button class="btn btn-sm" style="background:#1e2130;color:#fff"
+              data-bs-toggle="modal" data-bs-target="#payModal">
         <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
       </button>
     {% endif %}
 
-    <a href="{% url 'invoices:invoice_print' invoice.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'invoices:invoice_print' invoice.pk %}" target="_blank"
+       class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
 
@@ -69,7 +85,7 @@
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
         {% csrf_token %}
-        <button class="btn btn-danger btn-sm">
+        <button class="btn btn-outline-danger btn-sm">
           <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
         </button>
       </form>
@@ -79,285 +95,276 @@
 
 <div class="row g-3">
 
-  {# ── Left: Document paper ─────────────────────────────────────── #}
+  {# ── Left: Document ── #}
   <div class="col-lg-8">
-    <div class="doc-paper mb-3">
 
-      {# Document header #}
-      <div class="doc-header">
-        <div>
-          <div class="doc-type-eyebrow">
-            {% trans "Factura" %}
-            {% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %}
-          </div>
-          <div class="doc-ref-number">{{ invoice.encf|default:"Borrador" }}</div>
-          <div class="text-muted mt-1" style="font-size:0.82rem">{{ invoice.customer.name }}</div>
-        </div>
-        <div class="text-end">
-          <div class="doc-stamp
-            {% if invoice.status == 'DRAFT' %}doc-stamp-draft
-            {% elif invoice.status == 'CONFIRMED' %}doc-stamp-confirmed
-            {% elif invoice.status == 'SENT' %}doc-stamp-sent
-            {% elif invoice.status == 'PAID' %}doc-stamp-paid
-            {% elif invoice.status == 'OVERDUE' %}doc-stamp-overdue
-            {% elif invoice.status == 'CANCELLED' %}doc-stamp-cancelled
-            {% endif %}">
-            {% if invoice.status == 'DRAFT' %}{% trans "Borrador" %}
-            {% elif invoice.status == 'CONFIRMED' %}{% trans "Confirmada" %}
-            {% elif invoice.status == 'SENT' %}{% trans "Enviada" %}
-            {% elif invoice.status == 'PAID' %}{% trans "Pagada" %}
-            {% elif invoice.status == 'OVERDUE' %}{% trans "Vencida" %}
-            {% elif invoice.status == 'CANCELLED' %}{% trans "Anulada" %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      {# Meta info #}
-      <div class="doc-meta-grid">
-        <div>
-          <div class="doc-meta-label">{% trans "Cliente" %}</div>
-          <div class="doc-meta-value">{{ invoice.customer.name }}</div>
-          {% if invoice.customer.rnc_cedula %}
-          <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">
-            {{ invoice.customer.get_id_type_display }}: {{ invoice.customer.rnc_cedula }}
-          </div>
+    {# Meta info #}
+    <div class="rpt-table-wrap mb-3">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Cliente" %}</th>
+            <td>
+              {{ invoice.customer.name }}
+              {% if invoice.customer.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ invoice.customer.get_id_type_display }}: {{ invoice.customer.rnc_cedula }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
+            <td class="font-monospace">{{ invoice.issue_date|date:"d/m/Y" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Vencimiento" %}</th>
+            <td class="font-monospace {% if invoice.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
+              {{ invoice.due_date|date:"d/m/Y"|default:"—" }}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Condición de pago" %}</th>
+            <td>{{ invoice.get_payment_condition_display }}</td>
+          </tr>
+          {% if invoice.encf_modified %}
+          <tr>
+            <th class="detail-key">{% trans "NCF afectado" %}</th>
+            <td>
+              <a href="{% url 'invoices:invoice_detail' invoice.encf_modified.pk %}"
+                 class="font-monospace text-decoration-none" style="color:#1e2130">
+                {{ invoice.encf_modified.encf }}
+              </a>
+            </td>
+          </tr>
           {% endif %}
-        </div>
-        <div>
-          <div class="doc-meta-label">{% trans "Fecha de emisión" %}</div>
-          <div class="doc-meta-value">{{ invoice.issue_date|date:"d/m/Y" }}</div>
-        </div>
-        <div>
-          <div class="doc-meta-label">{% trans "Vencimiento" %}</div>
-          <div class="doc-meta-value {% if invoice.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
-            {{ invoice.due_date|date:"d/m/Y"|default:"—" }}
-          </div>
-        </div>
-        <div>
-          <div class="doc-meta-label">{% trans "Condición de pago" %}</div>
-          <div class="doc-meta-value">{{ invoice.get_payment_condition_display }}</div>
-        </div>
-        {% if invoice.encf_modified %}
-        <div>
-          <div class="doc-meta-label">{% trans "NCF afectado" %}</div>
-          <div class="doc-meta-value">
-            <a href="{% url 'invoices:invoice_detail' invoice.encf_modified.pk %}"
-               class="font-monospace text-decoration-none" style="color:var(--module-accent)">
-              {{ invoice.encf_modified.encf }}
-            </a>
-          </div>
-        </div>
-        {% endif %}
-      </div>
+        </tbody>
+      </table>
+    </div>
 
-      {# Items table #}
-      <div class="doc-items-table">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th>{% trans "Descripción" %}</th>
-              <th class="text-end">{% trans "Cant." %}</th>
-              <th class="text-end">{% trans "P. Unit." %}</th>
-              <th class="text-center">{% trans "ITBIS" %}</th>
-              <th class="text-end">{% trans "Subtotal" %}</th>
-              <th class="text-end">{% trans "Total" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in items %}
-            <tr>
-              <td>{{ item.description }}</td>
-              <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
-              <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
-              <td class="text-center">
-                <span class="badge status-badge {% if item.itbis_rate == 'RATE_18' %}bg-warning text-dark{% elif item.itbis_rate == 'RATE_16' %}bg-secondary{% else %}bg-light text-dark border{% endif %}">
-                  {{ item.get_itbis_rate_display }}
-                </span>
-              </td>
-              <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
-              <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      {# Totals #}
-      <div class="doc-totals-block">
-        <div class="doc-totals-inner">
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "Subtotal" %}</span>
-            <span class="total-value font-monospace">{{ invoice.subtotal|floatformat:2|intcomma }}</span>
-          </div>
+    {# Items table #}
+    <div class="rpt-table-wrap mb-3">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Descripción" %}</th>
+            <th class="text-end">{% trans "Cant." %}</th>
+            <th class="text-end">{% trans "P. Unit." %}</th>
+            <th class="text-center">{% trans "ITBIS" %}</th>
+            <th class="text-end">{% trans "Subtotal" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ item.description }}</td>
+            <td class="text-end font-monospace">{{ item.quantity|floatformat:"-4" }}</td>
+            <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
+            <td class="text-center">
+              {% if item.itbis_rate == 'RATE_18' %}
+                <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
+              {% elif item.itbis_rate == 'RATE_16' %}
+                <span class="badge-soft badge-confirmed">{{ item.get_itbis_rate_display }}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "Subtotal" %}</td>
+            <td class="text-end font-monospace">{{ invoice.subtotal|floatformat:2|intcomma }}</td>
+          </tr>
           {% if invoice.itbis_18 %}
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "ITBIS 18%" %}</span>
-            <span class="total-value font-monospace">{{ invoice.itbis_18|floatformat:2|intcomma }}</span>
-          </div>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 18%" %}</td>
+            <td class="text-end font-monospace">{{ invoice.itbis_18|floatformat:2|intcomma }}</td>
+          </tr>
           {% endif %}
           {% if invoice.itbis_16 %}
-          <div class="doc-total-line">
-            <span class="total-label">{% trans "ITBIS 16%" %}</span>
-            <span class="total-value font-monospace">{{ invoice.itbis_16|floatformat:2|intcomma }}</span>
-          </div>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 16%" %}</td>
+            <td class="text-end font-monospace">{{ invoice.itbis_16|floatformat:2|intcomma }}</td>
+          </tr>
           {% endif %}
-          <div class="doc-total-line grand-total">
-            <span class="total-label">{% trans "Total" %}</span>
-            <span class="total-value">{{ invoice.total|floatformat:2|intcomma }}</span>
-          </div>
-        </div>
-      </div>
+          <tr>
+            <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
+            <td class="text-end font-monospace fw-bold">{{ invoice.total|floatformat:2|intcomma }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
 
-      {% if invoice.notes or invoice.terms %}
-      <div class="doc-notes-section">
-        {% if invoice.notes %}
-        <div class="doc-notes-label">{% trans "Notas" %}</div>
-        <p class="small mb-2">{{ invoice.notes }}</p>
-        {% endif %}
-        {% if invoice.terms %}
-        <div class="doc-notes-label mt-2">{% trans "Términos y condiciones" %}</div>
-        <p class="small mb-0">{{ invoice.terms }}</p>
-        {% endif %}
+    {% if invoice.notes or invoice.terms %}
+    <div class="rpt-table-wrap mb-3">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Notas y condiciones" %}
       </div>
-      {% endif %}
-
-    </div>{# /doc-paper #}
+      <div class="p-3 small text-muted">
+        {% if invoice.notes %}<p class="mb-2">{{ invoice.notes }}</p>{% endif %}
+        {% if invoice.terms %}<p class="mb-0">{{ invoice.terms }}</p>{% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     {# Consolidated sale orders #}
     {% if consolidated_orders %}
-    <div class="card shadow-sm mb-3">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-boxes" style="color:var(--module-accent)"></i>
+    <div class="rpt-table-wrap mb-3">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;display:flex;align-items:center;gap:8px">
+        <i class="bi bi-boxes"></i>
         {% trans "Órdenes de venta consolidadas" %}
-        <span class="badge bg-secondary ms-1">{{ consolidated_orders|length }}</span>
+        <span class="badge-soft badge-default ms-1">{{ consolidated_orders|length }}</span>
       </div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "Número" %}</th>
-              <th>{% trans "Fecha de entrega" %}</th>
-              <th>{% trans "Recibido por" %}</th>
-              <th class="text-end">{% trans "Total" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for o in consolidated_orders %}
-            <tr>
-              <td>
-                <a href="{% url 'invoices:sale_order_detail' o.pk %}" class="font-monospace text-decoration-none">
-                  {{ o.doc_number|default:"—" }}
-                </a>
-              </td>
-              <td>{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
-              <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
-              <td class="text-end fw-semibold font-monospace">{{ o.total|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Número" %}</th>
+            <th>{% trans "Fecha de entrega" %}</th>
+            <th>{% trans "Recibido por" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in consolidated_orders %}
+          <tr>
+            <td>
+              <a href="{% url 'invoices:sale_order_detail' o.pk %}"
+                 class="font-monospace text-decoration-none" style="color:#1e2130">
+                {{ o.doc_number|default:"—" }}
+              </a>
+            </td>
+            <td class="small text-muted">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+            <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
+            <td class="text-end fw-semibold font-monospace">{{ o.total|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
     {% endif %}
 
     {# Payments applied #}
     {% if allocations %}
-    <div class="card shadow-sm">
-      <div class="card-header">{% trans "Pagos aplicados" %}</div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>{% trans "Fecha" %}</th>
-              <th>{% trans "Método" %}</th>
-              <th>{% trans "Referencia" %}</th>
-              <th class="text-end">{% trans "Monto aplicado" %}</th>
-            </tr>
-          </thead>
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Pagos aplicados" %}
+      </div>
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Fecha" %}</th>
+            <th>{% trans "Método" %}</th>
+            <th>{% trans "Referencia" %}</th>
+            <th class="text-end">{% trans "Monto aplicado" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alloc in allocations %}
+          <tr>
+            <td class="small text-muted">{{ alloc.payment.date|date:"d/m/Y" }}</td>
+            <td>{{ alloc.payment.get_method_display }}</td>
+            <td class="text-muted small">{{ alloc.payment.reference|default:"—" }}</td>
+            <td class="text-end fw-semibold font-monospace" style="color:#16a34a">
+              {{ alloc.amount|floatformat:2|intcomma }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Right: Status sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <div class="rpt-metric-card">
+      <div class="rpt-metric-value" style="color:#16a34a">{{ invoice.total|floatformat:2|intcomma }}</div>
+      <div class="rpt-metric-label">{% trans "Total" %} {{ invoice.currency }}</div>
+    </div>
+
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Estado del documento" %}
+      </div>
+      <div class="p-3">
+        <div class="mb-3">
+          {% include "invoices/partials/status_badge.html" with status=invoice.status %}
+        </div>
+        <table class="table table-sm mb-0" style="font-size:.82rem">
           <tbody>
-            {% for alloc in allocations %}
             <tr>
-              <td>{{ alloc.payment.date|date:"d/m/Y" }}</td>
-              <td>{{ alloc.payment.get_method_display }}</td>
-              <td class="text-muted">{{ alloc.payment.reference|default:"—" }}</td>
-              <td class="text-end fw-semibold font-monospace" style="color:var(--module-accent)">
-                {{ alloc.amount|floatformat:2|intcomma }}
-              </td>
+              <td class="text-muted">{% trans "e-NCF" %}</td>
+              <td class="text-end font-monospace fw-semibold">{{ invoice.encf|default:"—" }}</td>
             </tr>
-            {% endfor %}
+            <tr>
+              <td class="text-muted">{% trans "Estado DGII" %}</td>
+              <td class="text-end">{{ invoice.get_dgii_status_display }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Creada" %}</td>
+              <td class="text-end font-monospace">{{ invoice.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Actualizada" %}</td>
+              <td class="text-end font-monospace">{{ invoice.updated_at|date:"d/m/Y H:i" }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
-    {% endif %}
 
-  </div>{# /col-lg-8 #}
-
-  {# ── Right: Status + Meta + Org ───────────────────────────────── #}
-  <div class="col-lg-4">
-
-    <div class="doc-status-card mb-3">
-      <div class="doc-status-card-header">{% trans "Estado del documento" %}</div>
-      <div class="doc-status-card-body">
-        <div class="mb-3">
-          {% if invoice.status == "DRAFT" %}<span class="badge bg-secondary status-badge">{% trans "Borrador" %}</span>
-          {% elif invoice.status == "CONFIRMED" %}<span class="badge bg-primary status-badge">{% trans "Confirmada" %}</span>
-          {% elif invoice.status == "SENT" %}<span class="badge bg-info text-dark status-badge">{% trans "Enviada" %}</span>
-          {% elif invoice.status == "PAID" %}<span class="badge status-badge" style="background-color:var(--module-accent);color:#fff">{% trans "Pagada" %}</span>
-          {% elif invoice.status == "OVERDUE" %}<span class="badge bg-danger status-badge">{% trans "Vencida" %}</span>
-          {% elif invoice.status == "CANCELLED" %}<span class="badge bg-dark status-badge">{% trans "Anulada" %}</span>
-          {% endif %}
-        </div>
-        <hr class="my-2" style="border-color:#f1f3f7">
-        <dl class="row small mb-0">
-          <dt class="col-6 text-muted">{% trans "e-NCF" %}</dt>
-          <dd class="col-6 font-monospace fw-semibold">{{ invoice.encf|default:"—" }}</dd>
-          <dt class="col-6 text-muted">{% trans "Estado DGII" %}</dt>
-          <dd class="col-6">{{ invoice.get_dgii_status_display }}</dd>
-          <dt class="col-6 text-muted">{% trans "Creada" %}</dt>
-          <dd class="col-6">{{ invoice.created_at|date:"d/m/Y H:i" }}</dd>
-          <dt class="col-6 text-muted">{% trans "Actualizada" %}</dt>
-          <dd class="col-6">{{ invoice.updated_at|date:"d/m/Y H:i" }}</dd>
-        </dl>
+    <div class="rpt-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Emisor" %}
       </div>
-    </div>
-
-    <div class="doc-status-card">
-      <div class="doc-status-card-header">{% trans "Emisor" %}</div>
-      <div class="doc-status-card-body">
-        <dl class="row small mb-0">
-          <dt class="col-5 text-muted">{% trans "Razón social" %}</dt>
-          <dd class="col-7">{{ invoice.organization.name }}</dd>
-          <dt class="col-5 text-muted">RNC</dt>
-          <dd class="col-7 font-monospace">{{ invoice.organization.tax_id|default:"—" }}</dd>
-          <dt class="col-5 text-muted">{% trans "Dirección" %}</dt>
-          <dd class="col-7">{{ invoice.organization.address|default:"—" }}</dd>
-        </dl>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Razón social" %}</td>
+              <td class="text-end">{{ invoice.organization.name }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">RNC</td>
+              <td class="text-end font-monospace">{{ invoice.organization.tax_id|default:"—" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Dirección" %}</td>
+              <td class="text-end small">{{ invoice.organization.address|default:"—" }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
   </div>
 
-</div>{# /row #}
+</div>
 
-{# ── Pay modal ────────────────────────────────────────────────── #}
+{# Pay modal #}
 {% if invoice.status in "CONFIRMED,SENT,OVERDUE" %}
 <div class="modal fade" id="payModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
       <form method="post" action="{% url 'invoices:invoice_pay' invoice.pk %}">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">{% trans "Registrar pago" %}</h5>
+        <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+          <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
+            {% trans "Registrar pago" %}
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           {% crispy payment_form %}
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-module-accent">
+        <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+          <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
             <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
           </button>
         </div>
@@ -367,5 +374,4 @@
 </div>
 {% endif %}
 
-</div>{# /module-invoice #}
 {% endblock %}

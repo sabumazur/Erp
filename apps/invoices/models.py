@@ -181,6 +181,13 @@ class Customer(ERPBaseModel):
         if self.rnc_cedula:
             validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
 
+    def delete(self, *args, **kwargs):
+        if self.invoices.exists() or self.payments.exists():
+            raise ValueError(
+                f"No se puede eliminar «{self.name}» porque tiene documentos o pagos asociados."
+            )
+        return super().delete(*args, **kwargs)
+
 
 # ── Customer Department ───────────────────────────────────────────────────────
 
@@ -293,7 +300,7 @@ class NCFSequence(models.Model):
     current_seq = models.PositiveIntegerField(
         default=0, verbose_name=_("secuencia actual")
     )
-    max_seq = models.PositiveIntegerField(
+    max_seq = models.BigIntegerField(
         default=99999999, verbose_name=_("secuencia máxima")
     )
     is_active = models.BooleanField(default=True, verbose_name=_("activa"))
@@ -1055,6 +1062,11 @@ class Payment(ERPBaseModel):
     @property
     def unallocated(self) -> Decimal:
         return self.amount - self.allocated_total
+
+    def delete(self, *args, **kwargs):
+        raise ValueError(
+            "Use PaymentService.delete() para eliminar pagos y revertir sus efectos."
+        )
 
 
 # ── PaymentAllocation ─────────────────────────────────────────────────────────

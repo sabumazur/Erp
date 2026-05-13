@@ -570,6 +570,27 @@ code,
   --module-accent-border: rgba(16, 185, 129, 0.22);
 }
 
+.module-payment {
+  --module-accent:        #0891b2;
+  --module-accent-dark:   #0e7490;
+  --module-accent-subtle: rgba(8, 145, 178, 0.07);
+  --module-accent-border: rgba(8, 145, 178, 0.22);
+}
+
+.module-customer {
+  --module-accent:        #7c3aed;
+  --module-accent-dark:   #6d28d9;
+  --module-accent-subtle: rgba(124, 58, 237, 0.07);
+  --module-accent-border: rgba(124, 58, 237, 0.22);
+}
+
+.module-item {
+  --module-accent:        #ea580c;
+  --module-accent-dark:   #c2410c;
+  --module-accent-subtle: rgba(234, 88, 12, 0.07);
+  --module-accent-border: rgba(234, 88, 12, 0.22);
+}
+
 /* ── Module page header ─────────────────────────────────────── */
 
 .module-page-header {

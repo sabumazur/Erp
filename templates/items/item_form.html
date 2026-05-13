@@ -7,12 +7,22 @@
 
 {% block title %}{% trans "Editar artículo" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Editar artículo" %}</h1>
-  <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-  </a>
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Editar artículo" %}</h4>
+    <p class="rpt-header-sub">{% trans "Artículos" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
 </div>
 
 <div class="row justify-content-center">
@@ -21,42 +31,36 @@
           x-data="itemForm('{{ form.item_type.value|default:'BOTH' }}')"
           x-init="init()">
       {% csrf_token %}
-      <div class="card shadow-sm">
-        <div class="card-header fw-semibold">{% trans "Datos del artículo" %}</div>
-        <div class="card-body">
+      <div class="rpt-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Datos del artículo" %}
+        </div>
+        <div class="p-3">
           {% crispy form %}
         </div>
-        <div class="card-footer d-flex gap-2">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
-          </button>
-          <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary">
-            {% trans "Cancelar" %}
-          </a>
-        </div>
+      </div>
+
+      <div class="form-sticky-bar">
+        <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+          <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
+        </button>
+        <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">
+          {% trans "Cancelar" %}
+        </a>
       </div>
     </form>
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
-function itemForm(initialType) {
-  return {
-    itemType: initialType,
-    get autoCode() { return this.itemType === 'SALE' || this.itemType === 'BOTH'; },
-    get codeHint() {
-      return this.autoCode
-        ? "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}"
-        : "{% trans 'Código interno / SKU opcional.' %}";
-    },
-    get codePlaceholder() {
-      return this.autoCode ? "{% trans 'Automático (ART-XXXX)' %}" : "{% trans 'Código manual (opcional)' %}";
-    },
-    init() {
-      const sel = this.$el.querySelector('[name="item_type"]');
-      if (sel) this.itemType = sel.value;
-    },
-  }
-}
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  itemAutoCodeHint: "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}",
+  itemManualCodeHint: "{% trans 'Código interno / SKU opcional.' %}",
+  itemAutoCodePlaceholder: "{% trans 'Automático (ART-XXXX)' %}",
+  itemManualCodePlaceholder: "{% trans 'Código manual (opcional)' %}"
+});
 </script>
 {% endblock %}

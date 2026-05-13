@@ -384,6 +384,14 @@ class OrganizationSettingsView(ERPBaseViewMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        logo_url = ""
+        if self.object and self.object.logo:
+            try:
+                if self.object.logo.storage.exists(self.object.logo.name):
+                    logo_url = self.object.logo.url
+            except OSError:
+                logo_url = ""
+        ctx["organization_logo_url"] = logo_url
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Organización")},
@@ -665,7 +673,11 @@ class TeamDeleteView(ERPBaseViewMixin, View):
     def post(self, request, pk):
         team = get_object_or_404(Team, pk=pk, organization=request.organization)
         name = team.name
-        team.delete()
+        try:
+            team.delete()
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect("accounts:teams")
         messages.success(request, f"Equipo \"{name}\" eliminado.")
         return redirect("accounts:teams")
 

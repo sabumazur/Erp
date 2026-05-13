@@ -3,20 +3,31 @@
 
 {% block title %}{% trans "Clientes" %}{% endblock %}
 
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">{% trans "Clientes" %}</h1>
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customerModal">
-    <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
-  </button>
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Clientes" %}</h4>
+    <p class="rpt-header-sub">{% trans "CRM" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#customerModal"
+            style="background:#1e2130;color:#fff">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
+    </button>
+  </div>
 </div>
 
-{% include "components/_kpi_cards.html" with stats=stats %}
+<div class="mb-3">
+  {% include "components/_kpi_cards.html" with stats=stats %}
+</div>
 
 {% include "components/datatable/wrapper.html" %}
 
-{# Blank create-form template (browser never autofills or caches it) #}
 <template id="customer-blank-tpl">
   <form hx-post="{% url 'invoices:customer_list' %}"
         hx-target="#dt-results"
@@ -27,17 +38,19 @@
     <input type="hidden" name="_hx_target" value="#dt-results">
     <div class="modal-body">{% crispy form %}</div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-      <button type="submit" class="btn btn-primary">{% trans "Crear" %}</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+      <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">{% trans "Crear" %}</button>
     </div>
   </form>
 </template>
 
 <div class="modal fade" id="customerModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="customerModalTitle">{% trans "Nuevo cliente" %}</h5>
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="customerModalTitle" style="font-size:.95rem">
+          <i class="bi bi-person-plus me-2 text-muted"></i>{% trans "Nuevo cliente" %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div id="customer-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
@@ -49,69 +62,15 @@
 
 {% block extra_js %}
 <script>
-function initDeptPopovers(root) {
-  (root || document).querySelectorAll('.dept-popover').forEach(function (el) {
-    var existing = bootstrap.Popover.getInstance(el);
-    if (existing) existing.dispose();
-    var depts = [];
-    try { depts = JSON.parse(el.dataset.departments || '[]'); } catch (e) {}
-    var html = '<ul class="mb-0 ps-3 small">'
-      + depts.map(function (d) {
-          return '<li>' + d.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>';
-        }).join('') + '</ul>';
-    new bootstrap.Popover(el, {
-      title:     '{% trans "Departamentos" %}',
-      content:   html,
-      html:      true,
-      trigger:   'hover focus',
-      placement: 'left',
-      container: 'body',
-    });
-  });
-}
-
-initDeptPopovers();
-
-document.body.addEventListener('htmx:afterSwap', function (evt) {
-  if (evt.detail && evt.detail.target && evt.detail.target.id === 'dt-results') {
-    initDeptPopovers(evt.detail.target);
-  }
-});
-
-function restoreBlank() {
-  var body = document.getElementById('customer-modal-body');
-  body.innerHTML = '';
-  body.appendChild(document.getElementById('customer-blank-tpl').content.cloneNode(true));
-  document.getElementById('customerModalTitle').textContent = '{% trans "Nuevo cliente" %}';
-  htmx.process(body);
-}
-restoreBlank();
-document.getElementById('customerModal').addEventListener('hidden.bs.modal', restoreBlank);
-
-document.body.addEventListener('rncFound', function (evt) {
-  var d = evt.detail;
-  Swal.fire({
-    icon: 'success',
-    title: '{% trans "RNC encontrado" %}',
-    html: '<p class="mb-1"><strong>' + d.name + '</strong></p><small class="text-muted">RNC ' + d.value + '</small>',
-    showCancelButton: true,
-    confirmButtonText: '{% trans "Aceptar" %}',
-    cancelButtonText:  '{% trans "Cancelar" %}',
-  }).then(function (result) {
-    if (result.isConfirmed) {
-      var f = (document.querySelector('.modal.show') || document).querySelector('[name=name]');
-      if (f) f.value = d.name;
-    }
-  });
-});
-
-document.body.addEventListener('rncNotFound', function () {
-  Swal.fire({
-    icon: 'warning',
-    title: '{% trans "No encontrado" %}',
-    text:  '{% trans "Este RNC/Cédula no está registrado en el registro oficial." %}',
-    confirmButtonText: '{% trans "Cerrar" %}',
-  });
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  departmentsTitle: "{% trans 'Departamentos' %}",
+  customerCreateTitle: "{% trans 'Nuevo cliente' %}",
+  rncFoundTitle: "{% trans 'RNC encontrado' %}",
+  rncNotFoundTitle: "{% trans 'No encontrado' %}",
+  rncNotFoundText: "{% trans 'Este RNC/Cédula no está registrado en el registro oficial.' %}",
+  acceptText: "{% trans 'Aceptar' %}",
+  cancelText: "{% trans 'Cancelar' %}",
+  closeText: "{% trans 'Cerrar' %}"
 });
 </script>
 {% endblock %}

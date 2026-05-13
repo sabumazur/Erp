@@ -1,14 +1,14 @@
 {% load i18n %}
-{% if status == "DRAFT" %}<span class="badge bg-secondary status-badge">{% trans "Borrador" %}</span>
-{% elif status == "CONFIRMED" %}<span class="badge bg-primary status-badge">{% trans "Confirmada" %}</span>
-{% elif status == "SENT" %}<span class="badge bg-info text-dark status-badge">{% trans "Enviada" %}</span>
-{% elif status == "PAID" %}<span class="badge bg-success status-badge">{% trans "Pagada" %}</span>
-{% elif status == "OVERDUE" %}<span class="badge bg-danger status-badge">{% trans "Vencida" %}</span>
-{% elif status == "CANCELLED" %}<span class="badge bg-dark status-badge">{% trans "Anulada" %}</span>
-{% elif status == "ACCEPTED" %}<span class="badge bg-success status-badge">{% trans "Aceptada" %}</span>
-{% elif status == "REJECTED" %}<span class="badge bg-danger status-badge">{% trans "Rechazada" %}</span>
-{% elif status == "EXPIRED" %}<span class="badge bg-warning text-dark status-badge">{% trans "Expirada" %}</span>
-{% elif status == "CONVERTED" %}<span class="badge status-badge" style="background-color:#8b5cf6;color:#fff">{% trans "Convertida" %}</span>
-{% elif status == "DELIVERED" %}<span class="badge bg-info text-dark status-badge">{% trans "Entregada" %}</span>
-{% elif status == "INVOICED" %}<span class="badge bg-primary status-badge">{% trans "Facturada" %}</span>
+{% if status == "DRAFT" %}<span class="badge-soft badge-default">{% trans "Borrador" %}</span>
+{% elif status == "CONFIRMED" %}<span class="badge-soft badge-confirmed">{% trans "Confirmada" %}</span>
+{% elif status == "SENT" %}<span class="badge-soft badge-sent">{% trans "Enviada" %}</span>
+{% elif status == "PAID" %}<span class="badge-soft badge-paid">{% trans "Pagada" %}</span>
+{% elif status == "OVERDUE" %}<span class="badge-soft badge-overdue">{% trans "Vencida" %}</span>
+{% elif status == "CANCELLED" %}<span class="badge-soft badge-cancelled">{% trans "Anulada" %}</span>
+{% elif status == "ACCEPTED" %}<span class="badge-soft badge-paid">{% trans "Aceptada" %}</span>
+{% elif status == "REJECTED" %}<span class="badge-soft badge-overdue">{% trans "Rechazada" %}</span>
+{% elif status == "EXPIRED" %}<span class="badge-soft badge-overdue">{% trans "Expirada" %}</span>
+{% elif status == "CONVERTED" %}<span class="badge-soft badge-confirmed">{% trans "Convertida" %}</span>
+{% elif status == "DELIVERED" %}<span class="badge-soft badge-sent">{% trans "Entregada" %}</span>
+{% elif status == "INVOICED" %}<span class="badge-soft badge-confirmed">{% trans "Facturada" %}</span>
 {% endif %}
