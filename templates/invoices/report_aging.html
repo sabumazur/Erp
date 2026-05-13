@@ -4,7 +4,7 @@
 {% block title %}{% trans "Antigüedad de Cuentas por Cobrar" %}{% endblock %}
 
 {% block extra_css %}
-<style>@media print { @page { size: A4 landscape; } }</style>
+{% include "invoices/partials/report_shared_styles.html" %}
 {% endblock %}
 
 {% block content %}
@@ -18,19 +18,19 @@
   </p>
 </div>
 
-{# ── Screen header (hidden on print) ─────────────────────────────────────── #}
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
+{# ── Screen header ────────────────────────────────────────────────────────── #}
+<div class="rpt-header no-print">
   <div>
-    <h1 class="h3 mb-0">{% trans "Antigüedad de Cuentas por Cobrar" %}</h1>
-    <small class="text-muted">
+    <h1 class="rpt-header-title">{% trans "Antigüedad de Cuentas por Cobrar" %}</h1>
+    <p class="rpt-header-sub">
       {% if selected_customer %}{{ selected_customer.name }} · {% endif %}{% trans "Al" %} {{ today|date:"d/m/Y" }}
-    </small>
+    </p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="rpt-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
   </div>
@@ -47,48 +47,46 @@
 {% endif %}
 
 {% if rows %}
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover table-sm mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>{% trans "Cliente" %}</th>
-            {% for bh in bucket_headers %}
-            <th class="text-end {{ bh.css }}">{{ bh.label }}</th>
-            {% endfor %}
-            <th class="text-end">{% trans "Total" %}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in rows %}
-          <tr>
-            <td>
-              <a href="{% url 'invoices:customer_detail' row.customer.pk %}"
-                 class="text-decoration-none fw-semibold">
-                {{ row.customer.name }}
-              </a>
-            </td>
-            {% for bc in row.bucket_cells %}
-            <td class="text-end {{ bc.css }}">
-              {% if bc.amount %}{{ bc.amount|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
-            </td>
-            {% endfor %}
-            <td class="text-end fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
-          </tr>
+<div class="rpt-table-wrap">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead>
+        <tr>
+          <th>{% trans "Cliente" %}</th>
+          {% for bh in bucket_headers %}
+          <th class="text-end {{ bh.css }}">{{ bh.label }}</th>
           {% endfor %}
-        </tbody>
-        <tfoot class="table-light fw-bold">
-          <tr>
-            <td>{% trans "Total" %}</td>
-            {% for ctc in col_total_cells %}
-            <td class="text-end {{ ctc.css }}">{{ ctc.amount|floatformat:2|intcomma }}</td>
-            {% endfor %}
-            <td class="text-end">{{ grand_total|floatformat:2|intcomma }}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+          <th class="text-end">{% trans "Total" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            <a href="{% url 'invoices:customer_detail' row.customer.pk %}"
+               class="text-decoration-none fw-semibold">
+              {{ row.customer.name }}
+            </a>
+          </td>
+          {% for bc in row.bucket_cells %}
+          <td class="text-end font-monospace {{ bc.css }}">
+            {% if bc.amount %}{{ bc.amount|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          {% endfor %}
+          <td class="text-end font-monospace fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>{% trans "Total" %}</td>
+          {% for ctc in col_total_cells %}
+          <td class="text-end font-monospace {{ ctc.css }}">{{ ctc.amount|floatformat:2|intcomma }}</td>
+          {% endfor %}
+          <td class="text-end font-monospace">{{ grand_total|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
 </div>
 {% else %}
@@ -97,4 +95,5 @@
   {% trans "No hay cuentas por cobrar pendientes." %}
 </div>
 {% endif %}
+
 {% endblock %}
