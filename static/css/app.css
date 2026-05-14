@@ -1027,7 +1027,7 @@ tr:hover .dt-hover-actions {
 }
 
 .picker-list-wrap {
-  max-height: 340px;
+  max-height: 363px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #e2e8f0 transparent;
@@ -1036,6 +1036,9 @@ tr:hover .dt-hover-actions {
 .picker-list-wrap::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
 
 #itemPickerModal .picker-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;

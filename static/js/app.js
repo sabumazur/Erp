@@ -385,7 +385,7 @@
     });
 
     // Paginate
-    var pageSize = 20;
+    var pageSize = 10;
     var totalPages = Math.ceil(filtered.length / pageSize) || 1;
     if (picker.page > totalPages) picker.page = Math.max(1, totalPages);
     var start = (picker.page - 1) * pageSize;
