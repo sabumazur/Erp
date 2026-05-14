@@ -710,6 +710,8 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/create_org.html"
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         if not request.user.is_staff:
             messages.error(request, _("No tienes permiso para crear organizaciones."))
             return redirect("accounts:dashboard")
