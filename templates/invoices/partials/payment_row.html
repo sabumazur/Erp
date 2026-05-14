@@ -21,9 +21,9 @@
     {% endif %}
   </td>
 
-  <td data-col="amount" class="text-end fw-semibold font-monospace" style="color:#16a34a">
+  <td data-col="amount" class="text-end fw-semibold font-monospace">
     <a href="{% url 'invoices:payment_detail' row.pk %}"
-       class="text-decoration-none" style="color:#16a34a">
+       class="text-decoration-none" style="color:#1e2130">
       {{ row.amount|floatformat:2|intcomma }}
     </a>
     <span class="dt-hover-actions">

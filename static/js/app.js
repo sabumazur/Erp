@@ -306,6 +306,15 @@
   }
 
   function initDatatableFilters() {
+    document.addEventListener("htmx:configRequest", function (e) {
+      if (!e.detail.elt || e.detail.elt.id !== "dt-form") return;
+      var form = e.detail.elt;
+      if (!form._dtKeepPage) {
+        e.detail.parameters["page"] = "1";
+      }
+      form._dtKeepPage = false;
+    });
+
     document.addEventListener("htmx:afterRequest", function (e) {
       if (!window.bootstrap || !e.detail.elt || e.detail.elt.id !== "dt-form") return;
       var canvas = document.getElementById("dt-filter-offcanvas");

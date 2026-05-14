@@ -48,6 +48,7 @@ from .sale_orders import (
     SaleOrderDeliverView,
     SaleOrderCancelView,
     SaleOrderDeleteView,
+    SaleOrderEmailView,
     SaleOrderConsolidateView,
     SaleOrderCloneView,
     SaleOrderPrintView,

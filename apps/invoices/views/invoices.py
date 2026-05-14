@@ -20,6 +20,7 @@ from ..forms import (
     PaymentForm, CreditNoteForm, NCFSequenceForm,
 )
 from ..models import Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
+from ..email import send_invoice_email
 from ..services import NCFService
 from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
@@ -245,6 +246,15 @@ class InvoiceSendView(ERPBaseViewMixin, View):
             messages.success(request, _("Factura marcada como enviada."))
         except ValueError as exc:
             messages.error(request, str(exc))
+            return redirect("invoices:invoice_detail", pk=invoice.pk)
+        try:
+            sent = send_invoice_email(invoice, request)
+            if sent:
+                messages.info(request, _("Correo enviado a %(email)s.") % {"email": invoice.customer.email})
+            else:
+                messages.warning(request, _("El cliente no tiene correo registrado."))
+        except Exception as exc:
+            messages.warning(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
         return redirect("invoices:invoice_detail", pk=invoice.pk)
 
 

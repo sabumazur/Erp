@@ -147,7 +147,7 @@ class DataTableMixin:
 
     dt_columns: list = []
     dt_default_sort: str = ""
-    dt_page_size: int = 25
+    dt_page_size: int = 15
     dt_url: str = ""
     dt_row_template: str = ""
     dt_filter_template: str = ""

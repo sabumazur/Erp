@@ -649,12 +649,10 @@ code,
 }
 
 .kpi-value {
-  font-family: 'Cormorant Garamond', Georgia, serif !important;
-  font-size: 1.85rem !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-  letter-spacing: -0.02em !important;
-  color: #0f172a !important;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
 }
 
 /* ── Document paper card (detail pages) ─────────────────────── */

@@ -553,7 +553,7 @@ class InvoiceItemForm(forms.ModelForm):
             "unit_price": forms.NumberInput(
                 attrs={
                     "step": "0.01",
-                    "min": "1",
+                    "min": "0",
                     "class": "form-control form-control-sm text-end",
                     "x-model": "price",
                     "x-on:input": "recalc()",
@@ -597,8 +597,8 @@ class InvoiceItemForm(forms.ModelForm):
 
     def clean_unit_price(self):
         price = self.cleaned_data.get("unit_price")
-        if price is not None and price < 1:
-            raise forms.ValidationError(_("El precio unitario debe ser mayor o igual a 1."))
+        if price is not None and price < 0:
+            raise forms.ValidationError(_("El precio unitario no puede ser negativo."))
         return price
 
 

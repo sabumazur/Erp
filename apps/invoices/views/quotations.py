@@ -12,6 +12,7 @@ from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet
 from ..models import Invoice, NCFType
+from ..email import send_quotation_email
 from ..services import QuotationService
 from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
@@ -217,6 +218,15 @@ class QuotationSendView(ERPBaseViewMixin, View):
             messages.success(request, _("Cotización marcada como enviada."))
         except ValueError as exc:
             messages.error(request, str(exc))
+            return redirect("invoices:quotation_detail", pk=q.pk)
+        try:
+            sent = send_quotation_email(q, request)
+            if sent:
+                messages.info(request, _("Correo enviado a %(email)s.") % {"email": q.customer.email})
+            else:
+                messages.warning(request, _("El cliente no tiene correo registrado."))
+        except Exception as exc:
+            messages.warning(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
         return redirect("invoices:quotation_detail", pk=q.pk)
 
 

@@ -38,7 +38,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("is_active",  _("Estado"),   sortable=True),
     ]
     dt_default_sort = "name"
-    dt_page_size = 25
+    dt_page_size = 15
     dt_url = "items:item_list"
     dt_row_template = "items/partials/item_row.html"
     dt_filter_template = "items/partials/item_filters.html"

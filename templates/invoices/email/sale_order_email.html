@@ -1,0 +1,269 @@
+{% load i18n humanize %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% trans "Orden de Venta" %} {{ order.doc_number|default:"Borrador" }} – {{ org.name }}</title>
+  <style>
+    body, table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-spacing: 0; }
+    td { padding: 0; }
+    img { border: 0; display: block; }
+    body { margin: 0; padding: 0; background: #eff6ff; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; }
+  </style>
+</head>
+<body bgcolor="#eff6ff">
+
+<!-- Wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#eff6ff">
+  <tr>
+    <td align="center" style="padding: 28px 16px;">
+
+      <!-- Card -->
+      <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+        <!-- ── BLUE TOP BAR ── -->
+        <tr>
+          <td bgcolor="#2563eb" height="5" style="height:5px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+
+        <!-- ── HEADER ── -->
+        <tr>
+          <td style="padding: 20px 28px 16px; border-left: 6px solid #2563eb; background: #fafafa;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <!-- Logo / Avatar -->
+                <td width="52" valign="middle" style="padding-right:14px;">
+                  {% if logo_url %}
+                    <img src="{{ logo_url }}" width="44" height="44"
+                         style="width:44px;height:44px;border-radius:8px;object-fit:contain;" alt="{{ org.name }}">
+                  {% else %}
+                    <table cellpadding="0" cellspacing="0"><tr>
+                      <td width="44" height="44" align="center" valign="middle"
+                          style="width:44px;height:44px;background:#2563eb;border-radius:8px;font-weight:800;font-size:15px;color:#ffffff;">
+                        {{ org.name|slice:":2"|upper }}
+                      </td>
+                    </tr></table>
+                  {% endif %}
+                </td>
+                <!-- Org info -->
+                <td valign="middle">
+                  <div style="font-size:16px;font-weight:800;color:#1a1a1a;line-height:1.2;">{{ org.name }}</div>
+                  <div style="font-size:10px;color:#6b7280;margin-top:4px;line-height:1.7;">
+                    {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}
+                    {% if org.address %}<br>{{ org.address }}{% endif %}
+                  </div>
+                </td>
+                <!-- Doc title -->
+                <td valign="middle" align="right">
+                  <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#2563eb;">{% trans "Orden de Venta" %}</div>
+                  <div style="font-size:13px;font-family:monospace;color:#374151;margin-top:5px;">{{ order.doc_number|default:"Borrador" }}</div>
+                  <div style="display:inline-block;margin-top:7px;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
+                    {% if order.status == 'CONFIRMED' %}background:#dbeafe;color:#1d4ed8;
+                    {% elif order.status == 'DELIVERED' %}background:#dcfce7;color:#15803d;
+                    {% elif order.status == 'INVOICED' %}background:#d1fae5;color:#065f46;
+                    {% elif order.status == 'CANCELLED' %}background:#f3f4f6;color:#9ca3af;
+                    {% else %}background:#eff6ff;color:#2563eb;{% endif %}">
+                    {{ order.get_status_display }}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── PARTIES ── -->
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <!-- Customer -->
+                <td valign="top" style="padding-right:8px;{% if order.department %}width:33%;{% else %}width:50%;{% endif %}">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="background:#fafafa;border-left:3px solid #e5e7eb;border-radius:0 5px 5px 0;padding:10px 13px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:700;margin-bottom:4px;">{% trans "Cliente" %}</div>
+                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ order.customer.name }}</div>
+                        {% if order.customer.rnc_cedula %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}</div>{% endif %}
+                        {% if order.customer.address %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ order.customer.address }}</div>{% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <!-- Delivery dept (blue tint) -->
+                {% if order.department %}
+                <td valign="top" style="width:33%;padding-right:8px;padding-left:0;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td bgcolor="#eff6ff" style="background:#eff6ff;border-left:3px solid #2563eb;border-radius:0 5px 5px 0;padding:10px 13px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#60a5fa;font-weight:700;margin-bottom:4px;">{% trans "Departamento de entrega" %}</div>
+                        <div style="font-weight:700;font-size:13px;color:#1d4ed8;">{{ order.department.name }}</div>
+                        {% if order.department.contact_name %}<div style="font-size:11px;color:#1e40af;margin-top:2px;">{{ order.department.contact_name }}</div>{% endif %}
+                        {% if order.department.phone %}<div style="font-size:11px;color:#1e40af;margin-top:2px;">Tel: {{ order.department.phone }}</div>{% endif %}
+                        {% if order.department.address %}<div style="font-size:11px;color:#1e40af;margin-top:2px;">{{ order.department.address }}</div>{% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                {% endif %}
+                <!-- Emisor -->
+                <td valign="top" style="padding-left:{% if order.department %}0{% else %}8px{% endif %};{% if order.department %}width:33%;{% else %}width:50%;{% endif %}">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="background:#fafafa;border-left:3px solid #e5e7eb;border-radius:0 5px 5px 0;padding:10px 13px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:700;margin-bottom:4px;">{% trans "Emisor" %}</div>
+                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ org.name }}</div>
+                        {% if org.tax_id %}<div style="font-size:11px;color:#555;margin-top:2px;">RNC: {{ org.tax_id }}</div>{% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── META ── -->
+        <tr>
+          <td style="padding: 16px 28px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="border-bottom:1px solid #e5e7eb;padding-bottom:14px;">
+                  <table cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding-right:24px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Fecha emisión" %}</div>
+                        <div style="font-weight:600;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.issue_date|date:"d/m/Y" }}</div>
+                      </td>
+                      {% if order.delivery_date %}
+                      <td style="padding-right:24px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Fecha de entrega" %}</div>
+                        <div style="font-weight:600;font-size:12px;color:#2563eb;margin-top:2px;">{{ order.delivery_date|date:"d/m/Y" }}</div>
+                      </td>
+                      {% endif %}
+                      <td style="padding-right:24px;">
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Condición pago" %}</div>
+                        <div style="font-weight:600;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.get_payment_condition_display }}</div>
+                      </td>
+                      {% if order.currency != "DOP" %}
+                      <td>
+                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Moneda" %}</div>
+                        <div style="font-weight:600;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.currency }} @ {{ order.exchange_rate }}</div>
+                      </td>
+                      {% endif %}
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── ITEMS TABLE ── -->
+        <tr>
+          <td style="padding: 18px 28px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              <thead>
+                <tr bgcolor="#2563eb">
+                  <th align="left"   style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;border-radius:4px 0 0 0;">{% trans "Descripción" %}</th>
+                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:60px;">{% trans "Cant." %}</th>
+                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:90px;">{% trans "P. Unit." %}</th>
+                  <th align="center" style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:60px;">{% trans "ITBIS" %}</th>
+                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:90px;">{% trans "Subtotal" %}</th>
+                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:100px;border-radius:0 4px 0 0;">{% trans "Total" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in items %}
+                <tr bgcolor="{% cycle '#f0f7ff' '#ffffff' %}">
+                  <td style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.description }}</td>
+                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.quantity|floatformat:"-4" }}</td>
+                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.unit_price|floatformat:2|intcomma }}</td>
+                  <td align="center" style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.get_itbis_rate_display }}</td>
+                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.line_total|floatformat:2|intcomma }}</td>
+                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── TOTALS ── -->
+        <tr>
+          <td style="padding: 12px 28px 0;" align="right">
+            <table cellpadding="0" cellspacing="0" width="260">
+              <tr>
+                <td style="padding:4px 9px;font-size:12px;color:#374151;">{% trans "Subtotal" %}</td>
+                <td align="right" style="padding:4px 9px;font-size:12px;font-weight:600;color:#374151;">{{ order.subtotal|floatformat:2|intcomma }}</td>
+              </tr>
+              {% if order.itbis_18 %}
+              <tr>
+                <td style="padding:4px 9px;font-size:11px;color:#6b7280;">{% trans "ITBIS 18%" %}</td>
+                <td align="right" style="padding:4px 9px;font-size:11px;font-weight:600;color:#6b7280;">{{ order.itbis_18|floatformat:2|intcomma }}</td>
+              </tr>
+              {% endif %}
+              {% if order.itbis_16 %}
+              <tr>
+                <td style="padding:4px 9px;font-size:11px;color:#6b7280;">{% trans "ITBIS 16%" %}</td>
+                <td align="right" style="padding:4px 9px;font-size:11px;font-weight:600;color:#6b7280;">{{ order.itbis_16|floatformat:2|intcomma }}</td>
+              </tr>
+              {% endif %}
+              <tr>
+                <td style="padding:8px 9px 4px;font-size:15px;font-weight:800;color:#2563eb;border-top:2.5px solid #2563eb;">{% trans "TOTAL" %}</td>
+                <td align="right" style="padding:8px 9px 4px;font-size:15px;font-weight:800;color:#2563eb;border-top:2.5px solid #2563eb;">{{ order.total|floatformat:2|intcomma }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── NOTES ── -->
+        {% if order.notes %}
+        <tr>
+          <td style="padding: 18px 28px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="border-top:1px solid #e5e7eb;padding-top:14px;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;margin-bottom:3px;">{% trans "Notas" %}</div>
+                <div style="font-size:11px;color:#4b5563;">{{ order.notes }}</div>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- ── SIGNATURE (text representation) ── -->
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="50%" style="border-top:1px solid #374151;padding-top:6px;padding-right:24px;">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Autorizado por" %}</div>
+                </td>
+                <td width="50%" style="border-top:1px solid #374151;padding-top:6px;padding-left:24px;">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Recibido / Firmado por" %}</div>
+                  {% if order.signed_by %}<div style="font-size:12px;font-weight:600;color:#1a1a1a;margin-top:3px;">{{ order.signed_by }}</div>{% endif %}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── FOOTER ── -->
+        <tr>
+          <td bgcolor="#eff6ff" style="padding:16px 28px;margin-top:24px;border-top:1px solid #bfdbfe;border-radius:0 0 10px 10px;">
+            <div style="font-size:10px;color:#9ca3af;text-align:center;">
+              {{ org.name }}{% if org.tax_id %} · RNC {{ org.tax_id }}{% endif %}
+              &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}
+            </div>
+          </td>
+        </tr>
+
+      </table>
+      <!-- /Card -->
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

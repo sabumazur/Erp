@@ -42,6 +42,7 @@ from .views import (
     SaleOrderDeliverView,
     SaleOrderCancelView,
     SaleOrderDeleteView,
+    SaleOrderEmailView,
     SaleOrderConsolidateView,
     SaleOrderCloneView,
     SaleOrderPrintView,
@@ -140,6 +141,7 @@ urlpatterns = [
     path("sale-orders/<uuid:pk>/delete/",          SaleOrderDeleteView.as_view(),  name="sale_order_delete"),
     path("sale-orders/<uuid:pk>/clone/",           SaleOrderCloneView.as_view(),   name="sale_order_clone"),
     path("sale-orders/<uuid:pk>/print/",           SaleOrderPrintView.as_view(),   name="sale_order_print"),
+    path("sale-orders/<uuid:pk>/email/",           SaleOrderEmailView.as_view(),   name="sale_order_email"),
 
     # ── Payments ─────────────────────────────────────────────────────────────────
     path("payments/",                              PaymentListView.as_view(),      name="payment_list"),

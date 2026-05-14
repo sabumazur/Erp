@@ -14,6 +14,7 @@ from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, ConsolidateForm
 from ..models import Invoice, InvoiceItem, CustomerDepartment
+from ..email import send_sale_order_email
 from ..services import SaleOrderService
 from ._helpers import _org, _sale_items_json, _customer_defaults_json
 
@@ -256,6 +257,22 @@ class SaleOrderDeleteView(ERPBaseViewMixin, View):
         o.hard_delete()
         messages.success(request, _("Orden eliminada."))
         return redirect("invoices:sale_order_list")
+
+
+class SaleOrderEmailView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def post(self, request, pk):
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        try:
+            sent = send_sale_order_email(o, request)
+            if sent:
+                messages.success(request, _("Correo enviado a %(email)s.") % {"email": o.customer.email})
+            else:
+                messages.warning(request, _("El cliente no tiene correo registrado."))
+        except Exception as exc:
+            messages.error(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
+        return redirect("invoices:sale_order_detail", pk=o.pk)
 
 
 # ── Consolidation ─────────────────────────────────────────────────────────────
