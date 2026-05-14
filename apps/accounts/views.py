@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -17,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
-from .forms import ProfileForm, OrganizationForm, InvitationForm, TeamForm, CreateOrganizationForm
+from .forms import ProfileForm, OrganizationForm, InvitationForm, TeamForm, StaffCreateOrganizationForm
 from .models import Organization, Membership, Invitation, Team
 from .permissions import revoke_org_permissions, can_access_module
 
@@ -705,20 +706,28 @@ class AssignMemberTeamView(ERPBaseViewMixin, View):
 class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/create_org.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, _("No tienes permiso para crear organizaciones."))
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", CreateOrganizationForm())
+        ctx.setdefault("form", StaffCreateOrganizationForm())
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Plataforma")},
             {"label": _("Nueva organización")},
         ]
         return ctx
 
     def post(self, request, *args, **kwargs):
-        form = CreateOrganizationForm(request.POST)
+        form = StaffCreateOrganizationForm(request.POST)
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form=form))
 
+        owner_email = form.cleaned_data["owner_email"]
         name = form.cleaned_data["name"]
         base_slug = slugify(name) or "org"
         slug = base_slug
@@ -727,15 +736,37 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
             slug = f"{base_slug}-{counter}"
             counter += 1
 
-        org = Organization.objects.create(name=name, slug=slug, owner=request.user)
-        Membership.objects.create(
-            user=request.user,
-            organization=org,
-            role=Membership.Role.OWNER,
-        )
-        request.session["active_org_slug"] = org.slug
-        messages.success(request, f'Organización "{org.name}" creada.')
-        return redirect("accounts:org_settings")
+        with transaction.atomic():
+            org = form.save(commit=False)
+            org.slug = slug
+            org.owner = request.user  # technical creator; FK is informational
+            org.save()
+            invitation = Invitation.create_for(
+                email=owner_email,
+                organization=org,
+                role=Membership.Role.OWNER,
+                invited_by=request.user,
+            )
+
+        try:
+            send_invitation_email(invitation, request)
+        except Exception:
+            messages.warning(
+                request,
+                _('Organización "%(name)s" creada. No se pudo enviar la invitación a %(email)s.') % {
+                    "name": org.name,
+                    "email": owner_email,
+                },
+            )
+        else:
+            messages.success(
+                request,
+                _('Organización "%(name)s" creada. Invitación enviada a %(email)s.') % {
+                    "name": org.name,
+                    "email": owner_email,
+                },
+            )
+        return redirect("accounts:dashboard")
 
 
 class LeaveOrganizationView(LoginRequiredMixin, View):

@@ -41,12 +41,54 @@ class InvitationForm(forms.Form):
         return self.cleaned_data["email"].lower()
 
 
-class CreateOrganizationForm(forms.Form):
-    name = forms.CharField(
-        max_length=255,
-        label=_("Nombre de la organización"),
-        widget=forms.TextInput(attrs={"placeholder": "Mi Empresa S.R.L.", "autofocus": True}),
+class StaffCreateOrganizationForm(forms.ModelForm):
+    owner_email = forms.EmailField(
+        label=_("Correo del propietario"),
+        help_text=_("Se enviará una invitación de propietario a esta dirección."),
+        widget=forms.EmailInput(attrs={"placeholder": "propietario@empresa.com"}),
     )
+
+    class Meta:
+        model = Organization
+        fields = [
+            "name",
+            "tax_id", "email", "phone", "website",
+            "address", "city", "state", "zip_code", "country",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs["autofocus"] = True
+        for field_name, field in self.fields.items():
+            if field_name not in ("name", "owner_email"):
+                field.required = False
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            "name",
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'),
+            Row(
+                Column("tax_id", css_class="col-md-6"),
+                Column("email", css_class="col-md-6"),
+            ),
+            Row(
+                Column("phone", css_class="col-md-6"),
+                Column("website", css_class="col-md-6"),
+            ),
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'),
+            "address",
+            Row(
+                Column("city", css_class="col-md-5"),
+                Column("state", css_class="col-md-4"),
+                Column("zip_code", css_class="col-md-3"),
+            ),
+            "country",
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Propietario")}</p>'),
+            "owner_email",
+        )
+
+    def clean_owner_email(self):
+        return self.cleaned_data["owner_email"].lower()
 
 
 class OrganizationForm(forms.ModelForm):
