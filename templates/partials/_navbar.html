@@ -49,12 +49,14 @@
         </form>
       </li>
       {% endfor %}
+      {% if request.user.is_staff %}
       <li><hr class="dropdown-divider"></li>
       <li>
         <a class="dropdown-item" href="{% url 'accounts:create_org' %}">
           <i class="bi bi-plus-circle me-1"></i>{% trans "Nueva organización" %}
         </a>
       </li>
+      {% endif %}
       {% if user_memberships|length > 1 and organization %}
       <li x-data="{ _open: false }">
         <form method="post" action="{% url 'accounts:leave_org' %}"

@@ -159,6 +159,19 @@
     </ul>
     {% endif %}
 
+    {% if request.user.is_staff %}
+    <div class="sidebar-section-label">{% trans "Plataforma" %}</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="{% url 'accounts:create_org' %}"
+           class="sidebar-nav-link {% if 'org/create' in request.path %}active{% endif %}">
+          <i class="bi bi-building-add"></i>
+          <span>{% trans "Nueva organización" %}</span>
+        </a>
+      </li>
+    </ul>
+    {% endif %}
+
   </nav>
   {% endif %}
 
