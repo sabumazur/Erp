@@ -1,3 +1,4 @@
+import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -21,6 +22,8 @@ from django.views.generic import TemplateView, UpdateView
 from .forms import ProfileForm, OrganizationForm, InvitationForm, TeamForm, StaffCreateOrganizationForm
 from .models import Organization, Membership, Invitation, Team
 from .permissions import revoke_org_permissions, can_access_module
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -730,13 +733,13 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
         owner_email = form.cleaned_data["owner_email"]
         name = form.cleaned_data["name"]
         base_slug = slugify(name) or "org"
-        slug = base_slug
-        counter = 1
-        while Organization.all_objects.filter(slug=slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
 
         with transaction.atomic():
+            slug = base_slug
+            counter = 1
+            while Organization.all_objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
             org = form.save(commit=False)
             org.slug = slug
             org.owner = request.user  # technical creator; FK is informational
@@ -751,6 +754,7 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
         try:
             send_invitation_email(invitation, request)
         except Exception:
+            logger.exception("Failed to send invitation email for org %s to %s", org.pk, owner_email)
             messages.warning(
                 request,
                 _('Organización "%(name)s" creada. No se pudo enviar la invitación a %(email)s.') % {

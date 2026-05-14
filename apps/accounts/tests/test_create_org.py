@@ -12,8 +12,8 @@ class TestCreateOrganizationAccess:
     def test_anonymous_redirected(self, client):
         response = client.get(CREATE_URL)
         assert response.status_code == 302
-        # Anonymous users have is_staff=False, so the is_staff guard fires first
-        # and redirects to dashboard (which then redirects to login).
+        # Anonymous users have is_staff=False, so the dispatch() is_staff guard
+        # fires before LoginRequiredMixin and redirects directly to dashboard.
         assert response["Location"] == reverse("accounts:dashboard")
 
     def test_non_staff_redirected_to_dashboard(self, client, owner_membership):
