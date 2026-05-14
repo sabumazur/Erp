@@ -41,12 +41,4 @@
     {% include "invoices/partials/status_badge.html" with status=row.status %}
   </td>
 
-  <td class="text-end" style="width:60px">
-    <a href="{% url 'invoices:sale_order_detail' row.pk %}"
-       class="btn btn-outline-secondary btn-sm py-0 px-1"
-       title="{% trans 'Ver' %}">
-      <i class="bi bi-arrow-right"></i>
-    </a>
-  </td>
-
 </tr>
