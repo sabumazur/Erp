@@ -8,44 +8,60 @@
   <div class="modal-dialog picker-dialog">
     <div class="modal-content picker-content">
 
-      <div class="picker-head">
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="picker-icon-badge"><i class="bi bi-box-seam"></i></span>
-          <span class="picker-title" id="itemPickerModalLabel">{% trans "Catálogo de artículos" %}</span>
-          <button type="button" class="picker-x-btn ms-auto" data-bs-dismiss="modal" aria-label="{% trans 'Cerrar' %}">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="picker-search-box">
-          <i class="bi bi-search picker-search-icon"></i>
+      <div class="picker-head d-flex align-items-center justify-content-between">
+        <h6 class="picker-title mb-0" id="itemPickerModalLabel">
+          {% trans "Catálogo de artículos" %}
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                aria-label="{% trans 'Cerrar' %}"></button>
+      </div>
+
+      <div class="picker-search-area">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-transparent border-end-0">
+            <i class="bi bi-search" style="font-size:0.85rem"></i>
+          </span>
           <input type="text"
                  id="picker-search"
-                 class="picker-search-input"
+                 class="form-control border-start-0 ps-1 picker-search-input"
                  placeholder="{% trans 'Buscar por nombre o código…' %}"
                  autocomplete="off">
         </div>
       </div>
 
-      <div class="picker-col-header">
-        <span class="picker-ch-code">{% trans "Código" %}</span>
-        <span class="picker-ch-name">{% trans "Artículo" %}</span>
-        <span class="picker-ch-price">{% trans "Precio" %}</span>
-      </div>
-
       <div class="picker-list-wrap">
-        <table class="picker-table w-100">
+        <table class="table table-sm picker-table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="picker-ch-code" data-sort="code">
+                {% trans "Código" %}
+                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
+              </th>
+              <th data-sort="name">
+                {% trans "Artículo" %}
+                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
+              </th>
+              <th class="text-end picker-ch-price" data-sort="unit_price">
+                {% trans "Precio" %}
+                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
+              </th>
+            </tr>
+          </thead>
           <tbody id="picker-tbody"></tbody>
         </table>
       </div>
 
+      <div id="picker-pagination" class="picker-pagination d-none"></div>
+
       <div class="picker-foot">
         <span class="picker-count" id="picker-count"></span>
         <div class="d-flex gap-2">
-          <button type="button" class="picker-cancel-btn" data-bs-dismiss="modal">
+          <button type="button" class="btn btn-sm btn-outline-secondary"
+                  data-bs-dismiss="modal">
             {% trans "Cancelar" %}
           </button>
           <button type="button"
-                  class="btn btn-sm btn-module-accent"
+                  class="btn btn-sm"
                   id="picker-select-btn"
                   disabled>
             <i class="bi bi-check-lg me-1"></i>{% trans "Seleccionar" %}

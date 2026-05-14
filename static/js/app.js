@@ -253,16 +253,6 @@
           }
         });
 
-        var form = document.getElementById("dt-form");
-        if (form) {
-          form.addEventListener("htmx:configRequest", function () {
-            if (!form._dtKeepPage) {
-              var pageInput = document.getElementById("dt-page-input");
-              if (pageInput) pageInput.value = "1";
-            }
-            form._dtKeepPage = false;
-          });
-        }
       },
       toggleCol: function (key) {
         if (this.visible.includes(key)) {
@@ -367,14 +357,39 @@
     recalcGrandTotal();
   }
 
-  var picker = { selectedPk: null };
+  var picker = { selectedPk: null, sortKey: "name", sortDir: "asc", page: 1 };
 
   function pickerRender(query) {
     var catalog = window.ITEM_CATALOG || [];
     var q = (query || "").toLowerCase().trim();
     var filtered = q ? catalog.filter(function (i) {
-      return (i.name || "").toLowerCase().includes(q) || (i.code || "").toLowerCase().includes(q);
+      return (i.name || "").toLowerCase().includes(q) ||
+             (i.code || "").toLowerCase().includes(q);
     }) : catalog;
+
+    // Sort
+    var key = picker.sortKey;
+    var dir = picker.sortDir;
+    filtered = filtered.slice().sort(function (a, b) {
+      var av, bv;
+      if (key === "unit_price") {
+        av = parseFloat(a[key]) || 0;
+        bv = parseFloat(b[key]) || 0;
+      } else {
+        av = (a[key] || "").toString().toLowerCase();
+        bv = (b[key] || "").toString().toLowerCase();
+      }
+      if (av < bv) return dir === "asc" ? -1 : 1;
+      if (av > bv) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    // Paginate
+    var pageSize = 20;
+    var totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    if (picker.page > totalPages) picker.page = Math.max(1, totalPages);
+    var start = (picker.page - 1) * pageSize;
+    var pageItems = filtered.slice(start, start + pageSize);
 
     var tbody = document.getElementById("picker-tbody");
     var countEl = document.getElementById("picker-count");
@@ -390,20 +405,22 @@
       var emptyTd = document.createElement("td");
       emptyTd.colSpan = 3;
       emptyTd.className = "text-center text-muted py-4";
-      emptyTd.innerHTML = '<i class="bi bi-inbox me-1"></i>' + getConfig("itemPickerEmpty", "No se encontraron articulos.");
+      emptyTd.innerHTML = '<i class="bi bi-inbox me-1"></i>' +
+        getConfig("itemPickerEmpty", "No se encontraron artículos.");
       empty.appendChild(emptyTd);
       tbody.appendChild(empty);
     } else {
-      filtered.forEach(function (item) {
+      pageItems.forEach(function (item) {
         var tr = document.createElement("tr");
-        tr.style.cursor = "pointer";
         tr.innerHTML =
-          '<td class="text-muted small font-monospace">' + escapeHtml(item.code || "-") + "</td>" +
-          '<td><div class="fw-semibold">' + escapeHtml(item.name || "") + "</div></td>" +
+          '<td class="small font-monospace">' + escapeHtml(item.code || "-") + "</td>" +
+          '<td><span class="fw-semibold">' + escapeHtml(item.name || "") + "</span></td>" +
           '<td class="text-end">' + formatMoney(item.unit_price) + "</td>";
         tr.addEventListener("click", function () {
-          tbody.querySelectorAll("tr").forEach(function (r) { r.classList.remove("table-primary"); });
-          tr.classList.add("table-primary");
+          tbody.querySelectorAll("tr").forEach(function (r) {
+            r.classList.remove("picker-selected");
+          });
+          tr.classList.add("picker-selected");
           picker.selectedPk = item.pk;
           if (selBtn) selBtn.disabled = false;
         });
@@ -412,7 +429,17 @@
       });
     }
 
-    if (countEl) countEl.textContent = filtered.length + " articulo(s)";
+    if (countEl) {
+      if (filtered.length === 0) {
+        countEl.textContent = "0 artículos";
+      } else {
+        var endIdx = Math.min(start + pageSize, filtered.length);
+        countEl.textContent = (start + 1) + "–" + endIdx + " de " + filtered.length + " artículo(s)";
+      }
+    }
+
+    pickerRenderPagination(totalPages);
+    pickerUpdateSortHeaders();
   }
 
   function pickerSelect(pk) {
@@ -421,6 +448,51 @@
     var modal = document.getElementById("itemPickerModal");
     if (modal) bootstrap.Modal.getOrCreateInstance(modal).hide();
     picker.selectedPk = null;
+  }
+
+  function pickerRenderPagination(totalPages) {
+    var container = document.getElementById("picker-pagination");
+    if (!container) return;
+    if (totalPages <= 1) {
+      container.classList.add("d-none");
+      container.innerHTML = "";
+      return;
+    }
+    container.classList.remove("d-none");
+    var html = '<button class="page-btn" ' + (picker.page <= 1 ? "disabled" : "") +
+      ' onclick="pickerGoPage(' + (picker.page - 1) + ')">‹</button>';
+    for (var i = 1; i <= totalPages; i++) {
+      html += '<button class="page-btn' + (i === picker.page ? " active" : "") +
+        '" onclick="pickerGoPage(' + i + ')">' + i + "</button>";
+    }
+    html += '<button class="page-btn" ' + (picker.page >= totalPages ? "disabled" : "") +
+      ' onclick="pickerGoPage(' + (picker.page + 1) + ')">›</button>';
+    container.innerHTML = html;
+  }
+
+  function pickerGoPage(n) {
+    picker.page = n;
+    var searchEl = document.getElementById("picker-search");
+    pickerRender(searchEl ? searchEl.value : "");
+  }
+
+  function pickerUpdateSortHeaders() {
+    var ths = document.querySelectorAll("#itemPickerModal .picker-table thead th[data-sort]");
+    ths.forEach(function (th) {
+      var key = th.getAttribute("data-sort");
+      var icon = th.querySelector(".picker-sort-icon");
+      th.classList.remove("picker-sort-active");
+      if (icon) {
+        icon.className = "bi bi-arrow-down-up picker-sort-icon";
+      }
+      if (key === picker.sortKey) {
+        th.classList.add("picker-sort-active");
+        if (icon) {
+          icon.className = "bi bi-sort-" + (picker.sortDir === "asc" ? "up" : "down") +
+            "-alt picker-sort-icon";
+        }
+      }
+    });
   }
 
   function openItemPicker(rowEl) {
@@ -533,17 +605,47 @@
     var pickerModal = document.getElementById("itemPickerModal");
     var pickerSearch = document.getElementById("picker-search");
     var pickerSelBtn = document.getElementById("picker-select-btn");
-    if (pickerSearch) pickerSearch.addEventListener("input", function () { pickerRender(this.value); });
-    if (pickerSelBtn) pickerSelBtn.addEventListener("click", function () { pickerSelect(picker.selectedPk); });
+
+    if (pickerSearch) {
+      pickerSearch.addEventListener("input", function () {
+        picker.page = 1;
+        pickerRender(this.value);
+      });
+    }
+
+    if (pickerSelBtn) {
+      pickerSelBtn.addEventListener("click", function () { pickerSelect(picker.selectedPk); });
+    }
+
+    var pickerThead = document.querySelector("#itemPickerModal .picker-table thead");
+    if (pickerThead) {
+      pickerThead.addEventListener("click", function (e) {
+        var th = e.target.closest("th[data-sort]");
+        if (!th) return;
+        var key = th.getAttribute("data-sort");
+        if (picker.sortKey === key) {
+          picker.sortDir = picker.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          picker.sortKey = key;
+          picker.sortDir = "asc";
+        }
+        picker.page = 1;
+        pickerRender(pickerSearch ? pickerSearch.value : "");
+      });
+    }
+
     if (pickerModal) {
       pickerModal.addEventListener("shown.bs.modal", function () {
+        picker.page = 1;
         pickerRender("");
         if (pickerSearch) {
           pickerSearch.value = "";
           pickerSearch.focus();
         }
       });
-      pickerModal.addEventListener("hidden.bs.modal", function () { picker.selectedPk = null; });
+      pickerModal.addEventListener("hidden.bs.modal", function () {
+        picker.selectedPk = null;
+      });
     }
   }
 
@@ -826,6 +928,7 @@
   window.dtTable = dtTable;
   window.dtSort = dtSort;
   window.dtPage = dtPage;
+  window.pickerGoPage = pickerGoPage;
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
   window.openItemPicker = openItemPicker;
