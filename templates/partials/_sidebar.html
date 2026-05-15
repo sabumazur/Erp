@@ -80,6 +80,13 @@
         </a>
       </li>
       <li>
+        <a href="{% url 'invoices:payment_term_list' %}"
+           class="sidebar-nav-link {% if 'invoices/payment-terms' in request.path %}active{% endif %}">
+          <i class="bi bi-calendar-check"></i>
+          <span>{% trans "Términos de pago" %}</span>
+        </a>
+      </li>
+      <li>
         <a href="{% url 'invoices:reports' %}"
            class="sidebar-nav-link {% if 'invoices/reports' in request.path %}active{% endif %}">
           <i class="bi bi-file-earmark-bar-graph"></i>
@@ -167,6 +174,13 @@
            class="sidebar-nav-link {% if 'org/create' in request.path %}active{% endif %}">
           <i class="bi bi-building-add"></i>
           <span>{% trans "Nueva organización" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'core:module_list' %}"
+           class="sidebar-nav-link {% if request.path|startswith:'/core/modules' %}active{% endif %}">
+          <i class="bi bi-grid"></i>
+          <span>{% trans "Módulos" %}</span>
         </a>
       </li>
     </ul>

@@ -1,5 +1,5 @@
 {% extends "base_anon.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
 {% block title %}Crear cuenta — SabSys{% endblock %}
 
@@ -17,6 +17,7 @@
 
         <form method="post" action="{% url 'account_signup' %}" x-data="passwordChecker()">
           {% csrf_token %}
+          {% language "es" %}
           {{ form.email|as_crispy_field }}
           {{ form.password1|as_crispy_field }}
 
@@ -52,6 +53,7 @@
           </div>
 
           {{ form.password2|as_crispy_field }}
+          {% endlanguage %}
 
           <div class="d-grid mt-3">
             <button type="submit" class="btn btn-success">

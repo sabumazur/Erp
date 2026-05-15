@@ -86,6 +86,7 @@ def _sale_items_json(request) -> str:
                 "pk": str(item.pk),
                 "code": item.code,
                 "name": item.name,
+                "unit": item.get_unit_display(),
                 "unit_price": str(item.unit_price),
                 "itbis_rate": item.itbis_rate,
             }

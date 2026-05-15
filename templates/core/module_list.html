@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Módulos" %}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Módulos" %}</h4>
+    <p class="rpt-header-sub">{% trans "Registro del sistema" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <button type="button" class="btn btn-sm no-print"
+            style="background:#1e2130;color:#fff"
+            data-bs-toggle="modal" data-bs-target="#moduleModal">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo módulo" %}
+    </button>
+  </div>
+</div>
+
+{% include "components/datatable/wrapper.html" %}
+
+<template id="module-blank-tpl">
+  {% include "core/partials/module_modal_form.html" with form=form action_url=create_url submit_label=submit_label %}
+</template>
+
+<div class="modal fade" id="moduleModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="moduleModalLabel" style="font-size:.9rem;color:#111827">
+          <i class="bi bi-grid me-2" style="color:#6b7280"></i>{% trans "Nuevo módulo" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="module-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  moduleCreateTitle: "{% trans 'Nuevo módulo' %}",
+  moduleEditTitle: "{% trans 'Editar módulo' %}"
+});
+</script>
+{% endblock %}

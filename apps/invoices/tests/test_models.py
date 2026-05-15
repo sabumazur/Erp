@@ -221,11 +221,11 @@ class TestDGIIValidation:
 class TestRNCValidator:
 
     def test_valid_rnc(self):
-        ok, msg = validate_rnc("101012345")
+        ok, msg = validate_rnc("130461554")  # Café Tropical Mazur SRL
         assert ok, msg
 
     def test_invalid_rnc_wrong_check_digit(self):
-        ok, _ = validate_rnc("101012340")  # wrong last digit
+        ok, _ = validate_rnc("130461550")  # last digit changed
         assert not ok
 
     def test_rnc_wrong_length(self):
@@ -234,17 +234,15 @@ class TestRNCValidator:
         assert "9" in msg
 
     def test_rnc_with_dashes_stripped(self):
-        # Dashes are stripped before validation
-        ok, msg = validate_rnc("1-01-01234-5")
-        # Result depends on resulting digits; just ensure no crash
-        assert isinstance(ok, bool)
+        ok, msg = validate_rnc("1-30-46155-4")  # 130461554 with dashes
+        assert ok, msg
 
     def test_rnc_field_validator_raises_on_invalid(self):
         with pytest.raises(ValidationError):
             validate_rnc_cedula("000000000", id_type="RNC")
 
     def test_rnc_field_validator_passes_on_valid(self):
-        validate_rnc_cedula("101012345", id_type="RNC")  # must not raise
+        validate_rnc_cedula("130461554", id_type="RNC")  # must not raise
 
 
 class TestCedulaValidator:
@@ -279,7 +277,7 @@ class TestCedulaValidator:
 
     def test_auto_detect_rnc_by_length(self):
         """9-digit string auto-detected as RNC."""
-        ok, _ = validate_rnc("101012345")
+        ok, _ = validate_rnc("130461554")
         assert ok
 
     def test_auto_detect_cedula_by_length(self):

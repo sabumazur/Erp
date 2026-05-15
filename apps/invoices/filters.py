@@ -2,7 +2,7 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Invoice, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod
+from .models import Invoice, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod, PaymentTerm
 
 
 class InvoiceFilter(django_filters.FilterSet):
@@ -239,3 +239,23 @@ class CustomerFilter(django_filters.FilterSet):
     class Meta:
         model = Customer
         fields = ["default_ncf_type"]
+
+
+class PaymentTermFilter(django_filters.FilterSet):
+    q = django_filters.CharFilter(
+        method="search_filter",
+        label=_("Buscar"),
+        widget=forms.TextInput(attrs={
+            "placeholder": _("Nombre…"),
+            "class": "form-control form-control-sm",
+        }),
+    )
+
+    class Meta:
+        model = PaymentTerm
+        fields = ["q"]
+
+    def search_filter(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(name__icontains=value)

@@ -54,7 +54,20 @@
       "PowerShell(git add templates/invoices/report_statement.html)",
       "PowerShell(git commit -m \"style: redesign report_statement - rpt-header, rpt-metric-card, rpt-table-wrap, strip inline th styles\")",
       "PowerShell(git add templates/invoices/report_invoices_by_customer.html)",
-      "PowerShell(git commit -m \"style: redesign report_invoices_by_customer - rpt-header, rpt-metric-card, rpt-table-wrap, strip inline th styles\")"
+      "PowerShell(git commit -m \"style: redesign report_invoices_by_customer - rpt-header, rpt-metric-card, rpt-table-wrap, strip inline th styles\")",
+      "Bash(Select-String -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\static\\\\js\\\\app.js\" -Pattern \"openItemPicker|pickCatalogRow\")",
+      "Bash(Select-Object LineNumber, Line)",
+      "Bash(not exist *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(Get-Content -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\\\\views.py\" -TotalCount 30)",
+      "Bash(Select-String \"translation|gettext\")",
+      "Bash(pytest *)",
+      "PowerShell(gh pr list --state open --base main)",
+      "PowerShell(gh pr list --state open 2>&1)",
+      "Bash(gh auth *)",
+      "PowerShell(gh auth status)"
     ]
   }
 }

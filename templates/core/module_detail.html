@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ module.name }}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 38%;
+  vertical-align: middle;
+}
+.rpt-panel-hd {
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{{ module.name }}</h4>
+    <p class="rpt-header-sub">
+      {% trans "Módulos" %} · <span class="font-monospace">{{ module.slug }}</span>
+    </p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'core:module_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            hx-get="{% url 'core:module_edit' module.pk %}"
+            hx-target="#module-modal-body"
+            hx-on::after-request="
+              document.getElementById('moduleModalLabel').textContent = '{% trans "Editar módulo" %}';
+              bootstrap.Modal.getOrCreateInstance('#moduleModal').show();">
+      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    </button>
+    <form method="post" action="{% url 'core:module_toggle' module.pk %}"
+          x-data
+          x-on:submit.prevent="swalConfirm($el, '{% if module.is_active %}{% trans "¿Desactivar este módulo?" %}{% else %}{% trans "¿Activar este módulo?" %}{% endif %}', {% if module.is_active %}{icon:'warning', color:'#fd7e14', ok:'Sí, desactivar'}{% else %}{icon:'question', color:'#198754', ok:'Sí, activar'}{% endif %})">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-toggle-{% if module.is_active %}on{% else %}off{% endif %} me-1"></i>
+        {% if module.is_active %}{% trans "Desactivar" %}{% else %}{% trans "Activar" %}{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+{# Module modal (reused from list page) #}
+<div class="modal fade" id="moduleModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="moduleModalLabel" style="font-size:.9rem;color:#111827">
+          <i class="bi bi-grid me-2" style="color:#6b7280"></i>{% trans "Editar módulo" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="module-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+
+    <div class="rpt-table-wrap mb-3">
+      <div class="d-flex align-items-center justify-content-center py-4" style="font-size:2.5rem">
+        <i class="bi {{ module.icon|default:'bi-grid' }}"></i>
+      </div>
+    </div>
+
+    <div class="rpt-table-wrap">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Slug" %}</th>
+            <td class="font-monospace">{{ module.slug }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Nombre" %}</th>
+            <td>{{ module.name }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Ícono" %}</th>
+            <td class="font-monospace small">{{ module.icon|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Estado" %}</th>
+            <td>
+              {% if module.is_active %}
+                <span class="badge-soft badge-paid">{% trans "Activo" %}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% if module.description %}
+          <tr>
+            <th class="detail-key">{% trans "Descripción" %}</th>
+            <td class="small text-muted">{{ module.description }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

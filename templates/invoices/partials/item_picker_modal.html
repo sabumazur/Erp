@@ -30,15 +30,20 @@
       </div>
 
       <div class="picker-list-wrap">
-        <table class="table table-sm picker-table mb-0">
+        <table class="table table-sm picker-table table-hover 
+        mb-0" role="grid">
           <thead class="table-light">
             <tr>
               <th class="picker-ch-code" data-sort="code">
-                {% trans "Código" %}
+                {% trans "No." %}
                 <i class="bi bi-arrow-down-up picker-sort-icon"></i>
               </th>
               <th data-sort="name">
-                {% trans "Artículo" %}
+                {% trans "Descripción" %}
+                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
+              </th>
+              <th class="picker-ch-unit" data-sort="unit">
+                {% trans "Unidad" %}
                 <i class="bi bi-arrow-down-up picker-sort-icon"></i>
               </th>
               <th class="text-end picker-ch-price" data-sort="unit_price">
@@ -51,11 +56,17 @@
         </table>
       </div>
 
-      <div id="picker-pagination" class="picker-pagination d-none"></div>
-
       <div class="picker-foot">
-        <span class="picker-count" id="picker-count"></span>
-        <div class="d-flex gap-2">
+        <div class="picker-foot-left">
+          <div id="picker-pagination" class="picker-pagination d-none"></div>
+          <span class="picker-count" id="picker-count"></span>
+        </div>
+        <div class="picker-foot-right">
+          <a href="{% url 'items:item_list' %}"
+             target="_blank"
+             class="btn btn-sm btn-link picker-new-btn">
+            <i class="bi bi-plus-lg"></i> {% trans "Nuevo artículo" %}
+          </a>
           <button type="button" class="btn btn-sm btn-outline-secondary"
                   data-bs-dismiss="modal">
             {% trans "Cancelar" %}

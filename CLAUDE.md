@@ -26,8 +26,10 @@ python manage.py seed_modules          # Populate core.Module registry
 python manage.py configure_site        # Set django.contrib.sites entry
 python manage.py mark_overdue_invoices # Transition SENT → OVERDUE past due_date
 python manage.py expire_quotations     # Transition SENT/CONFIRMED → EXPIRED past valid_until
-python manage.py reset_and_seed_db     # Wipe all data (keep superuser) and seed 25 DR sample records per model
-python manage.py reset_and_seed_db --no-input  # Skip confirmation prompt
+python manage.py reset_db              # Wipe all data and restore superuser account
+python manage.py reset_db --no-input   # Skip confirmation prompt
+python manage.py seed_db               # Seed 25 DR sample records per model into superuser's org
+python manage.py seed_db --no-input    # Skip confirmation prompt
 ```
 
 Settings are split across `config/settings/base.py`, `development.py`, and `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Environment variables are loaded via `python-decouple` (`.env` file or environment). The development settings use PostgreSQL by default; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.

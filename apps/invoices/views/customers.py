@@ -473,3 +473,51 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
                 {"departments": departments, "customer": customer},
             )
         return redirect("invoices:customer_detail", pk=customer_pk)
+
+
+class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+    admin_required = True
+
+    def post(self, request, customer_pk, pk):
+        from ..models import Invoice
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
+
+        order_count = Invoice.sale_orders.filter(
+            organization=_org(request), department=dept
+        ).count()
+        if order_count:
+            msg = _(
+                f"No se puede eliminar «{dept.name}»: "
+                f"{order_count} orden(es) de venta lo tienen asignado."
+            )
+            if request.htmx:
+                resp = HttpResponse()
+                resp["HX-Reswap"] = "none"
+                resp["HX-Trigger"] = json.dumps({"showSwal": {
+                    "icon": "error",
+                    "title": str(_("No se puede eliminar")),
+                    "text": str(msg),
+                }})
+                return resp
+            messages.error(request, str(msg))
+            return redirect("invoices:customer_detail", pk=customer_pk)
+
+        name = dept.name
+        dept.delete()
+
+        if request.htmx:
+            departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
+            resp = render(
+                request,
+                "invoices/partials/department_table.html",
+                {"departments": departments, "customer": customer},
+            )
+            resp["HX-Trigger"] = json.dumps(
+                {"showToast": {"message": str(_(f"Departamento «{name}» eliminado.")), "type": "success"}}
+            )
+            return resp
+
+        messages.success(request, _(f"Departamento «{name}» eliminado."))
+        return redirect("invoices:customer_detail", pk=customer_pk)

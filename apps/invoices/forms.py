@@ -16,6 +16,7 @@ from .models import (
     InvoiceItem,
     Payment,
     NCFSequence,
+    PaymentTerm,
 )
 from .validators import validate_rnc, validate_cedula
 
@@ -534,6 +535,44 @@ class ConsolidateForm(forms.Form):
                 _("El departamento seleccionado no pertenece al cliente indicado.")
             )
         return cleaned_data
+
+
+# ── PaymentTerm ───────────────────────────────────────────────────────────────
+
+
+class PaymentTermForm(forms.ModelForm):
+    use_required_attribute = False
+
+    class Meta:
+        model = PaymentTerm
+        fields = ["name", "description", "days_due"]
+        labels = {
+            "name":        _("Nombre"),
+            "description": _("Descripción"),
+            "days_due":    _("Días de vencimiento"),
+        }
+        widgets = {
+            "description": forms.TextInput(attrs={"placeholder": _("Ej. Pago a 30 días")}),
+        }
+        help_texts = {
+            "days_due": _("Número de días desde la emisión hasta el vencimiento."),
+        }
+        error_messages = {
+            "name":     {"required": _("El nombre es obligatorio.")},
+            "days_due": {"required": _("Los días de vencimiento son obligatorios.")},
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column("name",     css_class="col-md-8"),
+                Column("days_due", css_class="col-md-4"),
+            ),
+            "description",
+        )
 
 
 # ── InvoiceItem formset ───────────────────────────────────────────────────────

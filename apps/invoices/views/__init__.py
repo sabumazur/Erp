@@ -6,6 +6,7 @@ from .customers import (
     CustomerDepartmentCreateView,
     CustomerDepartmentUpdateView,
     CustomerDepartmentToggleView,
+    CustomerDepartmentDeleteView,
 )
 from .invoices import (
     InvoiceListView,
@@ -76,4 +77,9 @@ from .reports import (
 from .htmx import (
     CustomerDefaultsView,
     ItemCatalogView,
+)
+from .payment_terms import (
+    PaymentTermListView,
+    PaymentTermUpdateView,
+    PaymentTermDeleteView,
 )

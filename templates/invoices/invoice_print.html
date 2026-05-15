@@ -6,12 +6,12 @@
   <title>{{ invoice.encf|default:"Borrador" }} – {{ org.name }}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; padding: 20mm 18mm; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; padding: 45mm 22mm 25mm 22mm; background-image: url("{% static 'img/hoja timbrada cafe tropical mod.jpg' %}"); background-size: 100% 100%; background-repeat: no-repeat; background-attachment: fixed; }
 
     .doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a1a1a; padding-bottom: 12px; margin-bottom: 18px; }
     .org-name { font-size: 18px; font-weight: 700; }
     .org-meta { font-size: 11px; color: #555; margin-top: 4px; }
-    .doc-title { text-align: right; }
+    .doc-title { display: flex; flex-direction: column; align-items: flex-end; text-align: right; margin-top: 15mm; }
     .doc-title h1 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
     .doc-title .doc-number { font-size: 14px; font-family: monospace; color: #333; margin-top: 4px; }
     .doc-title .doc-status { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: #e9ecef; color: #495057; }
@@ -58,9 +58,9 @@
     .page-footer { margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 8px; font-size: 10px; color: #999; text-align: center; }
 
     @media print {
-      body { padding: 10mm; }
+      body { padding: 45mm 22mm 25mm 22mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
-      @page { margin: 12mm; size: A4 portrait; }
+      @page { margin: 0; size: letter portrait; }
     }
     .print-btn { position: fixed; top: 12px; right: 16px; padding: 8px 18px; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; z-index: 999; }
     .print-btn:hover { background: #333; }

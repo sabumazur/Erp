@@ -1,0 +1,47 @@
+{% load i18n %}
+<tr>
+
+  <td data-col="name" class="fw-semibold" style="font-size:.85rem;color:#1e2130">
+    {{ row.name }}
+  </td>
+
+  <td data-col="days_due" class="text-end font-monospace" style="font-size:.83rem">
+    {{ row.days_due }}
+  </td>
+
+  <td data-col="description" class="small text-muted">
+    {{ row.description|default:"—" }}
+  </td>
+
+  <td class="text-end" style="white-space:nowrap">
+    {# Edit #}
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            hx-get="{% url 'invoices:payment_term_edit' row.pk %}"
+            hx-target="#payment-term-modal-body"
+            hx-on::after-request="
+              document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
+              bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+      <i class="bi bi-pencil"></i>
+    </button>
+
+    {# Delete #}
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            onclick="Swal.fire({
+              icon: 'warning',
+              title: '{% trans "¿Eliminar término?" %}',
+              html: '<strong>{{ row.name|escapejs }}</strong>',
+              showCancelButton: true,
+              confirmButtonText: '{% trans "Eliminar" %}',
+              cancelButtonText: '{% trans "Cancelar" %}',
+              confirmButtonColor: '#dc3545',
+            }).then(r => {
+              if (r.isConfirmed)
+                htmx.ajax('POST', '{% url "invoices:payment_term_delete" row.pk %}',
+                  { target: '#dt-results', swap: 'innerHTML',
+                    values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+            })">
+      <i class="bi bi-trash"></i>
+    </button>
+  </td>
+
+</tr>

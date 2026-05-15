@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block title %}{% trans "Editar módulo" %}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Editar módulo" %}</h4>
+    <p class="rpt-header-sub">{{ module.name }}</p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'core:module_detail' module.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="rpt-table-wrap p-4">
+      <form method="post">
+        {% csrf_token %}
+        {% crispy form %}
+        <hr class="my-3">
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{% url 'core:module_detail' module.pk %}" class="btn btn-outline-secondary">
+            {% trans "Cancelar" %}
+          </a>
+          <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

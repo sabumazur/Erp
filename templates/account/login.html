@@ -1,5 +1,5 @@
 {% extends "base_anon.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
 {% block title %}Iniciar sesión — SabSys{% endblock %}
 
@@ -13,7 +13,7 @@
 
         <form method="post" action="{% url 'account_login' %}">
           {% csrf_token %}
-          {{ form|crispy }}
+          {% language "es" %}{{ form|crispy }}{% endlanguage %}
           <div class="d-grid mt-3">
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión

@@ -1,21 +1,17 @@
 """
-Wipes ALL database records (preserving the superuser account) and seeds
-exactly 25 sample records per model for Invoice App and Items App.
+Seeds 25 sample records per model for Invoice App and Items App into the
+superuser's organization. Run after reset_db (or against any clean org).
 
 Usage:
-    python manage.py reset_and_seed_db
-    python manage.py reset_and_seed_db --no-input
+    python manage.py seed_db
+    python manage.py seed_db --no-input
 """
 import random
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.contrib.auth.hashers import make_password
-from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models.signals import post_save
-from django.utils import timezone
-from django.utils.text import slugify
 
 
 # ── Dominican Republic sample data ────────────────────────────────────────────
@@ -127,8 +123,12 @@ def _rnc(i: int) -> str:
     return f"1{i + 1:08d}"
 
 
+def _today_str() -> str:
+    return date.today().strftime("%Y%m%d")
+
+
 class Command(BaseCommand):
-    help = "Wipe all data and seed 25 sample records per model (Invoice + Items apps)."
+    help = "Seed 25 sample records per model into the superuser's organization."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -139,140 +139,38 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        from apps.accounts.models import Organization
+
+        # Find the superuser's org to seed into
+        org = Organization.objects.filter(owner__is_superuser=True).first()
+        if not org:
+            raise CommandError(
+                "No superuser org found. Run reset_db first or create a superuser."
+            )
+
         if not options["no_input"]:
             self.stdout.write(
-                "\nThis will DELETE all database records and reseed with sample data.\n"
+                f"\nThis will seed 25 sample records per model into org '{org.name}'.\n"
             )
             confirm = input("Type 'yes' to continue: ")
             if confirm.strip().lower() != "yes":
                 self.stdout.write(self.style.WARNING("Aborted."))
                 return
 
-        # Capture superuser credentials before wiping
-        from apps.accounts.models import User as _User
-
-        sv_email = sv_fn = sv_ln = sv_pw_hash = None
-        try:
-            su = _User.all_objects.filter(is_superuser=True).first()
-            if su:
-                sv_email   = su.email
-                sv_fn      = su.first_name
-                sv_ln      = su.last_name
-                sv_pw_hash = su.password
-        except Exception:
-            pass
-
-        if not sv_email:
-            sv_email   = "admin@sabsys.com"
-            sv_fn      = "Admin"
-            sv_ln      = "SabSys"
-            sv_pw_hash = make_password("Admin1234!")
-
-        # Set a DB-level default for the orphaned 'default_payment_method' column
-        # (exists in the DB from migration 0005 but removed from the model).
-        # Must happen outside the main transaction — ALTER TABLE disallowed with
-        # pending trigger events in PostgreSQL.
-        self._patch_orphaned_columns()
-
-        with transaction.atomic():
-            self._wipe()
-            superuser, org = self._restore_superuser(sv_email, sv_fn, sv_ln, sv_pw_hash)
-            counts = self._seed(superuser, org)
-
+        counts = self._seed(org)
         self._print_summary(counts)
 
-    # ── Schema patch ─────────────────────────────────────────────────────────
+    # ── Seed orchestration ────────────────────────────────────────────────────
 
-    def _patch_orphaned_columns(self):
-        """
-        Some DB columns exist from old migrations but were removed from models.
-        Set defaults on them so ORM inserts work without specifying those columns.
-        """
-        from django.db import connection
-
-        with connection.cursor() as cur:
-            cur.execute(
-                "ALTER TABLE invoices_customer "
-                "ALTER COLUMN default_payment_method SET DEFAULT 'TRANSFER'"
-            )
-
-    # ── Phase 1: Wipe ─────────────────────────────────────────────────────────
-
-    def _wipe(self):
-        from apps.invoices.models import (
-            Customer, Invoice, InvoiceItem, Payment, PaymentAllocation,
-            PaymentTerm, NCFSequence, DocumentSequence, CustomerDepartment,
-        )
-        from apps.items.models import Item, ItemCodeSequence
-        from apps.core.models import Module, Notification
-        from apps.accounts.models import User, Organization, Team, Membership, Invitation
-
-        self.stdout.write("Wiping database...")
-
-        # Historical records (django-simple-history)
-        Customer.history.model.objects.all().delete()
-        Invoice.history.model.objects.all().delete()
-        Payment.history.model.objects.all().delete()
-
-        PaymentAllocation.objects.all().delete()
-        Payment.all_objects.all().delete()
-        InvoiceItem.objects.all().delete()
-
-        # Clear self-referential PROTECT FKs before deleting Invoice rows
-        Invoice.objects.all().update(encf_modified=None, consolidated_into=None)
-        Invoice.objects.all().delete()
-
-        CustomerDepartment.all_objects.all().delete()
-        Customer.all_objects.all().delete()
-        NCFSequence.objects.all().delete()
-        DocumentSequence.objects.all().delete()
-        ItemCodeSequence.objects.all().delete()
-        Item.all_objects.all().delete()
-        PaymentTerm.objects.all().delete()
-        Notification.all_objects.all().delete()
-        Invitation.all_objects.all().delete()
-        Membership.all_objects.all().delete()
-        Team.all_objects.all().delete()
-        Organization.all_objects.all().delete()  # before User — owner FK is PROTECT
-        User.all_objects.all().delete()
-        Module.objects.all().delete()
-
-        self.stdout.write(self.style.SUCCESS("  Wipe complete."))
-
-    # ── Phase 2: Restore superuser ────────────────────────────────────────────
-
-    def _restore_superuser(self, email, first_name, last_name, pw_hash):
-        from apps.accounts.models import User, Organization
-
-        user = User(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            is_staff=True,
-            is_superuser=True,
-            is_active=True,
-        )
-        user.password = pw_hash
-        user.save()  # fires post_save → auto-creates default Org + OWNER Membership
-
-        org = Organization.objects.get(owner=user)
-        self.stdout.write(
-            self.style.SUCCESS(f"  Superuser '{email}' restored. Org: '{org.name}'")
-        )
-        return user, org
-
-    # ── Phase 3: Seed ────────────────────────────────────────────────────────
-
-    def _seed(self, superuser, org):
+    def _seed(self, org):
         from apps.accounts.models import User
         from apps.accounts.signals import create_default_organization
 
         counts = {}
 
-        # Disconnect auto-org signal so new User objects don't create phantom orgs
         post_save.disconnect(create_default_organization, sender=User)
         try:
-            items         = self._seed_items(org)
+            items = self._seed_items(org)
             counts["Item"] = len(items)
 
             from apps.items.models import ItemCodeSequence
@@ -281,16 +179,16 @@ class Command(BaseCommand):
             payment_terms = self._seed_payment_terms(org)
             counts["PaymentTerm"] = len(payment_terms)
 
-            customers     = self._seed_customers(org, payment_terms)
+            customers = self._seed_customers(org, payment_terms)
             counts["Customer"] = len(customers)
 
-            departments   = self._seed_customer_departments(org, customers)
+            departments = self._seed_customer_departments(org, customers)
             counts["CustomerDepartment"] = len(departments)
 
-            ncf_seqs      = self._seed_ncf_sequences(org)
+            ncf_seqs = self._seed_ncf_sequences(org)
             counts["NCFSequence"] = len(ncf_seqs)
 
-            doc_seqs      = self._seed_document_sequences(org)
+            doc_seqs = self._seed_document_sequences(org)
             counts["DocumentSequence"] = len(doc_seqs)
 
             invoices, inv_items = self._seed_invoices(org, customers, items, departments)
@@ -372,7 +270,6 @@ class Command(BaseCommand):
     def _seed_customers(self, org, payment_terms):
         from apps.invoices.models import Customer, NCFType
 
-        # Alternate between B01 and E31 as default NCF type — realistic mix
         ncf_type_cycle = [
             NCFType.B01_CREDITO_FISCAL, NCFType.CONSUMO,
             NCFType.B02_CONSUMO, NCFType.CREDITO_FISCAL,
@@ -421,13 +318,11 @@ class Command(BaseCommand):
     def _seed_ncf_sequences(self, org):
         from apps.invoices.models import NCFSequence
 
-        # 20 active sequences — one per NCF type (all B-series + all E-series)
-        B_TYPES = sorted(NCFSequence.PHYSICAL_TYPES)   # 10 types: 1,2,3,4,11,12,13,14,15,16
-        E_TYPES = sorted(NCFSequence.ELECTRONIC_TYPES) # 10 types: 31,32,33,34,41,43,44,45,46,47
+        B_TYPES = sorted(NCFSequence.PHYSICAL_TYPES)
+        E_TYPES = sorted(NCFSequence.ELECTRONIC_TYPES)
 
         seqs = []
 
-        # 10 active B-series sequences
         for ncf_type in B_TYPES:
             seqs.append(
                 NCFSequence.objects.create(
@@ -440,7 +335,6 @@ class Command(BaseCommand):
                 )
             )
 
-        # 10 active E-series sequences
         for ncf_type in E_TYPES:
             seqs.append(
                 NCFSequence.objects.create(
@@ -448,13 +342,11 @@ class Command(BaseCommand):
                     ncf_type=ncf_type,
                     series=NCFSequence.Series.ELECTRONIC,
                     current_seq=random.randint(0, 100),
-                    max_seq=99_999_999,  # PositiveIntegerField max fits this value
+                    max_seq=99_999_999,
                     is_active=True,
                 )
             )
 
-        # 5 inactive (exhausted) B-series sequences for the first 5 types
-        # — simulates sequences that were used and replaced
         for ncf_type in B_TYPES[:5]:
             seqs.append(
                 NCFSequence.objects.create(
@@ -463,7 +355,7 @@ class Command(BaseCommand):
                     series=NCFSequence.Series.PHYSICAL,
                     current_seq=99_999_999,
                     max_seq=99_999_999,
-                    is_active=False,  # exhausted / replaced
+                    is_active=False,
                 )
             )
 
@@ -481,7 +373,7 @@ class Command(BaseCommand):
                     current_seq=0,
                 )
             )
-        return seqs  # 2 (hard cap: 2 doc_types per org)
+        return seqs  # 2
 
     def _seed_invoices(self, org, customers, items, departments):
         from apps.invoices.models import Invoice, InvoiceItem
@@ -510,8 +402,8 @@ class Command(BaseCommand):
                 encf = f"B01{encf_counter:08d}"
                 encf_counter += 1
 
-            issue    = today - timedelta(days=random.randint(0, 90))
-            due      = issue + timedelta(days=30)
+            issue = today - timedelta(days=random.randint(0, 90))
+            due   = issue + timedelta(days=30)
 
             inv = Invoice.objects.create(
                 doc_type=Invoice.DocType.INVOICE,
@@ -621,7 +513,6 @@ class Command(BaseCommand):
     def _seed_payments(self, org, customers, invoices):
         from apps.invoices.models import Payment, PaymentAllocation, Invoice
 
-        # Target invoices that can be paid: CONFIRMED, SENT, or PAID
         payable = [
             inv for inv in invoices
             if inv.doc_type == Invoice.DocType.INVOICE
@@ -647,7 +538,7 @@ class Command(BaseCommand):
                 amount=amount,
                 date=inv.issue_date + timedelta(days=random.randint(0, 15)),
                 method=methods[i % len(methods)],
-                reference=f"REF-{today_str()}-{i + 1:04d}",
+                reference=f"REF-{_today_str()}-{i + 1:04d}",
                 notes=f"Pago de muestra #{i + 1}",
             )
             payments.append(pmt)
@@ -672,7 +563,3 @@ class Command(BaseCommand):
         total = sum(counts.values())
         self.stdout.write(f"  {'-'*30} {'-'*8}")
         self.stdout.write(f"  {'TOTAL':<30} {total:>8}")
-
-
-def today_str() -> str:
-    return date.today().strftime("%Y%m%d")

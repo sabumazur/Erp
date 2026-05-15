@@ -38,7 +38,7 @@ def validate_rnc(value: str) -> tuple[bool, str]:
     if len(set(digits)) == 1:
         return False, _("RNC inválido.")
     total = sum(int(d) * w for d, w in zip(digits, _RNC_WEIGHTS))
-    expected = (10 - total % 10) % 10
+    expected = (11 - total % 11) % 11
     if int(digits[8]) != expected:
         return False, _("El dígito verificador del RNC es incorrecto.")
     return True, ""

@@ -403,7 +403,7 @@
     if (filtered.length === 0) {
       var empty = document.createElement("tr");
       var emptyTd = document.createElement("td");
-      emptyTd.colSpan = 3;
+      emptyTd.colSpan = 4;
       emptyTd.className = "text-center text-muted py-4";
       emptyTd.innerHTML = '<i class="bi bi-inbox me-1"></i>' +
         getConfig("itemPickerEmpty", "No se encontraron artículos.");
@@ -414,13 +414,14 @@
         var tr = document.createElement("tr");
         tr.innerHTML =
           '<td class="small font-monospace">' + escapeHtml(item.code || "-") + "</td>" +
-          '<td><span class="fw-semibold">' + escapeHtml(item.name || "") + "</span></td>" +
+          '<td>' + escapeHtml(item.name || "") + "</td>" +
+          '<td class="picker-unit-cell">' + escapeHtml(item.unit || "") + "</td>" +
           '<td class="text-end">' + formatMoney(item.unit_price) + "</td>";
         tr.addEventListener("click", function () {
           tbody.querySelectorAll("tr").forEach(function (r) {
-            r.classList.remove("picker-selected");
+            r.removeAttribute("aria-selected");
           });
-          tr.classList.add("picker-selected");
+          tr.setAttribute("aria-selected", "true");
           picker.selectedPk = item.pk;
           if (selBtn) selBtn.disabled = false;
         });
@@ -638,10 +639,50 @@
       pickerModal.addEventListener("shown.bs.modal", function () {
         picker.page = 1;
         pickerRender("");
-        if (pickerSearch) {
-          pickerSearch.value = "";
-          pickerSearch.focus();
+        if (pickerSearch) pickerSearch.value = "";
+
+        var currentPk = null;
+        if (window.activeItemRow) {
+          var itemEl = window.activeItemRow.querySelector('[name$="-item"]');
+          if (itemEl && itemEl.value) currentPk = String(itemEl.value);
         }
+
+        if (currentPk) {
+          var catalog = window.ITEM_CATALOG || [];
+          var sorted = catalog.slice().sort(function (a, b) {
+            var av, bv;
+            if (picker.sortKey === "unit_price") {
+              av = parseFloat(a[picker.sortKey]) || 0;
+              bv = parseFloat(b[picker.sortKey]) || 0;
+            } else {
+              av = (a[picker.sortKey] || "").toString().toLowerCase();
+              bv = (b[picker.sortKey] || "").toString().toLowerCase();
+            }
+            if (av < bv) return picker.sortDir === "asc" ? -1 : 1;
+            if (av > bv) return picker.sortDir === "asc" ? 1 : -1;
+            return 0;
+          });
+          var idx = sorted.findIndex(function (i) { return String(i.pk) === currentPk; });
+          if (idx >= 0) {
+            var pageSize = 10;
+            picker.page = Math.floor(idx / pageSize) + 1;
+            pickerRender("");
+            var pos = idx % pageSize;
+            var tbody = document.getElementById("picker-tbody");
+            if (tbody) {
+              var rows = tbody.querySelectorAll("tr");
+              if (rows[pos]) {
+                rows[pos].setAttribute("aria-selected", "true");
+                picker.selectedPk = currentPk;
+                var selBtn = document.getElementById("picker-select-btn");
+                if (selBtn) selBtn.disabled = false;
+                rows[pos].scrollIntoView({ block: "nearest" });
+              }
+            }
+          }
+        }
+
+        if (pickerSearch) pickerSearch.focus();
       });
       pickerModal.addEventListener("hidden.bs.modal", function () {
         picker.selectedPk = null;
@@ -806,6 +847,26 @@
     });
   }
 
+  function initModuleModal() {
+    initTemplateModal("moduleModal", "module-modal-body", "module-blank-tpl", "moduleModalLabel", "moduleCreateTitle", false);
+    document.body.addEventListener("htmx:afterSwap", function (e) {
+      if (e.detail.target && e.detail.target.id === "module-modal-body") {
+        var title = document.getElementById("moduleModalLabel");
+        if (title) title.textContent = getConfig("moduleEditTitle", title.textContent);
+      }
+    });
+  }
+
+  function initPaymentTermModal() {
+    initTemplateModal("paymentTermModal", "payment-term-modal-body", "payment-term-blank-tpl", "paymentTermModalLabel", "paymentTermCreateTitle", false);
+    document.body.addEventListener("htmx:afterSwap", function (e) {
+      if (e.detail.target && e.detail.target.id === "payment-term-modal-body") {
+        var title = document.getElementById("paymentTermModalLabel");
+        if (title) title.textContent = getConfig("paymentTermEditTitle", title.textContent);
+      }
+    });
+  }
+
   function initNcfModal() {
     initTemplateModal("ncfSequenceModal", "ncf-modal-body", "ncf-blank-tpl", "", "", false);
   }
@@ -946,6 +1007,8 @@
     initCustomerDefaults();
     initPaymentForm();
     initItemModal();
+    initModuleModal();
+    initPaymentTermModal();
     initCustomerList();
     initNcfModal();
     initDeptModalClose();

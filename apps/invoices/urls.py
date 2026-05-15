@@ -8,6 +8,7 @@ from .views import (
     CustomerDepartmentCreateView,
     CustomerDepartmentUpdateView,
     CustomerDepartmentToggleView,
+    CustomerDepartmentDeleteView,
     # Invoices
     InvoiceListView,
     InvoiceCreateView,
@@ -62,6 +63,10 @@ from .views import (
     NCFSequenceListView,
     NCFSequenceUpdateView,
     NCFSequenceDeleteView,
+    # Payment terms
+    PaymentTermListView,
+    PaymentTermUpdateView,
+    PaymentTermDeleteView,
     # Reports
     ReportIndexView,
     Report607View,
@@ -91,6 +96,8 @@ urlpatterns = [
          CustomerDepartmentUpdateView.as_view(), name="department_edit"),
     path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/toggle/",
          CustomerDepartmentToggleView.as_view(), name="department_toggle"),
+    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/delete/",
+         CustomerDepartmentDeleteView.as_view(), name="department_delete"),
 
     # ── Invoices ──────────────────────────────────────────────────────────────
     path("invoices/",                              InvoiceListView.as_view(),    name="invoice_list"),
@@ -156,6 +163,11 @@ urlpatterns = [
     path("payments/outstanding-invoices/",         OutstandingInvoicesView.as_view(), name="payment_outstanding_invoices"),
     path("invoices/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
     path("invoices/items/catalog/",                ItemCatalogView.as_view(),         name="item_catalog"),
+
+    # ── Payment terms ────────────────────────────────────────────────────────
+    path("invoices/payment-terms/",                PaymentTermListView.as_view(),   name="payment_term_list"),
+    path("invoices/payment-terms/<int:pk>/edit/",  PaymentTermUpdateView.as_view(), name="payment_term_edit"),
+    path("invoices/payment-terms/<int:pk>/delete/",PaymentTermDeleteView.as_view(), name="payment_term_delete"),
 
     # ── NCF sequences ─────────────────────────────────────────────────────────
     path("invoices/ncf/",                          NCFSequenceListView.as_view(),   name="ncf_sequences"),

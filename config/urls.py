@@ -15,6 +15,7 @@ urlpatterns = [
     path("auth/", include("allauth.urls")),
     path("", include("apps.accounts.urls", namespace="accounts")),
     path("items/", include("apps.items.urls", namespace="items")),
+    path("core/",  include("apps.core.urls",  namespace="core")),
     path("", include("apps.invoices.urls", namespace="invoices")),
 ]
 
