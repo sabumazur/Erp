@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repo.
 
 ## Commands
 
@@ -32,41 +32,42 @@ python manage.py seed_db               # Seed 25 DR sample records per model int
 python manage.py seed_db --no-input    # Skip confirmation prompt
 ```
 
-Settings are split across `config/settings/base.py`, `development.py`, and `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Environment variables are loaded via `python-decouple` (`.env` file or environment). The development settings use PostgreSQL by default; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
+Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
 
 ## Architecture
 
 ### Multi-tenancy
 
-Every entity has an `organization` FK. All queries must be scoped:
+Every entity has `organization` FK. All queries must be scoped:
 
 ```python
 MyModel.objects.for_org(request.organization)
 ```
 
-`OrganizationMiddleware` (loaded in `MIDDLEWARE`) sets `request.organization` and `request.membership` on every authenticated request. Resolution priority: `session["active_org_slug"]` → first membership by `created_at`.
+`OrganizationMiddleware` (in `MIDDLEWARE`) sets `request.organization` + `request.membership` on every auth request. Resolution: `session["active_org_slug"]` → first membership by `created_at`.
 
 ### Base models (`apps/core/models.py`)
 
-`ERPBaseModel` = `TimeStampedModel` + `SoftDeleteModel`, UUID primary key. All entity models inherit from it.
+`ERPBaseModel` = `TimeStampedModel` + `SoftDeleteModel`, UUID PK. All entity models inherit it.
 
 **Soft-delete behaviour:**
-- `model.delete()` sets `deleted_at`; it does **not** emit `pre_delete`/`post_delete` signals. Guardian permission cleanup must be done manually before calling `delete()`.
-- `model.hard_delete()` performs a real SQL DELETE.
-- `Model.objects` filters `deleted_at__isnull=True`. `Model.all_objects` bypasses the filter — use this when checking for slug/code uniqueness to avoid collisions with soft-deleted rows.
+- `model.delete()` sets `deleted_at`; **not** emit `pre_delete`/`post_delete`. Do guardian cleanup manually before `delete()`.
+- `model.hard_delete()` performs real SQL DELETE.
+- `Model.objects` filters `deleted_at__isnull=True`. `Model.all_objects` bypasses — use for slug/code uniqueness to avoid collisions with soft-deleted rows.
 
 ### Auth & organizations (`apps/accounts/`)
 
-- Custom `User` model is email-based (`USERNAME_FIELD = "email"`, no username).
-- `UserManager.get_queryset()` always filters out soft-deleted users.
-- A `post_save` signal on `User` (`create_default_organization`) auto-creates a personal workspace `Organization` and an `OWNER` `Membership` on every new registration. The slug collision resolution uses `all_objects` to check both live and soft-deleted orgs.
-- On login, the `accept_pending_invitation` signal auto-accepts any pending `Invitation` for the user's email.
+- `User` model email-based (`USERNAME_FIELD = "email"`, no username).
+- `UserManager.get_queryset()` filters out soft-deleted users.
+- `post_save` on `User` (`create_default_organization`) auto-creates personal `Organization` + `OWNER` `Membership` on registration. Slug collision uses `all_objects` (live + soft-deleted).
+- On login, `accept_pending_invitation` auto-accepts pending `Invitation` for user email.
 - `Membership.Role` hierarchy: `OWNER` > `ADMIN` > `MEMBER` > `VIEWER`. `membership.is_admin` returns `True` for OWNER and ADMIN.
-- `Team.modules` (M2M to `core.Module`) gates module access. An empty `modules` set means unrestricted access.
+- `Team.modules` (M2M to `core.Module`) gates module access. Empty `modules` = unrestricted.
+- **Org creation restricted to `is_staff`.** `CreateOrganizationView` checks `is_staff` in `dispatch`; non-staff see no "Crear organización" in navbar. Uses `StaffCreateOrganizationForm`.
 
 ### View base class
 
-All views inherit `ERPBaseViewMixin(LoginRequiredMixin)`. It supports three class attributes:
+All views inherit `ERPBaseViewMixin(LoginRequiredMixin)`. Three class attrs:
 
 ```python
 required_permission: str | None   # guardian codename scoped to request.organization
@@ -74,11 +75,13 @@ admin_required: bool              # True → OWNER or ADMIN only
 required_module: str | None       # module slug checked via can_access_module()
 ```
 
-Class-based views that use `render()` directly (plain `View` subclasses) must call `self.get_context(...)` instead of `get_context_data()` to get the sidebar context variables (`organization`, `membership`, `user_memberships`) injected.
+Plain `View` subclasses using `render()` must call `self.get_context(...)` not `get_context_data()` to get sidebar vars (`organization`, `membership`, `user_memberships`).
+
+**`ModuleStaffMixin`** (`apps/core/views_modules.py`) — `ERPBaseViewMixin` subclass for staff-only views. Checks `request.user.is_staff`, skips org context. Use for platform-level admin (Module registry, etc.).
 
 ### Invoice system (`apps/invoices/`)
 
-`Invoice` is a single unified model with a `doc_type` discriminator: `INVOICE`, `QUOTATION`, `SALE_ORDER`. Three scoped managers exist:
+`Invoice` unified model with `doc_type` discriminator: `INVOICE`, `QUOTATION`, `SALE_ORDER`. Three scoped managers:
 
 ```python
 Invoice.invoices      # INVOICE only
@@ -87,29 +90,31 @@ Invoice.sale_orders   # SALE_ORDER only
 Invoice.objects       # all doc_types (default)
 ```
 
-**All fiscal and status transitions go through service classes** in `apps/invoices/services.py` — never mutate `status` directly in views:
+**All fiscal/status transitions go through service classes** in `apps/invoices/services.py` — never mutate `status` directly in views:
 
-- `NCFService` — confirms invoices, assigns e-NCF atomically via `NCFSequence.generate()` (`SELECT FOR UPDATE`). In dev mode with no active sequence, it falls back to a fake "B"-series NCF.
+- `NCFService` — confirms invoices, assigns e-NCF atomically via `NCFSequence.generate()` (`SELECT FOR UPDATE`). Dev fallback: fake "B"-series NCF.
 - `QuotationService` — DRAFT → CONFIRMED → SENT → ACCEPTED/REJECTED/EXPIRED → CONVERTED.
-- `SaleOrderService` — DRAFT → CONFIRMED → DELIVERED → INVOICED; includes `consolidate_and_invoice()` to batch-invoice all DELIVERED orders for a customer/period.
+- `SaleOrderService` — DRAFT → CONFIRMED → DELIVERED → INVOICED; `consolidate_and_invoice()` batch-invoices DELIVERED orders for customer/period.
 - `PaymentService` — creates `Payment` + `PaymentAllocation` rows atomically; auto-marks invoices PAID when fully covered; reversal on `delete()`.
 
-`InvoiceItem.save()` auto-calls `compute()` to populate `line_total`, `itbis_amount`, and `line_total_with_itbis`. After adding/removing items call `invoice.recompute_totals()`.
+`InvoiceItem.save()` auto-calls `compute()` → `line_total`, `itbis_amount`, `line_total_with_itbis`. After add/remove items call `invoice.recompute_totals()`.
 
-Dominican fiscal identifiers are tracked in `NCFSequence` (one active sequence per org+NCF type). Non-fiscal document numbers (quotations/sale orders) use `DocumentSequence`.
+Dominican fiscal IDs in `NCFSequence` (one active per org+NCF type). Non-fiscal (quotations/sale orders) use `DocumentSequence`.
 
 **NCF series:** `NCFType` covers two series — physical (B) and electronic (E):
 
 - **B-series** (traditional comprobantes): codes 1–16, e.g. `B01_CREDITO_FISCAL`, `B02_CONSUMO`. Format: `B{type:02d}{seq:08d}` → `B0100000001`. Default `max_seq` = 99,999,999.
 - **E-series** (e-CF electrónico): codes 31–47, e.g. `CREDITO_FISCAL = 31`. Format: `E{type:02d}{seq:010d}` → `E310000000001`.
 
-`NCFSequence` exposes `NCFSequence.PHYSICAL_TYPES` and `NCFSequence.ELECTRONIC_TYPES` frozensets. The `Series` inner class has `PHYSICAL = "B"` and `ELECTRONIC = "E"`; default series is `PHYSICAL`. Helper properties: `preview_next` (next NCF string without incrementing), `remaining` (unused slots). Dev-mode fallback in `NCFService` generates a fake B-series 8-digit NCF so it never collides with real E-series sequences.
+RNC/cedula validation in `apps/invoices/validators.py`. DGII checksum uses **modulo 11** (weights `[7,9,8,6,5,4,3,2]`, check digit = `(11 - total%11) % 11`). Cedulas use different weights + modulo 10.
+
+`NCFSequence` exposes `PHYSICAL_TYPES` + `ELECTRONIC_TYPES` frozensets. `Series`: `PHYSICAL = "B"`, `ELECTRONIC = "E"`; default `PHYSICAL`. Props: `preview_next` (next NCF without increment), `remaining` (unused slots). Dev fallback generates fake B-series 8-digit NCF — no collision with E-series.
 
 ### DataTable system (`apps/core/datatable.py`)
 
-All list views use a shared datatable pattern for sorting, pagination, and HTMX filtering.
+All list views use shared datatable pattern for sorting, pagination, HTMX filtering.
 
-**`DataTableMixin`** — add to any `ListView`/`View` and set these class attributes:
+**`DataTableMixin`** — add to any `ListView`/`View`; set class attrs:
 
 ```python
 dt_columns: list[DTColumn]     # column definitions (key, label, sortable, visible, numeric)
@@ -122,7 +127,7 @@ dt_search_placeholder: str     # search input placeholder
 dt_id: str                     # localStorage key for column visibility
 ```
 
-Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. For HTMX requests return `components/datatable/results.html`. Use `build_datatable_context()` directly in action views that need a table refresh after a CRUD op.
+Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. HTMX requests → return `components/datatable/results.html`. Use `build_datatable_context()` in action views needing table refresh after CRUD.
 
 Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
 
@@ -135,14 +140,14 @@ fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish")
 - `fts_fields` — natural-language text columns (SearchVector / SearchRank via `pg_trgm` + FTS).
 - `trgm_fields` — codes / IDs (reliable `icontains` matching).
 - `q < 3 chars` → plain `icontains` on all fields; `q >= 3` → FTS ranked + trigram fallback.
-- Requires `django.contrib.postgres` and the `pg_trgm` extension (migration `core/0003_pg_trgm`).
-- GIN indexes for FTS and trigram are added per-model in migrations `invoices/0018` and `items/0006`.
+- Needs `django.contrib.postgres` + `pg_trgm` extension (migration `core/0003_pg_trgm`).
+- GIN indexes for FTS + trigram per-model in migrations `invoices/0018` + `items/0006`.
 
-All customer, invoice, payment, quotation, sale order, and item list views already call `fts_search`.
+All customer, invoice, payment, quotation, sale order, item list views call `fts_search`.
 
 ### Reports (`apps/invoices/views/reports.py`)
 
-All report views are `admin_required = True`, module `"invoices"`. Available reports:
+All report views: `admin_required = True`, module `"invoices"`.
 
 | View | URL name | Description |
 |------|----------|-------------|
@@ -157,61 +162,87 @@ All report views are `admin_required = True`, module `"invoices"`. Available rep
 | `ReportITBISView` | `invoices:report_itbis` | ITBIS (VAT) summary by period |
 | `ReportSalesByNCFTypeView` | `invoices:report_ncf_type` | Sales grouped by NCF type |
 
+### Module management (`apps/core/views_modules.py`)
+
+Staff-only CRUD for global `Module` registry. Uses `ModuleStaffMixin` (no org context). URL namespace: `core`.
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `ModuleListView` | `core:module_list` | Datatable list + inline create |
+| `ModuleDetailView` | `core:module_detail` | Read-only detail |
+| `ModuleUpdateView` | `core:module_edit` | HTMX modal edit |
+| `ModuleToggleView` | `core:module_toggle` | Toggle `is_active` |
+| `ModuleDeleteView` | `core:module_delete` | Delete (blocked if teams use module) |
+
+Registered in `config/urls.py` at `plataforma/modules/`.
+
+### Payment Terms (`apps/invoices/views/payment_terms.py`)
+
+Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required = True`, `required_module = "invoices"`. Sidebar after "Secuencias NCF" for admins.
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `PaymentTermListView` | `invoices:payment_term_list` | Datatable list + inline create |
+| `PaymentTermUpdateView` | `invoices:payment_term_edit` | HTMX modal edit |
+| `PaymentTermDeleteView` | `invoices:payment_term_delete` | Delete (blocked if customers reference term) |
+
 ### KPI cards (`templates/components/_kpi_cards.html`)
 
-Reusable partial for summary metric grids. Include with:
+Reusable partial for summary metric grids:
 ```django
 {% include "components/_kpi_cards.html" with cards=kpi_cards %}
 ```
-Each card in `kpi_cards` is a dict with keys `label`, `value`, `icon`, `color` (Bootstrap color name), and optional `url`.
+Each card: dict with `label`, `value`, `icon`, `color` (Bootstrap color), optional `url`.
 
 ### Test factories
 
-All factories in `apps/accounts/tests/factories.py` and `apps/invoices/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Tests that specifically assert signal behaviour call `User.objects.create_user()` directly.
+All factories in `apps/accounts/tests/factories.py` + `apps/invoices/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Signal tests call `User.objects.create_user()` directly.
 
-Global fixtures (`user`, `org`, `owner_membership`, `admin_membership`, `member_membership`, `viewer_membership`) are defined in the root `conftest.py`.
+Global fixtures (`user`, `org`, `owner_membership`, `admin_membership`, `member_membership`, `viewer_membership`) in root `conftest.py`.
 
 ### Deletion pattern
 
-All delete views (`ItemDeleteView`, `CustomerDeleteView`, `NCFSequenceDeleteView`) are POST-only, `admin_required = True`. They guard against referential integrity before calling `model.delete()`:
+All delete views POST-only, `admin_required = True`. Guard referential integrity before `model.delete()`:
 
-- `ItemDeleteView` — blocked if any `InvoiceItem` references the item.
-- `CustomerDeleteView` — blocked if the customer has invoices **or** payments.
-- `NCFSequenceDeleteView` — no guard; sequences can always be deleted (confirmation handled in the template).
+- `ItemDeleteView` — blocked if any `InvoiceItem` references item.
+- `CustomerDeleteView` — blocked if customer has invoices **or** payments.
+- `NCFSequenceDeleteView` — no guard; sequences always deletable (confirmation in template).
+- `PaymentTermDeleteView` — blocked if any `Customer` references term.
+- `CustomerDepartmentDeleteView` — blocked if any `Invoice` (sale order) references department.
 
-HTMX-aware: when `request.htmx` is truthy, deletion views return a partial response with `HX-Trigger` headers instead of a redirect. Success triggers `showToast`; blocked deletes trigger `showSwal` (SweetAlert2). Non-HTMX paths fall back to `messages` + redirect.
+HTMX-aware: `request.htmx` → partial response with `HX-Trigger` instead of redirect. Success → `showToast`; blocked → `showSwal` (SweetAlert2). Non-HTMX → `messages` + redirect.
 
 ### Items app (`apps/items/`)
 
-`Item` has an `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes are auto-generated for `SALE` and `BOTH` items via `ItemCodeSequence.generate()` when left blank. `cost_price` is nullable/optional; `margin` property is only valid when set. `InvoiceItem` FK to `Item` is optional — line items can be free-text.
+`Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for `SALE`/`BOTH` via `ItemCodeSequence.generate()` if blank. `cost_price` nullable; `margin` valid only when set. `InvoiceItem` FK to `Item` optional — line items can be free-text.
 
-Search is indexed: GIN trgm on `name`/`code` (migration `items/0006`); the item list uses `fts_search` with `fts_fields=["name"]` and `trgm_fields=["code"]`.
+Search: GIN trgm on `name`/`code` (migration `items/0006`); item list uses `fts_search` with `fts_fields=["name"]`, `trgm_fields=["code"]`.
 
 ### CI / CD
 
 `.github/workflows/ci.yml` runs on every push/PR to `main`:
 
 1. **Security audit** (`pip-audit`) — scans `requirements.txt` for known vulnerabilities.
-2. **Tests** — spins up a `postgres:16-alpine` service container and runs `pytest` against it using `config.settings.development`.
+2. **Tests** — spins up `postgres:16-alpine` service container, runs `pytest` using `config.settings.development`.
 
-Required CI env vars (set in the workflow): `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_KEY`, `ALLOWED_HOSTS`.
+CI env vars: `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_KEY`, `ALLOWED_HOSTS`.
 
 ### Production deployment
 
 `docker-compose.prod.yml` runs two services:
 
-- **`db`** — `postgres:16-alpine` with a named `postgres_data` volume; requires `DB_PASSWORD` env var.
-- **`app`** — built from `Dockerfile`; reads `.env` via `env_file`; uses `config.settings.production`; exposes port 8000; mounts `media/` and `logs/` volumes.
+- **`db`** — `postgres:16-alpine` with named `postgres_data` volume; requires `DB_PASSWORD` env var.
+- **`app`** — built from `Dockerfile`; reads `.env` via `env_file`; uses `config.settings.production`; exposes port 8000; mounts `media/` + `logs/` volumes.
 
 Start with: `docker compose -f docker-compose.prod.yml up -d`
 
-Custom error pages live at `templates/404.html` and `templates/500.html` (Bootstrap 5, no JS dependencies).
+Custom error pages: `templates/404.html` + `templates/500.html` (Bootstrap 5, no JS).
 
 ### Settings & i18n
 
 - Default language: Spanish (`LANGUAGE_CODE = "es"`); English also enabled.
 - Timezone: `America/Santo_Domingo`.
-- Crispy forms use the `bootstrap5` pack.
+- Crispy forms use `bootstrap5` pack.
 - `MESSAGE_TAGS` maps `ERROR` → `"danger"` to match Bootstrap 5 alert classes.
-- `ANONYMOUS_USER_NAME = None` (disables the guardian anonymous user).
-- `django.contrib.humanize` is installed (use `{% load humanize %}` for `intcomma`, `naturaltime`, etc. in templates).
+- `ANONYMOUS_USER_NAME = None` (disables guardian anonymous user).
+- `django.contrib.humanize` installed (`{% load humanize %}` → `intcomma`, `naturaltime`, etc.).

@@ -67,7 +67,17 @@
       "PowerShell(gh pr list --state open --base main)",
       "PowerShell(gh pr list --state open 2>&1)",
       "Bash(gh auth *)",
-      "PowerShell(gh auth status)"
+      "PowerShell(gh auth status)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); gh auth status 2>&1)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); gh pr list --state open)",
+      "PowerShell(gh --version)",
+      "Bash(which gh *)",
+      "Read(//usr/**)",
+      "Read(//c/Users/sabum/AppData/**)",
+      "PowerShell(&\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr list --state open)",
+      "PowerShell(&\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" pr list --state all --limit 20)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); git diff HEAD~5 HEAD --stat 2>&1)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); git log --oneline -8 2>&1)"
     ]
   }
 }
