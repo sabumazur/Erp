@@ -9,6 +9,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.history import record_change_reason
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
 from apps.core.search import fts_search
 from .filters import ItemFilter
@@ -168,7 +169,8 @@ class ItemUpdateView(ERPBaseViewMixin, View):
         form = ItemForm(request.POST, instance=item)
 
         if form.is_valid():
-            form.save()
+            item = form.save()
+            record_change_reason(item, form.cleaned_data.get("change_reason", ""))
             if request.htmx:
                 return ItemListView.refresh_table(request, _("Artículo actualizado correctamente."))
             messages.success(request, _("Artículo actualizado correctamente."))
