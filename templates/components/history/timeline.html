@@ -1,0 +1,70 @@
+{% load i18n humanize %}
+<div class="history-timeline">
+  {% if history_records %}
+    {% for record in history_records %}
+    <div class="d-flex gap-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+      {# Icon column #}
+      <div class="flex-shrink-0 text-center" style="width: 2rem;">
+        {% if record.history_type == "+" %}
+          <span class="badge bg-success">+</span>
+        {% elif record.history_type == "~" %}
+          <span class="badge bg-warning text-dark">~</span>
+        {% else %}
+          <span class="badge bg-danger">-</span>
+        {% endif %}
+      </div>
+
+      {# Content column #}
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            {# Change type label #}
+            {% if record.history_type == "+" %}
+              <span class="badge bg-success me-1">{% trans "Creado" %}</span>
+            {% elif record.history_type == "~" %}
+              <span class="badge bg-warning text-dark me-1">{% trans "Modificado" %}</span>
+            {% else %}
+              <span class="badge bg-danger me-1">{% trans "Eliminado" %}</span>
+            {% endif %}
+
+            {# Actor #}
+            <span class="fw-semibold small">
+              {% if record.history_user %}
+                {{ record.history_user.get_full_name|default:record.history_user.email }}
+              {% else %}
+                {% trans "Sistema" %}
+              {% endif %}
+            </span>
+          </div>
+
+          {# Timestamp #}
+          <small class="text-muted text-nowrap ms-2">
+            {{ record.history_date|naturaltime }}
+          </small>
+        </div>
+
+        {# Diff: field-level changes #}
+        {% if record.delta and record.delta.changes %}
+          <dl class="row small mb-1 mt-1">
+            {% for change in record.delta.changes %}
+            <dt class="col-sm-4 text-muted fw-normal">{{ change.field }}</dt>
+            <dd class="col-sm-8 mb-0">
+              <span class="text-decoration-line-through text-muted me-1">{{ change.old|default:"—" }}</span>
+              <i class="bi bi-arrow-right text-secondary"></i>
+              <span class="ms-1">{{ change.new|default:"—" }}</span>
+            </dd>
+            {% endfor %}
+          </dl>
+        {% endif %}
+
+        {# Change reason #}
+        {% if record.history_change_reason %}
+          <em class="small text-secondary">{{ record.history_change_reason }}</em>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted small px-3 py-2 mb-0">{% trans "Sin historial registrado." %}</p>
+  {% endif %}
+</div>

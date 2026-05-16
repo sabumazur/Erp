@@ -1,0 +1,10 @@
+{% load i18n %}
+<div class="card mt-4">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-clock-history"></i>
+    <strong>{% trans "Historial de cambios" %}</strong>
+  </div>
+  <div class="card-body p-0">
+    {% include "components/history/timeline.html" with history_records=history_records %}
+  </div>
+</div>
