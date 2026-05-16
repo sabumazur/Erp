@@ -1,0 +1,11 @@
+{% load i18n %}
+{% comment %}
+  Filter-offcanvas body for the supplier list.
+  Rendered inside the dt-filter offcanvas by the datatable wrapper via dt_filter_template.
+  Has access to 'filter' (SupplierFilter) from the view context.
+{% endcomment %}
+
+<div class="mb-3">
+  <label class="rpt-filter-label">{% trans "Estado" %}</label>
+  {{ filter.form.status }}
+</div>

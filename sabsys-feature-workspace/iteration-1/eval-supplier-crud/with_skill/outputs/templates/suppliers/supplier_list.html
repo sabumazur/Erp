@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{% trans "Proveedores" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  {% include "components/datatable/wrapper.html" with
+      title=_("Proveedores")
+      create_modal_target="#supplier-modal"
+      create_label=_("Nuevo proveedor") %}
+
+</div>
+
+<!-- Create / Edit modal -->
+<div class="modal fade" id="supplier-modal" tabindex="-1" aria-labelledby="supplier-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="supplier-modal-label">{% trans "Proveedor" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Cerrar' %}"></button>
+      </div>
+      <div class="modal-body" id="supplier-modal-body">
+        {% include "suppliers/partials/supplier_modal_form.html" with
+            form=form
+            action_url=create_url
+            submit_label=submit_label %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

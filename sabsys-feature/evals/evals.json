@@ -1,0 +1,137 @@
+{
+  "skill_name": "sabsys-feature",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a Supplier model to sabsys. Suppliers belong to an organization, have a name, RNC (tax ID, optional), phone, email, and a status (ACTIVE/INACTIVE, default ACTIVE). Give me the full stack: model, form, filter, views (list with datatable, detail, create inline on list, edit via HTMX modal, delete with guard), URLs, the three template files (list, row partial, modal form), admin registration, a factory, and basic view tests.",
+      "expected_output": "Complete, copy-pasteable Django files for a Supplier feature: models.py with ERPBaseModel + org FK + TextChoices status, forms.py with crispy FormHelper form_tag=False, filters.py with fts_search, views.py with ERPBaseViewMixin + DataTableMixin list + refresh_table classmethod + HTMX-aware update/delete, urls.py with uuid pk, three HTML templates using Bootstrap 5 and HTMX, admin.py with @admin.register decorator, tests/factories.py with @mute_signals, and tests/test_views.py with _login helper and org-scoped assertions.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "model_inherits_ERPBaseModel",
+          "description": "The generated model.py imports and inherits from ERPBaseModel"
+        },
+        {
+          "name": "model_has_organization_fk",
+          "description": "The model has an 'organization' ForeignKey to 'accounts.Organization'"
+        },
+        {
+          "name": "model_has_status_textchoices",
+          "description": "Status field uses TextChoices inner class, not plain CharField with choices tuple"
+        },
+        {
+          "name": "views_use_ERPBaseViewMixin",
+          "description": "All views inherit ERPBaseViewMixin (not just LoginRequiredMixin directly)"
+        },
+        {
+          "name": "list_view_uses_DataTableMixin",
+          "description": "The list view mixes in DataTableMixin and defines dt_columns, dt_url, dt_row_template"
+        },
+        {
+          "name": "list_view_scopes_to_org",
+          "description": "QuerySet uses .for_org(request.organization) not .filter(organization=...)"
+        },
+        {
+          "name": "delete_view_is_post_only",
+          "description": "Delete view only defines a post() method, not get()"
+        },
+        {
+          "name": "delete_view_admin_required",
+          "description": "Delete view has admin_required = True"
+        },
+        {
+          "name": "htmx_refresh_table_classmethod",
+          "description": "List view has a refresh_table classmethod that returns HX-Trigger showToast"
+        },
+        {
+          "name": "plain_view_uses_self_get_context",
+          "description": "Detail/update views that are plain View subclasses call self.get_context() not get_context_data()"
+        },
+        {
+          "name": "urls_use_uuid_pk",
+          "description": "urls.py uses <uuid:pk> path converter, not <int:pk>"
+        },
+        {
+          "name": "factory_mutes_signals",
+          "description": "Factory class is decorated with @mute_signals(post_save)"
+        },
+        {
+          "name": "test_login_sets_session",
+          "description": "Test _login helper calls force_login AND sets session['active_org_slug']"
+        },
+        {
+          "name": "templates_in_spanish",
+          "description": "Template labels and button text are in Spanish (e.g. 'Guardar', 'Cancelar', 'Eliminar')"
+        },
+        {
+          "name": "form_tag_false",
+          "description": "Form's __init__ sets self.helper.form_tag = False for modal compatibility"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a PurchaseOrder app to sabsys. A purchase order has: supplier (FK to a Supplier model in the same app), organization FK, number (auto-generated, read-only), status (DRAFT, CONFIRMED, RECEIVED, CANCELLED), issue_date, expected_date (optional), and notes. I need a PurchaseOrderService with confirm() and receive() methods that handle the status transitions atomically. Also give me the full CRUD views, URLs, templates, and tests for the service transitions.",
+      "expected_output": "A service class with @transaction.atomic methods that raise ValueError on invalid transitions. Views that call the service and never mutate status directly. Tests that verify the status machine using factories.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "service_uses_transaction_atomic",
+          "description": "Service methods are decorated with @transaction.atomic"
+        },
+        {
+          "name": "service_raises_value_error",
+          "description": "Service raises ValueError (not Http errors) when transition is invalid"
+        },
+        {
+          "name": "views_call_service",
+          "description": "Views call the service (e.g. PurchaseOrderService.confirm(order)) rather than mutating status directly"
+        },
+        {
+          "name": "model_has_org_fk",
+          "description": "PurchaseOrder has organization ForeignKey to 'accounts.Organization'"
+        },
+        {
+          "name": "service_tests_use_factories",
+          "description": "Service tests create objects via factories, not Model.objects.create"
+        },
+        {
+          "name": "transition_test_checks_status",
+          "description": "Tests refresh_from_db() after calling the service and assert the new status"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want to add expense tracking to sabsys. Create an Expense model with: organization, category (FK to ExpenseCategory, also needs to be created), amount (DecimalField), date, description, status (PENDING/APPROVED/REJECTED), and approved_by (FK to User, nullable). ExpenseCategory just needs org + name. Both need full CRUD. The expense list should show category name, amount with intcomma formatting, and status badge colored by status. Delete should be blocked if the expense is APPROVED.",
+      "expected_output": "Two models (ExpenseCategory + Expense) both inheriting ERPBaseModel with org FK. Expense delete view checks status before deleting and returns showSwal if blocked. Row template uses intcomma filter and Bootstrap badge classes colored by status. ExpenseCategory has its own minimal CRUD.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "two_models_with_org_fk",
+          "description": "Both ExpenseCategory and Expense inherit ERPBaseModel and have organization FK"
+        },
+        {
+          "name": "expense_has_category_fk",
+          "description": "Expense model has a ForeignKey to ExpenseCategory"
+        },
+        {
+          "name": "delete_blocked_for_approved",
+          "description": "ExpenseDeleteView checks expense.status == APPROVED and returns error before deleting"
+        },
+        {
+          "name": "blocked_delete_returns_showswal",
+          "description": "Blocked delete returns HX-Trigger with showSwal when request.htmx is True"
+        },
+        {
+          "name": "row_uses_intcomma",
+          "description": "Row partial template uses the intcomma filter for amount display"
+        },
+        {
+          "name": "status_badge_by_status",
+          "description": "Row template renders different Bootstrap badge classes depending on status value"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{% load i18n humanize %}
+
+{% if row.status == "PENDING" %}
+  {% with badge_color="warning" %}
+{% elif row.status == "APPROVED" %}
+  {% with badge_color="success" %}
+{% else %}
+  {% with badge_color="danger" %}
+{% endif %}
+
+<tr>
+
+  <td data-col="date" style="font-size:.83rem">
+    {{ row.date }}
+  </td>
+
+  <td data-col="category" style="font-size:.85rem;color:#1e2130">
+    {{ row.category.name }}
+  </td>
+
+  <td data-col="amount" class="text-end font-monospace" style="font-size:.83rem">
+    {{ row.amount|intcomma }}
+  </td>
+
+  <td data-col="status">
+    {% if row.status == "PENDING" %}
+      <span class="badge bg-warning text-dark">{{ row.get_status_display }}</span>
+    {% elif row.status == "APPROVED" %}
+      <span class="badge bg-success">{{ row.get_status_display }}</span>
+    {% else %}
+      <span class="badge bg-danger">{{ row.get_status_display }}</span>
+    {% endif %}
+  </td>
+
+  <td data-col="description" class="small text-muted">
+    {{ row.description|default:"—"|truncatechars:60 }}
+  </td>
+
+  <td class="text-end" style="white-space:nowrap">
+    {# Edit #}
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            hx-get="{% url 'expenses:expense_edit' row.pk %}"
+            hx-target="#expense-modal-body"
+            hx-on::after-request="
+              document.getElementById('expenseModalLabel').textContent = '{% trans "Editar gasto" %}';
+              bootstrap.Modal.getOrCreateInstance('#expenseModal').show();">
+      <i class="bi bi-pencil"></i>
+    </button>
+
+    {# Delete — disabled visually if APPROVED #}
+    {% if row.status == "APPROVED" %}
+    <button type="button" class="btn btn-outline-danger btn-sm" disabled
+            title="{% trans "No se puede eliminar un gasto aprobado" %}">
+      <i class="bi bi-trash"></i>
+    </button>
+    {% else %}
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            onclick="Swal.fire({
+              icon: 'warning',
+              title: '{% trans "¿Eliminar gasto?" %}',
+              html: '<strong>{{ row.category.name|escapejs }}</strong> – {{ row.amount|intcomma }}',
+              showCancelButton: true,
+              confirmButtonText: '{% trans "Eliminar" %}',
+              cancelButtonText: '{% trans "Cancelar" %}',
+              confirmButtonColor: '#dc3545',
+            }).then(r => {
+              if (r.isConfirmed)
+                htmx.ajax('POST', '{% url "expenses:expense_delete" row.pk %}',
+                  { target: '#dt-results', swap: 'innerHTML',
+                    values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+            })">
+      <i class="bi bi-trash"></i>
+    </button>
+    {% endif %}
+  </td>
+
+</tr>

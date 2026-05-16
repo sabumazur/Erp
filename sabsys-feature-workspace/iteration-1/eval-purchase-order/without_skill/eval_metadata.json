@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "eval-purchase-order",
+  "prompt": "Add a PurchaseOrder app to sabsys with Supplier FK, status machine (DRAFT/CONFIRMED/RECEIVED/CANCELLED), a PurchaseOrderService with confirm() and receive() atomic methods, full CRUD views, URLs, templates, and service tests.",
+  "assertions": []
+}

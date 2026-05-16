@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Proveedores" %}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{% trans "Proveedores" %}</h4>
+    <p class="rpt-header-sub">{% trans "Directorio de proveedores" %}</p>
+  </div>
+  <div class="rpt-header-actions">
+    {% if membership.is_admin %}
+    <button type="button" class="btn btn-sm no-print"
+            style="background:#1e2130;color:#fff"
+            data-bs-toggle="modal" data-bs-target="#supplierModal">
+      <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo proveedor" %}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{% include "components/datatable/wrapper.html" %}
+
+{# Blank template — cloned into the modal when opening the create form #}
+<template id="supplier-blank-tpl">
+  {% include "suppliers/partials/supplier_modal_form.html" with form=form action_url=create_url submit_label=submit_label %}
+</template>
+
+<div class="modal fade" id="supplierModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" id="supplierModalLabel" style="font-size:.9rem;color:#111827">
+          <i class="bi bi-building me-2" style="color:#6b7280"></i>
+          <span id="supplier-modal-title">{% trans "Nuevo proveedor" %}</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="supplier-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const modal = document.getElementById('supplierModal');
+  if (!modal) return;
+
+  // When the modal is opened with no HTMX content yet, inject the blank create form.
+  modal.addEventListener('show.bs.modal', function () {
+    const body = document.getElementById('supplier-modal-body');
+    if (!body.innerHTML.trim()) {
+      const tpl = document.getElementById('supplier-blank-tpl');
+      if (tpl) body.innerHTML = tpl.innerHTML;
+    }
+  });
+
+  // Restore the "Nuevo proveedor" title whenever the modal closes so that a
+  // subsequent "edit" click that fires HTMX before show.bs.modal has a proper title.
+  modal.addEventListener('hidden.bs.modal', function () {
+    document.getElementById('supplier-modal-title').textContent = "{% trans 'Nuevo proveedor' %}";
+    document.getElementById('supplier-modal-body').innerHTML = '';
+  });
+})();
+</script>
+{% endblock %}

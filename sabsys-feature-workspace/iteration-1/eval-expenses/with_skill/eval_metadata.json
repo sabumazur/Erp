@@ -1,0 +1,6 @@
+{
+  "eval_id": 3,
+  "eval_name": "eval-expenses",
+  "prompt": "Add expense tracking to sabsys: ExpenseCategory (org + name) and Expense (org, category FK, amount, date, description, status PENDING/APPROVED/REJECTED, approved_by nullable). Full CRUD for both. Expense list shows intcomma amount and status badge colored by status. Delete blocked if APPROVED.",
+  "assertions": []
+}

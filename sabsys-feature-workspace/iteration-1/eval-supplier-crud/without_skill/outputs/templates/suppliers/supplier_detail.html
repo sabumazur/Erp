@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ supplier.name }}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 38%;
+  vertical-align: middle;
+}
+.rpt-panel-hd {
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Page header ── #}
+<div class="rpt-header">
+  <div>
+    <h4 class="rpt-header-title">{{ supplier.name }}</h4>
+    <p class="rpt-header-sub">
+      {% trans "Proveedores" %}
+      {% if supplier.rnc %} · <span class="font-monospace">{{ supplier.rnc }}</span>{% endif %}
+    </p>
+  </div>
+  <div class="rpt-header-actions">
+    <a href="{% url 'suppliers:supplier_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    {% if membership.is_admin %}
+    <a href="{% url 'suppliers:supplier_edit' supplier.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+
+  {# ── Main info ── #}
+  <div class="col-lg-8">
+    <div class="rpt-table-wrap">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "RNC" %}</th>
+            <td class="font-monospace">{{ supplier.rnc|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Teléfono" %}</th>
+            <td>
+              {% if supplier.phone %}
+                <a href="tel:{{ supplier.phone }}" class="text-decoration-none">{{ supplier.phone }}</a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Correo electrónico" %}</th>
+            <td>
+              {% if supplier.email %}
+                <a href="mailto:{{ supplier.email }}" class="text-decoration-none">{{ supplier.email }}</a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Estado" %}</th>
+            <td>
+              {% if supplier.status == 'ACTIVE' %}
+                <span class="badge-soft badge-paid">{% trans "Activo" %}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ── Audit sidebar ── #}
+  <div class="col-lg-4">
+    <div class="rpt-table-wrap">
+      <div class="rpt-panel-hd">{% trans "Auditoría" %}</div>
+      <table class="table table-sm mb-0" style="font-size:.82rem">
+        <tbody>
+          <tr>
+            <td class="text-muted">{% trans "Creado" %}</td>
+            <td class="text-end font-monospace">{{ supplier.created_at|date:"d/m/Y H:i" }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">{% trans "Actualizado" %}</td>
+            <td class="text-end font-monospace">{{ supplier.updated_at|date:"d/m/Y H:i" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {% if membership.is_admin %}
+    <div class="mt-3">
+      <form method="post"
+            action="{% url 'suppliers:supplier_delete' supplier.pk %}"
+            x-data
+            x-on:submit.prevent="Swal.fire({
+              icon: 'warning',
+              title: '{% trans "¿Eliminar proveedor?" %}',
+              html: '<strong>{{ supplier.name|escapejs }}</strong>',
+              showCancelButton: true,
+              confirmButtonText: '{% trans "Eliminar" %}',
+              cancelButtonText: '{% trans "Cancelar" %}',
+              confirmButtonColor: '#dc3545',
+            }).then(r => { if (r.isConfirmed) $el.submit(); })">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+          <i class="bi bi-trash me-1"></i>{% trans "Eliminar proveedor" %}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
