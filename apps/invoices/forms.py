@@ -50,6 +50,14 @@ class CustomerForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"rows": 3}),
         }
 
+    change_reason = forms.CharField(
+        required=False,
+        label=_("Motivo del cambio"),
+        widget=forms.TextInput(attrs={
+            "placeholder": _("Ej. Corrección de datos, actualización de crédito…")
+        }),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["rnc_cedula"].help_text = ""
@@ -114,6 +122,7 @@ class CustomerForm(forms.ModelForm):
                 Column("credit_limit", css_class="col-md-4"),
                 Column("notes", css_class="col-md-12"),
             ),
+            "change_reason",
         )
 
     def clean(self):

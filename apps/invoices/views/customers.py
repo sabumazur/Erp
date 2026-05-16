@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.history import record_change_reason
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
 from apps.core.search import fts_search
 from ..filters import CustomerFilter
@@ -172,6 +173,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        record_change_reason(self.object, form.cleaned_data.get("change_reason", ""))
         if self.request.htmx:
             hx_target = self.request.POST.get("_hx_target", "#customer-table")
             if hx_target == "#dt-results":
