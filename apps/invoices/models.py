@@ -8,8 +8,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from simple_history.models import HistoricalRecords
-
 from apps.core.models import ERPBaseModel
 
 
@@ -169,8 +167,6 @@ class Customer(ERPBaseModel):
                 name="unique_active_customer_rnc_per_org",
             )
         ]
-
-    history = HistoricalRecords()
 
     def __str__(self):
         return self.name
@@ -754,8 +750,6 @@ class Invoice(ERPBaseModel):
     quotations = QuotationManager()  # doc_type=QUOTATION
     sale_orders = SaleOrderManager()  # doc_type=SALE_ORDER
 
-    history = HistoricalRecords()
-
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("documento")
         verbose_name_plural = _("documentos")
@@ -1037,8 +1031,6 @@ class Payment(ERPBaseModel):
         help_text=_("Número de cheque o confirmación de transferencia bancaria."),
     )
     notes = models.TextField(blank=True, verbose_name=_("notas"))
-
-    history = HistoricalRecords()
 
     class Meta(ERPBaseModel.Meta):
         verbose_name = _("pago")
