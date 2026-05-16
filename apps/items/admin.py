@@ -1,11 +1,12 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.admin import ERPHistoryAdmin
 from .models import Item, ItemCodeSequence
 
 
 @admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
+class ItemAdmin(ERPHistoryAdmin):
     list_display   = ["__str__", "item_type", "unit", "unit_price", "cost_price",
                       "itbis_rate", "is_active", "organization"]
     list_filter    = ["organization", "item_type", "itbis_rate", "unit", "is_active"]

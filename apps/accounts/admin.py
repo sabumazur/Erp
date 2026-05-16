@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Organization, Team, Membership, Invitation
+from apps.core.admin import ERPHistoryAdmin
 
 
 @admin.register(User)
@@ -19,26 +20,26 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(Organization)
-class OrganizationAdmin(admin.ModelAdmin):
+class OrganizationAdmin(ERPHistoryAdmin):
     list_display = ["name", "slug", "owner", "is_active"]
     search_fields = ["name", "slug"]
     prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Team)
-class TeamAdmin(admin.ModelAdmin):
+class TeamAdmin(ERPHistoryAdmin):
     list_display = ["name", "organization"]
     list_filter = ["organization"]
 
 
 @admin.register(Membership)
-class MembershipAdmin(admin.ModelAdmin):
+class MembershipAdmin(ERPHistoryAdmin):
     list_display = ["user", "organization", "team", "role"]
     list_filter = ["role", "organization"]
 
 
 @admin.register(Invitation)
-class InvitationAdmin(admin.ModelAdmin):
+class InvitationAdmin(ERPHistoryAdmin):
     list_display = ["email", "organization", "role", "invited_by", "expires_at", "accepted_at"]
     list_filter = ["organization", "role"]
     search_fields = ["email"]

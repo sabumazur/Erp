@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.admin import ERPHistoryAdmin
 from .models import (
     Customer, CustomerDepartment, DocumentSequence, Invoice, InvoiceItem,
     NCFSequence, Payment, PaymentAllocation, PaymentTerm,
@@ -15,7 +16,7 @@ class CustomerDepartmentInline(admin.TabularInline):
 
 
 @admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+class CustomerAdmin(ERPHistoryAdmin):
     list_display   = ["name", "id_type", "rnc_cedula", "email", "organization", "default_ncf_type"]
     list_filter    = ["organization", "id_type", "default_ncf_type"]
     search_fields  = ["name", "rnc_cedula", "email"]
@@ -24,7 +25,7 @@ class CustomerAdmin(admin.ModelAdmin):
 
 
 @admin.register(CustomerDepartment)
-class CustomerDepartmentAdmin(admin.ModelAdmin):
+class CustomerDepartmentAdmin(ERPHistoryAdmin):
     list_display  = ["name", "customer", "contact_name", "phone", "is_active", "organization"]
     list_filter   = ["organization", "is_active"]
     search_fields = ["name", "customer__name", "contact_name"]
@@ -40,7 +41,7 @@ class InvoiceItemInline(admin.TabularInline):
 
 
 @admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(ERPHistoryAdmin):
     list_display   = ["display_number", "doc_type", "customer", "issue_date", "total", "status", "organization"]
     list_filter    = ["doc_type", "status", "ncf_type", "organization"]
     search_fields  = ["encf", "doc_number", "customer__name", "customer__rnc_cedula"]
@@ -107,7 +108,7 @@ class PaymentAllocationInline(admin.TabularInline):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ERPHistoryAdmin):
     list_display    = ["customer", "amount", "date", "method", "reference", "organization"]
     list_filter     = ["method", "organization", "date"]
     search_fields   = ["customer__name", "reference"]
