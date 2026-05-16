@@ -10,6 +10,7 @@ from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
 from apps.core.search import fts_search
 from .filters import ItemFilter
@@ -121,7 +122,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 # ── Detail ────────────────────────────────────────────────────────────────────
 
-class ItemDetailView(ERPBaseViewMixin, View):
+class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
     template_name = "items/item_detail.html"
     required_module = "invoices"
 
@@ -129,6 +130,7 @@ class ItemDetailView(ERPBaseViewMixin, View):
         item = get_object_or_404(Item, pk=pk, organization=_org(request))
         return render(request, self.template_name, self.get_context(
             item=item,
+            history_records=self.get_history(item),
             breadcrumbs=[
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
                 {"label": _("Artículos"), "url": reverse("items:item_list")},

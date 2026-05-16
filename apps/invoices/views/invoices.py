@@ -12,6 +12,7 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import InvoiceFilter
@@ -94,7 +95,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         return ctx
 
 
-class InvoiceDetailView(ERPBaseViewMixin, DetailView):
+class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "invoices/invoice_detail.html"
     required_module = "invoices"
     context_object_name = "invoice"
@@ -122,6 +123,7 @@ class InvoiceDetailView(ERPBaseViewMixin, DetailView):
             {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
             {"label": invoice.doc_number or invoice.encf or str(_("Borrador"))},
         ]
+        ctx["history_records"] = self.get_history(self.object)
         return ctx
 
 

@@ -9,6 +9,7 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
@@ -119,7 +120,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         return self.render_to_response(ctx)
 
 
-class SaleOrderDetailView(ERPBaseViewMixin, DetailView):
+class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "invoices/sale_order_detail.html"
     required_module = "invoices"
     context_object_name = "order"
@@ -141,6 +142,7 @@ class SaleOrderDetailView(ERPBaseViewMixin, DetailView):
             {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
             {"label": o.doc_number or str(_("Borrador"))},
         ]
+        ctx["history_records"] = self.get_history(self.object)
         return ctx
 
 

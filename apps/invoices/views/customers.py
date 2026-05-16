@@ -12,6 +12,7 @@ from django.views.generic import TemplateView, UpdateView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
 from apps.core.search import fts_search
 from ..filters import CustomerFilter
@@ -217,7 +218,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
         return super().form_invalid(form)
 
 
-class CustomerDetailView(ERPBaseViewMixin, View):
+class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def get(self, request, pk):
@@ -282,6 +283,7 @@ class CustomerDetailView(ERPBaseViewMixin, View):
                         {"label": customer.name},
                     ],
                 ),
+                "history_records": self.get_history(customer),
                 "invoices": invoices,
                 "total_invoiced": total_invoiced,
                 "total_paid": total_paid,

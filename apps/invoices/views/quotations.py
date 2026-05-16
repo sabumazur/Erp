@@ -7,6 +7,7 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
@@ -111,7 +112,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
         return self.render_to_response(ctx)
 
 
-class QuotationDetailView(ERPBaseViewMixin, DetailView):
+class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "invoices/quotation_detail.html"
     required_module = "invoices"
     context_object_name = "quotation"
@@ -133,6 +134,7 @@ class QuotationDetailView(ERPBaseViewMixin, DetailView):
             {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
             {"label": q.doc_number or str(_("Borrador"))},
         ]
+        ctx["history_records"] = self.get_history(self.object)
         return ctx
 
 

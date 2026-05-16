@@ -11,6 +11,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import PaymentFilter
@@ -153,7 +154,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
             return render(request, "invoices/payment_form.html", self._ctx(request, form))
 
 
-class PaymentDetailView(ERPBaseViewMixin, View):
+class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def get(self, request, pk):
@@ -172,6 +173,7 @@ class PaymentDetailView(ERPBaseViewMixin, View):
                         {"label": str(payment)},
                     ],
                 ),
+                "history_records": self.get_history(payment),
             },
         )
 
