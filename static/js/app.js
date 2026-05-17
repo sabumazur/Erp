@@ -363,150 +363,68 @@
     recalcGrandTotal();
   }
 
-  var picker = { selectedPk: null, sortKey: "name", sortDir: "asc", page: 1 };
-
-  function pickerRender(query) {
-    var catalog = window.ITEM_CATALOG || [];
-    var q = (query || "").toLowerCase().trim();
-    var filtered = q ? catalog.filter(function (i) {
-      return (i.name || "").toLowerCase().includes(q) ||
-             (i.code || "").toLowerCase().includes(q);
-    }) : catalog;
-
-    // Sort
-    var key = picker.sortKey;
-    var dir = picker.sortDir;
-    filtered = filtered.slice().sort(function (a, b) {
-      var av, bv;
-      if (key === "unit_price") {
-        av = parseFloat(a[key]) || 0;
-        bv = parseFloat(b[key]) || 0;
-      } else {
-        av = (a[key] || "").toString().toLowerCase();
-        bv = (b[key] || "").toString().toLowerCase();
-      }
-      if (av < bv) return dir === "asc" ? -1 : 1;
-      if (av > bv) return dir === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    // Paginate
-    var pageSize = 10;
-    var totalPages = Math.ceil(filtered.length / pageSize) || 1;
-    if (picker.page > totalPages) picker.page = Math.max(1, totalPages);
-    var start = (picker.page - 1) * pageSize;
-    var pageItems = filtered.slice(start, start + pageSize);
-
-    var tbody = document.getElementById("picker-tbody");
-    var countEl = document.getElementById("picker-count");
-    var selBtn = document.getElementById("picker-select-btn");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-    picker.selectedPk = null;
-    if (selBtn) selBtn.disabled = true;
-
-    if (filtered.length === 0) {
-      var empty = document.createElement("tr");
-      var emptyTd = document.createElement("td");
-      emptyTd.colSpan = 4;
-      emptyTd.className = "text-center text-muted py-4";
-      emptyTd.innerHTML = '<i class="bi bi-inbox me-1"></i>' +
-        getConfig("itemPickerEmpty", "No se encontraron artículos.");
-      empty.appendChild(emptyTd);
-      tbody.appendChild(empty);
-    } else {
-      pageItems.forEach(function (item) {
-        var tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td class="small font-monospace">' + escapeHtml(item.code || "-") + "</td>" +
-          '<td>' + escapeHtml(item.name || "") + "</td>" +
-          '<td class="picker-unit-cell">' + escapeHtml(item.unit || "") + "</td>" +
-          '<td class="text-end">' + formatMoney(item.unit_price) + "</td>";
-        tr.addEventListener("click", function () {
-          tbody.querySelectorAll("tr").forEach(function (r) {
-            r.removeAttribute("aria-selected");
-          });
-          tr.setAttribute("aria-selected", "true");
-          picker.selectedPk = item.pk;
-          if (selBtn) selBtn.disabled = false;
-        });
-        tr.addEventListener("dblclick", function () { pickerSelect(item.pk); });
-        tbody.appendChild(tr);
-      });
-    }
-
-    if (countEl) {
-      if (filtered.length === 0) {
-        countEl.textContent = "0 artículos";
-      } else {
-        var endIdx = Math.min(start + pageSize, filtered.length);
-        countEl.textContent = (start + 1) + "–" + endIdx + " de " + filtered.length + " artículo(s)";
-      }
-    }
-
-    pickerRenderPagination(totalPages);
-    pickerUpdateSortHeaders();
-  }
-
-  function pickerSelect(pk) {
-    if (!pk || !window.bootstrap) return;
-    if (window.activeItemRow) pickCatalogRow(window.activeItemRow, pk);
-    var modal = document.getElementById("itemPickerModal");
-    if (modal) bootstrap.Modal.getOrCreateInstance(modal).hide();
-    picker.selectedPk = null;
-  }
-
-  function pickerRenderPagination(totalPages) {
-    var container = document.getElementById("picker-pagination");
-    if (!container) return;
-    if (totalPages <= 1) {
-      container.classList.add("d-none");
-      container.innerHTML = "";
-      return;
-    }
-    container.classList.remove("d-none");
-    var html = '<button class="page-btn" ' + (picker.page <= 1 ? "disabled" : "") +
-      ' onclick="pickerGoPage(' + (picker.page - 1) + ')">‹</button>';
-    for (var i = 1; i <= totalPages; i++) {
-      html += '<button class="page-btn' + (i === picker.page ? " active" : "") +
-        '" onclick="pickerGoPage(' + i + ')">' + i + "</button>";
-    }
-    html += '<button class="page-btn" ' + (picker.page >= totalPages ? "disabled" : "") +
-      ' onclick="pickerGoPage(' + (picker.page + 1) + ')">›</button>';
-    container.innerHTML = html;
-  }
-
-  function pickerGoPage(n) {
-    picker.page = n;
-    var searchEl = document.getElementById("picker-search");
-    pickerRender(searchEl ? searchEl.value : "");
-  }
-
-  function pickerUpdateSortHeaders() {
-    var ths = document.querySelectorAll("#itemPickerModal .picker-table thead th[data-sort]");
-    ths.forEach(function (th) {
-      var key = th.getAttribute("data-sort");
-      var icon = th.querySelector(".picker-sort-icon");
-      th.classList.remove("picker-sort-active");
-      if (icon) {
-        icon.className = "bi bi-arrow-down-up picker-sort-icon";
-      }
-      if (key === picker.sortKey) {
-        th.classList.add("picker-sort-active");
-        if (icon) {
-          icon.className = "bi bi-sort-" + (picker.sortDir === "asc" ? "up" : "down") +
-            "-alt picker-sort-icon";
-        }
-      }
-    });
-  }
-
   function openItemPicker(rowEl) {
     if (!window.bootstrap) return;
-    window.activeItemRow = rowEl;
+    window.activeItemRow  = rowEl;
+    window.activePickerTr = null;
+    var selBtn = document.getElementById("picker-select-btn");
+    if (selBtn) selBtn.disabled = true;
+    var searchEl = document.getElementById("picker-search");
+    if (searchEl) searchEl.value = "";
     var modal = document.getElementById("itemPickerModal");
     if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
+    // Trigger HTMX search after modal is visible so tbody loads initial results.
+    if (searchEl && window.htmx) htmx.trigger(searchEl, "input");
+  }
+
+  function itemPickerHighlight(tr) {
+    document.querySelectorAll("#picker-tbody .item-picker-row").forEach(function (r) {
+      r.removeAttribute("aria-selected");
+    });
+    tr.setAttribute("aria-selected", "true");
+    window.activePickerTr = tr;
+    var selBtn = document.getElementById("picker-select-btn");
+    if (selBtn) selBtn.disabled = false;
+  }
+
+  function itemPickerConfirm() {
+    var tr = window.activePickerTr;
+    if (!tr || !window.activeItemRow) return;
+    pickItemRow(window.activeItemRow, tr);
+    var modal = document.getElementById("itemPickerModal");
+    if (modal) bootstrap.Modal.getOrCreateInstance(modal).hide();
+    window.activePickerTr = null;
+  }
+
+  function pickItemRow(formRow, catalogTr) {
+    var pk    = catalogTr.dataset.pk;
+    var name  = catalogTr.dataset.name;
+    var price = catalogTr.dataset.unitPrice;
+    var rate  = catalogTr.dataset.itbisRate;
+
+    var next    = formRow.nextElementSibling;
+    var descEl  = formRow.querySelector('[name$="-description"]') ||
+                  (next && next.querySelector('[name$="-description"]'));
+    var priceEl = formRow.querySelector('[name$="-unit_price"]');
+    var qtyEl   = formRow.querySelector('[name$="-quantity"]');
+    var rateEl  = formRow.querySelector('[name$="-itbis_rate"]');
+    var itemEl  = formRow.querySelector('[name$="-item"]');
+
+    if (descEl)  descEl.value  = name;
+    if (itemEl)  itemEl.value  = pk;
+    if (priceEl) priceEl.value = price;
+    if (qtyEl)   qtyEl.value   = "1";
+    if (rateEl)  rateEl.value  = rate;
+
+    if (typeof Alpine !== "undefined") {
+      try {
+        Alpine.evaluate(formRow, "price = " + (parseFloat(price) || 0) +
+          ", qty = 1, rate = '" + (rate || "RATE_18") + "'");
+      } catch (err) {
+        console.warn("pickItemRow: Alpine.evaluate failed", err);
+      }
+    }
+    recalcGrandTotal();
   }
 
   // ── Customer picker ──────────────────────────────────────────────────────
@@ -626,37 +544,6 @@
     });
   }
 
-  function pickCatalogRow(rowEl, pk) {
-    var catalog = window.ITEM_CATALOG || [];
-    var item = catalog.find(function (i) { return i.pk === pk; });
-    if (!item) return;
-
-    var next = rowEl.nextElementSibling;
-    var descEl = rowEl.querySelector('[name$="-description"]') ||
-      (next && next.querySelector('[name$="-description"]'));
-    var priceEl = rowEl.querySelector('[name$="-unit_price"]');
-    var qtyEl = rowEl.querySelector('[name$="-quantity"]');
-    var rateEl = rowEl.querySelector('[name$="-itbis_rate"]');
-    var itemEl = rowEl.querySelector('[name$="-item"]');
-
-    if (descEl) descEl.value = item.name;
-    if (itemEl) itemEl.value = pk;
-    if (priceEl) priceEl.value = item.unit_price;
-    if (qtyEl) qtyEl.value = "1";
-    if (rateEl) rateEl.value = item.itbis_rate;
-
-    if (typeof Alpine !== "undefined") {
-      try {
-        Alpine.evaluate(rowEl, "price = " + (parseFloat(item.unit_price) || 0) +
-          ", qty = 1, rate = '" + (item.itbis_rate || "RATE_18") + "'");
-      } catch (err) {
-        console.warn("pickCatalogRow: Alpine.evaluate failed", err);
-      }
-    }
-
-    recalcGrandTotal();
-  }
-
   function formatMoney(n) {
     return parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
@@ -727,88 +614,11 @@
     });
 
     var pickerModal = document.getElementById("itemPickerModal");
-    var pickerSearch = document.getElementById("picker-search");
-    var pickerSelBtn = document.getElementById("picker-select-btn");
-
-    if (pickerSearch) {
-      pickerSearch.addEventListener("input", function () {
-        picker.page = 1;
-        pickerRender(this.value);
-      });
-    }
-
-    if (pickerSelBtn) {
-      pickerSelBtn.addEventListener("click", function () { pickerSelect(picker.selectedPk); });
-    }
-
-    var pickerThead = document.querySelector("#itemPickerModal .picker-table thead");
-    if (pickerThead) {
-      pickerThead.addEventListener("click", function (e) {
-        var th = e.target.closest("th[data-sort]");
-        if (!th) return;
-        var key = th.getAttribute("data-sort");
-        if (picker.sortKey === key) {
-          picker.sortDir = picker.sortDir === "asc" ? "desc" : "asc";
-        } else {
-          picker.sortKey = key;
-          picker.sortDir = "asc";
-        }
-        picker.page = 1;
-        pickerRender(pickerSearch ? pickerSearch.value : "");
-      });
-    }
-
     if (pickerModal) {
-      pickerModal.addEventListener("shown.bs.modal", function () {
-        picker.page = 1;
-        pickerRender("");
-        if (pickerSearch) pickerSearch.value = "";
-
-        var currentPk = null;
-        if (window.activeItemRow) {
-          var itemEl = window.activeItemRow.querySelector('[name$="-item"]');
-          if (itemEl && itemEl.value) currentPk = String(itemEl.value);
-        }
-
-        if (currentPk) {
-          var catalog = window.ITEM_CATALOG || [];
-          var sorted = catalog.slice().sort(function (a, b) {
-            var av, bv;
-            if (picker.sortKey === "unit_price") {
-              av = parseFloat(a[picker.sortKey]) || 0;
-              bv = parseFloat(b[picker.sortKey]) || 0;
-            } else {
-              av = (a[picker.sortKey] || "").toString().toLowerCase();
-              bv = (b[picker.sortKey] || "").toString().toLowerCase();
-            }
-            if (av < bv) return picker.sortDir === "asc" ? -1 : 1;
-            if (av > bv) return picker.sortDir === "asc" ? 1 : -1;
-            return 0;
-          });
-          var idx = sorted.findIndex(function (i) { return String(i.pk) === currentPk; });
-          if (idx >= 0) {
-            var pageSize = 10;
-            picker.page = Math.floor(idx / pageSize) + 1;
-            pickerRender("");
-            var pos = idx % pageSize;
-            var tbody = document.getElementById("picker-tbody");
-            if (tbody) {
-              var rows = tbody.querySelectorAll("tr");
-              if (rows[pos]) {
-                rows[pos].setAttribute("aria-selected", "true");
-                picker.selectedPk = currentPk;
-                var selBtn = document.getElementById("picker-select-btn");
-                if (selBtn) selBtn.disabled = false;
-                rows[pos].scrollIntoView({ block: "nearest" });
-              }
-            }
-          }
-        }
-
-        if (pickerSearch) pickerSearch.focus();
-      });
       pickerModal.addEventListener("hidden.bs.modal", function () {
-        picker.selectedPk = null;
+        window.activePickerTr = null;
+        var selBtn = document.getElementById("picker-select-btn");
+        if (selBtn) selBtn.disabled = true;
       });
     }
   }
@@ -1112,11 +922,11 @@
   window.dtTable = dtTable;
   window.dtSort = dtSort;
   window.dtPage = dtPage;
-  window.pickerGoPage = pickerGoPage;
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
   window.openItemPicker = openItemPicker;
-  window.pickCatalogRow = pickCatalogRow;
+  window.itemPickerHighlight = itemPickerHighlight;
+  window.itemPickerConfirm = itemPickerConfirm;
   window.openCustomerPicker = openCustomerPicker;
   window.customerPickerSelect = customerPickerSelect;
   window.customerPickerShowCreate = customerPickerShowCreate;
