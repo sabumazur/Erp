@@ -20,6 +20,7 @@ from django.shortcuts import render as _render
 from django.views import View
 
 from apps.accounts.views import ERPBaseViewMixin
+from ..forms import CustomerQuickCreateForm
 from ..models import Customer
 from ._helpers import _org
 
@@ -123,3 +124,28 @@ class CustomerSearchView(ERPBaseViewMixin, View):
         customers = qs[:25]
         return _render(request, "invoices/partials/customer_picker_results.html",
                        {"customers": customers})
+
+
+class CustomerQuickCreateView(ERPBaseViewMixin, View):
+    """Creates a customer from the picker modal quick-create panel."""
+    required_module = "invoices"
+    admin_required = True
+
+    def post(self, request):
+        org = _org(request)
+        form = CustomerQuickCreateForm(request.POST, organization=org)
+        if form.is_valid():
+            customer = form.save(commit=False)
+            customer.organization = org
+            customer.save()
+            return JsonResponse({
+                "pk": str(customer.pk),
+                "name": customer.name,
+                "rnc_cedula": customer.rnc_cedula,
+                "default_ncf_type": customer.default_ncf_type,
+            })
+        return JsonResponse(
+            {"errors": {field: [str(e) for e in errs]
+                        for field, errs in form.errors.items()}},
+            status=422,
+        )

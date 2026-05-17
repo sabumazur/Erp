@@ -78,6 +78,7 @@ from .htmx import (
     CustomerDefaultsView,
     ItemCatalogView,
     CustomerSearchView,
+    CustomerQuickCreateView,
 )
 from .payment_terms import (
     PaymentTermListView,
