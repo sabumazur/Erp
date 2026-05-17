@@ -189,6 +189,66 @@ class CustomerForm(forms.ModelForm):
         return number
 
 
+# ── CustomerQuickCreateForm ───────────────────────────────────────────────────
+
+
+class CustomerQuickCreateForm(forms.ModelForm):
+    """Minimal form for creating a customer from within the picker modal."""
+
+    class Meta:
+        model = Customer
+        fields = ["name", "id_type", "rnc_cedula"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._organization = organization
+        self.fields["name"].widget.attrs["autofocus"] = True
+        self.fields["rnc_cedula"].widget.attrs["placeholder"] = _("9 dígitos (RNC) · 11 (Cédula)")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        id_type = cleaned_data.get("id_type")
+        rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
+
+        if rnc_cedula:
+            normalized = re.sub(r"[\s\-]", "", rnc_cedula)
+
+            if id_type == Customer.IdType.RNC:
+                if not re.fullmatch(r"\d{9}", normalized):
+                    self.add_error("rnc_cedula", _("El RNC debe tener exactamente 9 dígitos numéricos."))
+                else:
+                    ok, msg = validate_rnc(normalized)
+                    if not ok:
+                        self.add_error("rnc_cedula", msg)
+                    else:
+                        cleaned_data["rnc_cedula"] = normalized
+
+            elif id_type == Customer.IdType.CEDULA:
+                if not re.fullmatch(r"\d{11}", normalized):
+                    self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
+                else:
+                    ok, msg = validate_cedula(normalized)
+                    if not ok:
+                        self.add_error("rnc_cedula", msg)
+                    else:
+                        cleaned_data["rnc_cedula"] = normalized
+
+            elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
+                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
+                    self.add_error("rnc_cedula", _("Identificación inválida (4–20 caracteres alfanuméricos)."))
+
+            # Uniqueness within org (only if no prior errors on this field)
+            if self._organization and "rnc_cedula" not in self.errors and normalized:
+                if Customer.objects.filter(
+                    organization=self._organization,
+                    rnc_cedula=normalized,
+                    deleted_at__isnull=True,
+                ).exists():
+                    self.add_error("rnc_cedula", _("Ya existe un cliente con este RNC/cédula en la organización."))
+
+        return cleaned_data
+
+
 # ── CustomerDepartment ────────────────────────────────────────────────────────
 
 
@@ -264,6 +324,7 @@ class InvoiceForm(forms.ModelForm):
             self.fields["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
         # Only Factura de Crédito Fiscal is used — lock the field.
         # Django's disabled=True means the submitted value is ignored and the
@@ -272,9 +333,35 @@ class InvoiceForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("ncf_type", css_class="col-md-4"),
             ),
             Row(
@@ -327,6 +414,7 @@ class QuotationForm(forms.ModelForm):
             self.fields["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
         # Default valid_until = today + 30 days for new quotations
         if not self.instance.pk:
@@ -334,9 +422,35 @@ class QuotationForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("payment_condition", css_class="col-md-4"),
             ),
             Row(
@@ -408,20 +522,45 @@ class SaleOrderForm(forms.ModelForm):
             self.fields["department"].queryset = CustomerDepartment.objects.none()
 
         # HTMX: when customer changes, swap the department <option> tags in place.
-        self.fields["customer"].widget.attrs.update(
-            {
-                "hx-get": reverse_lazy("invoices:departments_for_customer"),
-                "hx-trigger": "change",
-                "hx-target": "#id_department",
-                "hx-swap": "innerHTML",
-            }
-        )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={
+            "id": "id_customer",
+            "hx-get": reverse_lazy("invoices:departments_for_customer"),
+            "hx-trigger": "change",
+            "hx-target": "#id_department",
+            "hx-swap": "innerHTML",
+        })
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("payment_condition", css_class="col-md-4"),
             ),
             Row(

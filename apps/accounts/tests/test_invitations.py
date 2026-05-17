@@ -190,7 +190,7 @@ class TestAcceptInvitationView:
         )
         assert response.status_code == 200
         assert b"login_required" not in response.content  # status value not rendered
-        assert b"Iniciar sesi" in response.content
+        assert b"Ya tengo una cuenta" in response.content
 
     def test_unauthenticated_login_url_preserves_next(self, client, owner_membership):
         invitation = self._make_invitation(owner_membership)
