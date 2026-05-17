@@ -333,6 +333,9 @@ class InvoiceForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
                 Column(
@@ -419,6 +422,9 @@ class QuotationForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
                 Column(
@@ -526,6 +532,9 @@ class SaleOrderForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_tag = False
+        # HTML() blocks below are rendered as Django templates by crispy-forms.
+        # They rely on `form` being the context variable name (crispy's default).
+        # `form.instance.customer` is populated on edit; blank on create.
         self.helper.layout = Layout(
             Row(
                 Column(

@@ -573,6 +573,8 @@
     var name = (document.getElementById("qc-name") || {}).value || "";
     var idType = (document.getElementById("qc-id-type") || {}).value || "";
     var rnc = (document.getElementById("qc-rnc") || {}).value || "";
+    // Safe: customer_picker_modal.html is always included inside the <form> tag,
+    // so the CSRF token input is always a sibling of the modal.
     var csrf = (document.querySelector("[name=csrfmiddlewaretoken]") || {}).value || "";
     var btn = document.getElementById("qc-submit-btn");
     if (btn) { btn.disabled = true; }
