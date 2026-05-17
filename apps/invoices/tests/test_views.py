@@ -58,7 +58,7 @@ class TestCustomerViews:
         resp = client.post(reverse("invoices:customer_list"), {
             "name": "Empresa Test S.R.L.",
             "id_type": "RNC",
-            "rnc_cedula": "101234565",
+            "rnc_cedula": "101234563",
             "email": "test@empresa.com",
             "phone": "",
             "address": "", "city": "", "province": "",
