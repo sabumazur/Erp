@@ -1,0 +1,130 @@
+{% load i18n %}
+<div class="modal fade"
+     id="customerPickerModal"
+     tabindex="-1"
+     aria-labelledby="customerPickerModalLabel"
+     aria-hidden="true">
+
+  <div class="modal-dialog picker-dialog">
+    <div class="modal-content picker-content">
+
+      {# ── Search panel (default) ── #}
+      <div id="customer-picker-search-panel">
+
+        <div class="picker-head d-flex align-items-center justify-content-between">
+          <h6 class="picker-title mb-0" id="customerPickerModalLabel">
+            {% trans "Seleccionar cliente" %}
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="{% trans 'Cerrar' %}"></button>
+        </div>
+
+        <div class="picker-search-area">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="bi bi-search" style="font-size:0.85rem"></i>
+            </span>
+            <input type="text"
+                   id="customer-picker-search"
+                   class="form-control border-start-0 ps-1 picker-search-input"
+                   placeholder="{% trans 'Nombre o RNC…' %}"
+                   autocomplete="off"
+                   hx-get="{% url 'invoices:customer_search' %}"
+                   hx-trigger="input changed delay:300ms, load"
+                   hx-target="#customer-picker-tbody"
+                   name="q">
+          </div>
+        </div>
+
+        <div class="picker-list-wrap">
+          <table class="table table-sm picker-table table-hover mb-0" role="grid">
+            <thead class="table-light">
+              <tr>
+                <th>{% trans "Nombre" %}</th>
+                <th>{% trans "RNC / Cédula" %}</th>
+                <th class="d-none d-md-table-cell">{% trans "Correo" %}</th>
+                <th class="d-none d-md-table-cell">{% trans "Teléfono" %}</th>
+              </tr>
+            </thead>
+            <tbody id="customer-picker-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="picker-foot">
+          <div class="picker-foot-left"></div>
+          <div class="picker-foot-right">
+            <button type="button"
+                    class="btn btn-sm btn-link picker-new-btn"
+                    onclick="customerPickerShowCreate()">
+              <i class="bi bi-plus-lg"></i> {% trans "Nuevo cliente" %}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-dismiss="modal">
+              {% trans "Cancelar" %}
+            </button>
+          </div>
+        </div>
+
+      </div>{# end search panel #}
+
+      {# ── Quick-create panel ── #}
+      <div id="customer-picker-create-panel" class="d-none">
+
+        <div class="picker-head d-flex align-items-center justify-content-between">
+          <h6 class="picker-title mb-0">{% trans "Nuevo cliente" %}</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="{% trans 'Cerrar' %}"></button>
+        </div>
+
+        <div class="p-3">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="qc-name">{% trans "Nombre / Razón social" %} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="qc-name"
+                   placeholder="{% trans 'Empresa S.R.L.' %}">
+            <div class="invalid-feedback d-block" id="qc-name-error"></div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-5">
+              <label class="form-label fw-semibold" for="qc-id-type">{% trans "Tipo ID" %} <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm" id="qc-id-type">
+                <option value="RNC">RNC</option>
+                <option value="CED">{% trans "Cédula" %}</option>
+                <option value="PAS">{% trans "Pasaporte" %}</option>
+                <option value="EXT">{% trans "Ext." %}</option>
+              </select>
+              <div class="invalid-feedback d-block" id="qc-id-type-error"></div>
+            </div>
+            <div class="col-7">
+              <label class="form-label fw-semibold" for="qc-rnc">{% trans "RNC / Cédula" %} <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="qc-rnc"
+                     placeholder="{% trans '9 dígitos (RNC)…' %}">
+              <div class="invalid-feedback d-block" id="qc-rnc-error"></div>
+            </div>
+          </div>
+          <div class="text-danger small mb-2" id="qc-non-field-errors"></div>
+        </div>
+
+        <div class="picker-foot">
+          <div class="picker-foot-left">
+            <button type="button" class="btn btn-sm btn-link"
+                    onclick="customerPickerShowSearch()">
+              <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+            </button>
+          </div>
+          <div class="picker-foot-right">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+            <button type="button" class="btn btn-sm"
+                    id="qc-submit-btn"
+                    style="background:#1e2130;color:#fff"
+                    onclick="customerPickerQuickCreate()">
+              <i class="bi bi-check-lg me-1"></i>{% trans "Crear y seleccionar" %}
+            </button>
+          </div>
+        </div>
+
+      </div>{# end create panel #}
+
+    </div>
+  </div>
+</div>
