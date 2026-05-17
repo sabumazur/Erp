@@ -189,6 +189,66 @@ class CustomerForm(forms.ModelForm):
         return number
 
 
+# ── CustomerQuickCreateForm ───────────────────────────────────────────────────
+
+
+class CustomerQuickCreateForm(forms.ModelForm):
+    """Minimal form for creating a customer from within the picker modal."""
+
+    class Meta:
+        model = Customer
+        fields = ["name", "id_type", "rnc_cedula"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._organization = organization
+        self.fields["name"].widget.attrs["autofocus"] = True
+        self.fields["rnc_cedula"].widget.attrs["placeholder"] = _("9 dígitos (RNC) · 11 (Cédula)")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        id_type = cleaned_data.get("id_type")
+        rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
+
+        if rnc_cedula:
+            normalized = re.sub(r"[\s\-]", "", rnc_cedula)
+
+            if id_type == Customer.IdType.RNC:
+                if not re.fullmatch(r"\d{9}", normalized):
+                    self.add_error("rnc_cedula", _("El RNC debe tener exactamente 9 dígitos numéricos."))
+                else:
+                    ok, msg = validate_rnc(normalized)
+                    if not ok:
+                        self.add_error("rnc_cedula", msg)
+                    else:
+                        cleaned_data["rnc_cedula"] = normalized
+
+            elif id_type == Customer.IdType.CEDULA:
+                if not re.fullmatch(r"\d{11}", normalized):
+                    self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
+                else:
+                    ok, msg = validate_cedula(normalized)
+                    if not ok:
+                        self.add_error("rnc_cedula", msg)
+                    else:
+                        cleaned_data["rnc_cedula"] = normalized
+
+            elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
+                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
+                    self.add_error("rnc_cedula", _("Identificación inválida (4–20 caracteres alfanuméricos)."))
+
+            # Uniqueness within org (only if no prior errors on this field)
+            if self._organization and "rnc_cedula" not in self.errors and normalized:
+                if Customer.objects.filter(
+                    organization=self._organization,
+                    rnc_cedula=normalized,
+                    deleted_at__isnull=True,
+                ).exists():
+                    self.add_error("rnc_cedula", _("Ya existe un cliente con este RNC/cédula en la organización."))
+
+        return cleaned_data
+
+
 # ── CustomerDepartment ────────────────────────────────────────────────────────
 
 

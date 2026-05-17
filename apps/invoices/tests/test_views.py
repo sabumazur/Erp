@@ -191,3 +191,47 @@ class TestReportViews:
         set_active_org(client, org)
         resp = client.get(reverse("invoices:report_607"))
         assert resp.status_code == 302  # redirect with error message
+
+
+# ── CustomerQuickCreateForm ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerQuickCreateForm:
+    from apps.invoices.forms import CustomerQuickCreateForm
+
+    def _form(self, data, org=None):
+        from apps.invoices.forms import CustomerQuickCreateForm
+        if org is None:
+            from apps.accounts.tests.factories import OrganizationFactory
+            org = OrganizationFactory()
+        return CustomerQuickCreateForm(data, organization=org)
+
+    def test_valid_rnc(self):
+        form = self._form({"name": "Empresa X", "id_type": "RNC", "rnc_cedula": "101234563"})
+        assert form.is_valid(), form.errors
+
+    def test_missing_name(self):
+        form = self._form({"id_type": "RNC", "rnc_cedula": "101234563"})
+        assert not form.is_valid()
+        assert "name" in form.errors
+
+    def test_invalid_rnc_checksum(self):
+        form = self._form({"name": "X", "id_type": "RNC", "rnc_cedula": "000000000"})
+        assert not form.is_valid()
+        assert "rnc_cedula" in form.errors
+
+    def test_duplicate_rnc_same_org(self):
+        from apps.invoices.tests.factories import CustomerFactory
+        c = CustomerFactory(rnc_cedula="101234563", id_type="RNC")
+        form = self._form(
+            {"name": "Otro", "id_type": "RNC", "rnc_cedula": c.rnc_cedula},
+            org=c.organization,
+        )
+        assert not form.is_valid()
+        assert "rnc_cedula" in form.errors
+
+    def test_same_rnc_different_org(self):
+        from apps.invoices.tests.factories import CustomerFactory
+        CustomerFactory(rnc_cedula="101234563", id_type="RNC")
+        form = self._form({"name": "Y", "id_type": "RNC", "rnc_cedula": "101234563"})
+        assert form.is_valid(), form.errors
