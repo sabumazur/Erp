@@ -324,6 +324,7 @@ class InvoiceForm(forms.ModelForm):
             self.fields["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
         # Only Factura de Crédito Fiscal is used — lock the field.
         # Django's disabled=True means the submitted value is ignored and the
@@ -334,7 +335,30 @@ class InvoiceForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("ncf_type", css_class="col-md-4"),
             ),
             Row(
@@ -387,6 +411,7 @@ class QuotationForm(forms.ModelForm):
             self.fields["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
         # Default valid_until = today + 30 days for new quotations
         if not self.instance.pk:
@@ -396,7 +421,30 @@ class QuotationForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("payment_condition", css_class="col-md-4"),
             ),
             Row(
@@ -468,20 +516,42 @@ class SaleOrderForm(forms.ModelForm):
             self.fields["department"].queryset = CustomerDepartment.objects.none()
 
         # HTMX: when customer changes, swap the department <option> tags in place.
-        self.fields["customer"].widget.attrs.update(
-            {
-                "hx-get": reverse_lazy("invoices:departments_for_customer"),
-                "hx-trigger": "change",
-                "hx-target": "#id_department",
-                "hx-swap": "innerHTML",
-            }
-        )
+        self.fields["customer"].widget = forms.HiddenInput(attrs={
+            "id": "id_customer",
+            "hx-get": reverse_lazy("invoices:departments_for_customer"),
+            "hx-trigger": "change",
+            "hx-target": "#id_department",
+            "hx-swap": "innerHTML",
+        })
 
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-8"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-8",
+                ),
                 Column("payment_condition", css_class="col-md-4"),
             ),
             Row(
