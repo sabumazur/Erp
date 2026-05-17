@@ -1117,6 +1117,11 @@
   window.deleteRow = deleteRow;
   window.openItemPicker = openItemPicker;
   window.pickCatalogRow = pickCatalogRow;
+  window.openCustomerPicker = openCustomerPicker;
+  window.customerPickerSelect = customerPickerSelect;
+  window.customerPickerShowCreate = customerPickerShowCreate;
+  window.customerPickerShowSearch = customerPickerShowSearch;
+  window.customerPickerQuickCreate = customerPickerQuickCreate;
   window.recalcGrandTotal = recalcGrandTotal;
   window.confirmDeleteNCF = confirmDeleteNCF;
 
