@@ -566,7 +566,14 @@ class AcceptInvitationView(View):
         invitation = get_object_or_404(Invitation, pk=pk)
 
         if invitation.accepted_at:
-            return render(request, "accounts/accept_invitation.html", {"status": "already_accepted"})
+            if request.user.is_authenticated and Membership.objects.filter(
+                user=request.user, organization=invitation.organization
+            ).exists():
+                request.session["active_org_slug"] = invitation.organization.slug
+                return redirect("accounts:dashboard")
+            return render(request, "accounts/accept_invitation.html", {
+                "status": "already_accepted", "invitation": invitation,
+            })
 
         if invitation.is_expired:
             return render(request, "accounts/accept_invitation.html", {
@@ -574,7 +581,6 @@ class AcceptInvitationView(View):
             })
 
         if not request.user.is_authenticated:
-            request.session["pending_invitation"] = str(invitation.pk)
             return render(request, "accounts/accept_invitation.html", {
                 "status": "login_required",
                 "invitation": invitation,
@@ -593,16 +599,16 @@ class AcceptInvitationView(View):
         return redirect("accounts:dashboard")
 
     def _accept(self, request, invitation):
-        if not Membership.objects.filter(
-            user=request.user, organization=invitation.organization
-        ).exists():
-            Membership.objects.create(
+        from .signals import _remove_ghost_org
+        with transaction.atomic():
+            Membership.objects.get_or_create(
                 user=request.user,
                 organization=invitation.organization,
-                role=invitation.role,
+                defaults={"role": invitation.role},
             )
-        invitation.accepted_at = timezone.now()
-        invitation.save(update_fields=["accepted_at"])
+            invitation.accepted_at = timezone.now()
+            invitation.save(update_fields=["accepted_at"])
+        _remove_ghost_org(request.user, invitation.organization)
         request.session["active_org_slug"] = invitation.organization.slug
 
 

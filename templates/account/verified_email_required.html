@@ -1,23 +1,24 @@
 {% extends "base_anon.html" %}
 
-{% block title %}Verificación de correo requerida — SabSys{% endblock %}
+{% block title %}Verificación requerida — SabSys{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-  <div class="col-md-5 text-center">
-    <i class="bi bi-shield-exclamation display-3 text-warning"></i>
-    <h4 class="mt-3 fw-bold">Verifica tu correo para continuar</h4>
-    <p class="text-muted">
-      Debes confirmar tu correo electrónico antes de acceder a esta página.
-      Revisa tu bandeja de entrada para el enlace de verificación que te enviamos al registrarte.
-    </p>
-    <p class="text-muted small">
-      ¿No lo encuentras? Revisa tu carpeta de spam o
-      <a href="{% url 'account_email' %}">solicita un nuevo correo de confirmación</a>.
-    </p>
-    <a href="{% url 'account_login' %}" class="btn btn-outline-secondary btn-sm mt-2">
-      <i class="bi bi-arrow-left me-1"></i> Volver a iniciar sesión
-    </a>
+<div class="auth-card text-center">
+  <div class="auth-status-icon is-warning">
+    <i class="bi bi-shield-exclamation"></i>
   </div>
+  <span class="auth-eyebrow">Acción requerida</span>
+  <h1 class="auth-card-title">Verifica tu correo</h1>
+  <p class="auth-card-sub">
+    Debes confirmar tu correo electrónico antes de continuar.
+    Revisa tu bandeja de entrada para el enlace de verificación.
+  </p>
+  <p style="font-size:.75rem;color:#b0b8c9;margin:-8px 0 20px;">
+    ¿No lo encuentras? Revisa spam o
+    <a href="{% url 'account_email' %}" style="color:#1e2130;font-weight:600;">solicita uno nuevo</a>.
+  </p>
+  <a href="{% url 'account_login' %}" class="auth-btn auth-btn-secondary">
+    <i class="bi bi-arrow-left"></i> Volver a iniciar sesión
+  </a>
 </div>
 {% endblock %}

@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.db import transaction, IntegrityError
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -8,10 +9,44 @@ from .models import User, Organization, Membership, Invitation
 from .permissions import assign_org_permissions, revoke_org_permissions
 
 
+def _remove_ghost_org(user, invited_org):
+    """
+    Hard-delete any empty auto-created workspace the user owns, excluding
+    invited_org.  Called after a user accepts an invitation so we never leave
+    behind a ghost workspace that was created for them by the post_save signal
+    before this guard was deployed.
+    """
+    candidates = (
+        Organization.objects
+        .filter(memberships__user=user, memberships__role=Membership.Role.OWNER)
+        .exclude(pk=invited_org.pk)
+    )
+    for org in candidates:
+        if org.memberships.count() != 1:
+            continue  # shared org — leave it alone
+        has_data = (
+            org.customers.exists()
+            or org.invoices.exists()
+            or org.payments.exists()
+        )
+        if not has_data:
+            org.hard_delete()
+
+
 @receiver(post_save, sender=User)
 def create_default_organization(sender, instance, created, **kwargs):
     """Auto-create a personal workspace on every new user registration."""
     if not created:
+        return
+
+    # Users with a pending invitation join an existing org — no personal
+    # workspace needed.  Use iexact + expiry check so an expired invitation
+    # does not permanently block workspace creation on re-registration.
+    if Invitation.objects.filter(
+        email__iexact=instance.email,
+        accepted_at__isnull=True,
+        expires_at__gt=timezone.now(),
+    ).exists():
         return
 
     base_slug = slugify(instance.email.split("@")[0]) or "org"
@@ -71,13 +106,15 @@ def accept_pending_invitation(sender, request, user, **kwargs):
         expires_at__gt=timezone.now(),
     )
     for invitation in pending:
-        if not Membership.objects.filter(
-            user=user, organization=invitation.organization
-        ).exists():
-            Membership.objects.create(
+        with transaction.atomic():
+            _, created = Membership.objects.get_or_create(
                 user=user,
                 organization=invitation.organization,
-                role=invitation.role,
+                defaults={"role": invitation.role},
             )
-        invitation.accepted_at = timezone.now()
-        invitation.save(update_fields=["accepted_at"])
+            invitation.accepted_at = timezone.now()
+            invitation.save(update_fields=["accepted_at"])
+        _remove_ghost_org(user, invitation.organization)
+        if created:
+            messages.success(request, f"¡Te has unido a {invitation.organization.name}!")
+        request.session["active_org_slug"] = invitation.organization.slug

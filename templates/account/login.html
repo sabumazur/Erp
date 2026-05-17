@@ -3,33 +3,31 @@
 
 {% block title %}Iniciar sesión — SabSys{% endblock %}
 
+{% block extra_css %}
+<style>.auth-brand { display: none !important; }</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-5">
-    <div class="card shadow-sm border-0 mt-5">
-      <div class="card-body p-4">
-        <h4 class="card-title mb-1 fw-bold">Bienvenido de vuelta</h4>
-        <p class="text-muted mb-4 small">Inicia sesión para continuar en SabSys</p>
+<div class="auth-card">
+  <span class="auth-eyebrow">Bienvenido de vuelta</span>
+  <h1 class="auth-card-title">Iniciar sesión</h1>
+  <p class="auth-card-sub">Accede a tu espacio de trabajo en SabSys</p>
 
-        <form method="post" action="{% url 'account_login' %}">
-          {% csrf_token %}
-          {% language "es" %}{{ form|crispy }}{% endlanguage %}
-          <div class="d-grid mt-3">
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
-            </button>
-          </div>
-        </form>
+  <form method="post" action="{% url 'account_login' %}">
+    {% csrf_token %}
+    {% language "es" %}{{ form|crispy }}{% endlanguage %}
+    <button type="submit" class="auth-btn auth-btn-primary mt-2">
+      <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+    </button>
+  </form>
 
-        <div class="mt-3 text-center small">
-          <a href="{% url 'account_reset_password' %}">¿Olvidaste tu contraseña?</a>
-        </div>
-        <hr>
-        <p class="text-center mb-0 small">
-          ¿No tienes cuenta? <a href="{% url 'account_signup' %}">Crear una</a>
-        </p>
-      </div>
-    </div>
+  <div class="text-center mt-3">
+    <a href="{% url 'account_reset_password' %}" style="font-size:.82rem;color:#94a3b8;text-decoration:none;">
+      ¿Olvidaste tu contraseña?
+    </a>
   </div>
+
+  <hr class="auth-divider">
+  <p class="auth-foot">¿No tienes cuenta? <a href="{% url 'account_signup' %}">Crear una gratis</a></p>
 </div>
 {% endblock %}

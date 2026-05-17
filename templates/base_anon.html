@@ -1,10 +1,236 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="min-vh-100 d-flex flex-column bg-light">
-  <main class="container py-4">
+<div class="auth-split">
+
+  {# ── Brand panel (left, dark) ─────────────────────────────── #}
+  <aside class="auth-brand">
+    <div class="auth-brand-inner">
+      <a href="/" class="auth-brand-logo">
+        <i class="bi bi-layers-half"></i>
+        <span>SabSys</span>
+      </a>
+      <div class="mb-4">
+        <span class="auth-eyebrow">ERP para empresas dominicanas</span>
+        <p class="auth-brand-headline">Factura, cobra y reporta con claridad.</p>
+      </div>
+      <ul class="auth-feature-list">
+        <li><i class="bi bi-check2-circle"></i> Facturación electrónica e-CF</li>
+        <li><i class="bi bi-check2-circle"></i> Reportes DGII 607 / 608</li>
+        <li><i class="bi bi-check2-circle"></i> Control de pagos y cobros</li>
+        <li><i class="bi bi-check2-circle"></i> Multi-empresa y equipos</li>
+      </ul>
+    </div>
+    <p class="auth-brand-copy">© 2025 SabSys</p>
+  </aside>
+
+  {# ── Form panel (right, light) ────────────────────────────── #}
+  <main class="auth-panel">
+    <a href="/" class="auth-mobile-logo d-flex d-md-none">
+      <i class="bi bi-layers-half"></i> SabSys
+    </a>
     {% include "partials/_messages.html" %}
     {% block content %}{% endblock %}
   </main>
+
 </div>
+
+<style>
+/* ── Auth split layout ─────────────────────────────────────── */
+.auth-split {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Brand panel ─────────────────────────────────────────── */
+.auth-brand {
+  width: 400px;
+  min-width: 400px;
+  background: #1e2130;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 36px 28px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.auth-brand-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  margin-bottom: 56px;
+}
+.auth-brand-logo .bi { font-size: 1.4rem; color: #5b9af5; }
+.auth-brand-logo:hover { color: #fff; }
+
+.auth-eyebrow {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #5b9af5;
+  margin-bottom: 10px;
+}
+
+.auth-brand-headline {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #e8eaf2;
+  margin: 0;
+}
+
+.auth-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #9ba3bf;
+}
+.auth-feature-list .bi { color: #5b9af5; font-size: 0.9rem; flex-shrink: 0; }
+
+.auth-brand-copy { font-size: 0.7rem; color: #5c6480; margin: 0; }
+
+/* ── Form panel ──────────────────────────────────────────── */
+.auth-panel {
+  flex: 1;
+  min-height: 100vh;
+  background: #f4f6fb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  overflow-y: auto;
+}
+
+.auth-mobile-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e2130;
+  text-decoration: none;
+  margin-bottom: 28px;
+  align-items: center;
+  gap: 8px;
+}
+.auth-mobile-logo .bi { color: #5b9af5; }
+
+/* ── Auth card ───────────────────────────────────────────── */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 10px;
+  border-top: 4px solid #1e2130;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.06);
+  padding: 32px 36px;
+}
+
+.auth-card-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: #0f172a;
+  line-height: 1.1;
+  margin: 0 0 4px;
+}
+
+.auth-card-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0 0 24px;
+}
+
+.auth-divider {
+  border: none;
+  border-top: 1px solid #eef0f6;
+  margin: 20px 0;
+}
+
+.auth-foot {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+}
+.auth-foot a { color: #1e2130; font-weight: 600; text-decoration: none; }
+.auth-foot a:hover { text-decoration: underline; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .14s, border-color .14s;
+  border: none;
+  line-height: 1.4;
+}
+.auth-btn-primary {
+  background: #1e2130;
+  color: #fff !important;
+}
+.auth-btn-primary:hover { background: #2a3050; color: #fff; }
+.auth-btn-secondary {
+  background: transparent;
+  color: #1e2130 !important;
+  border: 1px solid #d1d5db;
+}
+.auth-btn-secondary:hover { background: #f8f9fa; border-color: #9ca3af; }
+
+/* ── Status icon ─────────────────────────────────────────── */
+.auth-status-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin: 0 auto 20px;
+}
+.auth-status-icon.is-success { background: rgba(16,185,129,.1);  color: #059669; }
+.auth-status-icon.is-warning { background: rgba(245,158,11,.1);  color: #d97706; }
+.auth-status-icon.is-primary { background: rgba(91,154,245,.12); color: #5b9af5; }
+.auth-status-icon.is-danger  { background: rgba(239,68,68,.1);   color: #dc2626; }
+.auth-status-icon.is-muted   { background: #f1f3f7; color: #94a3b8; }
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 767.98px) {
+  .auth-brand { display: none !important; }
+  .auth-panel { padding: 32px 16px; }
+  .auth-card  { padding: 24px 20px; }
+}
+</style>
 {% endblock %}

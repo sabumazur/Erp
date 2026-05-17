@@ -117,11 +117,11 @@ LOGIN_URL = "account_login"
 
 ACCOUNT_RATE_LIMITS = {
     "login_failed":          "5/300s",   # 5 failed attempts → 5-minute lockout
-    "signup":                "10/hour",
-    "confirm_email":         "5/hour",
-    "password_reset":        "5/hour",
-    "password_reset_by_key": "5/hour",
-    "password_change":       "5/hour",
+    "signup":                "10/1h",
+    "confirm_email":         "5/1h",
+    "password_reset":        "5/1h",
+    "password_reset_by_key": "5/1h",
+    "password_change":       "5/1h",
 }
 
 # ── File upload limits ────────────────────────────────────────────────────────

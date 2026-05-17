@@ -30,6 +30,8 @@ python manage.py reset_db              # Wipe all data and restore superuser acc
 python manage.py reset_db --no-input   # Skip confirmation prompt
 python manage.py seed_db               # Seed 25 DR sample records per model into superuser's org
 python manage.py seed_db --no-input    # Skip confirmation prompt
+python manage.py cleanup_ghost_organizations          # Delete empty auto-created workspaces for invited users
+python manage.py cleanup_ghost_organizations --dry-run # Preview without deleting
 ```
 
 Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
@@ -59,8 +61,12 @@ MyModel.objects.for_org(request.organization)
 
 - `User` model email-based (`USERNAME_FIELD = "email"`, no username).
 - `UserManager.get_queryset()` filters out soft-deleted users.
-- `post_save` on `User` (`create_default_organization`) auto-creates personal `Organization` + `OWNER` `Membership` on registration. Slug collision uses `all_objects` (live + soft-deleted).
-- On login, `accept_pending_invitation` auto-accepts pending `Invitation` for user email.
+- `post_save` on `User` (`create_default_organization`) auto-creates personal `Organization` + `OWNER` `Membership` on registration. **Guard:** skips if a pending (non-expired) `Invitation` exists for that email — invited users get no ghost workspace. Slug collision uses `all_objects` (live + soft-deleted).
+- On login, `accept_pending_invitation` signal (`user_logged_in`) auto-accepts all pending non-expired invitations for user email. Uses `transaction.atomic()` + `get_or_create` for race safety. Calls `_remove_ghost_org()` to clean up any auto-created personal workspace after joining via invitation.
+- `_remove_ghost_org(user, invited_org)` in `apps/accounts/signals.py` — deletes any solo-owner org with no data (customers/invoices/payments) that isn't the org just joined.
+- `AcceptInvitationView` (`accounts:accept_invitation`) — GET-only view; statuses: `already_accepted` (redirects members to dashboard), `expired`, `login_required`, `wrong_email`. Uses `get_or_create` + `transaction.atomic()` in `_accept()`.
+- **allauth logout is POST-only (v65+).** `next` must be in POST body, not query string. Use `<form method="post">` with `<input type="hidden" name="next" value="...">` — never `<a href="{% url 'account_logout' %}?next=...">`.
+- **`ACCOUNT_RATE_LIMITS` format:** `"{count}/{digits}{unit}"` e.g. `"10/1h"`. Unit must be single char `s/m/h/d`. `"10/hour"` raises `ValueError: Invalid duration unit: r`.
 - `Membership.Role` hierarchy: `OWNER` > `ADMIN` > `MEMBER` > `VIEWER`. `membership.is_admin` returns `True` for OWNER and ADMIN.
 - `Team.modules` (M2M to `core.Module`) gates module access. Empty `modules` = unrestricted.
 - **Org creation restricted to `is_staff`.** `CreateOrganizationView` checks `is_staff` in `dispatch`; non-staff see no "Crear organización" in navbar. Uses `StaffCreateOrganizationForm`.
@@ -237,6 +243,31 @@ CI env vars: `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_
 Start with: `docker compose -f docker-compose.prod.yml up -d`
 
 Custom error pages: `templates/404.html` + `templates/500.html` (Bootstrap 5, no JS).
+
+### Auth templates (`templates/account/`, `templates/accounts/`, `templates/base_anon.html`)
+
+`base_anon.html` provides a two-column split layout — **do not** wrap auth page content in Bootstrap grid rows.
+
+**Layout:**
+- Left panel (`.auth-brand`, `#1e2130`, 400px sticky) — logo, eyebrow label, Cormorant Garamond headline, feature list, copyright. Hidden on mobile (`< 768px`).
+- Right panel (`.auth-panel`, `#f4f6fb`, flex-grows) — vertically centers `{% block content %}`.
+
+**CSS classes** (all inlined in `base_anon.html` `<style>` block, auth-only):
+
+| Class | Purpose |
+|-------|---------|
+| `.auth-card` | White card, `border-top: 4px solid #1e2130`, `border-radius: 10px`, max-width 420px |
+| `.auth-eyebrow` | `0.6rem` uppercase `#5b9af5` label above title |
+| `.auth-card-title` | Cormorant Garamond 1.75rem serif heading |
+| `.auth-card-sub` | `0.8rem` muted subtitle, `margin-bottom: 24px` |
+| `.auth-divider` | `1px solid #eef0f6` horizontal rule |
+| `.auth-foot` | Centered small footer link line |
+| `.auth-btn` | Base button: full-width flex, `border-radius: 8px`, `font-weight: 600` |
+| `.auth-btn-primary` | Dark fill (`#1e2130`) — primary CTA |
+| `.auth-btn-secondary` | Outline (`border: 1px solid #d1d5db`) — secondary action |
+| `.auth-status-icon` | 56×56px rounded icon bubble; variants: `is-success`, `is-warning`, `is-primary`, `is-danger`, `is-muted` |
+
+**Each auth page template** puts exactly one `.auth-card` div in `{% block content %}`. Status/confirmation pages add `.text-center` to the card. No Bootstrap `row`/`col` wrappers.
 
 ### Settings & i18n
 

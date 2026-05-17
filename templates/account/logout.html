@@ -3,17 +3,23 @@
 {% block title %}Cerrar sesión — SabSys{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-  <div class="col-md-4 text-center">
-    <i class="bi bi-door-open display-3 text-muted"></i>
-    <h4 class="mt-3">¿Cerrar sesión en SabSys?</h4>
+<div class="auth-card text-center">
+  <div class="auth-status-icon is-muted">
+    <i class="bi bi-door-open"></i>
+  </div>
+  <span class="auth-eyebrow">Hasta pronto</span>
+  <h1 class="auth-card-title">¿Cerrar sesión?</h1>
+  <p class="auth-card-sub">¿Confirmas que deseas salir de SabSys?</p>
+  <div class="d-grid gap-2">
     <form method="post" action="{% url 'account_logout' %}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger mt-2">
-        <i class="bi bi-box-arrow-right me-1"></i> Sí, cerrar sesión
+      <button type="submit" class="auth-btn auth-btn-primary w-100">
+        <i class="bi bi-box-arrow-right"></i> Sí, cerrar sesión
       </button>
-      <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary mt-2">Cancelar</a>
     </form>
+    <a href="{% url 'accounts:dashboard' %}" class="auth-btn auth-btn-secondary">
+      Cancelar
+    </a>
   </div>
 </div>
 {% endblock %}
