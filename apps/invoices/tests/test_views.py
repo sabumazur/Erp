@@ -191,3 +191,180 @@ class TestReportViews:
         set_active_org(client, org)
         resp = client.get(reverse("invoices:report_607"))
         assert resp.status_code == 302  # redirect with error message
+
+
+# ── CustomerQuickCreateForm ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerQuickCreateForm:
+    def _form(self, data, org=None):
+        from apps.invoices.forms import CustomerQuickCreateForm
+        if org is None:
+            from apps.accounts.tests.factories import OrganizationFactory
+            org = OrganizationFactory()
+        return CustomerQuickCreateForm(data, organization=org)
+
+    def test_valid_rnc(self):
+        form = self._form({"name": "Empresa X", "id_type": "RNC", "rnc_cedula": "101234563"})
+        assert form.is_valid(), form.errors
+
+    def test_missing_name(self):
+        form = self._form({"id_type": "RNC", "rnc_cedula": "101234563"})
+        assert not form.is_valid()
+        assert "name" in form.errors
+
+    def test_invalid_rnc_checksum(self):
+        form = self._form({"name": "X", "id_type": "RNC", "rnc_cedula": "000000000"})
+        assert not form.is_valid()
+        assert "rnc_cedula" in form.errors
+
+    def test_duplicate_rnc_same_org(self):
+        from apps.invoices.tests.factories import CustomerFactory
+        c = CustomerFactory(rnc_cedula="101234563", id_type="RNC")
+        form = self._form(
+            {"name": "Otro", "id_type": "RNC", "rnc_cedula": c.rnc_cedula},
+            org=c.organization,
+        )
+        assert not form.is_valid()
+        assert "rnc_cedula" in form.errors
+
+    def test_same_rnc_different_org(self):
+        from apps.invoices.tests.factories import CustomerFactory
+        CustomerFactory(rnc_cedula="101234563", id_type="RNC")
+        form = self._form({"name": "Y", "id_type": "RNC", "rnc_cedula": "101234563"})
+        assert form.is_valid(), form.errors
+
+
+# ── CustomerSearchView ────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerSearchView:
+
+    def _get(self, client, org, q=""):
+        from django.urls import reverse
+        return client.get(reverse("invoices:customer_search"), {"q": q})
+
+    def test_requires_login(self, client):
+        from apps.accounts.tests.factories import OrganizationFactory
+        org = OrganizationFactory()
+        resp = client.get("/invoices/htmx/customers/search/")
+        assert resp.status_code in (302, 403)
+
+    def test_returns_200(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._get(client, org)
+        assert resp.status_code == 200
+
+    def test_scope_to_org(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        c_mine = CustomerFactory(organization=org, name="Mi Cliente")
+        c_other = CustomerFactory(name="Otro Org")
+        resp = self._get(client, org)
+        content = resp.content.decode()
+        assert "Mi Cliente" in content
+        assert "Otro Org" not in content
+
+    def test_search_filters_by_name(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        CustomerFactory(organization=org, name="Ferretería Central")
+        CustomerFactory(organization=org, name="Supermercado Norte")
+        resp = self._get(client, org, q="Ferretería")
+        content = resp.content.decode()
+        assert "Ferretería Central" in content
+        assert "Supermercado Norte" not in content
+
+    def test_returns_at_most_25_rows(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        for i in range(30):
+            CustomerFactory(organization=org)
+        resp = self._get(client, org)
+        # count <tr> tags in response
+        assert resp.content.decode().count("<tr") <= 26  # 25 data rows + possible empty-state
+
+
+# ── CustomerQuickCreateView ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerQuickCreateView:
+
+    def _post(self, client, org, data):
+        import urllib.parse
+        from django.urls import reverse
+        return client.post(reverse("invoices:customer_quick_create"),
+                           urllib.parse.urlencode(data),
+                           content_type="application/x-www-form-urlencoded",
+                           HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+    def test_requires_login(self, client):
+        resp = client.post("/invoices/htmx/customers/create/", {})
+        assert resp.status_code in (302, 403)
+
+    def test_creates_customer_returns_json(self, client):
+        import json
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._post(client, org, {
+            "name": "Empresa Nueva S.R.L.",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+        })
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert "pk" in data
+        assert data["name"] == "Empresa Nueva S.R.L."
+        assert data["rnc_cedula"] == "101234563"
+        assert "default_ncf_type" in data
+
+    def test_invalid_returns_422(self, client):
+        import json
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._post(client, org, {
+            "name": "",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+        })
+        assert resp.status_code == 422
+        data = json.loads(resp.content)
+        assert "errors" in data
+        assert "name" in data["errors"]
+
+    def test_duplicate_rnc_returns_422(self, client):
+        import json
+        from apps.invoices.tests.factories import CustomerFactory
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        CustomerFactory(organization=org, rnc_cedula="101234563", id_type="RNC")
+        resp = self._post(client, org, {
+            "name": "Otro",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+        })
+        assert resp.status_code == 422
+        data = json.loads(resp.content)
+        assert "errors" in data
+
+    def test_viewer_cannot_create(self, client):
+        user, org, _ = make_member(Membership.Role.VIEWER)
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._post(client, org, {
+            "name": "X",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+        })
+        assert resp.status_code in (302, 403)
