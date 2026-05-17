@@ -84,7 +84,8 @@
       "Skill(superpowers:subagent-driven-development:*)",
       "Bash(grep -E \"\\\\.py$\")",
       "Skill(superpowers:finishing-a-development-branch)",
-      "Skill(superpowers:finishing-a-development-branch:*)"
+      "Skill(superpowers:finishing-a-development-branch:*)",
+      "Bash(xargs sed -i 's/rpt-/app-/g')"
     ]
   }
 }
