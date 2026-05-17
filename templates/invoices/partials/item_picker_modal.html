@@ -25,31 +25,23 @@
                  id="picker-search"
                  class="form-control border-start-0 ps-1 picker-search-input"
                  placeholder="{% trans 'Buscar por nombre o código…' %}"
-                 autocomplete="off">
+                 autocomplete="off"
+                 hx-get="{% url 'invoices:item_search' %}"
+                 hx-trigger="input changed delay:300ms, load"
+                 hx-target="#picker-tbody"
+                 hx-swap="innerHTML"
+                 name="q">
         </div>
       </div>
 
       <div class="picker-list-wrap">
-        <table class="table table-sm picker-table table-hover 
-        mb-0" role="grid">
+        <table class="table table-sm picker-table table-hover mb-0" role="grid">
           <thead class="table-light">
             <tr>
-              <th class="picker-ch-code" data-sort="code">
-                {% trans "No." %}
-                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
-              </th>
-              <th data-sort="name">
-                {% trans "Descripción" %}
-                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
-              </th>
-              <th class="picker-ch-unit" data-sort="unit">
-                {% trans "Unidad" %}
-                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
-              </th>
-              <th class="text-end picker-ch-price" data-sort="unit_price">
-                {% trans "Precio" %}
-                <i class="bi bi-arrow-down-up picker-sort-icon"></i>
-              </th>
+              <th class="picker-ch-code">{% trans "No." %}</th>
+              <th>{% trans "Descripción" %}</th>
+              <th class="picker-ch-unit">{% trans "Unidad" %}</th>
+              <th class="text-end picker-ch-price">{% trans "Precio" %}</th>
             </tr>
           </thead>
           <tbody id="picker-tbody"></tbody>
@@ -57,10 +49,7 @@
       </div>
 
       <div class="picker-foot">
-        <div class="picker-foot-left">
-          <div id="picker-pagination" class="picker-pagination d-none"></div>
-          <span class="picker-count" id="picker-count"></span>
-        </div>
+        <div class="picker-foot-left"></div>
         <div class="picker-foot-right">
           <a href="{% url 'items:item_list' %}"
              target="_blank"
@@ -74,6 +63,7 @@
           <button type="button"
                   class="btn btn-sm"
                   id="picker-select-btn"
+                  onclick="itemPickerConfirm()"
                   disabled>
             <i class="bi bi-check-lg me-1"></i>{% trans "Seleccionar" %}
           </button>
