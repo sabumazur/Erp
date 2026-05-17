@@ -15,25 +15,25 @@ def validate_image_size(image):
 class HasLetterValidator:
     def validate(self, password, user=None):
         if not re.search(r'[a-zA-Z]', password):
-            raise ValidationError('Password must contain at least one letter.')
+            raise ValidationError(_('La contraseña debe contener al menos una letra.'))
 
     def get_help_text(self):
-        return 'Your password must contain at least one letter.'
+        return _('Tu contraseña debe contener al menos una letra.')
 
 
 class HasNumberValidator:
     def validate(self, password, user=None):
         if not re.search(r'\d', password):
-            raise ValidationError('Password must contain at least one number.')
+            raise ValidationError(_('La contraseña debe contener al menos un número.'))
 
     def get_help_text(self):
-        return 'Your password must contain at least one number.'
+        return _('Tu contraseña debe contener al menos un número.')
 
 
 class HasSymbolValidator:
     def validate(self, password, user=None):
         if not re.search(r'[^a-zA-Z0-9]', password):
-            raise ValidationError('Password must contain at least one symbol.')
+            raise ValidationError(_('La contraseña debe contener al menos un símbolo.'))
 
     def get_help_text(self):
-        return 'Your password must contain at least one symbol.'
+        return _('Tu contraseña debe contener al menos un símbolo.')

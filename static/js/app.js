@@ -183,8 +183,14 @@
         var self = this;
         var p1 = document.getElementById("id_password1") || document.getElementById("id_oldpassword");
         var p2 = document.getElementById("id_password2");
-        if (p1) p1.addEventListener("input", function (e) { self.password = e.target.value; });
-        if (p2) p2.addEventListener("input", function (e) { self.confirm = e.target.value; });
+        if (p1) {
+          p1.addEventListener("input", function (e) { self.password = e.target.value; });
+          p1.addEventListener("change", function (e) { self.password = e.target.value; });
+        }
+        if (p2) {
+          p2.addEventListener("input", function (e) { self.confirm = e.target.value; });
+          p2.addEventListener("change", function (e) { self.confirm = e.target.value; });
+        }
       },
     };
   }
