@@ -77,6 +77,7 @@ from .reports import (
 from .htmx import (
     CustomerDefaultsView,
     ItemCatalogView,
+    CustomerSearchView,
 )
 from .payment_terms import (
     PaymentTermListView,

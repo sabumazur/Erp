@@ -233,3 +233,61 @@ class TestCustomerQuickCreateForm:
         CustomerFactory(rnc_cedula="101234563", id_type="RNC")
         form = self._form({"name": "Y", "id_type": "RNC", "rnc_cedula": "101234563"})
         assert form.is_valid(), form.errors
+
+
+# ── CustomerSearchView ────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerSearchView:
+
+    def _get(self, client, org, q=""):
+        from django.urls import reverse
+        return client.get(reverse("invoices:customer_search"), {"q": q})
+
+    def test_requires_login(self, client):
+        from apps.accounts.tests.factories import OrganizationFactory
+        org = OrganizationFactory()
+        resp = client.get("/invoices/htmx/customers/search/")
+        assert resp.status_code in (302, 403)
+
+    def test_returns_200(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._get(client, org)
+        assert resp.status_code == 200
+
+    def test_scope_to_org(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        c_mine = CustomerFactory(organization=org, name="Mi Cliente")
+        c_other = CustomerFactory(name="Otro Org")
+        resp = self._get(client, org)
+        content = resp.content.decode()
+        assert "Mi Cliente" in content
+        assert "Otro Org" not in content
+
+    def test_search_filters_by_name(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        CustomerFactory(organization=org, name="Ferretería Central")
+        CustomerFactory(organization=org, name="Supermercado Norte")
+        resp = self._get(client, org, q="Ferretería")
+        content = resp.content.decode()
+        assert "Ferretería Central" in content
+        assert "Supermercado Norte" not in content
+
+    def test_returns_at_most_25_rows(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        from apps.invoices.tests.factories import CustomerFactory
+        for i in range(30):
+            CustomerFactory(organization=org)
+        resp = self._get(client, org)
+        # count <tr> tags in response
+        assert resp.content.decode().count("<tr") <= 26  # 25 data rows + possible empty-state

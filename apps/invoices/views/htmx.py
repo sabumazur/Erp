@@ -14,7 +14,9 @@ and window.ITEM_CATALOG on page load:
 import json
 
 from django.core.cache import cache
+from django.db.models import Q
 from django.http import JsonResponse
+from django.shortcuts import render as _render
 from django.views import View
 
 from apps.accounts.views import ERPBaseViewMixin
@@ -104,3 +106,20 @@ class ItemCatalogView(ERPBaseViewMixin, View):
             cache.set(cache_key, result, timeout=300)
 
         return JsonResponse(result, safe=False)
+
+
+class CustomerSearchView(ERPBaseViewMixin, View):
+    """Returns customer rows for the picker modal via HTMX."""
+    required_module = "invoices"
+
+    def get(self, request):
+        q = request.GET.get("q", "").strip()
+        org = _org(request)
+        qs = Customer.objects.filter(organization=org).order_by("name")
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) | Q(rnc_cedula__icontains=q)
+            )
+        customers = qs[:25]
+        return _render(request, "invoices/partials/customer_picker_results.html",
+                       {"customers": customers})

@@ -1,0 +1,21 @@
+{% load i18n %}
+{% if customers %}
+  {% for c in customers %}
+  <tr style="cursor:pointer"
+      onclick="customerPickerSelect('{{ c.pk }}', '{{ c.name|escapejs }}', '{{ c.rnc_cedula|escapejs }}', {{ c.default_ncf_type }})">
+    <td>{{ c.name }}</td>
+    <td class="text-muted small">{{ c.rnc_cedula }}</td>
+    <td class="text-muted small">{{ c.email|default:"—" }}</td>
+    <td class="text-muted small">{{ c.phone|default:"—" }}</td>
+  </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="4" class="text-center text-muted py-3">
+      {% trans "No se encontraron clientes." %}
+      <a href="#" onclick="customerPickerShowCreate(); return false;" class="ms-1">
+        {% trans "¿Crear uno nuevo?" %}
+      </a>
+    </td>
+  </tr>
+{% endif %}
