@@ -113,7 +113,6 @@
 {% include "invoices/partials/customer_picker_modal.html" %}
 
 <script>
-window.ITEM_CATALOG              = {{ sale_items_json|safe }};
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'invoices:customer_quick_create' %}";
 </script>

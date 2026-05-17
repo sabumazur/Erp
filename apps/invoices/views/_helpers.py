@@ -66,30 +66,3 @@ def _customer_defaults_json(request) -> str:
             for c in qs
         }
     )
-
-
-def _sale_items_json(request) -> str:
-    """
-    Active SALE/BOTH items for the current org serialized as JSON.
-    Injected into form pages as window.ITEM_CATALOG.
-    """
-    from apps.items.models import Item
-
-    qs = Item.objects.filter(
-        organization=_org(request),
-        is_active=True,
-        item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH],
-    ).order_by("name")
-    return _html_safe_json(
-        [
-            {
-                "pk": str(item.pk),
-                "code": item.code,
-                "name": item.name,
-                "unit": item.get_unit_display(),
-                "unit_price": str(item.unit_price),
-                "itbis_rate": item.itbis_rate,
-            }
-            for item in qs
-        ]
-    )

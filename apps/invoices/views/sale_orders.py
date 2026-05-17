@@ -17,7 +17,7 @@ from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, Con
 from ..models import Invoice, InvoiceItem, CustomerDepartment
 from ..email import send_sale_order_email
 from ..services import SaleOrderService
-from ._helpers import _org, _sale_items_json, _customer_defaults_json
+from ._helpers import _org, _customer_defaults_json
 
 
 class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -93,7 +93,6 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", SaleOrderForm(organization=_org(self.request)))
         ctx.setdefault("formset", InvoiceItemFormSet())
-        ctx["sale_items_json"] = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -186,7 +185,6 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", SaleOrderForm(organization=_org(self.request)))
         ctx.setdefault("formset", InvoiceItemFormSet())
-        ctx["sale_items_json"] = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         o = kwargs.get("order")
         if o:

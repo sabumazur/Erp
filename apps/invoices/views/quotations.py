@@ -15,7 +15,7 @@ from ..forms import QuotationForm, InvoiceItemFormSet
 from ..models import Invoice, NCFType
 from ..email import send_quotation_email
 from ..services import QuotationService
-from ._helpers import _org, _sale_items_json, _customer_defaults_json
+from ._helpers import _org, _customer_defaults_json
 
 
 class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -85,7 +85,6 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", QuotationForm(organization=_org(self.request)))
         ctx.setdefault("formset", InvoiceItemFormSet())
-        ctx["sale_items_json"] = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -178,7 +177,6 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", QuotationForm(organization=_org(self.request)))
         ctx.setdefault("formset", InvoiceItemFormSet())
-        ctx["sale_items_json"] = _sale_items_json(self.request)
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         q = kwargs.get("quotation")
         if q:
