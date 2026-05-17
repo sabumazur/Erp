@@ -21,12 +21,12 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="rpt-header no-print">
+<div class="app-header no-print">
   <div>
-    <h1 class="rpt-header-title">{% trans "Ventas por Período" %}</h1>
-    {% if year %}<p class="rpt-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}</p>{% endif %}
+    <h1 class="app-header-title">{% trans "Ventas por Período" %}</h1>
+    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}</p>{% endif %}
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
@@ -45,23 +45,23 @@
 {# ── Summary metric cards ──────────────────────────────────────────────────── #}
 <div class="row g-2 mb-3 no-print">
   <div class="col-6 col-sm-4">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value">{{ totals.invoiced|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Total facturado" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ totals.invoiced|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total facturado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Total cobrado" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total cobrado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
         {{ totals.net|floatformat:2|intcomma }}
       </div>
-      <div class="rpt-metric-label">
+      <div class="app-metric-label">
         {% if by_day %}{% trans "Neto del mes" %}{% else %}{% trans "Neto del año" %}{% endif %}
       </div>
     </div>
@@ -69,7 +69,7 @@
 </div>
 
 {# ── Breakdown table ───────────────────────────────────────────────────────── #}
-<div class="rpt-table-wrap">
+<div class="app-table-wrap">
   <table class="table table-hover table-sm mb-0">
     <thead>
       <tr>

@@ -9,12 +9,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Editar módulo" %}</h4>
-    <p class="rpt-header-sub">{{ module.name }}</p>
+    <h4 class="app-header-title">{% trans "Editar módulo" %}</h4>
+    <p class="app-header-sub">{{ module.name }}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'core:module_detail' module.pk %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -23,7 +23,7 @@
 
 <div class="row justify-content-center">
   <div class="col-lg-7">
-    <div class="rpt-table-wrap p-4">
+    <div class="app-table-wrap p-4">
       <form method="post">
         {% csrf_token %}
         {% crispy form %}

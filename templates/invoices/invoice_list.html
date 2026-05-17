@@ -9,12 +9,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Facturas" %}</h4>
-    <p class="rpt-header-sub">{% trans "Facturación" %}</p>
+    <h4 class="app-header-title">{% trans "Facturas" %}</h4>
+    <p class="app-header-sub">{% trans "Facturación" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:invoice_create' %}" class="btn btn-sm"
        style="background:#1e2130;color:#fff">
       <i class="bi bi-plus-lg me-1"></i>{% trans "Nueva factura" %}

@@ -21,17 +21,17 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{{ customer.name }}</h4>
-    <p class="rpt-header-sub">
+    <h4 class="app-header-title">{{ customer.name }}</h4>
+    <p class="app-header-sub">
       {% trans "Clientes" %}
       {% if customer.rnc_cedula %}
         · <span class="font-monospace">{{ customer.get_id_type_display }}: {{ customer.rnc_cedula }}</span>
       {% endif %}
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -51,7 +51,7 @@
   <div class="col-lg-8 d-flex flex-column gap-3">
 
     {# Contact & fiscal info #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Información de contacto" %}
       </div>
@@ -104,7 +104,7 @@
     </div>
 
     {# Account summary mini-kpis #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Resumen de cuenta" %}
       </div>
@@ -129,7 +129,7 @@
     </div>
 
     {# Departments #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Departamentos de entrega" %}</span>
         <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -147,7 +147,7 @@
 
     {# Invoices #}
     {% if invoices %}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas" %}</span>
         <a href="{% url 'invoices:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
@@ -197,7 +197,7 @@
 
     {# Recent payments #}
     {% if recent_payments %}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Últimos pagos" %}
       </div>
@@ -242,7 +242,7 @@
   <div class="col-lg-4 d-flex flex-column gap-3">
 
     {# Credit #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Crédito" %}
       </div>
@@ -296,7 +296,7 @@
     </div>
 
     {# Aging breakdown #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Antigüedad de saldos" %}
       </div>
@@ -326,7 +326,7 @@
     </div>
 
     {# Audit #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Auditoría" %}
       </div>

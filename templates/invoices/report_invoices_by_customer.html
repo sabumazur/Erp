@@ -22,14 +22,14 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="rpt-header no-print">
+<div class="app-header no-print">
   <div>
-    <h1 class="rpt-header-title">{% trans "Facturas por Cliente" %}</h1>
-    <p class="rpt-header-sub">
+    <h1 class="app-header-title">{% trans "Facturas por Cliente" %}</h1>
+    <p class="app-header-sub">
       {% trans "Consulta el historial de facturación de un cliente en un período específico." %}
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
@@ -74,33 +74,33 @@
 {# ── Summary metric cards ─────────────────────────────────────────────────── #}
 <div class="row g-2 mb-4 no-print">
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value">{{ invoices|length }}</div>
-      <div class="rpt-metric-label">{% trans "Facturas" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ invoices|length }}</div>
+      <div class="app-metric-label">{% trans "Facturas" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value">{{ totals.subtotal|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Subtotal" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ totals.subtotal|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Subtotal" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-warning">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "ITBIS 18%" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-warning">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "ITBIS 18%" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-success">{{ totals.total|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Total" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-success">{{ totals.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total" %}</div>
     </div>
   </div>
 </div>
 
 {# ── Invoices table ───────────────────────────────────────────────────────── #}
-<div class="rpt-table-wrap">
+<div class="app-table-wrap">
   <div class="table-responsive">
     <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
       <thead>

@@ -13,12 +13,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Editar artículo" %}</h4>
-    <p class="rpt-header-sub">{% trans "Artículos" %}</p>
+    <h4 class="app-header-title">{% trans "Editar artículo" %}</h4>
+    <p class="app-header-sub">{% trans "Artículos" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
@@ -31,7 +31,7 @@
           x-data="itemForm('{{ form.item_type.value|default:'BOTH' }}')"
           x-init="init()">
       {% csrf_token %}
-      <div class="rpt-table-wrap mb-3">
+      <div class="app-table-wrap mb-3">
         <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
           {% trans "Datos del artículo" %}
         </div>

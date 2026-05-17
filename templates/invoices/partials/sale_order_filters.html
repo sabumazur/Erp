@@ -2,22 +2,22 @@
 {% comment %}Filter offcanvas body for the sale-order datatable. Requires 'filter' (SaleOrderFilter).{% endcomment %}
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Estado" %}</label>
+  <label class="app-filter-label">{% trans "Estado" %}</label>
   {{ filter.form.status }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Cliente" %}</label>
+  <label class="app-filter-label">{% trans "Cliente" %}</label>
   {{ filter.form.customer }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Departamento" %}</label>
+  <label class="app-filter-label">{% trans "Departamento" %}</label>
   {{ filter.form.department }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Fecha entrega" %}</label>
+  <label class="app-filter-label">{% trans "Fecha entrega" %}</label>
   <div class="d-flex gap-2 align-items-center">
     {{ filter.form.delivery_date_after }}
     <span class="text-muted small">—</span>

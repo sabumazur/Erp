@@ -22,14 +22,14 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="rpt-header no-print">
+<div class="app-header no-print">
   <div>
-    <h1 class="rpt-header-title">{% trans "Estado de Cuenta" %}</h1>
-    <p class="rpt-header-sub">
+    <h1 class="app-header-title">{% trans "Estado de Cuenta" %}</h1>
+    <p class="app-header-sub">
       {% trans "Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo acumulado." %}
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
@@ -72,31 +72,31 @@
 {# ── Summary metric cards ─────────────────────────────────────────────────── #}
 <div class="row g-2 mb-4 no-print">
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
         {{ opening_balance|floatformat:2|intcomma }}
       </div>
-      <div class="rpt-metric-label">{% trans "Saldo inicial" %}</div>
+      <div class="app-metric-label">{% trans "Saldo inicial" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value">{{ period_invoiced|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Facturado" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ period_invoiced|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Facturado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-success">{{ period_collected|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Cobrado" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-success">{{ period_collected|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Cobrado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
         {{ closing_balance|floatformat:2|intcomma }}
       </div>
-      <div class="rpt-metric-label">{% trans "Saldo final" %}</div>
+      <div class="app-metric-label">{% trans "Saldo final" %}</div>
     </div>
   </div>
 </div>
@@ -104,7 +104,7 @@
 {% if lines %}
 
 {# ── Statement table ──────────────────────────────────────────────────────── #}
-<div class="rpt-table-wrap">
+<div class="app-table-wrap">
   <div class="table-responsive">
     <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
       <thead>

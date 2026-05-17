@@ -19,14 +19,14 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="rpt-header no-print">
+<div class="app-header no-print">
   <div>
-    <h1 class="rpt-header-title">{% trans "Antigüedad de Cuentas por Cobrar" %}</h1>
-    <p class="rpt-header-sub">
+    <h1 class="app-header-title">{% trans "Antigüedad de Cuentas por Cobrar" %}</h1>
+    <p class="app-header-sub">
       {% if selected_customer %}{{ selected_customer.name }} · {% endif %}{% trans "Al" %} {{ today|date:"d/m/Y" }}
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
@@ -47,7 +47,7 @@
 {% endif %}
 
 {% if rows %}
-<div class="rpt-table-wrap">
+<div class="app-table-wrap">
   <div class="table-responsive">
     <table class="table table-hover table-sm mb-0">
       <thead>

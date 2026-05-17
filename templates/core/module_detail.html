@@ -16,7 +16,7 @@
   width: 38%;
   vertical-align: middle;
 }
-.rpt-panel-hd {
+.app-panel-hd {
   padding: 10px 14px 9px;
   border-bottom: 1px solid #e5e7eb;
   font-size: .7rem;
@@ -30,14 +30,14 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{{ module.name }}</h4>
-    <p class="rpt-header-sub">
+    <h4 class="app-header-title">{{ module.name }}</h4>
+    <p class="app-header-sub">
       {% trans "Módulos" %} · <span class="font-monospace">{{ module.slug }}</span>
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'core:module_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -79,13 +79,13 @@
 <div class="row g-3">
   <div class="col-lg-8">
 
-    <div class="rpt-table-wrap mb-3">
+    <div class="app-table-wrap mb-3">
       <div class="d-flex align-items-center justify-content-center py-4" style="font-size:2.5rem">
         <i class="bi {{ module.icon|default:'bi-grid' }}"></i>
       </div>
     </div>
 
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <table class="table mb-0">
         <tbody>
           <tr>

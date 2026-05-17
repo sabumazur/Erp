@@ -1,21 +1,23 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load i18n %}
 
-{% block title %}Configuración de organización — SabSys{% endblock %}
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
+
+{% block title %}{% trans "Configuración de organización" %} — SabSys{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-xl-10">
-
-    <div class="d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <h4 class="fw-bold mb-0">Configuración de organización</h4>
-        <span class="text-muted small">{{ organization.name }}</span>
-      </div>
-      <a href="{% url 'accounts:members' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-people me-1"></i> Miembros
-      </a>
-    </div>
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Configuración de organización" %}</h4>
+    <p class="app-header-sub">{{ organization.name }}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'accounts:members' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-people me-1"></i> {% trans "Miembros" %}
+    </a>
+  </div>
+</div>
 
     <div class="row g-4">
 
@@ -23,7 +25,7 @@
       <div class="col-md-8">
         <div class="card border-0 shadow-sm">
           <div class="card-body p-4">
-            <h6 class="text-muted small text-uppercase mb-3">General</h6>
+            <h6 class="text-muted small text-uppercase mb-3">{% trans "General" %}</h6>
 
             <form method="post" enctype="multipart/form-data" novalidate>
               {% csrf_token %}
@@ -34,14 +36,14 @@
                 <div class="position-relative">
                   <img src="{% if organization_logo_url %}{{ organization_logo_url }}{% else %}{{ placeholder }}{% endif %}"
                        :src="previewSrc"
-                       alt="Logotipo"
+                       alt="{% trans "Logotipo" %}"
                        width="80" height="80"
                        class="rounded-3 object-fit-cover border shadow-sm">
 
                   <button type="button"
                           class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                           style="width:26px;height:26px;top:0;right:0;"
-                          title="Cambiar logotipo"
+                          title="{% trans "Cambiar logotipo" %}"
                           @click="$refs.fileInput.click()">
                     <i class="bi bi-pencil" style="font-size:.65rem;"></i>
                   </button>
@@ -49,7 +51,7 @@
                   <button type="button"
                           class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                           style="width:26px;height:26px;bottom:0;right:0;"
-                          title="Eliminar logotipo"
+                          title="{% trans "Eliminar logotipo" %}"
                           x-show="hasAvatar"
                           @click="clear()">
                     <i class="bi bi-x" style="font-size:.8rem;"></i>
@@ -59,7 +61,7 @@
                 <div>
                   <div class="fw-semibold">{{ organization.name }}</div>
                   <div class="text-muted small">{{ organization.slug }}</div>
-                  <div class="text-muted" style="font-size:.72rem;">Permitido: png, jpg, jpeg.</div>
+                  <div class="text-muted" style="font-size:.72rem;">{% trans "Permitido: png, jpg, jpeg." %}</div>
                 </div>
 
                 <input type="file" name="logo" id="id_logo" accept=".png,.jpg,.jpeg"
@@ -72,7 +74,7 @@
               {% crispy form %}
 
               <div class="d-flex justify-content-end mt-3">
-                <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+                <button type="submit" class="btn btn-primary btn-sm">{% trans "Guardar cambios" %}</button>
               </div>
             </form>
           </div>
@@ -83,20 +85,20 @@
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body p-4">
-            <h6 class="text-muted small text-uppercase mb-1">Detalles</h6>
+            <h6 class="text-muted small text-uppercase mb-1">{% trans "Detalles" %}</h6>
             <dl class="row small mb-0 mt-3">
-              <dt class="col-5 text-muted">Slug</dt>
+              <dt class="col-5 text-muted">{% trans "Slug" %}</dt>
               <dd class="col-7 font-monospace">{{ organization.slug }}</dd>
-              <dt class="col-5 text-muted">Propietario</dt>
+              <dt class="col-5 text-muted">{% trans "Propietario" %}</dt>
               <dd class="col-7">{{ organization.owner.full_name }}</dd>
-              <dt class="col-5 text-muted">Creada</dt>
+              <dt class="col-5 text-muted">{% trans "Creada" %}</dt>
               <dd class="col-7">{{ organization.created_at|date:"d/m/Y" }}</dd>
-              <dt class="col-5 text-muted">Estado</dt>
+              <dt class="col-5 text-muted">{% trans "Estado" %}</dt>
               <dd class="col-7">
                 {% if organization.is_active %}
-                  <span class="badge bg-success">Activa</span>
+                  <span class="badge bg-success">{% trans "Activa" %}</span>
                 {% else %}
-                  <span class="badge bg-secondary">Inactiva</span>
+                  <span class="badge bg-secondary">{% trans "Inactiva" %}</span>
                 {% endif %}
               </dd>
             </dl>
@@ -105,7 +107,4 @@
       </div>
 
     </div><!-- /.row -->
-
-  </div>
-</div>
 {% endblock %}

@@ -16,7 +16,7 @@
   width: 38%;
   vertical-align: middle;
 }
-.rpt-panel-hd {
+.app-panel-hd {
   padding: 10px 14px 9px;
   border-bottom: 1px solid #e5e7eb;
   font-size: .7rem;
@@ -31,14 +31,14 @@
 {% block content %}
 
 {# ── Page header ── #}
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{{ item.name }}</h4>
-    <p class="rpt-header-sub">
+    <h4 class="app-header-title">{{ item.name }}</h4>
+    <p class="app-header-sub">
       {% trans "Artículos" %}{% if item.code %} · <span class="font-monospace">{{ item.code }}</span>{% endif %}
     </p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -65,15 +65,15 @@
     {# Pricing metric cards #}
     <div class="row g-2 mb-3">
       <div class="col-sm-4">
-        <div class="rpt-metric-card">
-          <div class="rpt-metric-value" style="color:#16a34a">{{ item.unit_price|floatformat:2 }}</div>
-          <div class="rpt-metric-label">{% trans "Precio de venta" %}</div>
+        <div class="app-metric-card">
+          <div class="app-metric-value" style="color:#16a34a">{{ item.unit_price|floatformat:2 }}</div>
+          <div class="app-metric-label">{% trans "Precio de venta" %}</div>
         </div>
       </div>
       <div class="col-sm-4">
-        <div class="rpt-metric-card">
-          <div class="rpt-metric-value">{{ item.cost_price|floatformat:2|default:"—" }}</div>
-          <div class="rpt-metric-label">{% trans "Precio de costo" %}</div>
+        <div class="app-metric-card">
+          <div class="app-metric-value">{{ item.cost_price|floatformat:2|default:"—" }}</div>
+          <div class="app-metric-label">{% trans "Precio de costo" %}</div>
           {% if item.margin is not None %}
             <div class="mt-1">
               <span class="badge-soft badge-paid" style="font-size:.65rem">{% trans "Margen" %} {{ item.margin }}%</span>
@@ -82,8 +82,8 @@
         </div>
       </div>
       <div class="col-sm-4">
-        <div class="rpt-metric-card">
-          <div class="rpt-metric-value" style="line-height:1.6">
+        <div class="app-metric-card">
+          <div class="app-metric-value" style="line-height:1.6">
             {% if item.itbis_rate == 'RATE_18' %}
               <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
             {% elif item.itbis_rate == 'RATE_16' %}
@@ -92,13 +92,13 @@
               <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
             {% endif %}
           </div>
-          <div class="rpt-metric-label">{% trans "ITBIS" %}</div>
+          <div class="app-metric-label">{% trans "ITBIS" %}</div>
         </div>
       </div>
     </div>
 
     {# Attributes table #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <table class="table mb-0">
         <tbody>
           <tr>
@@ -140,8 +140,8 @@
 
   {# ── Audit sidebar ── #}
   <div class="col-lg-4">
-    <div class="rpt-table-wrap">
-      <div class="rpt-panel-hd">{% trans "Auditoría" %}</div>
+    <div class="app-table-wrap">
+      <div class="app-panel-hd">{% trans "Auditoría" %}</div>
       <table class="table table-sm mb-0" style="font-size:.82rem">
         <tbody>
           <tr>

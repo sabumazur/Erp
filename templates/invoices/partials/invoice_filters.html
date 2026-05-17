@@ -6,22 +6,22 @@
 {% endcomment %}
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Estado" %}</label>
+  <label class="app-filter-label">{% trans "Estado" %}</label>
   {{ filter.form.status }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Tipo NCF" %}</label>
+  <label class="app-filter-label">{% trans "Tipo NCF" %}</label>
   {{ filter.form.ncf_type }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Cliente" %}</label>
+  <label class="app-filter-label">{% trans "Cliente" %}</label>
   {{ filter.form.customer }}
 </div>
 
 <div class="mb-3">
-  <label class="rpt-filter-label">{% trans "Fecha emisión" %}</label>
+  <label class="app-filter-label">{% trans "Fecha emisión" %}</label>
   <div class="d-flex gap-2 align-items-center">
     {{ filter.form.issue_date_after }}
     <span class="text-muted small">—</span>

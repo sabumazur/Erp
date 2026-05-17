@@ -5,13 +5,13 @@
   @page { size: A4 landscape; }
   .no-print { display: none !important; }
   .print-header { display: block !important; }
-  .rpt-table-wrap { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
-  .rpt-metric-card { border: 1px solid #dee2e6 !important; }
+  .app-table-wrap { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  .app-metric-card { border: 1px solid #dee2e6 !important; }
   .badge-soft { background: none !important; border: none !important; padding: 0 !important; color: inherit !important; font-weight: 600; }
 }
 
 /* ── Page header ─────────────────────────────────────────── */
-.rpt-header {
+.app-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -21,19 +21,19 @@
   flex-wrap: wrap;
   gap: .5rem;
 }
-.rpt-header-title { font-size: 1.2rem; font-weight: 700; color: #111827; letter-spacing: -.2px; margin: 0; }
-.rpt-header-sub { font-size: .8rem; color: #6b7280; margin: 3px 0 0; }
-.rpt-header-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+.app-header-title { font-size: 1.2rem; font-weight: 700; color: #111827; letter-spacing: -.2px; margin: 0; }
+.app-header-sub { font-size: .8rem; color: #6b7280; margin: 3px 0 0; }
+.app-header-actions { display: flex; gap: .5rem; flex-shrink: 0; }
 
 /* ── Filter panel ────────────────────────────────────────── */
-.rpt-filter-panel {
+.app-filter-panel {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 14px 16px;
   margin-bottom: 1rem;
 }
-.rpt-filter-label {
+.app-filter-label {
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
@@ -43,20 +43,20 @@
 }
 
 /* ── Metric cards ────────────────────────────────────────── */
-.rpt-metric-card {
+.app-metric-card {
   text-align: center;
   padding: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background: #fff;
 }
-.rpt-metric-value {
+.app-metric-value {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.2;
   color: #111827;
 }
-.rpt-metric-label {
+.app-metric-label {
   font-size: 9px;
   color: #6b7280;
   text-transform: uppercase;
@@ -65,14 +65,14 @@
 }
 
 /* ── Table wrapper ───────────────────────────────────────── */
-.rpt-table-wrap {
+.app-table-wrap {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
 }
-.rpt-table-wrap .table { margin-bottom: 0; font-size: .875rem; }
-.rpt-table-wrap thead th {
+.app-table-wrap .table { margin-bottom: 0; font-size: .875rem; }
+.app-table-wrap thead th {
   background: #f9fafb;
   font-size: .7rem;
   font-weight: 600;
@@ -83,13 +83,13 @@
   padding-top: .65rem;
   padding-bottom: .65rem;
 }
-.rpt-table-wrap tfoot td,
-.rpt-table-wrap tfoot th {
+.app-table-wrap tfoot td,
+.app-table-wrap tfoot th {
   background: #f9fafb;
   border-top: 2px solid #1e2130;
   font-weight: 700;
 }
-.rpt-table-wrap tbody tr:nth-child(even) { background: #fafafa; }
+.app-table-wrap tbody tr:nth-child(even) { background: #fafafa; }
 
 /* ── Status badges (class names unchanged) ───────────────── */
 .badge-soft {

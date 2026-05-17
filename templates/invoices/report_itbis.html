@@ -21,12 +21,12 @@
 </div>
 
 {# ── Screen header ────────────────────────────────────────────────────────── #}
-<div class="rpt-header no-print">
+<div class="app-header no-print">
   <div>
-    <h1 class="rpt-header-title">Resumen de ITBIS</h1>
-    {% if year %}<p class="rpt-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
+    <h1 class="app-header-title">Resumen de ITBIS</h1>
+    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>Reportes
     </a>
@@ -47,33 +47,33 @@
 {# ── Summary metric cards ──────────────────────────────────────────────────── #}
 <div class="row g-2 mb-3 no-print">
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value">{{ totals.total_base|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">Total base</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ totals.total_base|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Total base</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-warning">{{ totals.itbis_16|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">ITBIS 16%</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-warning">{{ totals.itbis_16|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">ITBIS 16%</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-danger">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">ITBIS 18%</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-danger">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">ITBIS 18%</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value text-danger">{{ totals.total_itbis|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">Total ITBIS</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value text-danger">{{ totals.total_itbis|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Total ITBIS</div>
     </div>
   </div>
 </div>
 
 {# ── Table ─────────────────────────────────────────────────────────────────── #}
-<div class="rpt-table-wrap">
+<div class="app-table-wrap">
   <div class="table-responsive">
     <table class="table table-hover table-sm mb-0">
       <thead>

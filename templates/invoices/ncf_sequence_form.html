@@ -9,12 +9,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Editar secuencia NCF" %}</h4>
-    <p class="rpt-header-sub">{% trans "Secuencias NCF" %}</p>
+    <h4 class="app-header-title">{% trans "Editar secuencia NCF" %}</h4>
+    <p class="app-header-sub">{% trans "Secuencias NCF" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
@@ -25,7 +25,7 @@
 
   {# ── Form ── #}
   <div class="col-lg-7">
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Parámetros" %}
       </div>
@@ -50,7 +50,7 @@
   <div class="col-lg-5 d-flex flex-column gap-3">
 
     {# Identity + preview #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;display:flex;align-items:center;gap:8px">
         {% if object.series == 'B' %}
           <span class="badge-soft badge-confirmed">B</span>

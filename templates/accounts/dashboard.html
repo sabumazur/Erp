@@ -6,7 +6,7 @@
 {% block extra_css %}
 {% include "components/app_styles.html" %}
 <style>
-/* ── Panel (charts / stat pills) — same border system as rpt-table-wrap ── */
+/* ── Panel (charts / stat pills) — same border system as app-table-wrap ── */
 .db-panel {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -36,8 +36,8 @@
 }
 .db-panel-body { padding: 14px; }
 
-/* ── Stat pill variant of rpt-metric-card ────────────────── */
-.rpt-metric-card.db-stat {
+/* ── Stat pill variant of app-metric-card ────────────────── */
+.app-metric-card.db-stat {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -70,12 +70,12 @@
 {% block content %}
 
 {# ── Page header ── #}
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Dashboard" %}</h4>
-    <p class="rpt-header-sub"><i class="bi bi-building me-1"></i>{{ organization.name }} · {{ today|date:"F Y" }}</p>
+    <h4 class="app-header-title">{% trans "Dashboard" %}</h4>
+    <p class="app-header-sub"><i class="bi bi-building me-1"></i>{{ organization.name }} · {{ today|date:"F Y" }}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <span class="btn btn-outline-secondary btn-sm no-print">
       <i class="bi bi-calendar3 me-1"></i>{{ today|date:"d/m/Y" }}
     </span>
@@ -85,27 +85,27 @@
 {# ── KPI metric cards ── #}
 <div class="row g-2 mb-3">
   <div class="col-sm-6 col-xl-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#16a34a">{{ month_invoiced|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Facturado · Mes actual" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a">{{ month_invoiced|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Facturado · Mes actual" %}</div>
     </div>
   </div>
   <div class="col-sm-6 col-xl-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#16a34a">{{ month_collected|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Cobrado · Mes actual" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a">{{ month_collected|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Cobrado · Mes actual" %}</div>
     </div>
   </div>
   <div class="col-sm-6 col-xl-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#111827">{{ outstanding|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Por cobrar" %}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#111827">{{ outstanding|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Por cobrar" %}</div>
     </div>
   </div>
   <div class="col-sm-6 col-xl-3">
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#dc2626">{{ overdue_total|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#dc2626">{{ overdue_total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">
         {% trans "Vencido" %}{% if overdue_count %} · {{ overdue_count }} {% trans "factura(s)" %}{% endif %}
       </div>
     </div>
@@ -115,31 +115,31 @@
 {# ── Stat pills ── #}
 <div class="row g-2 mb-3">
   <div class="col-sm-4">
-    <div class="rpt-metric-card db-stat">
+    <div class="app-metric-card db-stat">
       <span class="db-stat-icon"><i class="bi bi-people"></i></span>
       <div>
-        <div class="rpt-metric-value" style="text-align:left">{{ customer_count|intcomma }}</div>
-        <div class="rpt-metric-label" style="text-align:left">{% trans "Clientes" %}</div>
+        <div class="app-metric-value" style="text-align:left">{{ customer_count|intcomma }}</div>
+        <div class="app-metric-label" style="text-align:left">{% trans "Clientes" %}</div>
       </div>
       <a href="{% url 'invoices:customer_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
-    <div class="rpt-metric-card db-stat">
+    <div class="app-metric-card db-stat">
       <span class="db-stat-icon"><i class="bi bi-file-earmark-text"></i></span>
       <div>
-        <div class="rpt-metric-value" style="text-align:left">{{ pending_quotations|intcomma }}</div>
-        <div class="rpt-metric-label" style="text-align:left">{% trans "Cotizaciones activas" %}</div>
+        <div class="app-metric-value" style="text-align:left">{{ pending_quotations|intcomma }}</div>
+        <div class="app-metric-label" style="text-align:left">{% trans "Cotizaciones activas" %}</div>
       </div>
       <a href="{% url 'invoices:quotation_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
-    <div class="rpt-metric-card db-stat">
+    <div class="app-metric-card db-stat">
       <span class="db-stat-icon"><i class="bi bi-cart"></i></span>
       <div>
-        <div class="rpt-metric-value" style="text-align:left">{{ pending_sale_orders|intcomma }}</div>
-        <div class="rpt-metric-label" style="text-align:left">{% trans "Órdenes pendientes" %}</div>
+        <div class="app-metric-value" style="text-align:left">{{ pending_sale_orders|intcomma }}</div>
+        <div class="app-metric-label" style="text-align:left">{% trans "Órdenes pendientes" %}</div>
       </div>
       <a href="{% url 'invoices:sale_order_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
@@ -183,7 +183,7 @@
 </div>
 
 {# ── Recent invoices ── #}
-<div class="rpt-table-wrap mb-3">
+<div class="app-table-wrap mb-3">
   <div class="db-panel-header">
     <span class="db-panel-title">{% trans "Facturas recientes" %}</span>
     <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todas" %} →</a>
@@ -237,7 +237,7 @@
 {# ── Overdue + Recent payments ── #}
 <div class="row g-2">
   <div class="col-lg-6">
-    <div class="rpt-table-wrap db-panel-overdue">
+    <div class="app-table-wrap db-panel-overdue">
       <div class="db-panel-header">
         <span class="db-panel-title"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}</span>
         {% if overdue_count > 6 %}
@@ -286,7 +286,7 @@
   </div>
 
   <div class="col-lg-6">
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Pagos recientes" %}</span>
         <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todos" %} →</a>

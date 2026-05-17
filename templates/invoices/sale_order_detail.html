@@ -21,12 +21,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{{ order.doc_number|default:"Borrador" }}</h4>
-    <p class="rpt-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
+    <h4 class="app-header-title">{{ order.doc_number|default:"Borrador" }}</h4>
+    <p class="app-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -98,7 +98,7 @@
   <div class="col-lg-8">
 
     {# Meta info #}
-    <div class="rpt-table-wrap mb-3">
+    <div class="app-table-wrap mb-3">
       <table class="table mb-0">
         <tbody>
           <tr>
@@ -144,7 +144,7 @@
     </div>
 
     {# Items table #}
-    <div class="rpt-table-wrap mb-3">
+    <div class="app-table-wrap mb-3">
       <table class="table table-sm mb-0">
         <thead>
           <tr>
@@ -202,7 +202,7 @@
     </div>
 
     {% if order.notes %}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Notas" %}
       </div>
@@ -215,12 +215,12 @@
   {# ── Right: Status sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
 
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#16a34a">{{ order.total|floatformat:2|intcomma }}</div>
-      <div class="rpt-metric-label">{% trans "Total" %} {{ order.currency }}</div>
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a">{{ order.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total" %} {{ order.currency }}</div>
     </div>
 
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Estado del documento" %}
       </div>
@@ -258,7 +258,7 @@
     </div>
 
     {% if order.consolidated_into %}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Factura consolidada" %}
       </div>

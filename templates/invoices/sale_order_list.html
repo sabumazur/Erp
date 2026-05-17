@@ -9,12 +9,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Órdenes de venta" %}</h4>
-    <p class="rpt-header-sub">{% trans "Facturación" %}</p>
+    <h4 class="app-header-title">{% trans "Órdenes de venta" %}</h4>
+    <p class="app-header-sub">{% trans "Facturación" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:sale_order_consolidate' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-receipt me-1"></i>{% trans "Consolidar" %}
     </a>

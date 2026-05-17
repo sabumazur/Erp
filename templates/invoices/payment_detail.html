@@ -21,12 +21,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Recibo de pago" %}</h4>
-    <p class="rpt-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
+    <h4 class="app-header-title">{% trans "Recibo de pago" %}</h4>
+    <p class="app-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
@@ -47,11 +47,11 @@
   <div class="col-lg-8 d-flex flex-column gap-3">
 
     {# Amount hero #}
-    <div class="rpt-metric-card">
-      <div class="rpt-metric-value" style="color:#16a34a;font-size:2rem">
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a;font-size:2rem">
         RD$&nbsp;{{ payment.amount|floatformat:2|intcomma }}
       </div>
-      <div class="rpt-metric-label">
+      <div class="app-metric-label">
         {% trans "Monto total" %} ·
         {% if payment.method == 'TRANSFER' %}
           <span class="badge-soft badge-sent">{{ payment.get_method_display }}</span>
@@ -64,7 +64,7 @@
     </div>
 
     {# Meta info #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <table class="table mb-0">
         <tbody>
           <tr>
@@ -106,7 +106,7 @@
     </div>
 
     {# Allocations table #}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Facturas aplicadas" %}
       </div>
@@ -159,7 +159,7 @@
     </div>
 
     {% if payment.notes %}
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Notas" %}
       </div>
@@ -171,7 +171,7 @@
 
   {# ── Sidebar ── #}
   <div class="col-lg-4">
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Resumen" %}
       </div>

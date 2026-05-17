@@ -9,12 +9,12 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">{% trans "Consolidar órdenes en factura" %}</h4>
-    <p class="rpt-header-sub">{% trans "Órdenes de venta" %}</p>
+    <h4 class="app-header-title">{% trans "Consolidar órdenes en factura" %}</h4>
+    <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
@@ -27,7 +27,7 @@
 
 <div class="row g-3">
   <div class="col-lg-7">
-    <div class="rpt-table-wrap mb-3">
+    <div class="app-table-wrap mb-3">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Parámetros" %}
       </div>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="col-lg-5">
-    <div class="rpt-table-wrap">
+    <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
         {% trans "Vista previa" %}
       </div>

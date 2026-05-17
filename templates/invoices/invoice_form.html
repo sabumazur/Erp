@@ -9,14 +9,14 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">
+    <h4 class="app-header-title">
       {% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}
     </h4>
-    <p class="rpt-header-sub">{% trans "Facturas" %}</p>
+    <p class="app-header-sub">{% trans "Facturas" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
@@ -26,7 +26,7 @@
 <form method="post" id="invoice-form" x-data="invoiceForm()">
   {% csrf_token %}
 
-  <div class="rpt-table-wrap mb-3">
+  <div class="app-table-wrap mb-3">
     <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
       {% trans "Datos generales" %}
     </div>
@@ -35,7 +35,7 @@
     </div>
   </div>
 
-  <div class="rpt-table-wrap mb-3">
+  <div class="app-table-wrap mb-3">
     <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas de factura" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-sm"

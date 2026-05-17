@@ -11,14 +11,14 @@
 
 {% block content %}
 
-<div class="rpt-header">
+<div class="app-header">
   <div>
-    <h4 class="rpt-header-title">
+    <h4 class="app-header-title">
       {% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}
     </h4>
-    <p class="rpt-header-sub">{% trans "Cotizaciones" %}</p>
+    <p class="app-header-sub">{% trans "Cotizaciones" %}</p>
   </div>
-  <div class="rpt-header-actions">
+  <div class="app-header-actions">
     <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
@@ -29,7 +29,7 @@
   {% csrf_token %}
 
   {# Header fields #}
-  <div class="rpt-table-wrap mb-3">
+  <div class="app-table-wrap mb-3">
     <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
       {% trans "Datos de la cotización" %}
     </div>
@@ -39,7 +39,7 @@
   </div>
 
   {# Line items #}
-  <div class="rpt-table-wrap mb-3">
+  <div class="app-table-wrap mb-3">
     <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-sm"
