@@ -197,8 +197,6 @@ class TestReportViews:
 
 @pytest.mark.django_db
 class TestCustomerQuickCreateForm:
-    from apps.invoices.forms import CustomerQuickCreateForm
-
     def _form(self, data, org=None):
         from apps.invoices.forms import CustomerQuickCreateForm
         if org is None:
