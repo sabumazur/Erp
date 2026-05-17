@@ -76,7 +76,7 @@ from .reports import (
 )
 from .htmx import (
     CustomerDefaultsView,
-    ItemCatalogView,
+    ItemSearchView,
     CustomerSearchView,
     CustomerQuickCreateView,
 )

@@ -58,7 +58,7 @@ from .views import (
     RNCLookupView,
     CustomerDepartmentsView,
     CustomerDefaultsView,
-    ItemCatalogView,
+    ItemSearchView,
     CustomerSearchView,
     CustomerQuickCreateView,
     # NCF sequences
@@ -164,7 +164,7 @@ urlpatterns = [
     path("invoices/customers/departments/",        CustomerDepartmentsView.as_view(), name="departments_for_customer"),
     path("payments/outstanding-invoices/",         OutstandingInvoicesView.as_view(), name="payment_outstanding_invoices"),
     path("invoices/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
-    path("invoices/items/catalog/",                ItemCatalogView.as_view(),         name="item_catalog"),
+    path("invoices/items/search/",                  ItemSearchView.as_view(),          name="item_search"),
     path("invoices/htmx/customers/search/",        CustomerSearchView.as_view(),      name="customer_search"),
     path("invoices/htmx/customers/create/",        CustomerQuickCreateView.as_view(), name="customer_quick_create"),
 

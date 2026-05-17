@@ -368,3 +368,95 @@ class TestCustomerQuickCreateView:
             "rnc_cedula": "101234563",
         })
         assert resp.status_code in (302, 403)
+
+
+# ── ItemSearchView ────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestItemSearchView:
+
+    def _get(self, client, org, q=""):
+        return client.get(reverse("invoices:item_search"), {"q": q})
+
+    def test_requires_login(self, client):
+        resp = client.get(reverse("invoices:item_search"))
+        assert resp.status_code in (302, 403)
+
+    def test_returns_200(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = self._get(client, org)
+        assert resp.status_code == 200
+
+    def test_scope_to_org(self, client):
+        from decimal import Decimal
+        from apps.items.models import Item
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        Item.objects.create(
+            organization=org, name="Mi Artículo",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("100.00"), is_active=True,
+        )
+        other_org = OrganizationFactory()
+        Item.objects.create(
+            organization=other_org, name="Otro Org",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("50.00"), is_active=True,
+        )
+        resp = self._get(client, org)
+        content = resp.content.decode()
+        assert "Mi Artículo" in content
+        assert "Otro Org" not in content
+
+    def test_search_filters_by_name(self, client):
+        from decimal import Decimal
+        from apps.items.models import Item
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        Item.objects.create(
+            organization=org, name="Consultoría Web",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("200.00"), is_active=True,
+        )
+        Item.objects.create(
+            organization=org, name="Mantenimiento",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("150.00"), is_active=True,
+        )
+        resp = self._get(client, org, q="Consultoría")
+        content = resp.content.decode()
+        assert "Consultoría Web" in content
+        assert "Mantenimiento" not in content
+
+    def test_excludes_purchase_only_items(self, client):
+        from decimal import Decimal
+        from apps.items.models import Item
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        Item.objects.create(
+            organization=org, name="Solo Compra",
+            item_type=Item.ItemType.PURCHASE,
+            unit_price=Decimal("50.00"), is_active=True,
+        )
+        resp = self._get(client, org)
+        assert "Solo Compra" not in resp.content.decode()
+
+    def test_returns_at_most_50_rows(self, client):
+        from decimal import Decimal
+        from apps.items.models import Item
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        for i in range(60):
+            Item.objects.create(
+                organization=org, name=f"Artículo {i:03d}",
+                item_type=Item.ItemType.SALE,
+                unit_price=Decimal("10.00"), is_active=True,
+            )
+        resp = self._get(client, org)
+        assert resp.content.decode().count("<tr") <= 50
