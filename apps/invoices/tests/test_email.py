@@ -6,7 +6,7 @@ from apps.invoices.email import send_quotation_email
 
 
 @pytest.mark.django_db
-def test_send_quotation_email_context_includes_letterhead_url(mailoutbox):
+def test_send_quotation_email_context_includes_letterhead_url():
     org = OrganizationFactory()
     customer = CustomerFactory(organization=org, email="test@example.com")
     quotation = InvoiceFactory(
@@ -31,5 +31,4 @@ def test_send_quotation_email_context_includes_letterhead_url(mailoutbox):
     assert "letterhead_url" in captured_ctx
     letterhead_url = captured_ctx["letterhead_url"]
     assert letterhead_url.startswith("http://testserver")
-    # The filename may be URL-encoded (spaces → %20) or literal
-    assert "hoja" in letterhead_url and "timbrada" in letterhead_url and "cafe" in letterhead_url
+    assert "hoja%20timbrada%20cafe%20tropical%20mod.jpg" in captured_ctx["letterhead_url"]
