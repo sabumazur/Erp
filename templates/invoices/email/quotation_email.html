@@ -54,10 +54,12 @@
                     </div>
                   </div>
                 </td>
+                {% if logo_url %}
                 <td valign="top" align="right" width="130" style="padding-left:12px;">
-                  <img src="{{ cafe_logo_url }}" alt="{{ org.name }}" width="120"
+                  <img src="{{ logo_url }}" alt="{{ org.name }}" width="120"
                        style="max-width:120px;max-height:80px;object-fit:contain;display:block;margin-left:auto;">
                 </td>
+                {% endif %}
               </tr>
             </table>
           </td>

@@ -100,9 +100,11 @@ tbody td.text-center { text-align: center; }
         </div>
       </div>
     </div>
+    {% if org.logo %}
     <div class="doc-logo">
-      <img src="{% static 'img/logo-cafe.jpg' %}" alt="{{ org.name }}">
+      <img src="{{ org.logo.url }}" alt="{{ org.name }}">
     </div>
+    {% endif %}
   </div>
 
   <!-- Parties -->
