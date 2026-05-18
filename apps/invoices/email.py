@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.utils.translation import gettext as _
 
 from .models import Invoice
@@ -60,6 +61,9 @@ def send_quotation_email(quotation: Invoice, request) -> bool:
         "items": quotation.items.all(),
         "org": org,
         "logo_url": _logo_url(org, request),
+        "letterhead_url": request.build_absolute_uri(
+            static("img/hoja timbrada cafe tropical mod.jpg")
+        ),
     }
     html_body = render_to_string("invoices/email/quotation_email.html", ctx, request=request)
     doc_ref = quotation.doc_number or _("Borrador")
