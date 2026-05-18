@@ -40,7 +40,7 @@
                   <div style="margin-top:10px;">
                     <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Cotización" %}</div>
                     <div style="margin-top:4px;">
-                      <span style="font-size:13px;font-family:monospace;color:#374151;">{{ quotation.doc_number|default:"Borrador" }}</span>
+                      <span style="font-size:13px;font-family:monospace;font-weight:700;color:#374151;">{{ quotation.doc_number|default:"Borrador" }}</span>
                       &nbsp;&nbsp;
                       <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
                         {% if quotation.status == 'ACCEPTED' %}background:#d1e7dd;color:#0f5132;
