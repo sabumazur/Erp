@@ -2,6 +2,7 @@
 {% if customers %}
   {% for c in customers %}
   <tr style="cursor:pointer"
+      data-pk="{{ c.pk }}"
       onclick="customerPickerSelect('{{ c.pk }}', '{{ c.name|escapejs }}', '{{ c.rnc_cedula|escapejs }}', {{ c.default_ncf_type }})">
     <td>{{ c.name }}</td>
     <td class="text-muted small">{{ c.rnc_cedula }}</td>

@@ -122,6 +122,7 @@
 <script>
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'invoices:customer_quick_create' %}";
+window.ITEM_QUICK_CREATE_URL     = "{% url 'invoices:item_quick_create' %}";
 </script>
 {% include "invoices/partials/item_js.html" %}
 

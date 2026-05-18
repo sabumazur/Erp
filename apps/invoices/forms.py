@@ -9,6 +9,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
+from apps.items.models import Item as _Item
 from .models import (
     Customer,
     CustomerDepartment,
@@ -247,6 +248,22 @@ class CustomerQuickCreateForm(forms.ModelForm):
                     self.add_error("rnc_cedula", _("Ya existe un cliente con este RNC/cédula en la organización."))
 
         return cleaned_data
+
+
+# ── ItemQuickCreateForm ───────────────────────────────────────────────────────
+
+
+class ItemQuickCreateForm(forms.ModelForm):
+    """Minimal form for creating a catalog item from within the item picker modal."""
+
+    class Meta:
+        model = _Item
+        fields = ["name", "unit", "unit_price", "itbis_rate"]
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._organization = organization
+        self.fields["unit_price"].widget.attrs["placeholder"] = "0.00"
 
 
 # ── CustomerDepartment ────────────────────────────────────────────────────────

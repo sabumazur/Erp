@@ -85,7 +85,13 @@
       "Bash(grep -E \"\\\\.py$\")",
       "Skill(superpowers:finishing-a-development-branch)",
       "Skill(superpowers:finishing-a-development-branch:*)",
-      "Bash(xargs sed -i 's/rpt-/app-/g')"
+      "Bash(xargs sed -i 's/rpt-/app-/g')",
+      "Bash(awk '{print $2}')",
+      "Bash(cat)",
+      "Bash(python3 /tmp/parse_tools.py)",
+      "Bash(/c/Users/sabum/sabsys/venv/Scripts/python)",
+      "Bash(xargs ls -t)",
+      "Bash(awk '{print $NF}')"
     ]
   }
 }

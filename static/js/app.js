@@ -367,14 +367,150 @@
     if (!window.bootstrap) return;
     window.activeItemRow  = rowEl;
     window.activePickerTr = null;
+    itemPickerShowSearch();
     var selBtn = document.getElementById("picker-select-btn");
     if (selBtn) selBtn.disabled = true;
     var searchEl = document.getElementById("picker-search");
     if (searchEl) searchEl.value = "";
+
+    var itemEl    = rowEl ? rowEl.querySelector('[name$="-item"]') : null;
+    var currentPk = itemEl ? itemEl.value : "";
+    var tbody     = document.getElementById("picker-tbody");
+    if (tbody && currentPk) {
+      function onItemSwap() {
+        tbody.removeEventListener("htmx:afterSwap", onItemSwap);
+        var match = tbody.querySelector('tr[data-pk="' + currentPk + '"]');
+        if (match) {
+          itemPickerHighlight(match);
+          match.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+      tbody.addEventListener("htmx:afterSwap", onItemSwap);
+    }
+
     var modal = document.getElementById("itemPickerModal");
     if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
-    // Trigger HTMX search after modal is visible so tbody loads initial results.
-    if (searchEl && window.htmx) htmx.trigger(searchEl, "input");
+    _refreshItemPickerList("");
+  }
+
+  function _refreshItemPickerList(q) {
+    var searchEl = document.getElementById("picker-search");
+    if (!searchEl || !window.htmx) return;
+    var url = searchEl.getAttribute("hx-get");
+    if (!url) return;
+    if (q) url += (url.indexOf("?") === -1 ? "?" : "&") + "q=" + encodeURIComponent(q);
+    htmx.ajax("GET", url, { target: "#picker-tbody", swap: "innerHTML" });
+  }
+
+  function itemPickerShowCreate() {
+    var search = document.getElementById("item-picker-search-panel");
+    var create = document.getElementById("item-picker-create-panel");
+    if (search) search.classList.add("d-none");
+    if (create) create.classList.remove("d-none");
+    var nameEl  = document.getElementById("iqc-name");
+    var unitEl  = document.getElementById("iqc-unit");
+    var priceEl = document.getElementById("iqc-unit-price");
+    var rateEl  = document.getElementById("iqc-itbis-rate");
+    if (nameEl)  { nameEl.value  = ""; nameEl.classList.remove("is-invalid"); }
+    if (unitEl)  { unitEl.value  = "UNIT"; unitEl.classList.remove("is-invalid"); }
+    if (priceEl) { priceEl.value = ""; priceEl.classList.remove("is-invalid"); }
+    if (rateEl)  { rateEl.value  = "RATE_18"; rateEl.classList.remove("is-invalid"); }
+    ["iqc-name-error", "iqc-unit-error", "iqc-unit-price-error", "iqc-itbis-rate-error", "iqc-non-field-errors"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = "";
+    });
+    if (nameEl) nameEl.focus();
+  }
+
+  function itemPickerShowSearch() {
+    var search = document.getElementById("item-picker-search-panel");
+    var create = document.getElementById("item-picker-create-panel");
+    if (search) search.classList.remove("d-none");
+    if (create) create.classList.add("d-none");
+    ["iqc-name", "iqc-unit", "iqc-unit-price", "iqc-itbis-rate"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove("is-invalid");
+    });
+    ["iqc-name-error", "iqc-unit-error", "iqc-unit-price-error", "iqc-itbis-rate-error", "iqc-non-field-errors"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = "";
+    });
+  }
+
+  function itemPickerQuickCreate() {
+    var name      = (document.getElementById("iqc-name")       || {}).value || "";
+    var unit      = (document.getElementById("iqc-unit")       || {}).value || "UNIT";
+    var unitPrice = (document.getElementById("iqc-unit-price") || {}).value || "";
+    var itbisRate = (document.getElementById("iqc-itbis-rate") || {}).value || "RATE_18";
+    var csrf      = (document.querySelector("[name=csrfmiddlewaretoken]") || {}).value || "";
+    var btn       = document.getElementById("iqc-submit-btn");
+    if (btn) btn.disabled = true;
+
+    fetch(window.ITEM_QUICK_CREATE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrf,
+      },
+      body: "name=" + encodeURIComponent(name) +
+            "&unit=" + encodeURIComponent(unit) +
+            "&unit_price=" + encodeURIComponent(unitPrice) +
+            "&itbis_rate=" + encodeURIComponent(itbisRate),
+    })
+    .then(function (resp) {
+      return resp.json().then(function (data) { return { status: resp.status, data: data }; });
+    })
+    .then(function (result) {
+      if (btn) btn.disabled = false;
+      if (result.status === 200) {
+        var d = result.data;
+        itemPickerShowSearch();
+        _refreshItemPickerList(d.name || "");
+        setTimeout(function () {
+          if (window.activeItemRow) {
+            var formRow = window.activeItemRow;
+            var next    = formRow.nextElementSibling;
+            var descEl  = formRow.querySelector('[name$="-description"]') ||
+                          (next && next.querySelector('[name$="-description"]'));
+            var priceEl = formRow.querySelector('[name$="-unit_price"]');
+            var qtyEl   = formRow.querySelector('[name$="-quantity"]');
+            var rateEl  = formRow.querySelector('[name$="-itbis_rate"]');
+            var itemEl  = formRow.querySelector('[name$="-item"]');
+            if (descEl)  descEl.value  = d.name;
+            if (itemEl)  itemEl.value  = d.pk;
+            if (priceEl) priceEl.value = d.unit_price;
+            if (qtyEl)   qtyEl.value   = "1";
+            if (rateEl)  rateEl.value  = d.itbis_rate;
+            if (typeof Alpine !== "undefined") {
+              try {
+                Alpine.evaluate(formRow, "price = " + (parseFloat(d.unit_price) || 0) +
+                  ", qty = 1, rate = '" + (d.itbis_rate || "RATE_18") + "'");
+              } catch (err) {}
+            }
+            recalcGrandTotal();
+          }
+          var modal = document.getElementById("itemPickerModal");
+          if (modal) bootstrap.Modal.getOrCreateInstance(modal).hide();
+        }, 600);
+      } else {
+        var errors   = result.data.errors || {};
+        var fieldMap = { name: "iqc-name", unit: "iqc-unit", unit_price: "iqc-unit-price", itbis_rate: "iqc-itbis-rate" };
+        Object.keys(fieldMap).forEach(function (field) {
+          var inputEl = document.getElementById(fieldMap[field]);
+          var errEl   = document.getElementById(fieldMap[field] + "-error");
+          if (errors[field] && errors[field].length) {
+            if (inputEl) inputEl.classList.add("is-invalid");
+            if (errEl)   errEl.textContent = errors[field][0];
+          }
+        });
+        var nonField = errors["__all__"] || errors["non_field_errors"] || [];
+        var nfEl = document.getElementById("iqc-non-field-errors");
+        if (nfEl) nfEl.textContent = nonField.join(" ");
+      }
+    })
+    .catch(function () {
+      if (btn) btn.disabled = false;
+    });
   }
 
   function itemPickerHighlight(tr) {
@@ -435,15 +571,46 @@
     if (!modal) return;
     customerPickerShowSearch();
     var searchInput = document.getElementById("customer-picker-search");
+    var custSel     = document.getElementById("id_customer");
+    var currentPk   = custSel ? custSel.value : "";
     bootstrap.Modal.getOrCreateInstance(modal).show();
     modal.addEventListener("shown.bs.modal", function handler() {
       if (searchInput) {
         searchInput.value = "";
         searchInput.focus();
-        htmx.trigger(searchInput, "load");
+        var tbody = document.getElementById("customer-picker-tbody");
+        if (tbody && currentPk) {
+          function onCustSwap() {
+            tbody.removeEventListener("htmx:afterSwap", onCustSwap);
+            var match = tbody.querySelector('tr[data-pk="' + currentPk + '"]');
+            if (match) {
+              customerPickerHighlight(match);
+              match.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            }
+          }
+          tbody.addEventListener("htmx:afterSwap", onCustSwap);
+        }
+        _refreshCustomerPickerList("");
       }
       modal.removeEventListener("shown.bs.modal", handler);
     });
+  }
+
+  function customerPickerHighlight(tr) {
+    var tbody = document.getElementById("customer-picker-tbody");
+    if (tbody) {
+      tbody.querySelectorAll("tr").forEach(function (r) { r.removeAttribute("aria-selected"); });
+    }
+    tr.setAttribute("aria-selected", "true");
+  }
+
+  function _refreshCustomerPickerList(q) {
+    var searchInput = document.getElementById("customer-picker-search");
+    if (!searchInput || !window.htmx) return;
+    var url = searchInput.getAttribute("hx-get");
+    if (!url) return;
+    if (q) url += (url.indexOf("?") === -1 ? "?" : "&") + "q=" + encodeURIComponent(q);
+    htmx.ajax("GET", url, { target: "#customer-picker-tbody", swap: "innerHTML" });
   }
 
   function customerPickerSelect(pk, name, rnc, defaultNcfType) {
@@ -463,12 +630,21 @@
   }
 
   function customerPickerShowCreate() {
-    var search = document.getElementById("customer-picker-search-panel");
-    var create = document.getElementById("customer-picker-create-panel");
+    var search  = document.getElementById("customer-picker-search-panel");
+    var create  = document.getElementById("customer-picker-create-panel");
     if (search) search.classList.add("d-none");
     if (create) create.classList.remove("d-none");
-    var nameInput = document.getElementById("qc-name");
-    if (nameInput) nameInput.focus();
+    var nameEl   = document.getElementById("qc-name");
+    var idTypeEl = document.getElementById("qc-id-type");
+    var rncEl    = document.getElementById("qc-rnc");
+    if (nameEl)   { nameEl.value   = ""; nameEl.classList.remove("is-invalid"); }
+    if (idTypeEl) { idTypeEl.value = idTypeEl.options[0] ? idTypeEl.options[0].value : ""; idTypeEl.classList.remove("is-invalid"); }
+    if (rncEl)    { rncEl.value    = ""; rncEl.classList.remove("is-invalid"); }
+    ["qc-name-error", "qc-id-type-error", "qc-rnc-error", "qc-non-field-errors"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = "";
+    });
+    if (nameEl) nameEl.focus();
   }
 
   function customerPickerShowSearch() {
@@ -517,12 +693,16 @@
     .then(function(result) {
       if (btn) { btn.disabled = false; }
       if (result.status === 200) {
-        customerPickerSelect(
-          result.data.pk,
-          result.data.name,
-          result.data.rnc_cedula,
-          result.data.default_ncf_type
-        );
+        customerPickerShowSearch();
+        _refreshCustomerPickerList(result.data.name || "");
+        setTimeout(function () {
+          customerPickerSelect(
+            result.data.pk,
+            result.data.name,
+            result.data.rnc_cedula,
+            result.data.default_ncf_type
+          );
+        }, 600);
       } else {
         var errors = result.data.errors || {};
         var fieldMap = { name: "qc-name", id_type: "qc-id-type", rnc_cedula: "qc-rnc" };
@@ -927,8 +1107,12 @@
   window.openItemPicker = openItemPicker;
   window.itemPickerHighlight = itemPickerHighlight;
   window.itemPickerConfirm = itemPickerConfirm;
+  window.itemPickerShowCreate = itemPickerShowCreate;
+  window.itemPickerShowSearch = itemPickerShowSearch;
+  window.itemPickerQuickCreate = itemPickerQuickCreate;
   window.openCustomerPicker = openCustomerPicker;
   window.customerPickerSelect = customerPickerSelect;
+  window.customerPickerHighlight = customerPickerHighlight;
   window.customerPickerShowCreate = customerPickerShowCreate;
   window.customerPickerShowSearch = customerPickerShowSearch;
   window.customerPickerQuickCreate = customerPickerQuickCreate;

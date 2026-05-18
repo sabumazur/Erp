@@ -1203,6 +1203,11 @@ tr:hover .dt-hover-actions {
   color: #94a3b8 !important;
 }
 
+#customerPickerModal .picker-table tbody tr[aria-selected="true"] td {
+  font-weight: 600;
+  background-color: #dbeafe;
+}
+
 /* Footer */
 .picker-foot {
   background: #faf9f8;

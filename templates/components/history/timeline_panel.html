@@ -1,6 +1,5 @@
 {% load i18n humanize %}
 
-{% if history_records %}
 <style>
   .history-timeline::before {
     content: "";
@@ -32,41 +31,24 @@
     justify-content: center;
     font-size: 10px;
   }
-  [x-cloak] { display: none !important; }
 </style>
-<div class="card mt-4" x-data="{ expanded: false }">
-  <div class="card-header d-flex align-items-center justify-content-between py-2">
+
+{% if history_records %}
+<div class="card mt-4" x-data="{ open: false }">
+  <div class="card-header d-flex align-items-center justify-content-between py-2"
+       style="cursor: pointer;" @click="open = !open">
     <div class="d-flex align-items-center gap-2">
       <i class="bi bi-clock-history"></i>
       <strong>{% trans "Historial de cambios" %}</strong>
       <span class="badge bg-secondary rounded-pill">{{ history_records|length }}</span>
     </div>
-    {% if history_records|length > 3 %}
-    <button type="button" class="btn btn-sm btn-outline-secondary"
-            @click="expanded = !expanded">
-      <i :class="expanded ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
-      <span x-text="expanded ? '{% trans 'Ver menos' %}' : '{% trans 'Ver todo' %}'">{% trans "Ver todo" %}</span>
-    </button>
-    {% endif %}
+    <i :class="open ? 'bi bi-chevron-up' : 'bi bi-chevron-down'" class="text-muted"></i>
   </div>
-  <div class="card-body p-0">
+  <div class="card-body p-0" x-show="open" x-cloak>
     <div class="history-timeline position-relative">
-      {% include "components/history/timeline.html" with records=history_records|slice:":3" %}
-      {% if history_records|length > 3 %}
-      <div x-show="expanded" x-collapse x-cloak>
-        {% include "components/history/timeline.html" with records=history_records|slice:"3:" %}
-      </div>
-      {% endif %}
+      {% include "components/history/timeline.html" with records=history_records %}
     </div>
   </div>
-  {% if history_records|length > 3 %}
-  <div class="bg-light border-top text-muted text-center py-2 small"
-       style="font-size: 12px; cursor: pointer;"
-       x-show="!expanded" x-cloak
-       @click="expanded = !expanded">
-    {% blocktrans with remaining=history_records|length|add:"-3" %}{{ remaining }} cambios más — haz clic en "Ver todo" para expandir{% endblocktrans %}
-  </div>
-  {% endif %}
 </div>
 {% else %}
 <div class="card mt-4">

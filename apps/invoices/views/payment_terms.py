@@ -28,7 +28,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     dt_columns = [
         DTColumn("name",     _("Nombre"),              sortable=True),
-        DTColumn("days_due", _("Días vencimiento"),    sortable=True, numeric=True),
+        DTColumn("days_due", _("Días vencimiento"),    sortable=True, classes="text-center"),
         DTColumn("description", _("Descripción"),      sortable=False),
     ]
     dt_default_sort = "days_due"

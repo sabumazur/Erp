@@ -17,7 +17,7 @@ from django.shortcuts import render as _render
 from django.views import View
 
 from apps.accounts.views import ERPBaseViewMixin
-from ..forms import CustomerQuickCreateForm
+from ..forms import CustomerQuickCreateForm, ItemQuickCreateForm
 from ..models import Customer
 from ._helpers import _org
 
@@ -114,6 +114,35 @@ class CustomerQuickCreateView(ERPBaseViewMixin, View):
                 "name": customer.name,
                 "rnc_cedula": customer.rnc_cedula,
                 "default_ncf_type": customer.default_ncf_type,
+            })
+        return JsonResponse(
+            {"errors": {field: [str(e) for e in errs]
+                        for field, errs in form.errors.items()}},
+            status=422,
+        )
+
+
+class ItemQuickCreateView(ERPBaseViewMixin, View):
+    """Creates a catalog item from the item picker modal quick-create panel."""
+    required_module = "invoices"
+    admin_required = True
+
+    def post(self, request):
+        from apps.items.models import Item
+        org = _org(request)
+        form = ItemQuickCreateForm(request.POST, organization=org)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.organization = org
+            item.item_type = Item.ItemType.SALE
+            item.save()
+            return JsonResponse({
+                "pk": str(item.pk),
+                "name": item.name,
+                "code": item.code,
+                "unit_price": str(item.unit_price),
+                "itbis_rate": item.itbis_rate,
+                "unit": item.unit,
             })
         return JsonResponse(
             {"errors": {field: [str(e) for e in errs]

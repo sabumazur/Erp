@@ -59,6 +59,7 @@ from .views import (
     CustomerDepartmentsView,
     CustomerDefaultsView,
     ItemSearchView,
+    ItemQuickCreateView,
     CustomerSearchView,
     CustomerQuickCreateView,
     # NCF sequences
@@ -165,6 +166,7 @@ urlpatterns = [
     path("payments/outstanding-invoices/",         OutstandingInvoicesView.as_view(), name="payment_outstanding_invoices"),
     path("invoices/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
     path("invoices/items/search/",                  ItemSearchView.as_view(),          name="item_search"),
+    path("invoices/htmx/items/create/",            ItemQuickCreateView.as_view(),     name="item_quick_create"),
     path("invoices/htmx/customers/search/",        CustomerSearchView.as_view(),      name="customer_search"),
     path("invoices/htmx/customers/create/",        CustomerQuickCreateView.as_view(), name="customer_quick_create"),
 
