@@ -27,29 +27,39 @@
           <td bgcolor="#c0392b" height="6" style="height:6px;font-size:0;line-height:0;">&nbsp;</td>
         </tr>
 
-        <!-- ── HEADER (org + doc title + status) ── -->
+        <!-- ── HEADER (org + doc title + status | logo) ── -->
         <tr>
           <td style="padding: 18px 28px 14px; border-bottom: 2px solid #c0392b;">
-            <div style="font-size:16px;font-weight:800;color:#1a1a1a;">{{ org.name }}</div>
-            <div style="font-size:11px;color:#555;margin-top:3px;">
-              {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}{% if org.address %} &nbsp;·&nbsp; {{ org.address }}{% endif %}
-            </div>
-            <div style="margin-top:10px;">
-              <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Cotización" %}</div>
-              <div style="margin-top:4px;">
-                <span style="font-size:13px;font-family:monospace;color:#374151;">{{ quotation.doc_number|default:"Borrador" }}</span>
-                &nbsp;&nbsp;
-                <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
-                  {% if quotation.status == 'ACCEPTED' %}background:#d1e7dd;color:#0f5132;
-                  {% elif quotation.status == 'REJECTED' %}background:#f8d7da;color:#842029;
-                  {% elif quotation.status == 'SENT' %}background:#d1ecf1;color:#0c5460;
-                  {% elif quotation.status == 'CONFIRMED' %}background:#cfe2ff;color:#084298;
-                  {% elif quotation.status == 'EXPIRED' %}background:#f3f4f6;color:#9ca3af;
-                  {% else %}background:#fef3c7;color:#92400e;{% endif %}">
-                  {{ quotation.get_status_display }}
-                </span>
-              </div>
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td valign="top">
+                  <div style="font-size:16px;font-weight:800;color:#1a1a1a;">{{ org.name }}</div>
+                  <div style="font-size:11px;color:#555;margin-top:3px;">
+                    {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}{% if org.address %} &nbsp;·&nbsp; {{ org.address }}{% endif %}
+                  </div>
+                  <div style="margin-top:10px;">
+                    <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Cotización" %}</div>
+                    <div style="margin-top:4px;">
+                      <span style="font-size:13px;font-family:monospace;color:#374151;">{{ quotation.doc_number|default:"Borrador" }}</span>
+                      &nbsp;&nbsp;
+                      <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
+                        {% if quotation.status == 'ACCEPTED' %}background:#d1e7dd;color:#0f5132;
+                        {% elif quotation.status == 'REJECTED' %}background:#f8d7da;color:#842029;
+                        {% elif quotation.status == 'SENT' %}background:#d1ecf1;color:#0c5460;
+                        {% elif quotation.status == 'CONFIRMED' %}background:#cfe2ff;color:#084298;
+                        {% elif quotation.status == 'EXPIRED' %}background:#f3f4f6;color:#9ca3af;
+                        {% else %}background:#fef3c7;color:#92400e;{% endif %}">
+                        {{ quotation.get_status_display }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td valign="top" align="right" width="130" style="padding-left:12px;">
+                  <img src="{{ cafe_logo_url }}" alt="{{ org.name }}" width="120"
+                       style="max-width:120px;max-height:80px;object-fit:contain;display:block;margin-left:auto;">
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
 

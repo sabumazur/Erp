@@ -12,17 +12,13 @@ body {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 12px;
   color: #1a1a1a;
-  background-color: #fff;
-  background-image: url("{% static 'img/hoja timbrada cafe tropical mod.jpg' %}");
-  background-size: 216mm 279mm;
-  background-repeat: no-repeat;
-  background-position: top left;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-  padding: 38mm 24mm 30mm 22mm;
+  background: #fff;
+  padding: 18mm 18mm 20mm 18mm;
 }
 
-.doc-header { border-bottom: 2px solid #c0392b; padding-bottom: 10px; margin-bottom: 16px; }
+.doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #c0392b; padding-bottom: 10px; margin-bottom: 16px; }
+.doc-logo { width: 120px; flex-shrink: 0; text-align: right; }
+.doc-logo img { max-width: 120px; max-height: 80px; object-fit: contain; }
 .org-name { font-size: 16px; font-weight: 700; }
 .org-meta { font-size: 10px; color: #555; margin-top: 4px; }
 .doc-title { margin-top: 10px; }
@@ -70,7 +66,7 @@ tbody td.text-center { text-align: center; }
 .page-footer { margin-top: 24px; border-top: 1px solid #dee2e6; padding-top: 6px; font-size: 10px; color: #aaa; text-align: center; }
 
 @media print {
-  body { padding: 38mm 24mm 30mm 22mm; background-image: none; }
+  body { padding: 18mm 18mm 20mm 18mm; }
   .no-print { display: none !important; }
 }
 .print-btn { position: fixed; top: 12px; right: 16px; padding: 8px 18px; background: #c0392b; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; z-index: 999; }
@@ -85,22 +81,27 @@ tbody td.text-center { text-align: center; }
 
   <!-- Header -->
   <div class="doc-header">
-    <div class="org-name">{{ org.name }}</div>
-    <div class="org-meta">
-      {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}
-      {% if org.address %}&nbsp;·&nbsp;{{ org.address }}{% endif %}
-    </div>
-    <div class="doc-title">
-      <h1>{% trans "Cotización" %}</h1>
-      <div class="doc-number">{{ quotation.doc_number|default:"Borrador" }}</div>
-      <div class="doc-status
-        {% if quotation.status == 'CONFIRMED' %}confirmed
-        {% elif quotation.status == 'SENT' %}sent
-        {% elif quotation.status == 'ACCEPTED' %}accepted
-        {% elif quotation.status == 'REJECTED' %}rejected
-        {% endif %}">
-        {{ quotation.get_status_display }}
+    <div>
+      <div class="org-name">{{ org.name }}</div>
+      <div class="org-meta">
+        {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}
+        {% if org.address %}&nbsp;·&nbsp;{{ org.address }}{% endif %}
       </div>
+      <div class="doc-title">
+        <h1>{% trans "Cotización" %}</h1>
+        <div class="doc-number">{{ quotation.doc_number|default:"Borrador" }}</div>
+        <div class="doc-status
+          {% if quotation.status == 'CONFIRMED' %}confirmed
+          {% elif quotation.status == 'SENT' %}sent
+          {% elif quotation.status == 'ACCEPTED' %}accepted
+          {% elif quotation.status == 'REJECTED' %}rejected
+          {% endif %}">
+          {{ quotation.get_status_display }}
+        </div>
+      </div>
+    </div>
+    <div class="doc-logo">
+      <img src="{% static 'img/logo-cafe.jpg' %}" alt="{{ org.name }}">
     </div>
   </div>
 

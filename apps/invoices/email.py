@@ -61,9 +61,7 @@ def send_quotation_email(quotation: Invoice, request) -> bool:
         "items": quotation.items.all(),
         "org": org,
         "logo_url": _logo_url(org, request),
-        "letterhead_url": request.build_absolute_uri(
-            static("img/hoja timbrada cafe tropical mod.jpg")
-        ),
+        "cafe_logo_url": request.build_absolute_uri(static("img/logo-cafe.jpg")),
     }
     html_body = render_to_string("invoices/email/quotation_email.html", ctx, request=request)
     doc_ref = quotation.doc_number or _("Borrador")
