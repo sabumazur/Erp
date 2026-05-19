@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n invoices_tags %}
 {% comment %}
   Per-row partial for the customer datatable. Variable: row = Customer.
   Requires active_depts and dept_count annotations from _customers_with_depts().
@@ -9,7 +9,7 @@
     <div class="d-flex align-items-center gap-2">
       <div class="flex-shrink-0 d-flex align-items-center justify-content-center fw-bold text-uppercase"
            style="width:30px;height:30px;border-radius:8px;font-size:.7rem;
-                  background:#e8eaf0;color:#1e2130">
+                  background:{{ row.name|avatar_bg }};color:#1e2130">
         {{ row.name|slice:":2" }}
       </div>
       <div class="lh-sm">
@@ -40,10 +40,10 @@
 
   <td data-col="depts" class="text-center" style="width:80px">
     {% if row.active_depts %}
-      <span class="badge-soft badge-confirmed dept-popover"
+      <span class="badge-soft badge-confirmed dept-popover d-inline-flex align-items-center gap-1"
             tabindex="0" style="cursor:pointer"
             data-departments="[{% for d in row.active_depts %}&quot;{{ d.name|escapejs }}&quot;{% if not forloop.last %},{% endif %}{% endfor %}]">
-        {{ row.dept_count }}
+        <i class="bi bi-diagram-3" style="font-size:.7rem"></i>{{ row.dept_count }}
       </span>
     {% else %}
       <span class="text-muted small">—</span>

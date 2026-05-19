@@ -103,6 +103,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 SITE_ID = 1
 
+ACCOUNT_ADAPTER = "apps.accounts.adapter.AccountAdapter"
+
 ACCOUNT_FORMS = {
     "signup": "apps.accounts.forms.CustomSignupForm",
     "change_password": "apps.accounts.forms.CustomChangePasswordForm",

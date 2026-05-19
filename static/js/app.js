@@ -976,16 +976,17 @@
       if (existing) existing.dispose();
       var depts = [];
       try { depts = JSON.parse(el.dataset.departments || "[]"); } catch (err) {}
-      var html = '<ul class="mb-0 ps-3 small">' +
-        depts.map(function (d) { return "<li>" + escapeHtml(d) + "</li>"; }).join("") +
-        "</ul>";
+      var html = depts.map(function (d) {
+        return '<div class="dept-chip"><span class="dept-chip-dot"></span>' + escapeHtml(d) + "</div>";
+      }).join("");
       new bootstrap.Popover(el, {
-        title: getConfig("departmentsTitle", "Departamentos"),
-        content: html,
+        title: '<i class="bi bi-diagram-3 me-1"></i>' + escapeHtml(getConfig("departmentsTitle", "Departamentos")),
+        content: html || '<span class="text-muted small">—</span>',
         html: true,
         trigger: "hover focus",
         placement: "left",
         container: "body",
+        customClass: "dept-popover-bs",
       });
     });
   }

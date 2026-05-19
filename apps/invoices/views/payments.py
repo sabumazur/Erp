@@ -180,6 +180,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
 class PaymentDeleteView(ERPBaseViewMixin, View):
     required_module = "invoices"
+    admin_required = True
 
     def post(self, request, pk):
         payment = get_object_or_404(Payment, pk=pk, organization=_org(request))

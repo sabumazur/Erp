@@ -281,6 +281,7 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
 class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
     template_name = "invoices/sale_order_consolidate.html"
     required_module = "invoices"
+    admin_required = True
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

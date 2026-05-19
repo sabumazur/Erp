@@ -17,7 +17,7 @@ def test_send_quotation_email_context_includes_letterhead_url():
     )
 
     request = MagicMock()
-    request.build_absolute_uri.side_effect = lambda path: f"http://testserver{path}"
+    expected_logo_url = "http://testserver/media/hoja%20timbrada%20cafe%20tropical%20mod.jpg"
 
     captured_ctx = {}
 
@@ -25,10 +25,13 @@ def test_send_quotation_email_context_includes_letterhead_url():
         captured_ctx.update(ctx)
         return "<html></html>"
 
-    with patch("apps.invoices.email.render_to_string", side_effect=capture_render):
+    with patch("apps.invoices.email._logo_url", return_value=expected_logo_url), \
+         patch("apps.invoices.email.render_to_string", side_effect=capture_render), \
+         patch("apps.invoices.email._quotation_pdf_bytes", return_value=None), \
+         patch("django.core.mail.EmailMultiAlternatives.send"):
         send_quotation_email(quotation, request)
 
-    assert "letterhead_url" in captured_ctx
-    letterhead_url = captured_ctx["letterhead_url"]
-    assert letterhead_url.startswith("http://testserver")
-    assert "hoja%20timbrada%20cafe%20tropical%20mod.jpg" in captured_ctx["letterhead_url"]
+    assert "logo_url" in captured_ctx
+    logo_url = captured_ctx["logo_url"]
+    assert logo_url.startswith("http://testserver")
+    assert "hoja%20timbrada%20cafe%20tropical%20mod.jpg" in logo_url
