@@ -74,7 +74,12 @@ class Report607View(ERPBaseViewMixin, View):
             messages.error(request, _("Debe seleccionar mes y año."))
             return redirect("invoices:reports")
 
-        month, year = int(month), int(year)
+        try:
+            month, year = int(month), int(year)
+        except (ValueError, TypeError):
+            messages.error(request, _("Mes y año inválidos."))
+            return redirect("invoices:reports")
+
         invoices = (
             Invoice.invoices.filter(
                 organization=_org(request),
@@ -83,7 +88,8 @@ class Report607View(ERPBaseViewMixin, View):
             )
             .exclude(status=Invoice.Status.DRAFT)
             .exclude(status=Invoice.Status.CANCELLED)
-            .select_related("customer")
+            .select_related("customer", "encf_modified")
+            .prefetch_related("allocations__payment")
             .order_by("issue_date", "encf")
         )
 
@@ -95,7 +101,8 @@ class Report607View(ERPBaseViewMixin, View):
             buyer_type = id_type_code if buyer_id else ""
             encf_mod = inv.encf_modified.encf if inv.encf_modified else ""
 
-            last_alloc = inv.allocations.select_related("payment").order_by("-payment__date").first()
+            sorted_allocs = sorted(inv.allocations.all(), key=lambda a: a.payment.date, reverse=True)
+            last_alloc = sorted_allocs[0] if sorted_allocs else None
             if last_alloc:
                 pay_code = self.PAYMENT_METHOD_CODE.get(last_alloc.payment.method, "06")
             else:
@@ -125,7 +132,12 @@ class Report608View(ERPBaseViewMixin, View):
             messages.error(request, _("Debe seleccionar mes y año."))
             return redirect("invoices:reports")
 
-        month, year = int(month), int(year)
+        try:
+            month, year = int(month), int(year)
+        except (ValueError, TypeError):
+            messages.error(request, _("Mes y año inválidos."))
+            return redirect("invoices:reports")
+
         cancelled = (
             Invoice.invoices.filter(
                 organization=_org(request),

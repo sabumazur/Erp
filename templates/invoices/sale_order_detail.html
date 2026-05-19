@@ -81,7 +81,7 @@
       </a>
     {% endif %}
 
-    {% if order.status != "DRAFT" %}
+    {% if order.status != "DRAFT" and order.status != "CANCELLED" %}
       <form method="post" action="{% url 'invoices:sale_order_email' order.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-secondary btn-sm">

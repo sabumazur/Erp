@@ -208,4 +208,4 @@ class Invitation(ERPBaseModel):
 
     @property
     def is_pending(self):
-        return self.accepted_at is None and not self.is_expired
+        return self.accepted_at is None and self.deleted_at is None and not self.is_expired

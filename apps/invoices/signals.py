@@ -2,10 +2,14 @@
 apps/invoices/signals.py
 Post-save signals that keep Invoice totals in sync whenever line items change.
 """
+import logging
+
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from .models import InvoiceItem
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=InvoiceItem)
@@ -27,5 +31,4 @@ def recompute_invoice_on_item_delete(sender, instance, **kwargs):
     try:
         instance.invoice.recompute_totals()
     except Exception:
-        # Invoice itself may have been deleted; ignore.
-        pass
+        logger.exception("recompute_totals failed after InvoiceItem delete (invoice may have been deleted)")

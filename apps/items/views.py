@@ -18,11 +18,6 @@ from .forms import ItemForm
 from .models import Item
 
 
-def _org(request):
-    return request.organization
-
-
-
 # ── List + Create ─────────────────────────────────────────────────────────────
 
 class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -53,7 +48,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         the datatable after a mutation.  Returns a partial response that HTMX
         swaps into #dt-results, with a toast notification.
         """
-        qs = Item.objects.filter(organization=_org(request))
+        qs = Item.objects.for_org(request.organization)
         f = ItemFilter(request.GET, queryset=qs)
         ctx = build_datatable_context(
             request, f.qs, cls.dt_columns,
@@ -74,7 +69,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = Item.objects.filter(organization=_org(self.request))
+        qs = Item.objects.for_org(self.request.organization)
         f  = ItemFilter(self.request.GET, queryset=qs)
         ctx.update(self.apply_datatable(f.qs))
         ctx["filter"] = f
@@ -94,10 +89,13 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         return self.render_to_response(ctx)
 
     def post(self, request):
+        if not request.membership.is_admin:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
         form = ItemForm(request.POST)
         if form.is_valid():
             item = form.save(commit=False)
-            item.organization = _org(request)
+            item.organization = request.organization
             item.save()
             if request.htmx:
                 return ItemListView.refresh_table(request, _("Artículo creado correctamente."))
@@ -127,7 +125,7 @@ class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def get(self, request, pk):
-        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        item = get_object_or_404(Item, pk=pk, organization=request.organization)
         return render(request, self.template_name, self.get_context(
             item=item,
             history_records=self.get_history(item),
@@ -143,9 +141,10 @@ class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
 class ItemUpdateView(ERPBaseViewMixin, View):
     required_module = "invoices"
+    admin_required = True
 
     def get(self, request, pk):
-        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        item = get_object_or_404(Item, pk=pk, organization=request.organization)
         form = ItemForm(instance=item)
 
         if request.htmx:
@@ -167,7 +166,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
         ))
 
     def post(self, request, pk):
-        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        item = get_object_or_404(Item, pk=pk, organization=request.organization)
         form = ItemForm(request.POST, instance=item)
 
         if form.is_valid():
@@ -204,13 +203,14 @@ class ItemUpdateView(ERPBaseViewMixin, View):
 
 class ItemToggleView(ERPBaseViewMixin, View):
     required_module = "invoices"
+    admin_required = True
 
     def post(self, request, pk):
-        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        item = get_object_or_404(Item, pk=pk, organization=request.organization)
         item.is_active = not item.is_active
         item.save(update_fields=["is_active", "updated_at"])
         state = _("activado") if item.is_active else _("desactivado")
-        msg   = _(f"Artículo {state}.")
+        msg   = _("Artículo %(state)s.") % {"state": state}
 
         if request.htmx:
             return ItemListView.refresh_table(request, msg)
@@ -226,7 +226,7 @@ class ItemDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        item = get_object_or_404(Item, pk=pk, organization=_org(request))
+        item = get_object_or_404(Item, pk=pk, organization=request.organization)
         name = item.name
         try:
             item.delete()
@@ -243,8 +243,8 @@ class ItemDeleteView(ERPBaseViewMixin, View):
             messages.error(request, str(exc))
             return redirect("items:item_list")
         if request.htmx:
-            return ItemListView.refresh_table(request, _(f"Artículo «{name}» eliminado."))
-        messages.success(request, _(f"Artículo «{name}» eliminado."))
+            return ItemListView.refresh_table(request, _("Artículo «%(name)s» eliminado.") % {"name": name})
+        messages.success(request, _("Artículo «%(name)s» eliminado.") % {"name": name})
         return redirect("items:item_list")
 
 
@@ -267,7 +267,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
         if len(q) < 2:
             return HttpResponse("")
 
-        qs = Item.objects.filter(organization=_org(request), is_active=True)
+        qs = Item.objects.for_org(request.organization).filter(is_active=True)
 
         if item_type == "SALE":
             qs = qs.filter(item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH])

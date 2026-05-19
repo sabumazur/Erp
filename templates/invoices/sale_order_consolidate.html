@@ -66,8 +66,8 @@
 </div>
 
 <script>
+window.DEPARTMENTS_FOR_CUSTOMER_URL = "{% url 'invoices:departments_for_customer' %}";
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
-  departmentsForCustomerUrl: "{% url 'invoices:departments_for_customer' %}",
   allDepartmentsOption: '<option value="">-- {% trans "Todos los departamentos" %} --</option>'
 });
 </script>

@@ -58,6 +58,36 @@ class TestInviteMemberView:
         })
         assert response.status_code == 403
 
+    def test_admin_cannot_invite_as_owner(self, client, admin_membership, mailoutbox):
+        c = _org_client(client, admin_membership)
+        response = c.post(reverse("accounts:invite_member"), {
+            "email": "newowner@example.com",
+            "role": Membership.Role.OWNER,
+        })
+        assert response.status_code == 403
+        assert not Invitation.objects.filter(email="newowner@example.com").exists()
+
+    def test_admin_cannot_invite_as_admin(self, client, admin_membership, mailoutbox):
+        c = _org_client(client, admin_membership)
+        response = c.post(reverse("accounts:invite_member"), {
+            "email": "newadmin@example.com",
+            "role": Membership.Role.ADMIN,
+        })
+        assert response.status_code == 403
+        assert not Invitation.objects.filter(email="newadmin@example.com").exists()
+
+    def test_owner_can_invite_as_admin(self, client, owner_membership, mailoutbox):
+        c = _org_client(client, owner_membership)
+        response = c.post(reverse("accounts:invite_member"), {
+            "email": "newadmin@example.com",
+            "role": Membership.Role.ADMIN,
+        })
+        assert response.status_code == 302
+        assert Invitation.objects.filter(
+            email="newadmin@example.com",
+            role=Membership.Role.ADMIN,
+        ).exists()
+
     def test_duplicate_invite_rejected(self, client, owner_membership, mailoutbox):
         c = _org_client(client, owner_membership)
         c.post(reverse("accounts:invite_member"), {

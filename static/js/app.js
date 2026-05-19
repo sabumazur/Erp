@@ -121,8 +121,8 @@
       text: message,
       icon: opts.icon || "question",
       showCancelButton: true,
-      confirmButtonText: opts.ok || "Si, continuar",
-      cancelButtonText: opts.cancel || "Cancelar",
+      confirmButtonText: opts.ok || getConfig("swalConfirmOk", "Sí, continuar"),
+      cancelButtonText: opts.cancel || getConfig("swalCancelText", "Cancelar"),
       confirmButtonColor: opts.color || "#0d6efd",
       cancelButtonColor: "#6c757d",
       reverseButtons: true,
@@ -556,9 +556,39 @@
       try {
         Alpine.evaluate(formRow, "price = " + (parseFloat(price) || 0) +
           ", qty = 1, rate = '" + (rate || "RATE_18") + "'");
-      } catch (err) {
-        console.warn("pickItemRow: Alpine.evaluate failed", err);
-      }
+      } catch (err) {}
+    }
+    recalcGrandTotal();
+  }
+
+  function pickCatalogItem(btn) {
+    var formRow = window.activeItemRow;
+    if (!formRow) return;
+
+    var name  = btn.dataset.desc;
+    var price = btn.dataset.price;
+    var rate  = btn.dataset.rate;
+    var pk    = btn.dataset.pk;
+
+    var next    = formRow.nextElementSibling;
+    var descEl  = formRow.querySelector('[name$="-description"]') ||
+                  (next && next.querySelector('[name$="-description"]'));
+    var priceEl = formRow.querySelector('[name$="-unit_price"]');
+    var qtyEl   = formRow.querySelector('[name$="-quantity"]');
+    var rateEl  = formRow.querySelector('[name$="-itbis_rate"]');
+    var itemEl  = formRow.querySelector('[name$="-item"]');
+
+    if (descEl)  descEl.value  = name;
+    if (itemEl)  itemEl.value  = pk;
+    if (priceEl) priceEl.value = price;
+    if (qtyEl)   qtyEl.value   = "1";
+    if (rateEl)  rateEl.value  = rate;
+
+    if (typeof Alpine !== "undefined") {
+      try {
+        Alpine.evaluate(formRow, "price = " + (parseFloat(price) || 0) +
+          ", qty = 1, rate = '" + (rate || "RATE_18") + "'");
+      } catch (err) {}
     }
     recalcGrandTotal();
   }
@@ -1019,7 +1049,7 @@
       if (!deptSel) return;
       deptSel.value = "";
       if (pk) {
-        htmx.ajax("GET", getConfig("departmentsForCustomerUrl", "") + "?customer=" + encodeURIComponent(pk), {
+        htmx.ajax("GET", (window.DEPARTMENTS_FOR_CUSTOMER_URL || "") + "?customer=" + encodeURIComponent(pk), {
           target: "#id_department",
           swap: "innerHTML",
         });
@@ -1118,6 +1148,7 @@
   window.customerPickerQuickCreate = customerPickerQuickCreate;
   window.recalcGrandTotal = recalcGrandTotal;
   window.confirmDeleteNCF = confirmDeleteNCF;
+  window.pickCatalogItem = pickCatalogItem;
 
   ready(function () {
     initToasts();

@@ -85,8 +85,11 @@ def create_default_organization(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Membership)
-def sync_permissions_on_membership_save(sender, instance, **kwargs):
+def sync_permissions_on_membership_save(sender, instance, created, **kwargs):
     """On create or role change — revoke everything then re-assign."""
+    update_fields = kwargs.get("update_fields")
+    if not created and update_fields is not None and "role" not in update_fields:
+        return
     revoke_org_permissions(instance)
     assign_org_permissions(instance)
 

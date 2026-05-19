@@ -211,7 +211,7 @@ class SaleOrderConfirmView(ERPBaseViewMixin, View):
         try:
             SaleOrderService.confirm(o)
             messages.success(request, _(f"Orden confirmada: {o.doc_number}"))
-        except (ValueError, Exception) as exc:
+        except Exception as exc:
             messages.error(request, str(exc))
         return redirect("invoices:sale_order_detail", pk=o.pk)
 
@@ -381,19 +381,15 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
             notes=source.notes,
             terms=getattr(source, "terms", ""),
         )
-        InvoiceItem.objects.bulk_create(
-            [
-                InvoiceItem(
-                    invoice=new_order,
-                    item=line.item,
-                    description=line.description,
-                    quantity=line.quantity,
-                    unit_price=line.unit_price,
-                    itbis_rate=line.itbis_rate,
-                )
-                for line in source.items.all()
-            ]
-        )
+        for line in source.items.all():
+            InvoiceItem.objects.create(
+                invoice=new_order,
+                item=line.item,
+                description=line.description,
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                itbis_rate=line.itbis_rate,
+            )
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
         return redirect("invoices:sale_order_edit", pk=new_order.pk)
 

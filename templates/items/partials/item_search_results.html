@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 {% for item in items %}
 <button type="button"
         class="d-block w-100 text-start px-3 py-2 border-0 bg-transparent item-pick-btn"
@@ -13,7 +13,7 @@
     {{ item.name }}
   </div>
   <div class="text-muted" style="font-size:.75rem">
-    {{ item.get_unit_display }} &middot; {{ item.unit_price|floatformat:2 }} &middot; {{ item.get_itbis_rate_display }}
+    {{ item.get_unit_display }} &middot; {{ item.unit_price|floatformat:2|intcomma }} &middot; {{ item.get_itbis_rate_display }}
   </div>
 </button>
 {% empty %}

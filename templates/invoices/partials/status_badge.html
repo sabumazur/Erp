@@ -11,4 +11,5 @@
 {% elif status == "CONVERTED" %}<span class="badge-soft badge-confirmed">{% trans "Convertida" %}</span>
 {% elif status == "DELIVERED" %}<span class="badge-soft badge-sent">{% trans "Entregada" %}</span>
 {% elif status == "INVOICED" %}<span class="badge-soft badge-confirmed">{% trans "Facturada" %}</span>
+{% else %}<span class="badge-soft badge-default">{{ status }}</span>
 {% endif %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n humanize %}
 
 {% block title %}{{ item }}{% endblock %}
 
@@ -66,13 +66,13 @@
     <div class="row g-2 mb-3">
       <div class="col-sm-4">
         <div class="app-metric-card">
-          <div class="app-metric-value" style="color:#16a34a">{{ item.unit_price|floatformat:2 }}</div>
+          <div class="app-metric-value" style="color:#16a34a">{{ item.unit_price|floatformat:2|intcomma }}</div>
           <div class="app-metric-label">{% trans "Precio de venta" %}</div>
         </div>
       </div>
       <div class="col-sm-4">
         <div class="app-metric-card">
-          <div class="app-metric-value">{{ item.cost_price|floatformat:2|default:"—" }}</div>
+          <div class="app-metric-value">{{ item.cost_price|floatformat:2|intcomma|default:"—" }}</div>
           <div class="app-metric-label">{% trans "Precio de costo" %}</div>
           {% if item.margin is not None %}
             <div class="mt-1">

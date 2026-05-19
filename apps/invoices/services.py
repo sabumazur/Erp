@@ -75,7 +75,7 @@ class NCFService:
             # NCF using the 'B' series format (8-digit physical sequence) so
             # fake numbers never collide with real E-series electronic sequences.
             # Format: B{type:02d}{8-digit random}  →  e.g. B0109473826
-            fake_seq = int(uuid.uuid4()) % 100_000_000  # max 8 digits
+            fake_seq = uuid.uuid4().int % 100_000_000  # max 8 digits
             encf = f"B{invoice.ncf_type:02d}{fake_seq:08d}"
 
         invoice.encf = encf
@@ -110,7 +110,7 @@ class NCFService:
     @staticmethod
     def reopen(invoice: Invoice) -> Invoice:
         """
-        Reverse PAID → SENT (or CONFIRMED if it was never sent).
+        Reverse PAID → SENT.
         Called by PaymentService.delete() when a payment that fully covered
         this invoice is deleted.
         """

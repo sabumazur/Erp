@@ -59,7 +59,7 @@
       </form>
     {% endif %}
 
-    {% if invoice.status in "CONFIRMED,SENT,OVERDUE" %}
+    {% if invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
       <button class="btn btn-sm" style="background:#1e2130;color:#fff"
               data-bs-toggle="modal" data-bs-target="#payModal">
         <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
@@ -80,7 +80,7 @@
       </a>
     {% endif %}
 
-    {% if invoice.status not in "PAID,CANCELLED,DRAFT" %}
+    {% if invoice.status != "PAID" and invoice.status != "CANCELLED" and invoice.status != "DRAFT" %}
       <form method="post" action="{% url 'invoices:invoice_cancel' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
@@ -347,7 +347,7 @@
 </div>
 
 {# Pay modal #}
-{% if invoice.status in "CONFIRMED,SENT,OVERDUE" %}
+{% if invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
 <div class="modal fade" id="payModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">

@@ -20,9 +20,9 @@ from ..forms import (
     InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
     PaymentForm, CreditNoteForm, NCFSequenceForm,
 )
-from ..models import Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
+from ..models import Invoice, InvoiceItem, NCFSequence, Payment
 from ..email import send_invoice_email
-from ..services import NCFService
+from ..services import NCFService, PaymentService
 from ._helpers import _org, _customer_defaults_json
 
 
@@ -231,7 +231,7 @@ class InvoiceConfirmView(ERPBaseViewMixin, View):
         try:
             NCFService.confirm(invoice)
             messages.success(request, _(f"Factura confirmada. e-NCF asignado: {invoice.encf}"))
-        except (ValueError, Exception) as exc:
+        except Exception as exc:
             messages.error(request, str(exc))
         return redirect("invoices:invoice_detail", pk=invoice.pk)
 
@@ -268,15 +268,17 @@ class InvoicePayView(ERPBaseViewMixin, View):
             messages.error(request, _("Por favor corrija los errores en el formulario de pago."))
             return redirect("invoices:invoice_detail", pk=invoice.pk)
 
-        payment = form.save(commit=False)
-        payment.customer = invoice.customer
-        payment.organization = _org(request)
-        payment.save()
-
-        PaymentAllocation.objects.create(payment=payment, invoice=invoice, amount=payment.amount)
-
+        cd = form.cleaned_data
         try:
-            NCFService.mark_paid(invoice)
+            PaymentService.register(
+                organization=_org(request),
+                customer=invoice.customer,
+                payment_date=cd["date"],
+                method=cd["method"],
+                reference=cd.get("reference", ""),
+                notes=cd.get("notes", ""),
+                allocations=[{"invoice": invoice, "amount": cd["amount"]}],
+            )
             messages.success(request, _("Pago registrado. Factura marcada como pagada."))
         except ValueError as exc:
             messages.error(request, str(exc))

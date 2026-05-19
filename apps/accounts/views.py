@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -7,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -457,7 +458,9 @@ class ChangeMemberRoleView(ERPBaseViewMixin, View):
             messages.error(request, "Rol inválido.")
             return redirect("accounts:members")
 
-        if new_role == Membership.Role.OWNER and request.membership.role != Membership.Role.OWNER:
+        # Only OWNERs may assign OWNER or ADMIN roles (prevents ADMINs from
+        # expanding the privilege pool beyond their own level).
+        if new_role in (Membership.Role.OWNER, Membership.Role.ADMIN) and request.membership.role != Membership.Role.OWNER:
             raise PermissionDenied
 
         membership.role = new_role
@@ -506,6 +509,10 @@ class InviteMemberView(ERPBaseViewMixin, View):
         email = form.cleaned_data["email"]
         role = form.cleaned_data["role"]
 
+        # Only OWNERs may invite at OWNER or ADMIN level.
+        if role in (Membership.Role.OWNER, Membership.Role.ADMIN) and request.membership.role != Membership.Role.OWNER:
+            raise PermissionDenied
+
         if Membership.objects.filter(
             user__email__iexact=email,
             organization=request.organization,
@@ -522,12 +529,18 @@ class InviteMemberView(ERPBaseViewMixin, View):
             messages.warning(request, f"Ya existe una invitación pendiente para {email}.")
             return redirect("accounts:members")
 
-        invitation = Invitation.create_for(
-            email=email,
-            organization=request.organization,
-            role=role,
-            invited_by=request.user,
-        )
+        try:
+            with transaction.atomic():
+                invitation = Invitation.create_for(
+                    email=email,
+                    organization=request.organization,
+                    role=role,
+                    invited_by=request.user,
+                )
+        except IntegrityError:
+            # Concurrent request already created a pending invitation.
+            messages.warning(request, f"Ya existe una invitación pendiente para {email}.")
+            return redirect("accounts:members")
         send_invitation_email(invitation, request)
         messages.success(request, f"Invitación enviada a {email}.")
         return redirect("accounts:members")
@@ -751,7 +764,13 @@ class CreateOrganizationView(ERPBaseViewMixin, TemplateView):
             org = form.save(commit=False)
             org.slug = slug
             org.owner = request.user  # technical creator; FK is informational
-            org.save()
+            try:
+                with transaction.atomic():
+                    org.save()
+            except IntegrityError:
+                # Concurrent request claimed this slug between our check and save.
+                org.slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
+                org.save()
             invitation = Invitation.create_for(
                 email=owner_email,
                 organization=org,

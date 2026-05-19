@@ -91,7 +91,21 @@
       "Bash(python3 /tmp/parse_tools.py)",
       "Bash(/c/Users/sabum/sabsys/venv/Scripts/python)",
       "Bash(xargs ls -t)",
-      "Bash(awk '{print $NF}')"
+      "Bash(awk '{print $NF}')",
+      "Bash(ls /mnt/skills/ 2>/dev/null || echo \"NOT FOUND\")",
+      "Read(//mnt/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\sabum\\\\.claude\\\\plugins\\\\data\\\\\" -Recurse | Where-Object { $_.Name -eq \"SKILL.md\" } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\sabum\\\\.claude\\\\\" -Directory -Recurse | Where-Object { $_.Name -like \"skills\" } | Select-Object FullName)",
+      "Skill(superpowers:writing-skills)",
+      "Skill(superpowers:writing-skills:*)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\sabum\\\\sabsys\\\\sabsys-test\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"dir ready\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\sabum\\\\sabsys\\\\sabsys-test\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\" -Recurse -File | Select-Object FullName, @{Name=\"Size\";Expression={$_.Length}} | Format-Table -AutoSize)",
+      "Bash(Find-Item -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\" -Name \"*manager*\" -Type File)",
+      "Skill(caveman:caveman-review)",
+      "Skill(caveman:caveman-review:*)"
     ]
   }
 }

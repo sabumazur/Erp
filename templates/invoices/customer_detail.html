@@ -38,7 +38,8 @@
     <button type="button" class="btn btn-outline-secondary btn-sm"
             hx-get="{% url 'invoices:customer_edit' customer.pk %}?hx_target=refresh"
             hx-target="#customer-modal-body"
-            hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
+            data-modal-title="{% trans "Editar cliente" %}"
+            hx-on::after-request="document.getElementById('customerModalTitle').textContent = this.dataset.modalTitle;
                                   bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
       <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
     </button>
