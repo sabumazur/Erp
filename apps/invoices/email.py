@@ -12,6 +12,12 @@ def _logo_url(org, request):
     return None
 
 
+def _signature_url(user, request):
+    if user and user.signature:
+        return request.build_absolute_uri(user.signature.url)
+    return None
+
+
 def send_invoice_email(invoice: Invoice, request) -> bool:
     """Render invoice_email.html and send to customer. Returns True if sent."""
     to_email = invoice.customer.email
@@ -43,7 +49,12 @@ def _quotation_pdf_bytes(quotation: Invoice, request) -> bytes | None:
     org = quotation.organization
     html_string = render_to_string(
         "invoices/quotation_print.html",
-        {"quotation": quotation, "items": quotation.items.all(), "org": org},
+        {
+            "quotation": quotation,
+            "items": quotation.items.all(),
+            "org": org,
+            "sender_signature_url": _signature_url(request.user, request),
+        },
         request=request,
     )
     return WeasyprintHTML(string=html_string, base_url=request.build_absolute_uri("/")).write_pdf()

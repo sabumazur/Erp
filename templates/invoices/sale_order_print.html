@@ -239,7 +239,11 @@ tbody td.text-center { text-align: center; }
   <!-- Signature block -->
   <div class="signature-block">
     <div class="sig-line">
+      {% if sender_signature_url %}
+      <img src="{{ sender_signature_url }}" alt="Firma" style="max-height:56px;max-width:160px;display:block;margin-bottom:2px;">
+      {% else %}
       <div class="sig-name"></div>
+      {% endif %}
       <div class="sig-label">{% trans "Autorizado por" %}</div>
     </div>
     <div class="sig-line">

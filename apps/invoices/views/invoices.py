@@ -21,7 +21,7 @@ from ..forms import (
     PaymentForm, CreditNoteForm, NCFSequenceForm,
 )
 from ..models import Invoice, InvoiceItem, NCFSequence, Payment
-from ..email import send_invoice_email
+from ..email import send_invoice_email, _signature_url
 from ..services import NCFService, PaymentService
 from ._helpers import _org, _customer_defaults_json
 
@@ -392,7 +392,13 @@ class InvoicePDFView(ERPBaseViewMixin, View):
 
             html_string = render_to_string(
                 "invoices/invoice_pdf.html",
-                {"invoice": invoice, "items": invoice.items.all(), "org": invoice.organization, "request": request},
+                {
+                    "invoice": invoice,
+                    "items": invoice.items.all(),
+                    "org": invoice.organization,
+                    "request": request,
+                    "sender_signature_url": _signature_url(request.user, request),
+                },
             )
             pdf_file = WeasyprintHTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
             filename = f"factura_{invoice.encf}.pdf"
@@ -417,7 +423,12 @@ class InvoicePrintView(ERPBaseViewMixin, View):
         )
         return render(
             request, "invoices/invoice_print.html",
-            {"invoice": invoice, "items": invoice.items.all(), "org": invoice.organization},
+            {
+                "invoice": invoice,
+                "items": invoice.items.all(),
+                "org": invoice.organization,
+                "sender_signature_url": _signature_url(request.user, request),
+            },
         )
 
 

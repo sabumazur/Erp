@@ -66,6 +66,14 @@
 
           {% crispy form %}
 
+          {% if user.signature %}
+          <div class="mb-3">
+            <label class="form-label small text-muted">Firma actual</label><br>
+            <img src="{{ user.signature.url }}" alt="Firma"
+                 style="max-height:80px; border:1px solid #dee2e6; border-radius:4px; padding:4px; background:#fff;">
+          </div>
+          {% endif %}
+
           <div class="d-flex justify-content-end mt-3">
             <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
           </div>

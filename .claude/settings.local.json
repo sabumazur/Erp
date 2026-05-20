@@ -105,7 +105,8 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\" -Recurse -File | Select-Object FullName, @{Name=\"Size\";Expression={$_.Length}} | Format-Table -AutoSize)",
       "Bash(Find-Item -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\" -Name \"*manager*\" -Type File)",
       "Skill(caveman:caveman-review)",
-      "Skill(caveman:caveman-review:*)"
+      "Skill(caveman:caveman-review:*)",
+      "Bash(Remove-Item -Recurse -Force \".claude/worktrees/exciting-austin-2e5afc\")"
     ]
   }
 }

@@ -227,6 +227,18 @@ tbody td.text-center { text-align: center; }
   </div>
   {% endif %}
 
+  <!-- Sender Signature -->
+  <div style="display:flex;gap:40px;margin-top:24px;margin-bottom:16px;">
+    <div style="min-width:180px;text-align:center;">
+      {% if sender_signature_url %}
+      <img src="{{ sender_signature_url }}" alt="Firma" style="max-height:60px;max-width:180px;display:block;margin:0 auto 4px;">
+      {% else %}
+      <div style="border-bottom:1px solid #999;height:44px;margin-bottom:4px;"></div>
+      {% endif %}
+      <div style="font-size:7pt;color:#777;text-transform:uppercase;letter-spacing:.05em;">{% trans "Autorizado por" %}</div>
+    </div>
+  </div>
+
   <div class="page-footer">
     {{ org.name }}{% if org.tax_id %} · RNC {{ org.tax_id }}{% endif %}
     &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}

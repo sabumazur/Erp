@@ -15,7 +15,7 @@ from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, ConsolidateForm
 from ..models import Invoice, InvoiceItem, CustomerDepartment
-from ..email import send_sale_order_email
+from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
 from ._helpers import _org, _customer_defaults_json
 
@@ -405,7 +405,12 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
         )
         return render(
             request, "invoices/sale_order_print.html",
-            {"order": order, "items": order.items.all(), "org": order.organization},
+            {
+                "order": order,
+                "items": order.items.all(),
+                "org": order.organization,
+                "sender_signature_url": _signature_url(request.user, request),
+            },
         )
 
 

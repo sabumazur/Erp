@@ -13,7 +13,7 @@ from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet
 from ..models import Invoice, NCFType
-from ..email import send_quotation_email
+from ..email import send_quotation_email, _signature_url
 from ..services import QuotationService
 from ._helpers import _org, _customer_defaults_json
 
@@ -297,5 +297,10 @@ class QuotationPrintView(ERPBaseViewMixin, View):
         )
         return render(
             request, "invoices/quotation_print.html",
-            {"quotation": quotation, "items": quotation.items.all(), "org": quotation.organization},
+            {
+                "quotation": quotation,
+                "items": quotation.items.all(),
+                "org": quotation.organization,
+                "sender_signature_url": _signature_url(request.user, request),
+            },
         )
