@@ -1,255 +1,248 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Miembros — {{ organization.name }}{% endblock %}
+{% block title %}{% trans "Miembros" %} — {{ organization.name }}{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-9">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <h4 class="fw-bold mb-0">Miembros</h4>
-        <span class="text-muted small">{{ organization.name }}</span>
-      </div>
-      <div class="d-flex gap-2">
-        <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-people me-1"></i> Equipos
-        </a>
-        <a href="{% url 'accounts:org_settings' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-gear me-1"></i> Configuración
-        </a>
-      </div>
-    </div>
-
-    {# ── Invite form ────────────────────────────────────────────────── #}
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-header bg-white border-bottom py-3">
-        <h6 class="fw-semibold mb-0"><i class="bi bi-person-plus me-1"></i> Invitar a un miembro</h6>
-      </div>
-      <div class="card-body">
-        <form method="post" action="{% url 'accounts:invite_member' %}" class="row g-2 align-items-end">
-          {% csrf_token %}
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Correo electrónico</label>
-            {{ invite_form.email }}
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-semibold">Rol</label>
-            {{ invite_form.role }}
-          </div>
-          <div class="col-md-3">
-            <button type="submit" class="btn btn-primary w-100">
-              <i class="bi bi-send me-1"></i> Enviar invitación
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    {# ── Active members table ────────────────────────────────────────── #}
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-header bg-white border-bottom py-3">
-        <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i> Miembros activos</h6>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4 py-3 fw-semibold small text-uppercase text-muted">Miembro</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Rol</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Equipo</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Se unió</th>
-              <th class="pe-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in members %}
-            <tr>
-              <td class="ps-4 py-3">
-                <div class="d-flex align-items-center gap-3">
-                  <img src="{% if m.user.avatar %}{{ m.user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ m.user.full_name|urlencode }}&size=36&background=6c757d&color=fff&rounded=true{% endif %}"
-                       width="36" height="36" class="rounded-circle object-fit-cover" alt="">
-                  <div>
-                    <div class="fw-semibold small">
-                      {{ m.user.full_name }}
-                      {% if m.user == request.user %}
-                        <span class="badge bg-secondary ms-1" style="font-size:.65rem;">tú</span>
-                      {% endif %}
-                    </div>
-                    <div class="text-muted" style="font-size:.8rem;">{{ m.user.email }}</div>
-                  </div>
-                </div>
-              </td>
-
-              <td class="py-3">
-                {% if m.user != request.user %}
-                  <form method="post" action="{% url 'accounts:member_role' m.pk %}">
-                    {% csrf_token %}
-                    <select name="role" class="form-select form-select-sm w-auto"
-                            onchange="this.form.submit()"
-                            {% if not membership.role == 'owner' and m.role == 'owner' %}disabled{% endif %}>
-                      {% for value, label in roles %}
-                        <option value="{{ value }}" {% if m.role == value %}selected{% endif %}
-                          {% if value == 'owner' and membership.role != 'owner' %}disabled{% endif %}>
-                          {{ label }}
-                        </option>
-                      {% endfor %}
-                    </select>
-                  </form>
-                {% else %}
-                  <span class="badge
-                    {% if m.role == 'owner' %}bg-primary
-                    {% elif m.role == 'admin' %}bg-info text-dark
-                    {% elif m.role == 'member' %}bg-success
-                    {% else %}bg-secondary{% endif %}">
-                    {{ m.get_role_display }}
-                  </span>
-                {% endif %}
-              </td>
-
-              <td class="py-3">
-                <form method="post" action="{% url 'accounts:member_assign_team' m.pk %}">
-                  {% csrf_token %}
-                  <select name="team" class="form-select form-select-sm w-auto"
-                          onchange="this.form.submit()">
-                    <option value="">— Sin equipo —</option>
-                    {% for t in teams %}
-                      <option value="{{ t.pk }}" {% if m.team_id == t.pk %}selected{% endif %}>
-                        {{ t.name }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </form>
-              </td>
-
-              <td class="py-3 text-muted small">
-                {{ m.created_at|date:"d/m/Y" }}
-              </td>
-
-              <td class="pe-4 py-3 text-end">
-                {% if m.user != request.user %}
-                <div x-data="{ _open: false }">
-                  <form method="post" action="{% url 'accounts:member_remove' m.pk %}"
-                        @submit.prevent="_open = true">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                      <i class="bi bi-person-dash"></i>
-                    </button>
-                  </form>
-                  <dialog x-ref="dlg"
-                          x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
-                          @close="_open = false"
-                          class="erp-dialog confirm-dialog">
-                    <div class="p-4">
-                      <p class="mb-1 fw-semibold">¿Eliminar miembro?</p>
-                      <p class="text-muted small mb-3">{{ m.user.full_name }} perderá acceso a esta organización.</p>
-                      <div class="d-flex gap-2 justify-content-end">
-                        <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Cancelar</button>
-                        <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Eliminar</button>
-                      </div>
-                    </div>
-                  </dialog>
-                </div>
-                {% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="text-center text-muted py-5">No se encontraron miembros.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {# ── Pending invitations ─────────────────────────────────────────── #}
-    {% if pending_invitations %}
-    <div class="card border-0 shadow-sm">
-      <div class="card-header bg-white border-bottom py-3">
-        <h6 class="fw-semibold mb-0">
-          <i class="bi bi-envelope-open me-1"></i> Invitaciones pendientes
-          <span class="badge bg-warning text-dark ms-1">{{ pending_invitations|length }}</span>
-        </h6>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4 py-3 fw-semibold small text-uppercase text-muted">Correo</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Rol</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Invitado por</th>
-              <th class="py-3 fw-semibold small text-uppercase text-muted">Vence</th>
-              <th class="pe-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for inv in pending_invitations %}
-            <tr>
-              <td class="ps-4 py-3 small fw-semibold">{{ inv.email }}</td>
-              <td class="py-3">
-                <span class="badge
-                  {% if inv.role == 'owner' %}bg-primary
-                  {% elif inv.role == 'admin' %}bg-info text-dark
-                  {% elif inv.role == 'member' %}bg-success
-                  {% else %}bg-secondary{% endif %}">
-                  {{ inv.get_role_display }}
-                </span>
-              </td>
-              <td class="py-3 text-muted small">{{ inv.invited_by.full_name|default:"—" }}</td>
-              <td class="py-3 text-muted small">
-                {% if inv.is_expired %}
-                  <span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Expirada</span>
-                {% else %}
-                  {{ inv.expires_at|date:"d/m/Y" }}
-                {% endif %}
-              </td>
-              <td class="pe-4 py-3 text-end">
-                <div class="d-flex gap-2 justify-content-end">
-                  <form method="post" action="{% url 'accounts:invitation_resend' inv.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Reenviar">
-                      <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                  </form>
-                  <div x-data="{ _open: false }">
-                    <form method="post" action="{% url 'accounts:invitation_cancel' inv.pk %}"
-                          @submit.prevent="_open = true">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar">
-                        <i class="bi bi-x-lg"></i>
-                      </button>
-                    </form>
-                    <dialog x-ref="dlg"
-                            x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
-                            @close="_open = false"
-                            class="erp-dialog confirm-dialog">
-                      <div class="p-4">
-                        <p class="mb-1 fw-semibold">¿Cancelar invitación?</p>
-                        <p class="text-muted small mb-3">La invitación para <strong>{{ inv.email }}</strong> será revocada.</p>
-                        <div class="d-flex gap-2 justify-content-end">
-                          <button type="button" @click="_open = false" class="btn btn-sm btn-secondary">Mantener</button>
-                          <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">Cancelar invitación</button>
-                        </div>
-                      </div>
-                    </dialog>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Miembros" %}</h4>
+    <p class="app-header-sub">{{ organization.name }}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-people me-1"></i>{% trans "Equipos" %}
+    </a>
+    <a href="{% url 'accounts:org_settings' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-gear me-1"></i>{% trans "Configuración" %}
+    </a>
   </div>
 </div>
 
-<style>
-  #id_email { width: 100%; }
-  #id_role { width: 100%; }
-  .form-select, .form-control { font-size: .9rem; }
-</style>
+{# ── Invite form ────────────────────────────────────────────────── #}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-bottom py-3">
+    <h6 class="fw-semibold mb-0"><i class="bi bi-person-plus me-1"></i>{% trans "Invitar a un miembro" %}</h6>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'accounts:invite_member' %}" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">{% trans "Correo electrónico" %}</label>
+        {{ invite_form.email }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">{% trans "Rol" %}</label>
+        {{ invite_form.role }}
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-sm w-100" style="background:#1e2130;color:#fff">
+          <i class="bi bi-send me-1"></i>{% trans "Enviar invitación" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Active members table ────────────────────────────────────────── #}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-bottom py-3">
+    <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>{% trans "Miembros activos" %}</h6>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4 py-3 fw-semibold small text-uppercase text-muted">{% trans "Miembro" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Rol" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Equipo" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Se unió" %}</th>
+          <th class="pe-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in members %}
+        <tr>
+          <td class="ps-4 py-3">
+            <div class="d-flex align-items-center gap-3">
+              <img src="{% if m.user.avatar %}{{ m.user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ m.user.full_name|urlencode }}&size=36&background=6c757d&color=fff&rounded=true{% endif %}"
+                   width="36" height="36" class="rounded-circle object-fit-cover" alt="">
+              <div>
+                <div class="fw-semibold small">
+                  {{ m.user.full_name }}
+                  {% if m.user == request.user %}
+                    <span class="badge bg-secondary ms-1" style="font-size:.65rem;">{% trans "tú" %}</span>
+                  {% endif %}
+                </div>
+                <div class="text-muted" style="font-size:.8rem;">{{ m.user.email }}</div>
+              </div>
+            </div>
+          </td>
+
+          <td class="py-3">
+            {% if m.user != request.user %}
+              <form method="post" action="{% url 'accounts:member_role' m.pk %}">
+                {% csrf_token %}
+                <select name="role" class="form-select form-select-sm w-auto"
+                        onchange="this.form.submit()"
+                        {% if not membership.role == 'owner' and m.role == 'owner' %}disabled{% endif %}>
+                  {% for value, label in roles %}
+                    <option value="{{ value }}" {% if m.role == value %}selected{% endif %}
+                      {% if value == 'owner' and membership.role != 'owner' %}disabled{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </form>
+            {% else %}
+              <span class="badge
+                {% if m.role == 'owner' %}bg-primary
+                {% elif m.role == 'admin' %}bg-info text-dark
+                {% elif m.role == 'member' %}bg-success
+                {% else %}bg-secondary{% endif %}">
+                {{ m.get_role_display }}
+              </span>
+            {% endif %}
+          </td>
+
+          <td class="py-3">
+            <form method="post" action="{% url 'accounts:member_assign_team' m.pk %}">
+              {% csrf_token %}
+              <select name="team" class="form-select form-select-sm w-auto"
+                      onchange="this.form.submit()">
+                <option value="">{% trans "— Sin equipo —" %}</option>
+                {% for t in teams %}
+                  <option value="{{ t.pk }}" {% if m.team_id == t.pk %}selected{% endif %}>
+                    {{ t.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+
+          <td class="py-3 text-muted small">
+            {{ m.created_at|date:"d/m/Y" }}
+          </td>
+
+          <td class="pe-4 py-3 text-end">
+            {% if m.user != request.user %}
+            <div x-data="{ _open: false }">
+              <form method="post" action="{% url 'accounts:member_remove' m.pk %}"
+                    @submit.prevent="_open = true">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-person-dash"></i>
+                </button>
+              </form>
+              <dialog x-ref="dlg"
+                      x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
+                      @close="_open = false"
+                      class="erp-dialog confirm-dialog">
+                <div class="p-4">
+                  <p class="mb-1 fw-semibold">{% trans "¿Eliminar miembro?" %}</p>
+                  <p class="text-muted small mb-3">{{ m.user.full_name }} {% trans "perderá acceso a esta organización." %}</p>
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" @click="_open = false" class="btn btn-sm btn-outline-secondary">{% trans "Cancelar" %}</button>
+                    <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">{% trans "Eliminar" %}</button>
+                  </div>
+                </div>
+              </dialog>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">{% trans "No se encontraron miembros." %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Pending invitations ─────────────────────────────────────────── #}
+{% if pending_invitations %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white border-bottom py-3">
+    <h6 class="fw-semibold mb-0">
+      <i class="bi bi-envelope-open me-1"></i>{% trans "Invitaciones pendientes" %}
+      <span class="badge bg-warning text-dark ms-1">{{ pending_invitations|length }}</span>
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4 py-3 fw-semibold small text-uppercase text-muted">{% trans "Correo" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Rol" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Invitado por" %}</th>
+          <th class="py-3 fw-semibold small text-uppercase text-muted">{% trans "Vence" %}</th>
+          <th class="pe-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in pending_invitations %}
+        <tr>
+          <td class="ps-4 py-3 small fw-semibold">{{ inv.email }}</td>
+          <td class="py-3">
+            <span class="badge
+              {% if inv.role == 'owner' %}bg-primary
+              {% elif inv.role == 'admin' %}bg-info text-dark
+              {% elif inv.role == 'member' %}bg-success
+              {% else %}bg-secondary{% endif %}">
+              {{ inv.get_role_display }}
+            </span>
+          </td>
+          <td class="py-3 text-muted small">{{ inv.invited_by.full_name|default:"—" }}</td>
+          <td class="py-3 text-muted small">
+            {% if inv.is_expired %}
+              <span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Expirada" %}</span>
+            {% else %}
+              {{ inv.expires_at|date:"d/m/Y" }}
+            {% endif %}
+          </td>
+          <td class="pe-4 py-3 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+              <form method="post" action="{% url 'accounts:invitation_resend' inv.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="{% trans 'Reenviar' %}">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </form>
+              <div x-data="{ _open: false }">
+                <form method="post" action="{% url 'accounts:invitation_cancel' inv.pk %}"
+                      @submit.prevent="_open = true">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Cancelar' %}">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </form>
+                <dialog x-ref="dlg"
+                        x-effect="_open ? $refs.dlg.showModal() : ($refs.dlg.open && $refs.dlg.close())"
+                        @close="_open = false"
+                        class="erp-dialog confirm-dialog">
+                  <div class="p-4">
+                    <p class="mb-1 fw-semibold">{% trans "¿Cancelar invitación?" %}</p>
+                    <p class="text-muted small mb-3">{% blocktrans with email=inv.email %}La invitación para <strong>{{ email }}</strong> será revocada.{% endblocktrans %}</p>
+                    <div class="d-flex gap-2 justify-content-end">
+                      <button type="button" @click="_open = false" class="btn btn-sm btn-outline-secondary">{% trans "Mantener" %}</button>
+                      <button type="button" @click="$el.closest('[x-data]').querySelector('form').submit()" class="btn btn-sm btn-danger">{% trans "Cancelar invitación" %}</button>
+                    </div>
+                  </div>
+                </dialog>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

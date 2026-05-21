@@ -1,109 +1,107 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
-{% block title %}Editar equipo — {{ organization.name }}{% endblock %}
+{% block title %}{% trans "Editar equipo" %} — {{ organization.name }}{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8">
 
-    <div class="d-flex align-items-center mb-4">
-      <a href="{% url 'accounts:teams' %}" class="btn btn-link text-muted p-0 me-3">
-        <i class="bi bi-arrow-left"></i>
-      </a>
-      <div>
-        <h4 class="fw-bold mb-0">Editar equipo</h4>
-        <span class="text-muted small">{{ organization.name }}</span>
-      </div>
-    </div>
-
-    <form method="post">
-      {% csrf_token %}
-
-      {# ── Name & description ──────────────────────────────────────── #}
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-bottom py-3">
-          <h6 class="fw-semibold mb-0"><i class="bi bi-pencil me-1"></i> Datos del equipo</h6>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold small">Nombre</label>
-            {{ form.name }}
-            {% if form.name.errors %}
-              <div class="text-danger small mt-1">{{ form.name.errors }}</div>
-            {% endif %}
-          </div>
-          <div class="mb-0">
-            <label class="form-label fw-semibold small">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
-            {{ form.description }}
-          </div>
-        </div>
-      </div>
-
-      {# ── Module access ────────────────────────────────────────────── #}
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-bottom py-3">
-          <h6 class="fw-semibold mb-0">
-            <i class="bi bi-grid me-1"></i> Acceso a módulos
-            <span class="text-muted fw-normal ms-1" style="font-size:.8rem;">
-              — dejar todo sin marcar permite acceso a todos los módulos
-            </span>
-          </h6>
-        </div>
-        <div class="card-body">
-          {% if all_modules %}
-          <div class="row g-3">
-            {% for module in all_modules %}
-            <div class="col-md-4">
-              <label class="d-block cursor-pointer h-100" for="module_{{ module.slug }}">
-                <div class="card h-100 border module-card {% if module.pk|stringformat:'s' in selected_module_pks %}border-primary shadow-sm{% endif %}"
-                     style="transition: border-color .15s, box-shadow .15s;">
-                  <div class="card-body p-3">
-                    <div class="d-flex align-items-start gap-2">
-                      <input
-                        class="form-check-input mt-0 flex-shrink-0"
-                        type="checkbox"
-                        name="modules"
-                        value="{{ module.pk }}"
-                        id="module_{{ module.slug }}"
-                        {% if module.pk|stringformat:'s' in selected_module_pks %}checked{% endif %}
-                        onchange="this.closest('.card').classList.toggle('border-primary', this.checked);
-                                  this.closest('.card').classList.toggle('shadow-sm', this.checked);">
-                      <div>
-                        <div class="fw-semibold small">
-                          <i class="bi {{ module.icon }} me-1 text-primary"></i>{{ module.name }}
-                        </div>
-                        {% if module.description %}
-                          <div class="text-muted" style="font-size:.78rem;">{{ module.description }}</div>
-                        {% endif %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </label>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <p class="text-muted mb-0 small">
-            No hay módulos disponibles. Ejecuta <code>python manage.py seed_modules</code> para crearlos.
-          </p>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-lg me-1"></i> Guardar cambios
-        </button>
-        <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Editar equipo" %}</h4>
+    <p class="app-header-sub">{{ organization.name }}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'accounts:teams' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
   </div>
 </div>
 
-<style>
-  .cursor-pointer { cursor: pointer; }
-</style>
+<form method="post">
+  {% csrf_token %}
+
+  {# ── Name & description ──────────────────────────────────────── #}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+      <h6 class="fw-semibold mb-0"><i class="bi bi-pencil me-1"></i>{% trans "Datos del equipo" %}</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-start">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold small">{% trans "Nombre" %}</label>
+          {{ form.name }}
+          {% if form.name.errors %}
+            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label fw-semibold small">{% trans "Descripción" %} <span class="text-muted fw-normal">({% trans "opcional" %})</span></label>
+          {{ form.description }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Module access ────────────────────────────────────────────── #}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+      <h6 class="fw-semibold mb-0">
+        <i class="bi bi-grid me-1"></i>{% trans "Acceso a módulos" %}
+        <span class="text-muted fw-normal ms-1" style="font-size:.8rem;">
+          — {% trans "dejar todo sin marcar permite acceso a todos los módulos" %}
+        </span>
+      </h6>
+    </div>
+    <div class="card-body">
+      {% if all_modules %}
+      <div class="row g-3">
+        {% for module in all_modules %}
+        <div class="col-md-4">
+          <label class="d-block h-100" style="cursor:pointer;" for="module_{{ module.slug }}">
+            <div class="card h-100 border module-card {% if module.pk|stringformat:'s' in selected_module_pks %}border-primary shadow-sm{% endif %}"
+                 style="transition: border-color .15s, box-shadow .15s;">
+              <div class="card-body p-3">
+                <div class="d-flex align-items-start gap-2">
+                  <input
+                    class="form-check-input mt-0 flex-shrink-0"
+                    type="checkbox"
+                    name="modules"
+                    value="{{ module.pk }}"
+                    id="module_{{ module.slug }}"
+                    {% if module.pk|stringformat:'s' in selected_module_pks %}checked{% endif %}
+                    onchange="this.closest('.card').classList.toggle('border-primary', this.checked);
+                              this.closest('.card').classList.toggle('shadow-sm', this.checked);">
+                  <div>
+                    <div class="fw-semibold small">
+                      <i class="bi {{ module.icon }} me-1 text-primary"></i>{{ module.name }}
+                    </div>
+                    {% if module.description %}
+                      <div class="text-muted" style="font-size:.78rem;">{{ module.description }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted mb-0 small">
+        {% blocktrans %}No hay módulos disponibles. Ejecuta <code>python manage.py seed_modules</code> para crearlos.{% endblocktrans %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+      <i class="bi bi-check-lg me-1"></i>{% trans "Guardar cambios" %}
+    </button>
+    <a href="{% url 'accounts:teams' %}" class="btn btn-sm btn-outline-secondary">{% trans "Cancelar" %}</a>
+  </div>
+</form>
+
 {% endblock %}

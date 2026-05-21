@@ -1,20 +1,31 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
-{% block title %}Perfil — SabSys{% endblock %}
+{% block title %}{% trans "Perfil" %} — SabSys{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
 
 {% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Perfil" %}</h4>
+    <p class="app-header-sub">{{ user.email }}</p>
+  </div>
+</div>
+
 <div class="row justify-content-center">
   <div class="col-md-6">
-    <h4 class="fw-bold mb-4">Tu perfil</h4>
 
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Cuenta</h6>
+        <h6 class="text-muted small text-uppercase mb-3">{% trans "Cuenta" %}</h6>
         <dl class="row small mb-0">
-          <dt class="col-4 text-muted">Correo</dt>
+          <dt class="col-4 text-muted">{% trans "Correo" %}</dt>
           <dd class="col-8">{{ user.email }}</dd>
-          <dt class="col-4 text-muted">Miembro desde</dt>
+          <dt class="col-4 text-muted">{% trans "Miembro desde" %}</dt>
           <dd class="col-8">{{ user.created_at|date:"d/m/Y" }}</dd>
         </dl>
       </div>
@@ -22,7 +33,7 @@
 
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Información personal</h6>
+        <h6 class="text-muted small text-uppercase mb-3">{% trans "Información personal" %}</h6>
 
         <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
@@ -40,7 +51,7 @@
               <button type="button"
                       class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                       style="width:28px;height:28px;top:0;right:0;"
-                      title="Cambiar foto"
+                      title="{% trans 'Cambiar foto' %}"
                       @click="$refs.fileInput.click()">
                 <i class="bi bi-pencil" style="font-size:.7rem;"></i>
               </button>
@@ -48,14 +59,14 @@
               <button type="button"
                       class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
                       style="width:28px;height:28px;bottom:0;right:0;"
-                      title="Eliminar foto"
+                      title="{% trans 'Eliminar foto' %}"
                       x-show="hasAvatar"
                       @click="clear()">
                 <i class="bi bi-x" style="font-size:.85rem;"></i>
               </button>
             </div>
 
-            <p class="text-muted mb-0" style="font-size:.75rem;">Tipos permitidos: png, jpg, jpeg.</p>
+            <p class="text-muted mb-0" style="font-size:.75rem;">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
 
             <input type="file" name="avatar" id="id_avatar" accept=".png,.jpg,.jpeg"
                    class="d-none" x-ref="fileInput" @change="change($event)">
@@ -68,14 +79,16 @@
 
           {% if user.signature %}
           <div class="mb-3">
-            <label class="form-label small text-muted">Firma actual</label><br>
-            <img src="{{ user.signature.url }}" alt="Firma"
+            <label class="form-label small text-muted">{% trans "Firma actual" %}</label><br>
+            <img src="{{ user.signature.url }}" alt="{% trans 'Firma' %}"
                  style="max-height:80px; border:1px solid #dee2e6; border-radius:4px; padding:4px; background:#fff;">
           </div>
           {% endif %}
 
           <div class="d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+            <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+              {% trans "Guardar cambios" %}
+            </button>
           </div>
         </form>
       </div>
@@ -83,9 +96,9 @@
 
     <div class="card border-0 shadow-sm mt-3">
       <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">Cambiar contraseña</h6>
+        <h6 class="text-muted small text-uppercase mb-3">{% trans "Cambiar contraseña" %}</h6>
         <a href="{% url 'account_change_password' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-key me-1"></i> Cambiar contraseña
+          <i class="bi bi-key me-1"></i>{% trans "Cambiar contraseña" %}
         </a>
       </div>
     </div>

@@ -6,7 +6,9 @@ from allauth.account.forms import SignupForm, ChangePasswordForm
 from apps.core.models import Module
 from .models import User, Organization, Membership, Team
 
-_PASSWORD_HELP = "Usa 8 o más caracteres con una combinación de letras, números y símbolos."
+_PASSWORD_HELP = (
+    "Usa 8 o más caracteres con una combinación de letras, números y símbolos."
+)
 
 
 class CustomSignupForm(SignupForm):
@@ -52,8 +54,15 @@ class StaffCreateOrganizationForm(forms.ModelForm):
         model = Organization
         fields = [
             "name",
-            "tax_id", "email", "phone", "website",
-            "address", "city", "state", "zip_code", "country",
+            "tax_id",
+            "email",
+            "phone",
+            "website",
+            "address",
+            "city",
+            "state",
+            "zip_code",
+            "country",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -66,7 +75,9 @@ class StaffCreateOrganizationForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             "name",
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'
+            ),
             Row(
                 Column("tax_id", css_class="col-md-6"),
                 Column("email", css_class="col-md-6"),
@@ -75,7 +86,9 @@ class StaffCreateOrganizationForm(forms.ModelForm):
                 Column("phone", css_class="col-md-6"),
                 Column("website", css_class="col-md-6"),
             ),
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'
+            ),
             "address",
             Row(
                 Column("city", css_class="col-md-5"),
@@ -83,7 +96,9 @@ class StaffCreateOrganizationForm(forms.ModelForm):
                 Column("zip_code", css_class="col-md-3"),
             ),
             "country",
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Propietario")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Propietario")}</p>'
+            ),
             "owner_email",
         )
 
@@ -95,9 +110,17 @@ class OrganizationForm(forms.ModelForm):
     class Meta:
         model = Organization
         fields = [
-            "name", "logo",
-            "tax_id", "email", "phone", "website",
-            "address", "city", "state", "zip_code", "country",
+            "name",
+            "logo",
+            "tax_id",
+            "email",
+            "phone",
+            "website",
+            "address",
+            "city",
+            "state",
+            "zip_code",
+            "country",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -110,7 +133,9 @@ class OrganizationForm(forms.ModelForm):
         self.helper.form_tag = False
         self.helper.layout = Layout(
             "name",
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Contacto")}</p>'
+            ),
             Row(
                 Column("tax_id", css_class="col-md-6"),
                 Column("email", css_class="col-md-6"),
@@ -119,7 +144,9 @@ class OrganizationForm(forms.ModelForm):
                 Column("phone", css_class="col-md-6"),
                 Column("website", css_class="col-md-6"),
             ),
-            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'),
+            HTML(
+                f'<hr class="my-3"><p class="text-muted small text-uppercase mb-3">{_("Dirección")}</p>'
+            ),
             "address",
             Row(
                 Column("city", css_class="col-md-5"),
@@ -147,7 +174,8 @@ class TeamForm(forms.ModelForm):
             "description": _("Descripción"),
         }
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "description": forms.Textarea(attrs={"rows": 1, "class": "form-control form-control-sm"}),
         }
 
     def __init__(self, *args, **kwargs):

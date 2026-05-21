@@ -45,7 +45,7 @@
       </li>
       <li>
         <a href="{% url 'invoices:invoice_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/invoices/' and 'customers' not in request.path and 'ncf' not in request.path and 'reports' not in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% if request.path|startswith:'/invoices/' and 'customers' not in request.path and 'ncf' not in request.path and 'reports' not in request.path and 'payment-terms' not in request.path %}active{% endif %}">
           <i class="bi bi-receipt-cutoff"></i>
           <span>{% trans "Facturas" %}</span>
         </a>
