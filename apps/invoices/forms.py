@@ -321,8 +321,8 @@ class InvoiceForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "due_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
         }
@@ -411,8 +411,8 @@ class QuotationForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "valid_until": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "valid_until": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
         }
@@ -499,8 +499,8 @@ class SaleOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "delivery_date": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "delivery_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "notes": forms.TextInput(),
         }
         error_messages = {
@@ -810,9 +810,19 @@ InvoiceItemFormSet = inlineformset_factory(
     Invoice,
     InvoiceItem,
     form=InvoiceItemForm,
-    extra=1,
+    extra=0,
     can_delete=True,
     min_num=0,  # allow saving drafts with no items
+    validate_min=False,
+)
+
+InvoiceItemFormSetCreate = inlineformset_factory(
+    Invoice,
+    InvoiceItem,
+    form=InvoiceItemForm,
+    extra=1,
+    can_delete=True,
+    min_num=0,
     validate_min=False,
 )
 

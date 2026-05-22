@@ -151,6 +151,8 @@ TIME_ZONE = "America/Santo_Domingo"
 USE_I18N = True
 USE_TZ = True
 
+FORMAT_MODULE_PATH = ["config.formats"]
+
 # ── Static & Media ────────────────────────────────────────────────────────────
 
 STATIC_URL = "/static/"

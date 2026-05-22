@@ -13,7 +13,7 @@ from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
-from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, ConsolidateForm
+from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, SaleOrderDeliverForm, ConsolidateForm
 from ..models import Invoice, InvoiceItem, CustomerDepartment
 from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
@@ -94,7 +94,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", SaleOrderForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [

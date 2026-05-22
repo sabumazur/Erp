@@ -41,16 +41,6 @@
                     <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Factura" %}</div>
                     <div style="margin-top:4px;">
                       <span style="font-size:13px;font-family:monospace;font-weight:700;color:#374151;">{% if invoice.encf %}{{ invoice.encf }}{% else %}{{ invoice.doc_number|default:"Borrador" }}{% endif %}</span>
-                      &nbsp;&nbsp;
-                      <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
-                        {% if invoice.status == 'PAID' %}background:#d1e7dd;color:#0f5132;
-                        {% elif invoice.status == 'OVERDUE' %}background:#f8d7da;color:#842029;
-                        {% elif invoice.status == 'SENT' %}background:#d1ecf1;color:#0c5460;
-                        {% elif invoice.status == 'CONFIRMED' %}background:#cfe2ff;color:#084298;
-                        {% elif invoice.status == 'CANCELLED' %}background:#f3f4f6;color:#9ca3af;
-                        {% else %}background:#fef3c7;color:#92400e;{% endif %}">
-                        {{ invoice.get_status_display }}
-                      </span>
                     </div>
                   </div>
                 </td>

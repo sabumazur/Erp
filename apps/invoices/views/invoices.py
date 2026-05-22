@@ -17,7 +17,7 @@ from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import InvoiceFilter
 from ..forms import (
-    InvoiceForm, InvoiceItemForm, InvoiceItemFormSet,
+    InvoiceForm, InvoiceItemForm, InvoiceItemFormSet, InvoiceItemFormSetCreate,
     PaymentForm, CreditNoteForm, NCFSequenceForm,
 )
 from ..models import Invoice, InvoiceItem, NCFSequence, Payment
@@ -137,7 +137,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", InvoiceForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [

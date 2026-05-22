@@ -11,7 +11,7 @@ from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
-from ..forms import QuotationForm, InvoiceItemFormSet
+from ..forms import QuotationForm, InvoiceItemFormSet, InvoiceItemFormSetCreate
 from ..models import Invoice, NCFType
 from ..email import send_quotation_email, _signature_url
 from ..services import QuotationService
@@ -86,7 +86,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", QuotationForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
@@ -232,6 +232,22 @@ class QuotationSendView(ERPBaseViewMixin, View):
                 messages.warning(request, _("El cliente no tiene correo registrado."))
         except Exception as exc:
             messages.warning(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
+        return redirect("invoices:quotation_detail", pk=q.pk)
+
+
+class QuotationEmailView(ERPBaseViewMixin, View):
+    required_module = "invoices"
+
+    def post(self, request, pk):
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
+        try:
+            sent = send_quotation_email(q, request)
+            if sent:
+                messages.success(request, _("Correo enviado a %(email)s.") % {"email": q.customer.email})
+            else:
+                messages.warning(request, _("El cliente no tiene correo registrado."))
+        except Exception as exc:
+            messages.error(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
         return redirect("invoices:quotation_detail", pk=q.pk)
 
 

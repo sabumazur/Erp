@@ -1,9 +1,26 @@
+import base64
+import mimetypes
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 
 from .models import Invoice
+
+
+def _logo_data_uri(org):
+    """Return a base64 data URI for the org logo so email clients need no external fetch."""
+    if not org.logo:
+        return None
+    try:
+        path = org.logo.path
+        mime = mimetypes.guess_type(path)[0] or "image/png"
+        with open(path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("ascii")
+        return f"data:{mime};base64,{encoded}"
+    except (FileNotFoundError, ValueError):
+        return None
 
 
 def _logo_url(org, request):
@@ -28,7 +45,7 @@ def send_invoice_email(invoice: Invoice, request) -> bool:
         "invoice": invoice,
         "items": invoice.items.all(),
         "org": org,
-        "logo_url": _logo_url(org, request),
+        "logo_url": _logo_data_uri(org),
     }
     html_body = render_to_string("invoices/email/invoice_email.html", ctx, request=request)
     doc_ref = invoice.encf or invoice.doc_number or _("Borrador")
@@ -70,7 +87,7 @@ def send_quotation_email(quotation: Invoice, request) -> bool:
         "quotation": quotation,
         "items": quotation.items.all(),
         "org": org,
-        "logo_url": _logo_url(org, request),
+        "logo_url": _logo_data_uri(org),
     }
     html_body = render_to_string("invoices/email/quotation_email.html", ctx, request=request)
     doc_ref = quotation.doc_number or _("Borrador")
@@ -95,7 +112,7 @@ def send_sale_order_email(order: Invoice, request) -> bool:
         "order": order,
         "items": order.items.all(),
         "org": org,
-        "logo_url": _logo_url(org, request),
+        "logo_url": _logo_data_uri(org),
     }
     html_body = render_to_string("invoices/email/sale_order_email.html", ctx, request=request)
     doc_ref = order.doc_number or _("Borrador")

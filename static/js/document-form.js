@@ -146,6 +146,15 @@
     });
   }
 
+  function initIssueDateDeliverySync() {
+    var issueDateEl = document.querySelector('[name="issue_date"]');
+    var deliveryDateEl = document.querySelector('[name="delivery_date"]');
+    if (!issueDateEl || !deliveryDateEl) return;
+    issueDateEl.addEventListener("change", function () {
+      deliveryDateEl.value = issueDateEl.value;
+    });
+  }
+
   function initCustomerDefaults() {
     var custSel = document.querySelector('[name="customer"]');
     if (!custSel || !window.CUSTOMER_DEFAULTS) return;
@@ -164,4 +173,5 @@
   window.initInvoiceItemFormset = initInvoiceItemFormset;
   window.initInvoiceItemHtmx = initInvoiceItemHtmx;
   window.initCustomerDefaults = initCustomerDefaults;
+  window.initIssueDateDeliverySync = initIssueDateDeliverySync;
 })();

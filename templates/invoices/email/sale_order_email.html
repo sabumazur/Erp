@@ -41,15 +41,6 @@
                     <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Orden de Venta" %}</div>
                     <div style="margin-top:4px;">
                       <span style="font-size:13px;font-family:monospace;font-weight:700;color:#374151;">{{ order.doc_number|default:"Borrador" }}</span>
-                      &nbsp;&nbsp;
-                      <span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;
-                        {% if order.status == 'CONFIRMED' %}background:#cfe2ff;color:#084298;
-                        {% elif order.status == 'DELIVERED' %}background:#d1e7dd;color:#0f5132;
-                        {% elif order.status == 'INVOICED' %}background:#d1fae5;color:#065f46;
-                        {% elif order.status == 'CANCELLED' %}background:#f3f4f6;color:#9ca3af;
-                        {% else %}background:#fef3c7;color:#92400e;{% endif %}">
-                        {{ order.get_status_display }}
-                      </span>
                     </div>
                   </div>
                 </td>

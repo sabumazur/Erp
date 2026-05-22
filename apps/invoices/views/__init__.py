@@ -34,6 +34,7 @@ from .quotations import (
     QuotationUpdateView,
     QuotationConfirmView,
     QuotationSendView,
+    QuotationEmailView,
     QuotationAcceptView,
     QuotationRejectView,
     QuotationConvertView,

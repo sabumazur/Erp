@@ -29,6 +29,7 @@ from .views import (
     QuotationUpdateView,
     QuotationConfirmView,
     QuotationSendView,
+    QuotationEmailView,
     QuotationAcceptView,
     QuotationRejectView,
     QuotationConvertView,
@@ -131,6 +132,7 @@ urlpatterns = [
     # Quotation transitions
     path("quotations/<uuid:pk>/confirm/",          QuotationConfirmView.as_view(), name="quotation_confirm"),
     path("quotations/<uuid:pk>/send/",             QuotationSendView.as_view(),    name="quotation_send"),
+    path("quotations/<uuid:pk>/email/",            QuotationEmailView.as_view(),   name="quotation_email"),
     path("quotations/<uuid:pk>/accept/",           QuotationAcceptView.as_view(),  name="quotation_accept"),
     path("quotations/<uuid:pk>/reject/",           QuotationRejectView.as_view(),  name="quotation_reject"),
     path("quotations/<uuid:pk>/convert/",          QuotationConvertView.as_view(), name="quotation_convert"),
