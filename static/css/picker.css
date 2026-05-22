@@ -1,0 +1,275 @@
+/* ── Item Picker Modal ──────────────────────────────────────── */
+
+#itemPickerModal.fade .picker-dialog {
+  transform: translateY(-14px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+#itemPickerModal.show .picker-dialog {
+  transform: none !important;
+}
+
+#itemPickerModal .picker-dialog {
+  max-width: 650px;
+  margin-top: 6vh;
+}
+
+#itemPickerModal .picker-content {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+.picker-head {
+  background: #f3f2f1;
+  border-bottom: 1px solid #edebe9;
+  padding: 10px 16px;
+}
+
+.picker-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #201f1e;
+  letter-spacing: 0.01em;
+}
+
+.picker-search-area {
+  border-bottom: 1px solid #edebe9;
+  padding: 8px 12px;
+}
+
+.picker-search-area .input-group-text {
+  background: transparent;
+  border-right: 0;
+  color: #605e5c;
+}
+
+.picker-search-input {
+  border-left: 0;
+  padding-left: 4px;
+  font-size: 0.8125rem;
+}
+
+.picker-search-input:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+
+.picker-search-area .input-group:focus-within .input-group-text {
+  border-color: #0078d4;
+}
+
+.picker-list-wrap {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d2d0ce transparent;
+}
+
+.picker-list-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+.picker-list-wrap::-webkit-scrollbar-thumb {
+  background: #d2d0ce;
+  border-radius: 0;
+}
+
+#itemPickerModal .picker-table {
+  border-collapse: collapse;
+}
+
+#itemPickerModal .picker-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f3f2f1;
+  border-bottom: 1px solid #edebe9 !important;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #605e5c;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  padding: 6px 8px;
+}
+
+#itemPickerModal .picker-table thead th:hover {
+  color: #0078d4;
+}
+
+#itemPickerModal .picker-table thead th .picker-sort-icon {
+  font-size: 0.58rem;
+  margin-left: 3px;
+  opacity: 0.35;
+}
+
+#itemPickerModal .picker-table thead th.picker-sort-active .picker-sort-icon {
+  opacity: 1;
+  color: #0078d4;
+}
+
+.picker-ch-code {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.picker-ch-unit {
+  width: 76px;
+}
+
+.picker-ch-price {
+  width: 88px;
+}
+
+/* Row base */
+#itemPickerModal .picker-table tbody tr {
+  transition: background-color 0.08s;
+  cursor: pointer;
+}
+
+#itemPickerModal .picker-table tbody td {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #f3f2f1;
+  vertical-align: middle;
+}
+
+#itemPickerModal .picker-table tbody tr:hover {
+  background-color: #f3f2f1;
+}
+
+/* Code (No.) column — same typography, distinct color */
+#itemPickerModal .picker-table td:first-child {
+  color: #0078d4;
+  position: relative;
+  padding-left: 20px;
+  white-space: nowrap;
+}
+
+/* Arrow indicator space on all rows so text aligns */
+#itemPickerModal .picker-table thead th:first-child {
+  padding-left: 20px;
+}
+
+/* Selected row */
+#itemPickerModal .picker-table tbody tr[aria-selected="true"] td {
+  font-weight: 600;
+  background-color: #dbeafe;
+}
+
+
+#itemPickerModal .picker-table td[colspan] {
+  text-align: center;
+  padding: 48px 20px;
+  color: #94a3b8 !important;
+}
+
+#customerPickerModal .picker-table tbody tr[aria-selected="true"] td {
+  font-weight: 600;
+  background-color: #dbeafe;
+}
+
+/* Footer */
+.picker-foot {
+  background: #faf9f8;
+  border-top: 1px solid #edebe9;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.picker-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.picker-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Inline pagination (inside footer) */
+.picker-pagination {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.picker-pagination .page-btn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  font-size: 0.75rem;
+  border: 1px solid #d2d0ce;
+  background: #fff;
+  color: #323130;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.08s, border-color 0.08s;
+}
+
+.picker-pagination .page-btn:hover:not(:disabled) {
+  background: #f3f2f1;
+  border-color: #8a8886;
+}
+
+.picker-pagination .page-btn.active {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: #fff;
+  font-weight: 600;
+}
+
+.picker-pagination .page-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.picker-count {
+  font-size: 0.68rem;
+  color: #8a8886;
+  white-space: nowrap;
+}
+
+/* New item link */
+.picker-new-btn {
+  font-size: 0.78rem;
+  color: #0078d4 !important;
+  padding: 3px 6px;
+  text-decoration: none !important;
+  border-radius: 2px;
+}
+
+.picker-new-btn:hover {
+  background: #f3f2f1;
+  color: #106ebe !important;
+}
+
+#picker-select-btn {
+  background-color: #0078d4 !important;
+  border-color: #0078d4 !important;
+  color: #fff !important;
+  border-radius: 2px;
+}
+
+#picker-select-btn:hover:not(:disabled) {
+  background-color: #106ebe !important;
+  border-color: #106ebe !important;
+}
+
+#picker-select-btn:disabled {
+  opacity: 0.4;
+}

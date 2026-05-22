@@ -7,7 +7,7 @@ from apps.accounts.tests.factories import UserFactory, MembershipFactory, Organi
 
 
 def _apply(request):
-    OrganizationMiddleware(get_response=lambda r: None).process_request(request)
+    OrganizationMiddleware(get_response=lambda r: None)._resolve_org(request)
     return request
 
 

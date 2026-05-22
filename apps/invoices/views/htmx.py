@@ -19,7 +19,6 @@ from django.views import View
 from apps.accounts.views import ERPBaseViewMixin
 from ..forms import CustomerQuickCreateForm, ItemQuickCreateForm
 from ..models import Customer
-from ._helpers import _org
 
 
 class CustomerDefaultsView(ERPBaseViewMixin, View):
@@ -35,7 +34,7 @@ class CustomerDefaultsView(ERPBaseViewMixin, View):
             return JsonResponse({})
         try:
             c = Customer.objects.select_related("payment_term").get(
-                pk=customer_id, organization=_org(request)
+                pk=customer_id, organization=request.organization
             )
         except Customer.DoesNotExist:
             return JsonResponse({})
@@ -65,7 +64,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
         from django.shortcuts import render
 
         q = request.GET.get("q", "").strip()
-        org = _org(request)
+        org = request.organization
 
         qs = Item.objects.filter(
             organization=org,
@@ -86,7 +85,7 @@ class CustomerSearchView(ERPBaseViewMixin, View):
 
     def get(self, request):
         q = request.GET.get("q", "").strip()
-        org = _org(request)
+        org = request.organization
         qs = Customer.objects.filter(organization=org).order_by("name")
         if q:
             qs = qs.filter(
@@ -103,7 +102,7 @@ class CustomerQuickCreateView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request):
-        org = _org(request)
+        org = request.organization
         form = CustomerQuickCreateForm(request.POST, organization=org)
         if form.is_valid():
             customer = form.save(commit=False)
@@ -129,7 +128,7 @@ class ItemQuickCreateView(ERPBaseViewMixin, View):
 
     def post(self, request):
         from apps.items.models import Item
-        org = _org(request)
+        org = request.organization
         form = ItemQuickCreateForm(request.POST, organization=org)
         if form.is_valid():
             item = form.save(commit=False)

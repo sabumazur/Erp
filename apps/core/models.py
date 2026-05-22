@@ -97,7 +97,6 @@ class ERPBaseModel(TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         abstract = True
-        ordering = ["-created_at"]
 
 
 # ── Notification ──────────────────────────────────────────────────────────────
@@ -131,6 +130,7 @@ class Notification(ERPBaseModel):
     read_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta(ERPBaseModel.Meta):
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["recipient", "read_at"]),
         ]

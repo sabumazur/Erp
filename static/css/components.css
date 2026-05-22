@@ -1,0 +1,62 @@
+/* ── Native <dialog> modal ─────────────────────────────────── */
+
+.erp-dialog {
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.erp-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-dialog {
+  width: 360px;
+}
+
+/* ── Department popover ──────────────────────────────────────────────────── */
+.dept-popover-bs.popover {
+  min-width: 200px;
+  max-width: 260px;
+  border: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,.13);
+  border-radius: 10px;
+}
+.dept-popover-bs .popover-arrow::before,
+.dept-popover-bs .popover-arrow::after { border-color: transparent; }
+.dept-popover-bs .popover-header {
+  background: #1e2130;
+  color: #fff;
+  border-radius: 10px 10px 0 0;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-bottom: none;
+}
+.dept-popover-bs .popover-body {
+  padding: 8px 12px 10px;
+}
+.dept-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .8rem;
+  color: #374151;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.dept-chip:last-child { border-bottom: none; }
+.dept-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5b9af5;
+  flex-shrink: 0;
+}

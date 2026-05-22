@@ -18,7 +18,7 @@ from apps.core.search import fts_search
 from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
 from ..models import Customer, CustomerDepartment
-from ._helpers import _org, _customers_with_depts
+from ._helpers import _customers_with_depts
 
 
 class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -42,7 +42,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     @classmethod
     def _refresh_table(cls, request, msg, msg_type="success"):
-        qs = _customers_with_depts(_org(request))
+        qs = _customers_with_depts(request.organization)
         q = request.GET.get("q", "").strip()
         if q:
             qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
@@ -69,7 +69,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = _org(self.request)
+        org = self.request.organization
         qs = _customers_with_depts(org)
         q = self.request.GET.get("q", "").strip()
         if q:
@@ -79,23 +79,25 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx.update(self.apply_datatable(f.qs))
         ctx["form"] = CustomerForm()
 
-        today = date.today()
-        active_dept = CustomerDepartment.objects.filter(
-            customer=OuterRef("pk"), deleted_at__isnull=True, is_active=True,
-        )
-        stats_qs = Customer.objects.filter(organization=org)
-        ctx["stats"] = [
-            {"label": _("Total clientes"),     "value": stats_qs.count(),
-             "icon": "bi-people",              "color": "primary"},
-            {"label": _("Con límite de crédito"),"value": stats_qs.filter(credit_limit__isnull=False).count(),
-             "icon": "bi-credit-card",         "color": "info"},
-            {"label": _("Con departamentos"),  "value": stats_qs.filter(Exists(active_dept)).count(),
-             "icon": "bi-building",            "color": "secondary"},
-            {"label": _("Nuevos este mes"),    "value": stats_qs.filter(
-                created_at__month=today.month, created_at__year=today.year,
-             ).count(),
-             "icon": "bi-person-plus",         "color": "success"},
-        ]
+        if not self.request.htmx:
+            today = date.today()
+            active_dept = CustomerDepartment.objects.filter(
+                customer=OuterRef("pk"), deleted_at__isnull=True, is_active=True,
+            )
+            stats_qs = Customer.objects.filter(organization=org)
+            ctx["stats"] = [
+                {"label": _("Total clientes"),     "value": stats_qs.count(),
+                 "icon": "bi-people",              "color": "primary"},
+                {"label": _("Con límite de crédito"),"value": stats_qs.filter(credit_limit__isnull=False).count(),
+                 "icon": "bi-credit-card",         "color": "info"},
+                {"label": _("Con departamentos"),  "value": stats_qs.filter(Exists(active_dept)).count(),
+                 "icon": "bi-building",            "color": "secondary"},
+                {"label": _("Nuevos este mes"),    "value": stats_qs.filter(
+                    created_at__month=today.month, created_at__year=today.year,
+                 ).count(),
+                 "icon": "bi-person-plus",         "color": "success"},
+            ]
+        ctx["module"] = "customer"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Clientes")},
@@ -106,7 +108,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         form = CustomerForm(request.POST)
         if form.is_valid():
             customer = form.save(commit=False)
-            customer.organization = _org(request)
+            customer.organization = request.organization
             customer.save()
             if request.htmx:
                 return self._refresh_table(request, str(_("Cliente creado correctamente.")))
@@ -144,6 +146,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        ctx["module"] = "customer"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Clientes"), "url": reverse("invoices:customer_list")},
@@ -153,7 +156,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
 
     def get_object(self):
         return get_object_or_404(
-            Customer, pk=self.kwargs["pk"], organization=_org(self.request)
+            Customer, pk=self.kwargs["pk"], organization=self.request.organization
         )
 
     def get(self, request, *args, **kwargs):
@@ -189,7 +192,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
             resp = render(
                 self.request,
                 "invoices/partials/customer_table.html",
-                {"customers": _customers_with_depts(_org(self.request))},
+                {"customers": _customers_with_depts(self.request.organization)},
             )
             resp["HX-Trigger"] = json.dumps(
                 {"showToast": {"message": str(_("Cliente actualizado.")), "type": "success"}}
@@ -227,14 +230,14 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         from django.db.models.functions import Coalesce
         from ..models import Invoice, Payment
 
-        customer = get_object_or_404(Customer, pk=pk, organization=_org(request))
+        customer = get_object_or_404(Customer, pk=pk, organization=request.organization)
         departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
 
         _zero = Decimal("0.00")
         _dec_field = DecimalField(max_digits=14, decimal_places=2)
 
         invoices = list(
-            Invoice.invoices.filter(organization=_org(request), customer=customer)
+            Invoice.invoices.filter(organization=request.organization, customer=customer)
             .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
             .annotate(
                 paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
@@ -263,7 +266,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         ]
 
         recent_payments = list(
-            Payment.objects.filter(customer=customer, organization=_org(request))
+            Payment.objects.filter(customer=customer, organization=request.organization)
             .prefetch_related("allocations__invoice")
             .order_by("-date", "-created_at")[:30]
         )
@@ -274,6 +277,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
             "invoices/customer_detail.html",
             {
                 **self.get_context(
+                    module="customer",
                     customer=customer,
                     departments=departments,
                     dept_form=_DeptForm(),
@@ -305,7 +309,7 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        customer = get_object_or_404(Customer, pk=pk, organization=_org(request))
+        customer = get_object_or_404(Customer, pk=pk, organization=request.organization)
         name = customer.name
         try:
             customer.delete()
@@ -336,7 +340,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def _customer(self, request, customer_pk):
-        return get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        return get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
 
     def _departments(self, customer):
         return customer.departments.filter(deleted_at__isnull=True).order_by("name")
@@ -360,7 +364,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
         form = CustomerDepartmentForm(request.POST)
         if form.is_valid():
             dept = form.save(commit=False)
-            dept.organization = _org(request)
+            dept.organization = request.organization
             dept.customer = customer
             dept.save()
             if request.htmx:
@@ -401,7 +405,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def _get_objects(self, request, customer_pk, pk):
-        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
         dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
         return customer, dept
 
@@ -465,7 +469,7 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, customer_pk, pk):
-        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
         dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
         dept.is_active = not dept.is_active
         dept.save(update_fields=["is_active", "updated_at"])
@@ -485,11 +489,11 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
 
     def post(self, request, customer_pk, pk):
         from ..models import Invoice
-        customer = get_object_or_404(Customer, pk=customer_pk, organization=_org(request))
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
         dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
 
         order_count = Invoice.sale_orders.filter(
-            organization=_org(request), department=dept
+            organization=request.organization, department=dept
         ).count()
         if order_count:
             msg = _(

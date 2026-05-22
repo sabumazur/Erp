@@ -14,7 +14,6 @@ from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
 from ..models import Customer, Invoice, InvoiceItem, NCFType, Payment
-from ._helpers import _org
 
 _AGING_CSS = {
     "current": "text-success",
@@ -82,7 +81,7 @@ class Report607View(ERPBaseViewMixin, View):
 
         invoices = (
             Invoice.invoices.filter(
-                organization=_org(request),
+                organization=request.organization,
                 issue_date__month=month,
                 issue_date__year=year,
             )
@@ -115,7 +114,7 @@ class Report607View(ERPBaseViewMixin, View):
             ])
             buf.write(row + "\r\n")
 
-        filename = f"607_{year}{month:02d}_{_org(request).slug}.txt"
+        filename = f"607_{year}{month:02d}_{request.organization.slug}.txt"
         response = HttpResponse(buf.getvalue(), content_type="text/plain; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
@@ -140,7 +139,7 @@ class Report608View(ERPBaseViewMixin, View):
 
         cancelled = (
             Invoice.invoices.filter(
-                organization=_org(request),
+                organization=request.organization,
                 status=Invoice.Status.CANCELLED,
                 updated_at__month=month,
                 updated_at__year=year,
@@ -154,7 +153,7 @@ class Report608View(ERPBaseViewMixin, View):
             row = "|".join([inv.encf, str(inv.ncf_type), inv.updated_at.strftime("%Y%m%d")])
             buf.write(row + "\r\n")
 
-        filename = f"608_{year}{month:02d}_{_org(request).slug}.txt"
+        filename = f"608_{year}{month:02d}_{request.organization.slug}.txt"
         response = HttpResponse(buf.getvalue(), content_type="text/plain; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
@@ -168,15 +167,15 @@ class ReportAgingView(ERPBaseViewMixin, View):
         _zero = Decimal("0.00")
         _dec = DecimalField(max_digits=14, decimal_places=2)
 
-        customers = Customer.objects.filter(organization=_org(request)).order_by("name")
+        customers = Customer.objects.filter(organization=request.organization).order_by("name")
         customer_id = request.GET.get("customer", "").strip()
 
         selected_customer = None
         if customer_id:
-            selected_customer = get_object_or_404(Customer, pk=customer_id, organization=_org(request))
+            selected_customer = get_object_or_404(Customer, pk=customer_id, organization=request.organization)
 
         qs = Invoice.invoices.filter(
-            organization=_org(request),
+            organization=request.organization,
             status__in=[Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE],
         )
         if selected_customer:
@@ -252,7 +251,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
         _zero = Decimal("0.00")
         _dec = DecimalField(max_digits=14, decimal_places=2)
 
-        customers = Customer.objects.filter(organization=_org(request)).order_by("name")
+        customers = Customer.objects.filter(organization=request.organization).order_by("name")
 
         customer_id   = request.GET.get("customer",  "").strip()
         date_from_str = request.GET.get("date_from", "").strip()
@@ -266,25 +265,25 @@ class ReportStatementView(ERPBaseViewMixin, View):
 
         if customer_id and date_from_str and date_to_str:
             try:
-                customer = get_object_or_404(Customer, pk=customer_id, organization=_org(request))
+                customer = get_object_or_404(Customer, pk=customer_id, organization=request.organization)
                 d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
                 d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
 
                 inv_before = (
                     Invoice.invoices.filter(
-                        organization=_org(request), customer=customer, issue_date__lt=d_from,
+                        organization=request.organization, customer=customer, issue_date__lt=d_from,
                     )
                     .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
                     .aggregate(t=Coalesce(Sum("total"), _zero, output_field=_dec))["t"]
                 )
                 pmt_before = Payment.objects.filter(
-                    organization=_org(request), customer=customer, date__lt=d_from,
+                    organization=request.organization, customer=customer, date__lt=d_from,
                 ).aggregate(t=Coalesce(Sum("amount"), _zero, output_field=_dec))["t"]
                 opening_balance = inv_before - pmt_before
 
                 for inv in (
                     Invoice.invoices.filter(
-                        organization=_org(request), customer=customer,
+                        organization=request.organization, customer=customer,
                         issue_date__gte=d_from, issue_date__lte=d_to,
                     )
                     .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
@@ -299,7 +298,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
                     period_invoiced += inv.total
 
                 for pmt in Payment.objects.filter(
-                    organization=_org(request), customer=customer,
+                    organization=request.organization, customer=customer,
                     date__gte=d_from, date__lte=d_to,
                 ).order_by("date", "created_at"):
                     lines.append({
@@ -364,7 +363,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                     by_day = True
                     inv_qs = (
                         Invoice.invoices.filter(
-                            organization=_org(request),
+                            organization=request.organization,
                             issue_date__year=year, issue_date__month=month,
                         )
                         .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
@@ -374,7 +373,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                     )
                     pmt_qs = (
                         Payment.objects.filter(
-                            organization=_org(request),
+                            organization=request.organization,
                             date__year=year, date__month=month,
                         )
                         .annotate(period=TruncDay("date"))
@@ -384,7 +383,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                 else:
                     inv_qs = (
                         Invoice.invoices.filter(
-                            organization=_org(request), issue_date__year=year,
+                            organization=request.organization, issue_date__year=year,
                         )
                         .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
                         .annotate(period=TruncMonth("issue_date"))
@@ -393,7 +392,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                     )
                     pmt_qs = (
                         Payment.objects.filter(
-                            organization=_org(request), date__year=year,
+                            organization=request.organization, date__year=year,
                         )
                         .annotate(period=TruncMonth("date"))
                         .values("period")
@@ -442,7 +441,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
         _zero = Decimal("0.00")
         _dec = DecimalField(max_digits=14, decimal_places=2)
 
-        customers = Customer.objects.filter(organization=_org(request)).order_by("name")
+        customers = Customer.objects.filter(organization=request.organization).order_by("name")
         customer_id   = request.GET.get("customer",  "").strip()
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
@@ -454,13 +453,13 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
 
         if customer_id and date_from_str and date_to_str:
             try:
-                customer = get_object_or_404(Customer, pk=customer_id, organization=_org(request))
+                customer = get_object_or_404(Customer, pk=customer_id, organization=request.organization)
                 d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
                 d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
 
                 invoices = list(
                     Invoice.invoices.filter(
-                        organization=_org(request),
+                        organization=request.organization,
                         customer=customer,
                         issue_date__gte=d_from,
                         issue_date__lte=d_to,
@@ -519,7 +518,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
 
                 payments = list(
                     Payment.objects.filter(
-                        organization=_org(request), date__gte=d_from, date__lte=d_to,
+                        organization=request.organization, date__gte=d_from, date__lte=d_to,
                     )
                     .select_related("customer")
                     .order_by("date", "customer__name")
@@ -529,7 +528,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
                 by_method = [
                     {**r, "method_display": method_labels.get(r["method"], r["method"])}
                     for r in Payment.objects.filter(
-                        organization=_org(request), date__gte=d_from, date__lte=d_to,
+                        organization=request.organization, date__gte=d_from, date__lte=d_to,
                     )
                     .values("method")
                     .annotate(count=Count("id"), total=Coalesce(Sum("amount"), _zero, output_field=_dec))
@@ -582,7 +581,7 @@ class ReportITBISView(ERPBaseViewMixin, View):
 
                 qs = (
                     InvoiceItem.objects.filter(
-                        invoice__organization=_org(request),
+                        invoice__organization=request.organization,
                         invoice__doc_type=Invoice.DocType.INVOICE,
                         invoice__deleted_at__isnull=True,
                         invoice__issue_date__year=year,
@@ -676,7 +675,7 @@ class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
                 ncf_labels = dict(NCFType.choices)
                 raw = (
                     Invoice.invoices.filter(
-                        organization=_org(request),
+                        organization=request.organization,
                         issue_date__year=year,
                         issue_date__month=month,
                     )

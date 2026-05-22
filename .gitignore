@@ -28,3 +28,12 @@ db.sqlite3
 # OS
 .DS_Store
 Thumbs.db
+
+# Accidental pip install artifacts
+=*
+
+# Skills
+sabsys-feature.skill
+sabsys-feature/
+sabsys-review/
+sabsys-test/

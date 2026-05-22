@@ -5,10 +5,6 @@ from django.db.models import Count, Prefetch, Q
 from ..models import Customer, CustomerDepartment
 
 
-def _org(request):
-    return request.organization
-
-
 # Escape characters that could break out of a <script> block.
 # json.dumps() does NOT escape < > & by default, so a value like
 # "</script><script>alert(1)" would close the tag and execute arbitrary JS.
@@ -46,7 +42,7 @@ def _customer_defaults_json(request) -> str:
     payment_condition automatically when the user changes the customer select.
     """
     qs = Customer.objects.filter(
-        organization=_org(request),
+        organization=request.organization,
     ).select_related("payment_term")
     return _html_safe_json(
         {

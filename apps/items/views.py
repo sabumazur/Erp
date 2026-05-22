@@ -74,6 +74,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx.update(self.apply_datatable(f.qs))
         ctx["filter"] = f
         ctx["form"]   = ItemForm()
+        ctx["module"]              = "item"
         ctx["create_url"]          = reverse("items:item_list")
         ctx["submit_label"]        = _("Crear")
         ctx["breadcrumbs"]         = [
@@ -127,6 +128,7 @@ class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
     def get(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=request.organization)
         return render(request, self.template_name, self.get_context(
+            module="item",
             item=item,
             history_records=self.get_history(item),
             breadcrumbs=[
@@ -156,6 +158,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
             })
 
         return render(request, "items/item_form.html", self.get_context(
+            module="item",
             form=form, item=item, action="edit",
             breadcrumbs=[
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -189,6 +192,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
             return resp
 
         return render(request, "items/item_form.html", self.get_context(
+            module="item",
             form=form, item=item, action="edit",
             breadcrumbs=[
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

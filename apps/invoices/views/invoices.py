@@ -23,7 +23,7 @@ from ..forms import (
 from ..models import Invoice, InvoiceItem, NCFSequence, Payment
 from ..email import send_invoice_email, _signature_url
 from ..services import NCFService, PaymentService
-from ._helpers import _org, _customer_defaults_json
+from ._helpers import _customer_defaults_json
 
 
 class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -53,7 +53,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = _org(self.request)
+        org = self.request.organization
         qs = Invoice.invoices.filter(organization=org).select_related("customer")
         q = self.request.GET.get("q", "").strip()
         if q:
@@ -62,32 +62,34 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
-        today = date.today()
-        agg = Invoice.invoices.filter(organization=org).aggregate(
-            total_count=Count("id"),
-            pending_count=Count("id", filter=Q(status__in=[
-                Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE,
-            ])),
-            overdue_count=Count("id", filter=Q(status=Invoice.Status.OVERDUE)),
-            paid_month=Sum("total", filter=Q(
-                status=Invoice.Status.PAID,
-                issue_date__month=today.month,
-                issue_date__year=today.year,
-            )),
-        )
-        paid_total = agg["paid_month"] or Decimal("0.00")
-        ctx["stats"] = [
-            {"label": _("Total facturas"),      "value": agg["total_count"],
-             "icon": "bi-receipt",              "color": "primary"},
-            {"label": _("Pendientes de cobro"), "value": agg["pending_count"],
-             "icon": "bi-hourglass-split",      "color": "info"},
-            {"label": _("Vencidas"),            "value": agg["overdue_count"],
-             "icon": "bi-exclamation-circle",   "color": "danger",
-             "trend": _("requieren atención") if agg["overdue_count"] else None,
-             "trend_up": False if agg["overdue_count"] else None},
-            {"label": _("Cobrado este mes"),    "value": f"RD$ {paid_total:,.2f}",
-             "icon": "bi-cash-coin",            "color": "success"},
-        ]
+        if not self.request.htmx:
+            today = date.today()
+            agg = Invoice.invoices.filter(organization=org).aggregate(
+                total_count=Count("id"),
+                pending_count=Count("id", filter=Q(status__in=[
+                    Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE,
+                ])),
+                overdue_count=Count("id", filter=Q(status=Invoice.Status.OVERDUE)),
+                paid_month=Sum("total", filter=Q(
+                    status=Invoice.Status.PAID,
+                    issue_date__month=today.month,
+                    issue_date__year=today.year,
+                )),
+            )
+            paid_total = agg["paid_month"] or Decimal("0.00")
+            ctx["stats"] = [
+                {"label": _("Total facturas"),      "value": agg["total_count"],
+                 "icon": "bi-receipt",              "color": "primary"},
+                {"label": _("Pendientes de cobro"), "value": agg["pending_count"],
+                 "icon": "bi-hourglass-split",      "color": "info"},
+                {"label": _("Vencidas"),            "value": agg["overdue_count"],
+                 "icon": "bi-exclamation-circle",   "color": "danger",
+                 "trend": _("requieren atención") if agg["overdue_count"] else None,
+                 "trend_up": False if agg["overdue_count"] else None},
+                {"label": _("Cobrado este mes"),    "value": f"RD$ {paid_total:,.2f}",
+                 "icon": "bi-cash-coin",            "color": "success"},
+            ]
+        ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Facturas")},
@@ -104,7 +106,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         return get_object_or_404(
             Invoice.objects.select_related("customer", "organization", "encf_modified"),
             pk=self.kwargs["pk"],
-            organization=_org(self.request),
+            organization=self.request.organization,
         )
 
     def get_context_data(self, **kwargs):
@@ -118,6 +120,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
             else None
         )
         invoice = self.object
+        ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
@@ -133,9 +136,10 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", InvoiceForm(organization=_org(self.request)))
+        ctx.setdefault("form", InvoiceForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
@@ -144,11 +148,11 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        form = InvoiceForm(organization=_org(request), data=request.POST)
+        form = InvoiceForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
             invoice = form.save(commit=False)
-            invoice.organization = _org(request)
+            invoice.organization = request.organization
             invoice.doc_type = Invoice.DocType.INVOICE
             invoice.save()
             formset.instance = invoice
@@ -166,7 +170,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_invoice(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         if not invoice.is_editable:
             messages.error(
                 request,
@@ -181,7 +185,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         ctx = self.get_context_data(
-            form=InvoiceForm(organization=_org(request), instance=invoice),
+            form=InvoiceForm(organization=request.organization, instance=invoice),
             formset=InvoiceItemFormSet(instance=invoice),
             invoice=invoice,
         )
@@ -191,7 +195,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         invoice, redir = self._get_invoice(request, pk)
         if redir:
             return redir
-        form = InvoiceForm(organization=_org(request), data=request.POST, instance=invoice)
+        form = InvoiceForm(organization=request.organization, data=request.POST, instance=invoice)
         formset = InvoiceItemFormSet(request.POST, instance=invoice)
         if form.is_valid() and formset.is_valid():
             form.save()
@@ -203,9 +207,10 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", InvoiceForm(organization=_org(self.request)))
+        ctx.setdefault("form", InvoiceForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "invoice"
         invoice = kwargs.get("invoice")
         if invoice:
             ctx["breadcrumbs"] = [
@@ -227,7 +232,7 @@ class InvoiceConfirmView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         try:
             NCFService.confirm(invoice)
             messages.success(request, _(f"Factura confirmada. e-NCF asignado: {invoice.encf}"))
@@ -240,7 +245,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         try:
             NCFService.mark_sent(invoice)
             messages.success(request, _("Factura marcada como enviada."))
@@ -262,7 +267,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         form = PaymentForm(request.POST)
         if not form.is_valid():
             messages.error(request, _("Por favor corrija los errores en el formulario de pago."))
@@ -271,7 +276,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
         cd = form.cleaned_data
         try:
             PaymentService.register(
-                organization=_org(request),
+                organization=request.organization,
                 customer=invoice.customer,
                 payment_date=cd["date"],
                 method=cd["method"],
@@ -290,7 +295,7 @@ class InvoiceCancelView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         try:
             NCFService.cancel(invoice)
             messages.success(
@@ -308,7 +313,7 @@ class InvoiceDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
         if invoice.status != Invoice.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar documentos en estado Borrador."))
             return redirect("invoices:invoice_detail", pk=invoice.pk)
@@ -325,7 +330,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_original(self, request, pk):
-        return get_object_or_404(Invoice, pk=pk, organization=_org(request))
+        return get_object_or_404(Invoice, pk=pk, organization=request.organization)
 
     def get(self, request, pk):
         original = self._get_original(request, pk)
@@ -340,7 +345,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         formset = InvoiceItemFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
             note = form.save(commit=False)
-            note.organization = _org(request)
+            note.organization = request.organization
             note.customer = original.customer
             note.encf_modified = original
             note.doc_type = Invoice.DocType.INVOICE
@@ -357,6 +362,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", CreditNoteForm())
         ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx["module"] = "invoice"
         original = kwargs.get("original")
         if original:
             ctx["breadcrumbs"] = [
@@ -380,7 +386,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
     def get(self, request, pk):
         invoice = get_object_or_404(
             Invoice.objects.select_related("customer", "organization"),
-            pk=pk, organization=_org(request),
+            pk=pk, organization=request.organization,
         )
         if invoice.status == Invoice.Status.DRAFT:
             messages.warning(request, _("El PDF solo está disponible para documentos confirmados."))
@@ -419,7 +425,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
     def get(self, request, pk):
         invoice = get_object_or_404(
             Invoice.objects.select_related("customer", "organization"),
-            pk=pk, organization=_org(request), doc_type=Invoice.DocType.INVOICE,
+            pk=pk, organization=request.organization, doc_type=Invoice.DocType.INVOICE,
         )
         return render(
             request, "invoices/invoice_print.html",
@@ -441,7 +447,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
     admin_required = True
 
     def _sequences(self, request):
-        return NCFSequence.objects.filter(organization=_org(request)).order_by("ncf_type")
+        return NCFSequence.objects.filter(organization=request.organization).order_by("ncf_type")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -457,7 +463,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
         form = NCFSequenceForm(request.POST)
         if form.is_valid():
             seq = form.save(commit=False)
-            seq.organization = _org(request)
+            seq.organization = request.organization
             seq.save()
             if request.htmx:
                 resp = render(
@@ -494,7 +500,7 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
     success_url = reverse_lazy("invoices:ncf_sequences")
 
     def get_object(self):
-        return get_object_or_404(NCFSequence, pk=self.kwargs["pk"], organization=_org(self.request))
+        return get_object_or_404(NCFSequence, pk=self.kwargs["pk"], organization=self.request.organization)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -515,7 +521,7 @@ class NCFSequenceDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        seq = get_object_or_404(NCFSequence, pk=pk, organization=_org(request))
+        seq = get_object_or_404(NCFSequence, pk=pk, organization=request.organization)
         label = seq.get_ncf_type_display()
         seq.delete()
         messages.success(request, _(f"Secuencia NCF «{label}» eliminada."))

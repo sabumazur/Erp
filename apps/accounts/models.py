@@ -45,6 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin, ERPBaseModel):
     REQUIRED_FIELDS = []
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = _("usuario")
         verbose_name_plural = _("usuarios")
 
@@ -82,6 +83,7 @@ class Organization(ERPBaseModel):
     country = models.CharField(max_length=100, blank=True, verbose_name=_("país"))
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = _("organización")
         verbose_name_plural = _("organizaciones")
 
@@ -104,6 +106,7 @@ class Team(ERPBaseModel):
     )
 
     class Meta:
+        ordering = ["-created_at"]
         # FIX: partial index instead of unique_together so soft-deleted teams
         # don't block re-creating a team with the same name in the same org.
         constraints = [
@@ -146,6 +149,7 @@ class Membership(ERPBaseModel):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
 
     class Meta:
+        ordering = ["-created_at"]
         # FIX: partial index so a re-invited user (after soft-delete) is allowed.
         constraints = [
             models.UniqueConstraint(
@@ -180,6 +184,7 @@ class Invitation(ERPBaseModel):
     accepted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
                 fields=["email", "organization"],

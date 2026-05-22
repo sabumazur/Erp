@@ -1,18 +1,15 @@
-from django.utils.deprecation import MiddlewareMixin
-from .models import Organization, Membership
+from .models import Membership
 
 
-class OrganizationMiddleware(MiddlewareMixin):
-    """
-    Attaches request.organization and request.membership on every
-    authenticated request.
+class OrganizationMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-    Resolution order:
-    1. session["active_org_slug"]
-    2. first membership (by created_at)
-    """
+    def __call__(self, request):
+        self._resolve_org(request)
+        return self.get_response(request)
 
-    def process_request(self, request):
+    def _resolve_org(self, request):
         request.organization = None
         request.membership = None
 

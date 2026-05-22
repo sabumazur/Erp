@@ -15,7 +15,7 @@ from ..forms import QuotationForm, InvoiceItemFormSet
 from ..models import Invoice, NCFType
 from ..email import send_quotation_email, _signature_url
 from ..services import QuotationService
-from ._helpers import _org, _customer_defaults_json
+from ._helpers import _customer_defaults_json
 
 
 class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -45,7 +45,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = _org(self.request)
+        org = self.request.organization
         qs = Invoice.quotations.filter(organization=org).select_related("customer")
         q = self.request.GET.get("q", "").strip()
         if q:
@@ -54,22 +54,24 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
-        agg = Invoice.quotations.filter(organization=org).aggregate(
-            total_count=Count("id"),
-            draft_count=Count("id", filter=Q(status=Invoice.Status.DRAFT)),
-            sent_count=Count("id", filter=Q(status=Invoice.Status.SENT)),
-            accepted_count=Count("id", filter=Q(status=Invoice.Status.ACCEPTED)),
-        )
-        ctx["stats"] = [
-            {"label": _("Total cotizaciones"), "value": agg["total_count"],
-             "icon": "bi-file-text",           "color": "primary"},
-            {"label": _("Borradores"),          "value": agg["draft_count"],
-             "icon": "bi-pencil-square",        "color": "secondary"},
-            {"label": _("Enviadas"),            "value": agg["sent_count"],
-             "icon": "bi-send",                 "color": "info"},
-            {"label": _("Aceptadas"),           "value": agg["accepted_count"],
-             "icon": "bi-check-circle",         "color": "success"},
-        ]
+        if not self.request.htmx:
+            agg = Invoice.quotations.filter(organization=org).aggregate(
+                total_count=Count("id"),
+                draft_count=Count("id", filter=Q(status=Invoice.Status.DRAFT)),
+                sent_count=Count("id", filter=Q(status=Invoice.Status.SENT)),
+                accepted_count=Count("id", filter=Q(status=Invoice.Status.ACCEPTED)),
+            )
+            ctx["stats"] = [
+                {"label": _("Total cotizaciones"), "value": agg["total_count"],
+                 "icon": "bi-file-text",           "color": "primary"},
+                {"label": _("Borradores"),          "value": agg["draft_count"],
+                 "icon": "bi-pencil-square",        "color": "secondary"},
+                {"label": _("Enviadas"),            "value": agg["sent_count"],
+                 "icon": "bi-send",                 "color": "info"},
+                {"label": _("Aceptadas"),           "value": agg["accepted_count"],
+                 "icon": "bi-check-circle",         "color": "success"},
+            ]
+        ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Cotizaciones")},
@@ -83,9 +85,10 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", QuotationForm(organization=_org(self.request)))
+        ctx.setdefault("form", QuotationForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
@@ -94,11 +97,11 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        form = QuotationForm(organization=_org(request), data=request.POST)
+        form = QuotationForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
             quotation = form.save(commit=False)
-            quotation.organization = _org(request)
+            quotation.organization = request.organization
             quotation.doc_type = Invoice.DocType.QUOTATION
             quotation.save()
             formset.instance = quotation
@@ -120,13 +123,14 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         return get_object_or_404(
             Invoice.quotations.select_related("customer", "organization"),
             pk=self.kwargs["pk"],
-            organization=_org(self.request),
+            organization=self.request.organization,
         )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.all()
         ctx["ncf_type_choices"] = NCFType.choices
+        ctx["module"] = "quotation"
         q = self.object
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -142,7 +146,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_quotation(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         if not q.is_editable:
             messages.error(request, _("Solo se pueden editar cotizaciones en Borrador."))
             return None, redirect("invoices:quotation_detail", pk=q.pk)
@@ -153,7 +157,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         ctx = self.get_context_data(
-            form=QuotationForm(organization=_org(request), instance=q),
+            form=QuotationForm(organization=request.organization, instance=q),
             formset=InvoiceItemFormSet(instance=q),
             quotation=q,
         )
@@ -163,7 +167,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         q, redir = self._get_quotation(request, pk)
         if redir:
             return redir
-        form = QuotationForm(organization=_org(request), data=request.POST, instance=q)
+        form = QuotationForm(organization=request.organization, data=request.POST, instance=q)
         formset = InvoiceItemFormSet(request.POST, instance=q)
         if form.is_valid() and formset.is_valid():
             form.save()
@@ -175,9 +179,10 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", QuotationForm(organization=_org(self.request)))
+        ctx.setdefault("form", QuotationForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "quotation"
         q = kwargs.get("quotation")
         if q:
             ctx["breadcrumbs"] = [
@@ -199,7 +204,7 @@ class QuotationConfirmView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         try:
             QuotationService.confirm(q)
             messages.success(request, _(f"Cotización confirmada: {q.doc_number}"))
@@ -212,7 +217,7 @@ class QuotationSendView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         try:
             QuotationService.send(q)
             messages.success(request, _("Cotización marcada como enviada."))
@@ -234,7 +239,7 @@ class QuotationAcceptView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         try:
             QuotationService.accept(q)
             messages.success(request, _("Cotización marcada como aceptada."))
@@ -247,7 +252,7 @@ class QuotationRejectView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         try:
             QuotationService.reject(q)
             messages.success(request, _("Cotización marcada como rechazada."))
@@ -260,7 +265,7 @@ class QuotationConvertView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         ncf_type = request.POST.get("ncf_type")
         if not ncf_type:
             messages.error(request, _("Debe seleccionar el tipo de comprobante fiscal."))
@@ -278,7 +283,7 @@ class QuotationDeleteView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        q = get_object_or_404(Invoice.quotations, pk=pk, organization=_org(request))
+        q = get_object_or_404(Invoice.quotations, pk=pk, organization=request.organization)
         if q.status != Invoice.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar cotizaciones en Borrador."))
             return redirect("invoices:quotation_detail", pk=q.pk)
@@ -293,7 +298,7 @@ class QuotationPrintView(ERPBaseViewMixin, View):
     def get(self, request, pk):
         quotation = get_object_or_404(
             Invoice.objects.select_related("customer", "organization"),
-            pk=pk, organization=_org(request), doc_type=Invoice.DocType.QUOTATION,
+            pk=pk, organization=request.organization, doc_type=Invoice.DocType.QUOTATION,
         )
         return render(
             request, "invoices/quotation_print.html",

@@ -153,6 +153,7 @@ class Customer(ERPBaseModel):
     )
 
     class Meta(ERPBaseModel.Meta):
+        ordering = ["-created_at"]
         verbose_name = _("cliente")
         verbose_name_plural = _("clientes")
         indexes = [
@@ -751,6 +752,7 @@ class Invoice(ERPBaseModel):
     sale_orders = SaleOrderManager()  # doc_type=SALE_ORDER
 
     class Meta(ERPBaseModel.Meta):
+        ordering = ["-created_at"]
         verbose_name = _("documento")
         verbose_name_plural = _("documentos")
         indexes = [

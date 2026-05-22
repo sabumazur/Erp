@@ -17,7 +17,7 @@
     <ul class="sidebar-nav mt-2">
       <li>
         <a href="{% url 'accounts:dashboard' %}"
-           class="sidebar-nav-link {% if request.path == '/' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'accounts:dashboard' %}">
           <i class="bi bi-speedometer2"></i>
           <span>{% trans "Dashboard" %}</span>
         </a>
@@ -31,42 +31,42 @@
     <ul class="sidebar-nav">
       <li>
         <a href="{% url 'invoices:quotation_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/quotations/' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:quotation_list' 'invoices:quotation_create' 'invoices:quotation_detail' 'invoices:quotation_edit' %}">
           <i class="bi bi-file-earmark-text"></i>
           <span>{% trans "Cotizaciones" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:sale_order_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/sale-orders/' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:sale_order_list' 'invoices:sale_order_create' 'invoices:sale_order_detail' 'invoices:sale_order_edit' 'invoices:sale_order_consolidate' %}">
           <i class="bi bi-box-seam"></i>
           <span>{% trans "Órdenes de venta" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:invoice_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/invoices/' and 'customers' not in request.path and 'ncf' not in request.path and 'reports' not in request.path and 'payment-terms' not in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:invoice_list' 'invoices:invoice_create' 'invoices:invoice_detail' 'invoices:invoice_edit' 'invoices:credit_note_create' %}">
           <i class="bi bi-receipt-cutoff"></i>
           <span>{% trans "Facturas" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:payment_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/payments/' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:payment_list' 'invoices:payment_create' 'invoices:payment_detail' %}">
           <i class="bi bi-cash-stack"></i>
           <span>{% trans "Pagos" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:customer_list' %}"
-           class="sidebar-nav-link {% if 'invoices/customers' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:customer_list' 'invoices:customer_detail' 'invoices:customer_edit' %}">
           <i class="bi bi-person-lines-fill"></i>
           <span>{% trans "Clientes" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'items:item_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/items/' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'items:item_list' 'items:item_detail' 'items:item_edit' %}">
           <i class="bi bi-box-seam-fill"></i>
           <span>{% trans "Artículos" %}</span>
         </a>
@@ -74,21 +74,21 @@
       {% if membership.is_admin %}
       <li>
         <a href="{% url 'invoices:ncf_sequences' %}"
-           class="sidebar-nav-link {% if 'invoices/ncf' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:ncf_sequences' 'invoices:ncf_sequence_edit' %}">
           <i class="bi bi-hash"></i>
           <span>{% trans "Secuencias NCF" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:payment_term_list' %}"
-           class="sidebar-nav-link {% if 'invoices/payment-terms' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:payment_term_list' 'invoices:payment_term_edit' %}">
           <i class="bi bi-calendar-check"></i>
           <span>{% trans "Términos de pago" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'invoices:reports' %}"
-           class="sidebar-nav-link {% if 'invoices/reports' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'invoices:reports' 'invoices:report_607' 'invoices:report_608' 'invoices:report_aging' 'invoices:report_statement' 'invoices:report_sales_period' 'invoices:report_invoices_by_customer' 'invoices:report_collections' 'invoices:report_itbis' 'invoices:report_ncf_type' %}">
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span>{% trans "Reportes" %}</span>
         </a>
@@ -101,37 +101,37 @@
     <div class="sidebar-section-label">{% trans "Próximamente" %}</div>
     <ul class="sidebar-nav">
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-bag-fill"></i>
           <span>{% trans "Ventas" %}</span>
         </span>
       </li>
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-boxes"></i>
           <span>{% trans "Inventario" %}</span>
         </span>
       </li>
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-cart-fill"></i>
           <span>{% trans "Compras" %}</span>
         </span>
       </li>
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-calculator-fill"></i>
           <span>{% trans "Contabilidad" %}</span>
         </span>
       </li>
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-person-vcard-fill"></i>
           <span>{% trans "Recursos Humanos" %}</span>
         </span>
       </li>
       <li>
-        <span class="sidebar-nav-link" style="opacity:.4;cursor:default">
+        <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-kanban-fill"></i>
           <span>{% trans "Proyectos" %}</span>
         </span>
@@ -144,21 +144,21 @@
     <ul class="sidebar-nav">
       <li>
         <a href="{% url 'accounts:members' %}"
-           class="sidebar-nav-link {% if 'org/members' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'accounts:members' 'accounts:member_role' 'accounts:member_remove' 'accounts:invite_member' %}">
           <i class="bi bi-person-lines-fill"></i>
           <span>{% trans "Miembros" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'accounts:teams' %}"
-           class="sidebar-nav-link {% if 'org/teams' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'accounts:teams' 'accounts:team_edit' %}">
           <i class="bi bi-people-fill"></i>
           <span>{% trans "Equipos" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'accounts:org_settings' %}"
-           class="sidebar-nav-link {% if 'org/settings' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'accounts:org_settings' %}">
           <i class="bi bi-gear"></i>
           <span>{% trans "Configuración" %}</span>
         </a>
@@ -171,14 +171,14 @@
     <ul class="sidebar-nav">
       <li>
         <a href="{% url 'accounts:create_org' %}"
-           class="sidebar-nav-link {% if 'org/create' in request.path %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'accounts:create_org' %}">
           <i class="bi bi-building-add"></i>
           <span>{% trans "Nueva organización" %}</span>
         </a>
       </li>
       <li>
         <a href="{% url 'core:module_list' %}"
-           class="sidebar-nav-link {% if request.path|startswith:'/core/modules' %}active{% endif %}">
+           class="sidebar-nav-link {% nav_active 'core:module_list' 'core:module_detail' 'core:module_edit' %}">
           <i class="bi bi-grid"></i>
           <span>{% trans "Módulos" %}</span>
         </a>

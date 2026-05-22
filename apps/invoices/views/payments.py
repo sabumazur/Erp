@@ -18,7 +18,6 @@ from ..filters import PaymentFilter
 from ..forms import PaymentHeaderForm, PaymentForm
 from ..models import Invoice, Payment, PaymentAllocation
 from ..services import PaymentService
-from ._helpers import _org
 
 
 class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -48,7 +47,7 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = _org(self.request)
+        org = self.request.organization
         qs = (
             Payment.objects.filter(organization=org)
             .select_related("customer")
@@ -61,29 +60,31 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
-        today = date.today()
-        agg = Payment.objects.filter(organization=org).aggregate(
-            total_count=Count("id"),
-            total_amount=Sum("amount"),
-            month_count=Count("id", filter=Q(
-                date__month=today.month, date__year=today.year,
-            )),
-            month_amount=Sum("amount", filter=Q(
-                date__month=today.month, date__year=today.year,
-            )),
-        )
-        total_amount = agg["total_amount"] or Decimal("0.00")
-        month_amount = agg["month_amount"] or Decimal("0.00")
-        ctx["stats"] = [
-            {"label": _("Total pagos"),       "value": agg["total_count"],
-             "icon": "bi-cash-stack",         "color": "primary"},
-            {"label": _("Monto total"),        "value": f"RD$ {total_amount:,.2f}",
-             "icon": "bi-wallet2",             "color": "success"},
-            {"label": _("Pagos este mes"),     "value": agg["month_count"],
-             "icon": "bi-calendar-check",      "color": "info"},
-            {"label": _("Cobrado este mes"),   "value": f"RD$ {month_amount:,.2f}",
-             "icon": "bi-graph-up-arrow",      "color": "warning"},
-        ]
+        if not self.request.htmx:
+            today = date.today()
+            agg = Payment.objects.filter(organization=org).aggregate(
+                total_count=Count("id"),
+                total_amount=Sum("amount"),
+                month_count=Count("id", filter=Q(
+                    date__month=today.month, date__year=today.year,
+                )),
+                month_amount=Sum("amount", filter=Q(
+                    date__month=today.month, date__year=today.year,
+                )),
+            )
+            total_amount = agg["total_amount"] or Decimal("0.00")
+            month_amount = agg["month_amount"] or Decimal("0.00")
+            ctx["stats"] = [
+                {"label": _("Total pagos"),       "value": agg["total_count"],
+                 "icon": "bi-cash-stack",         "color": "primary"},
+                {"label": _("Monto total"),        "value": f"RD$ {total_amount:,.2f}",
+                 "icon": "bi-wallet2",             "color": "success"},
+                {"label": _("Pagos este mes"),     "value": agg["month_count"],
+                 "icon": "bi-calendar-check",      "color": "info"},
+                {"label": _("Cobrado este mes"),   "value": f"RD$ {month_amount:,.2f}",
+                 "icon": "bi-graph-up-arrow",      "color": "warning"},
+            ]
+        ctx["module"] = "payment"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Pagos")},
@@ -97,6 +98,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
     def _ctx(self, request, form):
         return {
             **self.get_context(
+                module="payment",
                 form=form,
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -107,11 +109,11 @@ class PaymentCreateView(ERPBaseViewMixin, View):
         }
 
     def get(self, request):
-        form = PaymentHeaderForm(organization=_org(request), initial={"date": date.today()})
+        form = PaymentHeaderForm(organization=request.organization, initial={"date": date.today()})
         return render(request, "invoices/payment_form.html", self._ctx(request, form))
 
     def post(self, request):
-        form = PaymentHeaderForm(organization=_org(request), data=request.POST)
+        form = PaymentHeaderForm(organization=request.organization, data=request.POST)
 
         if not form.is_valid():
             return render(request, "invoices/payment_form.html", self._ctx(request, form))
@@ -128,7 +130,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
             if amt <= Decimal("0"):
                 continue
             try:
-                inv = Invoice.invoices.get(pk=pk_str, organization=_org(request))
+                inv = Invoice.invoices.get(pk=pk_str, organization=request.organization)
             except Invoice.DoesNotExist:
                 continue
             allocations.append({"invoice": inv, "amount": amt})
@@ -139,7 +141,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
 
         try:
             payment = PaymentService.register(
-                organization=_org(request),
+                organization=request.organization,
                 customer=form.cleaned_data["customer"],
                 payment_date=form.cleaned_data["date"],
                 method=form.cleaned_data["method"],
@@ -160,12 +162,13 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
     def get(self, request, pk):
         payment = get_object_or_404(
             Payment.objects.select_related("customer", "organization").prefetch_related("allocations__invoice"),
-            pk=pk, organization=_org(request),
+            pk=pk, organization=request.organization,
         )
         return render(
             request, "invoices/payment_detail.html",
             {
                 **self.get_context(
+                    module="payment",
                     payment=payment,
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -183,7 +186,7 @@ class PaymentDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        payment = get_object_or_404(Payment, pk=pk, organization=_org(request))
+        payment = get_object_or_404(Payment, pk=pk, organization=request.organization)
         try:
             PaymentService.delete(payment)
             messages.success(request, _("Pago eliminado y facturas reabiertas."))
@@ -203,7 +206,7 @@ class OutstandingInvoicesView(ERPBaseViewMixin, View):
             _dec = DecimalField(max_digits=14, decimal_places=2)
             qs = (
                 Invoice.invoices.filter(
-                    organization=_org(request),
+                    organization=request.organization,
                     customer_id=customer_id,
                     status__in=[
                         Invoice.Status.CONFIRMED,

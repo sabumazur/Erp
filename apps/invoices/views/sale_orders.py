@@ -17,7 +17,7 @@ from ..forms import SaleOrderForm, InvoiceItemFormSet, SaleOrderDeliverForm, Con
 from ..models import Invoice, InvoiceItem, CustomerDepartment
 from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
-from ._helpers import _org, _customer_defaults_json
+from ._helpers import _customer_defaults_json
 
 
 class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -48,7 +48,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        org = _org(self.request)
+        org = self.request.organization
         qs = (
             Invoice.sale_orders.filter(organization=org)
             .select_related("customer", "department")
@@ -60,24 +60,26 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
-        agg = Invoice.sale_orders.filter(organization=org).aggregate(
-            total_count=Count("id"),
-            pending_count=Count("id", filter=Q(status__in=[
-                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
-            ])),
-            delivered_count=Count("id", filter=Q(status=Invoice.Status.DELIVERED)),
-            invoiced_count=Count("id", filter=Q(status=Invoice.Status.INVOICED)),
-        )
-        ctx["stats"] = [
-            {"label": _("Total órdenes"),   "value": agg["total_count"],
-             "icon": "bi-cart3",            "color": "primary"},
-            {"label": _("Pendientes"),      "value": agg["pending_count"],
-             "icon": "bi-hourglass-split",  "color": "warning"},
-            {"label": _("Entregadas"),      "value": agg["delivered_count"],
-             "icon": "bi-truck",            "color": "info"},
-            {"label": _("Facturadas"),      "value": agg["invoiced_count"],
-             "icon": "bi-receipt-cutoff",   "color": "success"},
-        ]
+        if not self.request.htmx:
+            agg = Invoice.sale_orders.filter(organization=org).aggregate(
+                total_count=Count("id"),
+                pending_count=Count("id", filter=Q(status__in=[
+                    Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
+                ])),
+                delivered_count=Count("id", filter=Q(status=Invoice.Status.DELIVERED)),
+                invoiced_count=Count("id", filter=Q(status=Invoice.Status.INVOICED)),
+            )
+            ctx["stats"] = [
+                {"label": _("Total órdenes"),   "value": agg["total_count"],
+                 "icon": "bi-cart3",            "color": "primary"},
+                {"label": _("Pendientes"),      "value": agg["pending_count"],
+                 "icon": "bi-hourglass-split",  "color": "warning"},
+                {"label": _("Entregadas"),      "value": agg["delivered_count"],
+                 "icon": "bi-truck",            "color": "info"},
+                {"label": _("Facturadas"),      "value": agg["invoiced_count"],
+                 "icon": "bi-receipt-cutoff",   "color": "success"},
+            ]
+        ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Órdenes de venta")},
@@ -91,9 +93,10 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", SaleOrderForm(organization=_org(self.request)))
+        ctx.setdefault("form", SaleOrderForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
@@ -102,11 +105,11 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        form = SaleOrderForm(organization=_org(request), data=request.POST)
+        form = SaleOrderForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
             order = form.save(commit=False)
-            order.organization = _org(request)
+            order.organization = request.organization
             order.doc_type = Invoice.DocType.SALE_ORDER
             order.save()
             formset.instance = order
@@ -128,13 +131,14 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         return get_object_or_404(
             Invoice.sale_orders.select_related("customer", "organization", "consolidated_into", "department"),
             pk=self.kwargs["pk"],
-            organization=_org(self.request),
+            organization=self.request.organization,
         )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.all()
         ctx["deliver_form"] = SaleOrderDeliverForm()
+        ctx["module"] = "sale-order"
         o = self.object
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -150,7 +154,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_order(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         if not o.is_editable:
             messages.error(request, _("Solo se pueden editar órdenes en Borrador."))
             return None, redirect("invoices:sale_order_detail", pk=o.pk)
@@ -161,7 +165,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         ctx = self.get_context_data(
-            form=SaleOrderForm(organization=_org(request), instance=o),
+            form=SaleOrderForm(organization=request.organization, instance=o),
             formset=InvoiceItemFormSet(instance=o),
             order=o,
         )
@@ -171,7 +175,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         o, redir = self._get_order(request, pk)
         if redir:
             return redir
-        form = SaleOrderForm(organization=_org(request), data=request.POST, instance=o)
+        form = SaleOrderForm(organization=request.organization, data=request.POST, instance=o)
         formset = InvoiceItemFormSet(request.POST, instance=o)
         if form.is_valid() and formset.is_valid():
             form.save()
@@ -183,9 +187,10 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", SaleOrderForm(organization=_org(self.request)))
+        ctx.setdefault("form", SaleOrderForm(organization=self.request.organization))
         ctx.setdefault("formset", InvoiceItemFormSet())
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
+        ctx["module"] = "sale-order"
         o = kwargs.get("order")
         if o:
             ctx["breadcrumbs"] = [
@@ -207,7 +212,7 @@ class SaleOrderConfirmView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         try:
             SaleOrderService.confirm(o)
             messages.success(request, _(f"Orden confirmada: {o.doc_number}"))
@@ -220,7 +225,7 @@ class SaleOrderDeliverView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         form = SaleOrderDeliverForm(request.POST)
         if not form.is_valid():
             messages.error(request, _("Debe indicar el nombre de quien recibe la entrega."))
@@ -237,7 +242,7 @@ class SaleOrderCancelView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         try:
             SaleOrderService.cancel(o)
             messages.success(request, _("Orden de venta anulada."))
@@ -250,7 +255,7 @@ class SaleOrderDeleteView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         if o.status != Invoice.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar órdenes en Borrador."))
             return redirect("invoices:sale_order_detail", pk=o.pk)
@@ -263,7 +268,7 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=_org(request))
+        o = get_object_or_404(Invoice.sale_orders, pk=pk, organization=request.organization)
         try:
             sent = send_sale_order_email(o, request)
             if sent:
@@ -285,7 +290,8 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("form", ConsolidateForm(organization=_org(self.request)))
+        ctx.setdefault("form", ConsolidateForm(organization=self.request.organization))
+        ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
             {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
@@ -313,7 +319,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                 p_end = datetime.strptime(end, "%Y-%m-%d").date()
                 qs = (
                     Invoice.sale_orders.filter(
-                        organization=_org(request),
+                        organization=request.organization,
                         customer_id=customer_id,
                         status=Invoice.Status.DELIVERED,
                         consolidated_into__isnull=True,
@@ -336,7 +342,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
         )
 
     def post(self, request):
-        form = ConsolidateForm(organization=_org(request), data=request.POST)
+        form = ConsolidateForm(organization=request.organization, data=request.POST)
         if not form.is_valid():
             ctx = self.get_context_data()
             ctx["form"] = form
@@ -345,7 +351,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
         cd = form.cleaned_data
         try:
             invoice = SaleOrderService.consolidate_and_invoice(
-                organization=_org(request),
+                organization=request.organization,
                 customer=cd["customer"],
                 period_start=cd["period_start"],
                 period_end=cd["period_end"],
@@ -367,7 +373,7 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
     def post(self, request, pk):
         source = get_object_or_404(
             Invoice.objects.prefetch_related("items"),
-            pk=pk, organization=_org(request), doc_type=Invoice.DocType.SALE_ORDER,
+            pk=pk, organization=request.organization, doc_type=Invoice.DocType.SALE_ORDER,
         )
         new_order = Invoice.objects.create(
             organization=source.organization,
@@ -401,7 +407,7 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
     def get(self, request, pk):
         order = get_object_or_404(
             Invoice.objects.select_related("customer", "organization", "department"),
-            pk=pk, organization=_org(request), doc_type=Invoice.DocType.SALE_ORDER,
+            pk=pk, organization=request.organization, doc_type=Invoice.DocType.SALE_ORDER,
         )
         return render(
             request, "invoices/sale_order_print.html",
@@ -427,7 +433,7 @@ class CustomerDepartmentsView(ERPBaseViewMixin, View):
             departments = list(
                 CustomerDepartment.objects.filter(
                     customer_id=customer_id,
-                    organization=_org(request),
+                    organization=request.organization,
                     is_active=True,
                     deleted_at__isnull=True,
                 ).order_by("name")

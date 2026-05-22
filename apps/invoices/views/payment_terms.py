@@ -15,10 +15,6 @@ from ..forms import PaymentTermForm
 from ..models import PaymentTerm
 
 
-def _org(request):
-    return request.organization
-
-
 # ── List + Create ─────────────────────────────────────────────────────────────
 
 class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -40,7 +36,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     @classmethod
     def refresh_table(cls, request, msg, msg_type="success"):
-        qs = PaymentTerm.objects.filter(organization=_org(request))
+        qs = PaymentTerm.objects.filter(organization=request.organization)
         f = PaymentTermFilter(request.GET, queryset=qs)
         ctx = build_datatable_context(
             request, f.qs, cls.dt_columns,
@@ -61,7 +57,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        qs = PaymentTerm.objects.filter(organization=_org(self.request))
+        qs = PaymentTerm.objects.filter(organization=self.request.organization)
         f  = PaymentTermFilter(self.request.GET, queryset=qs)
         ctx.update(self.apply_datatable(f.qs))
         ctx["filter"]       = f
@@ -84,7 +80,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         form = PaymentTermForm(request.POST)
         if form.is_valid():
             term = form.save(commit=False)
-            term.organization = _org(request)
+            term.organization = request.organization
             term.save()
             if request.htmx:
                 return PaymentTermListView.refresh_table(
@@ -115,7 +111,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
     admin_required = True
 
     def get(self, request, pk):
-        term = get_object_or_404(PaymentTerm, pk=pk, organization=_org(request))
+        term = get_object_or_404(PaymentTerm, pk=pk, organization=request.organization)
         form = PaymentTermForm(instance=term)
 
         if request.htmx:
@@ -136,7 +132,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
         return render(request, "invoices/payment_term_form.html", ctx)
 
     def post(self, request, pk):
-        term = get_object_or_404(PaymentTerm, pk=pk, organization=_org(request))
+        term = get_object_or_404(PaymentTerm, pk=pk, organization=request.organization)
         form = PaymentTermForm(request.POST, instance=term)
 
         if form.is_valid():
@@ -176,7 +172,7 @@ class PaymentTermDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        term = get_object_or_404(PaymentTerm, pk=pk, organization=_org(request))
+        term = get_object_or_404(PaymentTerm, pk=pk, organization=request.organization)
         name = term.name
 
         customers_using = term.customer_set.count()
