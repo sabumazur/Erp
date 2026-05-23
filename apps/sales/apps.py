@@ -1,10 +1,10 @@
 from django.apps import AppConfig
 
 
-class InvoicesConfig(AppConfig):
+class SalesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.invoices"
-    label = "invoices"
+    name = "apps.sales"
+    label = "sales"
 
     def ready(self):
-        import apps.invoices.signals  # noqa: F401
+        import apps.sales.signals  # noqa: F401

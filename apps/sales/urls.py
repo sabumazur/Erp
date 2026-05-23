@@ -84,7 +84,7 @@ from .views import (
     ReportSalesByNCFTypeView,
 )
 
-app_name = "invoices"
+app_name = "sales"
 
 urlpatterns = [
     # ── Customers ─────────────────────────────────────────────────────────────
