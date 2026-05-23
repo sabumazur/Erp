@@ -72,6 +72,7 @@ MyModel.objects.for_org(request.organization)
 - `Membership.Role` hierarchy: `OWNER` > `ADMIN` > `MEMBER` > `VIEWER`. `membership.is_admin` returns `True` for OWNER and ADMIN.
 - `Team.modules` (M2M to `core.Module`) gates module access. Empty `modules` = unrestricted.
 - **Org creation restricted to `is_staff`.** `CreateOrganizationView` checks `is_staff` in `dispatch`; non-staff see no "Crear organización" in navbar. Uses `StaffCreateOrganizationForm`.
+- **Account adapter** (`apps/accounts/adapter.py`) — `AccountAdapter(DefaultAccountAdapter)` suppresses allauth's built-in login/logout flash messages (`account/messages/logged_in.txt`, `account/messages/logged_out.txt`). Wired via `ACCOUNT_ADAPTER = "apps.accounts.adapter.AccountAdapter"` in settings.
 
 ### View base class
 
@@ -195,6 +196,40 @@ Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required
 | `PaymentTermListView` | `sales:payment_term_list` | Datatable list + inline create |
 | `PaymentTermUpdateView` | `sales:payment_term_edit` | HTMX modal edit |
 | `PaymentTermDeleteView` | `sales:payment_term_delete` | Delete (blocked if customers reference term) |
+
+### Customer departments (`apps/sales/views/customers.py`)
+
+`CustomerDepartment` — org-scoped sub-entity of `Customer` (name, is_active). Used to tag sale orders for departmental billing. Managed from the customer detail page via HTMX modals.
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `CustomerDepartmentCreateView` | `sales:department_create` | HTMX inline create |
+| `CustomerDepartmentUpdateView` | `sales:department_edit` | HTMX modal edit |
+| `CustomerDepartmentToggleView` | `sales:department_toggle` | Toggle `is_active` |
+| `CustomerDepartmentDeleteView` | `sales:department_delete` | Delete (blocked if sale order references it) |
+| `CustomerDepartmentsView` | `sales:departments_for_customer` | HTMX partial — dropdown options for a customer |
+
+### Document email (`apps/sales/email.py`)
+
+Sends HTML emails with inline org logo (base64 data URI, no external fetch).
+
+- `send_invoice_email(invoice, request)` — sends `sales/email/invoice_email.html` to customer email.
+- `send_quotation_email(quotation, request)` — sends `sales/email/quotation_email.html`; includes org logo + sender signature (also base64 if `user.signature` set).
+- `QuotationEmailView` (`sales:quotation_email`) — POST-only; triggers `send_quotation_email` and redirects with success/error message.
+
+Email templates embed logo as `data:image/...;base64,...` so email clients don't need to fetch external URLs.
+
+### HTMX document-form views (`apps/sales/views/htmx.py`)
+
+Inline helpers used by the invoice/quotation/sale-order create/edit forms via HTMX.
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `ItemSearchView` | `sales:item_search` | Returns item picker results partial (`sales/partials/item_picker_results.html`) |
+| `ItemQuickCreateView` | `sales:item_quick_create` | Creates `Item` inline via `ItemQuickCreateForm`; returns picker row |
+| `CustomerQuickCreateView` | `sales:customer_quick_create` | Creates `Customer` inline; returns updated customer picker |
+
+`ItemQuickCreateForm` (`apps/sales/forms.py`) — minimal item creation (name, unit_price, itbis_rate) scoped to org. Used from item picker modal without leaving the document form.
 
 ### KPI cards (`templates/components/_kpi_cards.html`)
 
