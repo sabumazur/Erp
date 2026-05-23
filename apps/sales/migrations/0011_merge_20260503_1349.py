@@ -6,8 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0005_add_default_payment_method_to_customer"),
-        ("invoices", "0010_customer_department"),
+        ("sales", "0005_add_default_payment_method_to_customer"),
+        ("sales", "0010_customer_department"),
     ]
 
     operations = []

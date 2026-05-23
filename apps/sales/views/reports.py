@@ -33,7 +33,7 @@ _MONTHS_ES = [
 
 class ReportIndexView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/reports.html"
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get_context_data(self, **kwargs):
@@ -53,7 +53,7 @@ class ReportIndexView(ERPBaseViewMixin, TemplateView):
 
 
 class Report607View(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     PAYMENT_METHOD_CODE = {
@@ -121,7 +121,7 @@ class Report607View(ERPBaseViewMixin, View):
 
 
 class Report608View(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -160,7 +160,7 @@ class Report608View(ERPBaseViewMixin, View):
 
 
 class ReportAgingView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -243,7 +243,7 @@ class ReportAgingView(ERPBaseViewMixin, View):
 
 
 class ReportStatementView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -339,7 +339,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
 
 
 class ReportSalesByPeriodView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -433,7 +433,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
 
 
 class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -495,7 +495,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
 
 
 class ReportCollectionsView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -558,7 +558,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
 
 
 class ReportITBISView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):
@@ -653,7 +653,7 @@ class ReportITBISView(ERPBaseViewMixin, View):
 
 
 class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request):

@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0018_search_indexes"),
+        ("sales", "0018_search_indexes"),
     ]
 
     operations = [

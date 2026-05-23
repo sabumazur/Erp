@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0017_alter_ncfsequence_series"),
+        ("sales", "0017_alter_ncfsequence_series"),
         ("core", "0003_pg_trgm"),
     ]
 

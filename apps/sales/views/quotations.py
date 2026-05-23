@@ -20,7 +20,7 @@ from ._helpers import _customer_defaults_json
 
 class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/quotation_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("doc_number",    _("Número"),      sortable=True),
@@ -81,7 +81,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class QuotationCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/quotation_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -116,7 +116,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
 
 class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "sales/quotation_detail.html"
-    required_module = "invoices"
+    required_module = "sales"
     context_object_name = "quotation"
 
     def get_object(self):
@@ -143,7 +143,7 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/quotation_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def _get_quotation(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -201,7 +201,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
 
 
 class QuotationConfirmView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -214,7 +214,7 @@ class QuotationConfirmView(ERPBaseViewMixin, View):
 
 
 class QuotationSendView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -236,7 +236,7 @@ class QuotationSendView(ERPBaseViewMixin, View):
 
 
 class QuotationEmailView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -252,7 +252,7 @@ class QuotationEmailView(ERPBaseViewMixin, View):
 
 
 class QuotationAcceptView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -265,7 +265,7 @@ class QuotationAcceptView(ERPBaseViewMixin, View):
 
 
 class QuotationRejectView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -278,7 +278,7 @@ class QuotationRejectView(ERPBaseViewMixin, View):
 
 
 class QuotationConvertView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -296,7 +296,7 @@ class QuotationConvertView(ERPBaseViewMixin, View):
 
 
 class QuotationDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
@@ -309,7 +309,7 @@ class QuotationDeleteView(ERPBaseViewMixin, View):
 
 
 class QuotationPrintView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         quotation = get_object_or_404(

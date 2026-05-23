@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("accounts", "0007_alter_organization_logo_alter_user_avatar_and_more"),
-        ("invoices", "0019_ncfsequence_max_seq_biginteger"),
+        ("sales", "0019_ncfsequence_max_seq_biginteger"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

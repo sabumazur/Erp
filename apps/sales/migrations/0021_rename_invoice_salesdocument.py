@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0020_historicalcustomerdepartment"),
+        ("sales", "0020_historicalcustomerdepartment"),
     ]
 
     operations = [

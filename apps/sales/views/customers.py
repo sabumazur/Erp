@@ -23,7 +23,7 @@ from ._helpers import _customers_with_depts
 
 class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/customer_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("name",             _("Nombre"),   sortable=True),
@@ -137,7 +137,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     form_class = CustomerForm
     template_name = "sales/customer_form.html"
-    required_module = "invoices"
+    required_module = "sales"
     success_url = None  # set in form_valid
 
     def get_success_url(self):
@@ -222,7 +222,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
 
 
 class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         from decimal import Decimal
@@ -305,7 +305,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
 
 class CustomerDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -337,7 +337,7 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
 
 
 class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def _customer(self, request, customer_pk):
         return get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
@@ -402,7 +402,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
 
 
 class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def _get_objects(self, request, customer_pk, pk):
         customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
@@ -466,7 +466,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
 
 
 class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, customer_pk, pk):
         customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
@@ -484,7 +484,7 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
 
 
 class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, customer_pk, pk):

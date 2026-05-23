@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0016_ncf_traditional_types"),
+        ("sales", "0016_ncf_traditional_types"),
     ]
 
     operations = [

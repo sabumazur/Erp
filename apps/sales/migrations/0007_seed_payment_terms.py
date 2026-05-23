@@ -12,7 +12,7 @@ PAYMENT_TERMS = [
 
 
 def seed(apps, schema_editor):
-    PaymentTerm = apps.get_model("invoices", "PaymentTerm")
+    PaymentTerm = apps.get_model("sales", "PaymentTerm")
     for name, description, days_due in PAYMENT_TERMS:
         PaymentTerm.objects.get_or_create(
             name=name,
@@ -21,14 +21,14 @@ def seed(apps, schema_editor):
 
 
 def unseed(apps, schema_editor):
-    PaymentTerm = apps.get_model("invoices", "PaymentTerm")
+    PaymentTerm = apps.get_model("sales", "PaymentTerm")
     PaymentTerm.objects.filter(name__in=[t[0] for t in PAYMENT_TERMS]).delete()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0006_add_payment_term_model_and_customer_fk"),
+        ("sales", "0006_add_payment_term_model_and_customer_fk"),
     ]
 
     operations = [

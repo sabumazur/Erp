@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0012_payment_refactor_and_payment_allocation"),
+        ("sales", "0012_payment_refactor_and_payment_allocation"),
     ]
 
     operations = [

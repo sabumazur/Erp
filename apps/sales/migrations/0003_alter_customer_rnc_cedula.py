@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0002_add_contact_fields_to_customer"),
+        ("sales", "0002_add_contact_fields_to_customer"),
     ]
 
     operations = [

@@ -28,7 +28,7 @@ from ._helpers import _customer_defaults_json
 
 class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/invoice_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("encf",          _("e-NCF"),   sortable=True),
@@ -99,7 +99,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "sales/invoice_detail.html"
-    required_module = "invoices"
+    required_module = "sales"
     context_object_name = "invoice"
 
     def get_object(self):
@@ -132,7 +132,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/invoice_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -167,7 +167,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
 
 class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/invoice_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def _get_invoice(self, request, pk):
         invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
@@ -229,7 +229,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
 
 
 class InvoiceConfirmView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
@@ -242,7 +242,7 @@ class InvoiceConfirmView(ERPBaseViewMixin, View):
 
 
 class InvoiceSendView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
@@ -264,7 +264,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
 
 
 class InvoicePayView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
@@ -291,7 +291,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
 
 
 class InvoiceCancelView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -309,7 +309,7 @@ class InvoiceCancelView(ERPBaseViewMixin, View):
 
 
 class InvoiceDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -327,7 +327,7 @@ class InvoiceDeleteView(ERPBaseViewMixin, View):
 
 class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/credit_note_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def _get_original(self, request, pk):
         return get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
@@ -381,7 +381,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
 
 
 class InvoicePDFView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         invoice = get_object_or_404(
@@ -420,7 +420,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
 
 
 class InvoicePrintView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         invoice = get_object_or_404(
@@ -443,7 +443,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
 
 class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/ncf_sequence_list.html"
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def _sequences(self, request):
@@ -495,7 +495,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
 class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
     form_class = NCFSequenceForm
     template_name = "sales/ncf_sequence_form.html"
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
     success_url = reverse_lazy("invoices:ncf_sequences")
 
@@ -517,7 +517,7 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
 
 
 class NCFSequenceDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -532,7 +532,7 @@ class NCFSequenceDeleteView(ERPBaseViewMixin, View):
 
 
 class InvoiceItemRowView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         index = int(request.GET.get("form_index", 0))
@@ -541,7 +541,7 @@ class InvoiceItemRowView(ERPBaseViewMixin, View):
 
 
 class RNCLookupView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         import json as _json

@@ -22,7 +22,7 @@ from ..services import PaymentService
 
 class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/payment_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("date",           _("Fecha"),    sortable=True),
@@ -93,7 +93,7 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 
 class PaymentCreateView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def _ctx(self, request, form):
         return {
@@ -157,7 +157,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
 
 
 class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         payment = get_object_or_404(
@@ -182,7 +182,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
 
 class PaymentDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -196,7 +196,7 @@ class PaymentDeleteView(ERPBaseViewMixin, View):
 
 
 class OutstandingInvoicesView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         customer_id = request.GET.get("customer", "").strip()

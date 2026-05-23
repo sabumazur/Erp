@@ -11,7 +11,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0008_document_types"),
+        ("sales", "0008_document_types"),
         ("items",    "0001_initial"),
     ]
 

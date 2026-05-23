@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("accounts", "0005_alter_invitation_options_alter_membership_options_and_more"),
-        ("invoices", "0014_paymentterm_organization_invoice_indexes"),
+        ("sales", "0014_paymentterm_organization_invoice_indexes"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

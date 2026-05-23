@@ -6,7 +6,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("accounts", "0005_alter_invitation_options_alter_membership_options_and_more"),
-        ("invoices", "0013_customer_credit_limit"),
+        ("sales", "0013_customer_credit_limit"),
     ]
 
     operations = [

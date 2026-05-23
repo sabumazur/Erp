@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0004_alter_customer_rnc_cedula"),
+        ("sales", "0004_alter_customer_rnc_cedula"),
     ]
 
     operations = [

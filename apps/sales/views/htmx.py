@@ -26,7 +26,7 @@ class CustomerDefaultsView(ERPBaseViewMixin, View):
     Returns billing defaults for a single customer as JSON.
     Replaces the full window.CUSTOMER_DEFAULTS dump on form pages.
     """
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         customer_id = request.GET.get("customer_id", "").strip()
@@ -57,7 +57,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
     HTMX endpoint: returns item_picker_results.html partial for the item picker modal.
     GET ?q=<search> — scoped to org, top 50 SALE/BOTH active items.
     """
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         from apps.items.models import Item
@@ -81,7 +81,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
 
 class CustomerSearchView(ERPBaseViewMixin, View):
     """Returns customer rows for the picker modal via HTMX."""
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         q = request.GET.get("q", "").strip()
@@ -98,7 +98,7 @@ class CustomerSearchView(ERPBaseViewMixin, View):
 
 class CustomerQuickCreateView(ERPBaseViewMixin, View):
     """Creates a customer from the picker modal quick-create panel."""
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request):
@@ -123,7 +123,7 @@ class CustomerQuickCreateView(ERPBaseViewMixin, View):
 
 class ItemQuickCreateView(ERPBaseViewMixin, View):
     """Creates a catalog item from the item picker modal quick-create panel."""
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request):

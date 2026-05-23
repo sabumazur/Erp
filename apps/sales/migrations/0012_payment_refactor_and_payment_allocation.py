@@ -14,7 +14,7 @@ import django.utils.timezone
 
 def forward_set_customer(apps, schema_editor):
     """Copy invoice.customer → payment.customer for every existing Payment row."""
-    Payment = apps.get_model("invoices", "Payment")
+    Payment = apps.get_model("sales", "Payment")
     for pmt in Payment.objects.select_related("invoice__customer").all():
         if pmt.invoice_id:
             pmt.customer = pmt.invoice.customer
@@ -29,7 +29,7 @@ def reverse_set_invoice(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("invoices", "0011_merge_20260503_1349"),
+        ("sales", "0011_merge_20260503_1349"),
     ]
 
     operations = [

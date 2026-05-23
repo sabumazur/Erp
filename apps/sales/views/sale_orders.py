@@ -22,7 +22,7 @@ from ._helpers import _customer_defaults_json
 
 class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/sale_order_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("doc_number",     _("Número"),     sortable=True),
@@ -89,7 +89,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/sale_order_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -124,7 +124,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
 
 class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     template_name = "sales/sale_order_detail.html"
-    required_module = "invoices"
+    required_module = "sales"
     context_object_name = "order"
 
     def get_object(self):
@@ -151,7 +151,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/sale_order_form.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def _get_order(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -209,7 +209,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
 
 
 class SaleOrderConfirmView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -222,7 +222,7 @@ class SaleOrderConfirmView(ERPBaseViewMixin, View):
 
 
 class SaleOrderDeliverView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -239,7 +239,7 @@ class SaleOrderDeliverView(ERPBaseViewMixin, View):
 
 
 class SaleOrderCancelView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -252,7 +252,7 @@ class SaleOrderCancelView(ERPBaseViewMixin, View):
 
 
 class SaleOrderDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -265,7 +265,7 @@ class SaleOrderDeleteView(ERPBaseViewMixin, View):
 
 
 class SaleOrderEmailView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
@@ -285,7 +285,7 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
 
 class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
     template_name = "sales/sale_order_consolidate.html"
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get_context_data(self, **kwargs):
@@ -368,7 +368,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
 
 
 class SaleOrderCloneView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def post(self, request, pk):
         source = get_object_or_404(
@@ -402,7 +402,7 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
 
 
 class SaleOrderPrintView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         order = get_object_or_404(
@@ -424,7 +424,7 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
 
 
 class CustomerDepartmentsView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         customer_id = request.GET.get("customer", "").strip()

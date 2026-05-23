@@ -19,7 +19,7 @@ from ..models import PaymentTerm
 
 class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "sales/payment_term_list.html"
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     dt_columns = [
@@ -107,7 +107,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 # ── Update ────────────────────────────────────────────────────────────────────
 
 class PaymentTermUpdateView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request, pk):
@@ -168,7 +168,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
 # ── Delete ────────────────────────────────────────────────────────────────────
 
 class PaymentTermDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
