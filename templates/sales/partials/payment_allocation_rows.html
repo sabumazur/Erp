@@ -4,7 +4,7 @@
   <tr>
     <td>
       <input type="hidden" name="alloc_invoices" value="{{ inv.pk }}">
-      <a href="{% url 'invoices:invoice_detail' inv.pk %}"
+      <a href="{% url 'sales:invoice_detail' inv.pk %}"
          class="text-decoration-none font-monospace small" style="color:#1e2130" target="_blank">
         {{ inv.display_number }}
       </a>

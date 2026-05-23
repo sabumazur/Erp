@@ -27,7 +27,7 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
@@ -37,10 +37,10 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-{% include "invoices/partials/report_filter_panel.html" with show_customer=True %}
+{% include "sales/partials/report_filter_panel.html" with show_customer=True %}
 {% if selected_customer %}
 <div class="text-end mb-3 no-print" style="margin-top:-.75rem">
-  <a href="{% url 'invoices:report_aging' %}" class="small text-muted text-decoration-none">
+  <a href="{% url 'sales:report_aging' %}" class="small text-muted text-decoration-none">
     <i class="bi bi-x me-1"></i>Ver todos los clientes
   </a>
 </div>
@@ -63,7 +63,7 @@
         {% for row in rows %}
         <tr>
           <td>
-            <a href="{% url 'invoices:customer_detail' row.customer.pk %}"
+            <a href="{% url 'sales:customer_detail' row.customer.pk %}"
                class="text-decoration-none fw-semibold">
               {{ row.customer.name }}
             </a>

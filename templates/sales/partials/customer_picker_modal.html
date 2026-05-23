@@ -29,7 +29,7 @@
                    class="form-control border-start-0 ps-1 picker-search-input"
                    placeholder="{% trans 'Nombre o RNC…' %}"
                    autocomplete="off"
-                   hx-get="{% url 'invoices:customer_search' %}"
+                   hx-get="{% url 'sales:customer_search' %}"
                    hx-trigger="input changed delay:300ms, load"
                    hx-target="#customer-picker-tbody"
                    name="q">

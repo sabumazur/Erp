@@ -19,7 +19,7 @@
       <td class="small text-muted">{{ dept.address|default:"—" }}</td>
       <td>
         <button type="button"
-                hx-post="{% url 'invoices:department_toggle' customer.pk dept.pk %}"
+                hx-post="{% url 'sales:department_toggle' customer.pk dept.pk %}"
                 hx-target="#dept-table-wrapper"
                 hx-swap="innerHTML"
                 class="badge-soft {% if dept.is_active %}badge-paid{% else %}badge-default{% endif %} border-0"
@@ -30,7 +30,7 @@
       </td>
       <td class="text-end" style="white-space:nowrap">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                hx-get="{% url 'invoices:department_edit' customer.pk dept.pk %}"
+                hx-get="{% url 'sales:department_edit' customer.pk dept.pk %}"
                 hx-target="#dept-modal-body"
                 hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
                                       bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
@@ -47,7 +47,7 @@
                   confirmButtonColor: '#dc3545',
                 }).then(r => {
                   if (r.isConfirmed)
-                    htmx.ajax('POST', '{% url "invoices:department_delete" customer.pk dept.pk %}',
+                    htmx.ajax('POST', '{% url "sales:department_delete" customer.pk dept.pk %}',
                       { target: '#dept-table-wrapper', swap: 'innerHTML',
                         values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
                 })">

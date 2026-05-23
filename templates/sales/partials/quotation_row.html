@@ -3,17 +3,17 @@
 <tr>
 
   <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'invoices:quotation_detail' row.pk %}"
+    <a href="{% url 'sales:quotation_detail' row.pk %}"
        class="text-decoration-none" style="color:#1e2130">
       {{ row.display_number }}
     </a>
     <span class="dt-hover-actions">
-      <a href="{% url 'invoices:quotation_detail' row.pk %}"
+      <a href="{% url 'sales:quotation_detail' row.pk %}"
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
         <i class="bi bi-eye"></i>
       </a>
       {% if row.status == 'DRAFT' %}
-      <a href="{% url 'invoices:quotation_edit' row.pk %}"
+      <a href="{% url 'sales:quotation_edit' row.pk %}"
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem">
         <i class="bi bi-pencil"></i>
       </a>
@@ -38,7 +38,7 @@
   <td data-col="total" class="text-end fw-semibold font-monospace">{{ row.total|floatformat:2|intcomma }}</td>
 
   <td data-col="status" class="text-center">
-    {% include "invoices/partials/status_badge.html" with status=row.status %}
+    {% include "sales/partials/status_badge.html" with status=row.status %}
   </td>
 
 </tr>

@@ -14,7 +14,7 @@
   <tbody>
     {% for c in customers %}
     <tr>
-      <td class="fw-semibold"><a href="{% url 'invoices:customer_detail' c.pk %}" class="text-decoration-none">{{ c.name }}</a></td>
+      <td class="fw-semibold"><a href="{% url 'sales:customer_detail' c.pk %}" class="text-decoration-none">{{ c.name }}</a></td>
       <td class="text-nowrap">
         {% if c.rnc_cedula %}
           {{ c.rnc_cedula }}
@@ -39,7 +39,7 @@
       </td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                hx-get="{% url 'invoices:customer_edit' c.pk %}"
+                hx-get="{% url 'sales:customer_edit' c.pk %}"
                 hx-target="#customer-modal-body"
                 hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
                                       bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
@@ -55,7 +55,7 @@
                   cancelButtonText:  '{% trans "Cancelar" %}',
                   confirmButtonColor: '#dc3545',
                 }).then(function (r) {
-                  if (r.isConfirmed) htmx.ajax('POST', '{% url "invoices:customer_delete" c.pk %}',
+                  if (r.isConfirmed) htmx.ajax('POST', '{% url "sales:customer_delete" c.pk %}',
                     { target: '#customer-table', swap: 'innerHTML',
                       values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
                 })">

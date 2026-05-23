@@ -15,7 +15,7 @@
     <p class="app-header-sub">{% trans "Clientes" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
   </div>
@@ -36,7 +36,7 @@
     <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
     </button>
-    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </form>
 

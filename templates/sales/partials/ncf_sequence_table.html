@@ -70,13 +70,13 @@
           </td>
 
           <td class="py-3 text-end" style="white-space:nowrap">
-            <a href="{% url 'invoices:ncf_sequence_edit' seq.pk %}"
+            <a href="{% url 'sales:ncf_sequence_edit' seq.pk %}"
                class="btn btn-outline-secondary btn-sm"
                title="{% trans 'Editar' %}">
               <i class="bi bi-pencil"></i>
             </a>
             {% if seq.current_seq == 0 %}
-            <form method="post" action="{% url 'invoices:ncf_sequence_delete' seq.pk %}"
+            <form method="post" action="{% url 'sales:ncf_sequence_delete' seq.pk %}"
                   class="d-inline ms-1">
               {% csrf_token %}
               <button type="button"

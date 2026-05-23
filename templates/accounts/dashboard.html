@@ -121,7 +121,7 @@
         <div class="app-metric-value" style="text-align:left">{{ customer_count|intcomma }}</div>
         <div class="app-metric-label" style="text-align:left">{% trans "Clientes" %}</div>
       </div>
-      <a href="{% url 'invoices:customer_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
+      <a href="{% url 'sales:customer_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
@@ -131,7 +131,7 @@
         <div class="app-metric-value" style="text-align:left">{{ pending_quotations|intcomma }}</div>
         <div class="app-metric-label" style="text-align:left">{% trans "Cotizaciones activas" %}</div>
       </div>
-      <a href="{% url 'invoices:quotation_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
+      <a href="{% url 'sales:quotation_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
   <div class="col-sm-4">
@@ -141,7 +141,7 @@
         <div class="app-metric-value" style="text-align:left">{{ pending_sale_orders|intcomma }}</div>
         <div class="app-metric-label" style="text-align:left">{% trans "Órdenes pendientes" %}</div>
       </div>
-      <a href="{% url 'invoices:sale_order_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
+      <a href="{% url 'sales:sale_order_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
 </div>
@@ -186,7 +186,7 @@
 <div class="app-table-wrap mb-3">
   <div class="db-panel-header">
     <span class="db-panel-title">{% trans "Facturas recientes" %}</span>
-    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todas" %} →</a>
+    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todas" %} →</a>
   </div>
   <table class="table table-hover mb-0">
     <thead>
@@ -203,7 +203,7 @@
       {% for inv in recent_invoices %}
       <tr>
         <td>
-          <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#1e2130">{{ inv.display_number }}</a>
+          <a href="{% url 'sales:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#1e2130">{{ inv.display_number }}</a>
         </td>
         <td>{{ inv.customer.name }}</td>
         <td class="text-muted text-nowrap" style="font-size:.83rem">{{ inv.issue_date|date:"d/m/Y" }}</td>
@@ -241,7 +241,7 @@
       <div class="db-panel-header">
         <span class="db-panel-title"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}</span>
         {% if overdue_count > 6 %}
-        <a href="{% url 'invoices:invoice_list' %}?status=OVERDUE" class="btn btn-sm no-print" style="font-size:.7rem;color:#dc2626;border:1px solid #fecaca;background:#fff5f5">{% trans "Ver todas" %} →</a>
+        <a href="{% url 'sales:invoice_list' %}?status=OVERDUE" class="btn btn-sm no-print" style="font-size:.7rem;color:#dc2626;border:1px solid #fecaca;background:#fff5f5">{% trans "Ver todas" %} →</a>
         {% endif %}
       </div>
       <table class="table mb-0">
@@ -257,7 +257,7 @@
           {% for inv in overdue_invoices %}
           <tr>
             <td>
-              <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#842029">{{ inv.display_number }}</a>
+              <a href="{% url 'sales:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#842029">{{ inv.display_number }}</a>
             </td>
             <td class="text-muted" style="font-size:.83rem">{{ inv.customer.name }}</td>
             <td class="text-end fw-bold font-monospace" style="color:#dc2626;font-size:.83rem">{{ inv.days_overdue }}</td>
@@ -289,7 +289,7 @@
     <div class="app-table-wrap">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Pagos recientes" %}</span>
-        <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todos" %} →</a>
+        <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todos" %} →</a>
       </div>
       <table class="table mb-0">
         <thead>
@@ -305,7 +305,7 @@
           <tr>
             <td class="text-muted text-nowrap" style="font-size:.83rem">{{ pmt.date|date:"d/m/Y" }}</td>
             <td style="font-size:.83rem">
-              <a href="{% url 'invoices:customer_detail' pmt.customer.pk %}" class="text-decoration-none text-dark">{{ pmt.customer.name }}</a>
+              <a href="{% url 'sales:customer_detail' pmt.customer.pk %}" class="text-decoration-none text-dark">{{ pmt.customer.name }}</a>
             </td>
             <td>
               {% if pmt.method == 'TRANSFER' %}<span class="badge-soft badge-sent">{{ pmt.get_method_display }}</span>

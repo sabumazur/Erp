@@ -16,7 +16,7 @@
   <td class="text-end" style="white-space:nowrap">
     {# Edit #}
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            hx-get="{% url 'invoices:payment_term_edit' row.pk %}"
+            hx-get="{% url 'sales:payment_term_edit' row.pk %}"
             hx-target="#payment-term-modal-body"
             hx-on::after-request="
               document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
@@ -36,7 +36,7 @@
               confirmButtonColor: '#dc3545',
             }).then(r => {
               if (r.isConfirmed)
-                htmx.ajax('POST', '{% url "invoices:payment_term_delete" row.pk %}',
+                htmx.ajax('POST', '{% url "sales:payment_term_delete" row.pk %}',
                   { target: '#dt-results', swap: 'innerHTML',
                     values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
             })">

@@ -27,7 +27,7 @@
     {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>Reportes
     </a>
     {% if rows %}
@@ -39,7 +39,7 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-{% include "invoices/partials/report_filter_panel.html" with show_year=True show_month=True %}
+{% include "sales/partials/report_filter_panel.html" with show_year=True show_month=True %}
 
 {% if year %}
 {% if rows %}

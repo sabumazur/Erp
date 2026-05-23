@@ -39,23 +39,23 @@
     <ul class="dropdown-menu">
       <li><h6 class="dropdown-header">{% trans "Facturación" %}</h6></li>
       <li>
-        <a class="dropdown-item" href="{% url 'invoices:quotation_create' %}">
+        <a class="dropdown-item" href="{% url 'sales:quotation_create' %}">
           <i class="bi bi-file-earmark-text me-2 text-muted"></i>{% trans "Cotización" %}
         </a>
       </li>
       <li>
-        <a class="dropdown-item" href="{% url 'invoices:sale_order_create' %}">
+        <a class="dropdown-item" href="{% url 'sales:sale_order_create' %}">
           <i class="bi bi-box-seam me-2 text-muted"></i>{% trans "Orden de venta" %}
         </a>
       </li>
       <li>
-        <a class="dropdown-item" href="{% url 'invoices:invoice_create' %}">
+        <a class="dropdown-item" href="{% url 'sales:invoice_create' %}">
           <i class="bi bi-receipt-cutoff me-2 text-muted"></i>{% trans "Factura" %}
         </a>
       </li>
       <li><hr class="dropdown-divider"></li>
       <li>
-        <a class="dropdown-item" href="{% url 'invoices:payment_create' %}">
+        <a class="dropdown-item" href="{% url 'sales:payment_create' %}">
           <i class="bi bi-cash-stack me-2 text-muted"></i>{% trans "Pago" %}
         </a>
       </li>
@@ -108,7 +108,7 @@
 {% can_access_module membership "invoices" as has_invoices %}
 {% if has_invoices %}
 <nav id="subnav">
-  <a href="{% url 'invoices:customer_list' %}"
+  <a href="{% url 'sales:customer_list' %}"
      class="subnav-link {% if 'invoices/customers' in request.path %}active{% endif %}">
     <i class="bi bi-person-lines-fill"></i>
     <span>{% trans "Clientes" %}</span>
@@ -119,7 +119,7 @@
     <span>{% trans "Artículos" %}</span>
   </a>
   {% if membership.is_admin %}
-  <a href="{% url 'invoices:payment_term_list' %}"
+  <a href="{% url 'sales:payment_term_list' %}"
      class="subnav-link {% if 'invoices/payment-terms' in request.path %}active{% endif %}">
     <i class="bi bi-calendar-check"></i>
     <span>{% trans "Términos de pago" %}</span>

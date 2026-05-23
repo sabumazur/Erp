@@ -30,7 +30,7 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if customer and invoices %}
@@ -42,7 +42,7 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-{% include "invoices/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
+{% include "sales/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
 
 {# ── Validation error ─────────────────────────────────────────────────────── #}
 {% if error %}
@@ -119,7 +119,7 @@
         {% for inv in invoices %}
         <tr>
           <td class="ps-4 font-monospace fw-semibold" style="font-size:.82rem">
-            <a href="{% url 'invoices:invoice_detail' inv.pk %}" class="text-decoration-none text-dark">
+            <a href="{% url 'sales:invoice_detail' inv.pk %}" class="text-decoration-none text-dark">
               <i class="bi bi-receipt me-1 text-muted no-print" style="font-size:.75rem"></i>{{ inv.display_number }}
             </a>
           </td>

@@ -29,7 +29,7 @@
                    class="form-control border-start-0 ps-1 picker-search-input"
                    placeholder="{% trans 'Buscar por nombre o código…' %}"
                    autocomplete="off"
-                   hx-get="{% url 'invoices:item_search' %}"
+                   hx-get="{% url 'sales:item_search' %}"
                    hx-trigger="input changed delay:300ms, load"
                    hx-target="#picker-tbody"
                    hx-swap="innerHTML"

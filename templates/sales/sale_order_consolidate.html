@@ -15,7 +15,7 @@
     <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
   </div>
@@ -35,7 +35,7 @@
         <form method="post" id="consolidate-form">
           {% csrf_token %}
           <div
-            hx-get="{% url 'invoices:sale_order_consolidate' %}?preview=1"
+            hx-get="{% url 'sales:sale_order_consolidate' %}?preview=1"
             hx-trigger="change from:#consolidate-form input, change from:#consolidate-form select"
             hx-target="#consolidate-preview"
             hx-include="#consolidate-form">
@@ -66,7 +66,7 @@
 </div>
 
 <script>
-window.DEPARTMENTS_FOR_CUSTOMER_URL = "{% url 'invoices:departments_for_customer' %}";
+window.DEPARTMENTS_FOR_CUSTOMER_URL = "{% url 'sales:departments_for_customer' %}";
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   allDepartmentsOption: '<option value="">-- {% trans "Todos los departamentos" %} --</option>'
 });

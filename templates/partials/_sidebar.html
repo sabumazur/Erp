@@ -30,36 +30,36 @@
     <div class="sidebar-section-label">{% trans "Facturación" %}</div>
     <ul class="sidebar-nav">
       <li>
-        <a href="{% url 'invoices:quotation_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:quotation_list' 'invoices:quotation_create' 'invoices:quotation_detail' 'invoices:quotation_edit' %}">
+        <a href="{% url 'sales:quotation_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:quotation_list' 'sales:quotation_create' 'sales:quotation_detail' 'sales:quotation_edit' %}">
           <i class="bi bi-file-earmark-text"></i>
           <span>{% trans "Cotizaciones" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:sale_order_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:sale_order_list' 'invoices:sale_order_create' 'invoices:sale_order_detail' 'invoices:sale_order_edit' 'invoices:sale_order_consolidate' %}">
+        <a href="{% url 'sales:sale_order_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:sale_order_list' 'sales:sale_order_create' 'sales:sale_order_detail' 'sales:sale_order_edit' 'sales:sale_order_consolidate' %}">
           <i class="bi bi-box-seam"></i>
           <span>{% trans "Órdenes de venta" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:invoice_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:invoice_list' 'invoices:invoice_create' 'invoices:invoice_detail' 'invoices:invoice_edit' 'invoices:credit_note_create' %}">
+        <a href="{% url 'sales:invoice_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:invoice_list' 'sales:invoice_create' 'sales:invoice_detail' 'sales:invoice_edit' 'sales:credit_note_create' %}">
           <i class="bi bi-receipt-cutoff"></i>
           <span>{% trans "Facturas" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:payment_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:payment_list' 'invoices:payment_create' 'invoices:payment_detail' %}">
+        <a href="{% url 'sales:payment_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:payment_list' 'sales:payment_create' 'sales:payment_detail' %}">
           <i class="bi bi-cash-stack"></i>
           <span>{% trans "Pagos" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:customer_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:customer_list' 'invoices:customer_detail' 'invoices:customer_edit' %}">
+        <a href="{% url 'sales:customer_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:customer_list' 'sales:customer_detail' 'sales:customer_edit' %}">
           <i class="bi bi-person-lines-fill"></i>
           <span>{% trans "Clientes" %}</span>
         </a>
@@ -73,22 +73,22 @@
       </li>
       {% if membership.is_admin %}
       <li>
-        <a href="{% url 'invoices:ncf_sequences' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:ncf_sequences' 'invoices:ncf_sequence_edit' %}">
+        <a href="{% url 'sales:ncf_sequences' %}"
+           class="sidebar-nav-link {% nav_active 'sales:ncf_sequences' 'sales:ncf_sequence_edit' %}">
           <i class="bi bi-hash"></i>
           <span>{% trans "Secuencias NCF" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:payment_term_list' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:payment_term_list' 'invoices:payment_term_edit' %}">
+        <a href="{% url 'sales:payment_term_list' %}"
+           class="sidebar-nav-link {% nav_active 'sales:payment_term_list' 'sales:payment_term_edit' %}">
           <i class="bi bi-calendar-check"></i>
           <span>{% trans "Términos de pago" %}</span>
         </a>
       </li>
       <li>
-        <a href="{% url 'invoices:reports' %}"
-           class="sidebar-nav-link {% nav_active 'invoices:reports' 'invoices:report_607' 'invoices:report_608' 'invoices:report_aging' 'invoices:report_statement' 'invoices:report_sales_period' 'invoices:report_invoices_by_customer' 'invoices:report_collections' 'invoices:report_itbis' 'invoices:report_ncf_type' %}">
+        <a href="{% url 'sales:reports' %}"
+           class="sidebar-nav-link {% nav_active 'sales:reports' 'sales:report_607' 'sales:report_608' 'sales:report_aging' 'sales:report_statement' 'sales:report_sales_period' 'sales:report_invoices_by_customer' 'sales:report_collections' 'sales:report_itbis' 'sales:report_ncf_type' %}">
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span>{% trans "Reportes" %}</span>
         </a>

@@ -25,7 +25,7 @@
 {% include "components/datatable/wrapper.html" %}
 
 <template id="customer-blank-tpl">
-  <form hx-post="{% url 'invoices:customer_list' %}"
+  <form hx-post="{% url 'sales:customer_list' %}"
         hx-target="#dt-results"
         hx-swap="innerHTML"
         hx-on::after-request="if(event.detail.successful && event.target === this) bootstrap.Modal.getInstance('#customerModal').hide()"

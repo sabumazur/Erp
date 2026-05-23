@@ -18,7 +18,7 @@
         {% for o in orders %}
         <tr>
           <td class="font-monospace fw-semibold">
-            <a href="{% url 'invoices:sale_order_detail' o.pk %}"
+            <a href="{% url 'sales:sale_order_detail' o.pk %}"
                class="text-decoration-none" style="color:#1e2130">
               {{ o.display_number }}
             </a>
@@ -36,7 +36,7 @@
           <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
           <td class="text-end fw-semibold font-monospace">{{ o.total|floatformat:2|intcomma }}</td>
           <td class="text-center">
-            {% include "invoices/partials/status_badge.html" with status=o.status %}
+            {% include "sales/partials/status_badge.html" with status=o.status %}
           </td>
         </tr>
         {% empty %}

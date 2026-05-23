@@ -27,15 +27,15 @@
     <p class="app-header-sub">{% trans "Factura" %}{% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %} · {{ invoice.customer.name }}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
 
     {% if invoice.status == "DRAFT" %}
-      <a href="{% url 'invoices:invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
+      <a href="{% url 'sales:invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
-      <form method="post" action="{% url 'invoices:invoice_confirm' invoice.pk %}"
+      <form method="post" action="{% url 'sales:invoice_confirm' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}', {icon:'warning', color:'#10b981', ok:'Sí, confirmar'})">
         {% csrf_token %}
@@ -43,7 +43,7 @@
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
-      <form method="post" action="{% url 'invoices:invoice_delete' invoice.pk %}"
+      <form method="post" action="{% url 'sales:invoice_delete' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
@@ -51,7 +51,7 @@
       </form>
 
     {% elif invoice.status == "CONFIRMED" %}
-      <form method="post" action="{% url 'invoices:invoice_send' invoice.pk %}">
+      <form method="post" action="{% url 'sales:invoice_send' invoice.pk %}">
         {% csrf_token %}
         <button class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-send me-1"></i>{% trans "Marcar enviada" %}
@@ -66,22 +66,22 @@
       </button>
     {% endif %}
 
-    <a href="{% url 'invoices:invoice_print' invoice.pk %}" target="_blank"
+    <a href="{% url 'sales:invoice_print' invoice.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
 
     {% if invoice.encf and invoice.status != "DRAFT" %}
-      <a href="{% url 'invoices:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
+      <a href="{% url 'sales:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-file-earmark-pdf me-1"></i>PDF
       </a>
-      <a href="{% url 'invoices:credit_note_create' invoice.pk %}" class="btn btn-outline-warning btn-sm">
+      <a href="{% url 'sales:credit_note_create' invoice.pk %}" class="btn btn-outline-warning btn-sm">
         <i class="bi bi-file-minus me-1"></i>{% trans "Nota de Crédito" %}
       </a>
     {% endif %}
 
     {% if invoice.status != "PAID" and invoice.status != "CANCELLED" and invoice.status != "DRAFT" %}
-      <form method="post" action="{% url 'invoices:invoice_cancel' invoice.pk %}"
+      <form method="post" action="{% url 'sales:invoice_cancel' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
         {% csrf_token %}
@@ -129,7 +129,7 @@
           <tr>
             <th class="detail-key">{% trans "NCF afectado" %}</th>
             <td>
-              <a href="{% url 'invoices:invoice_detail' invoice.encf_modified.pk %}"
+              <a href="{% url 'sales:invoice_detail' invoice.encf_modified.pk %}"
                  class="font-monospace text-decoration-none" style="color:#1e2130">
                 {{ invoice.encf_modified.encf }}
               </a>
@@ -231,7 +231,7 @@
           {% for o in consolidated_orders %}
           <tr>
             <td>
-              <a href="{% url 'invoices:sale_order_detail' o.pk %}"
+              <a href="{% url 'sales:sale_order_detail' o.pk %}"
                  class="font-monospace text-decoration-none" style="color:#1e2130">
                 {{ o.doc_number|default:"—" }}
               </a>
@@ -293,7 +293,7 @@
       </div>
       <div class="p-3">
         <div class="mb-3">
-          {% include "invoices/partials/status_badge.html" with status=invoice.status %}
+          {% include "sales/partials/status_badge.html" with status=invoice.status %}
         </div>
         <table class="table table-sm mb-0" style="font-size:.82rem">
           <tbody>
@@ -351,7 +351,7 @@
 <div class="modal fade" id="payModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <form method="post" action="{% url 'invoices:invoice_pay' invoice.pk %}">
+      <form method="post" action="{% url 'sales:invoice_pay' invoice.pk %}">
         {% csrf_token %}
         <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
           <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">

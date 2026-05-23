@@ -27,14 +27,14 @@
     <p class="app-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <a href="{% url 'invoices:sale_order_print' order.pk %}" target="_blank"
+    <a href="{% url 'sales:sale_order_print' order.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
-    <form method="post" action="{% url 'invoices:sale_order_clone' order.pk %}"
+    <form method="post" action="{% url 'sales:sale_order_clone' order.pk %}"
           x-data
           x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
       {% csrf_token %}
@@ -44,17 +44,17 @@
     </form>
 
     {% if order.status == "DRAFT" %}
-      <a href="{% url 'invoices:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
+      <a href="{% url 'sales:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
-      <form method="post" action="{% url 'invoices:sale_order_confirm' order.pk %}"
+      <form method="post" action="{% url 'sales:sale_order_confirm' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar orden?" %}', {icon:'question', color:'#6366f1', ok:'Sí, confirmar'})">
         {% csrf_token %}
         <button class="btn btn-sm" style="background:#1e2130;color:#fff">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
-      <form method="post" action="{% url 'invoices:sale_order_delete' order.pk %}"
+      <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
@@ -65,7 +65,7 @@
               data-bs-toggle="modal" data-bs-target="#deliverModal">
         <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}
       </button>
-      <form method="post" action="{% url 'invoices:sale_order_cancel' order.pk %}"
+      <form method="post" action="{% url 'sales:sale_order_cancel' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm">
@@ -75,14 +75,14 @@
     {% endif %}
 
     {% if order.status == "INVOICED" and order.consolidated_into %}
-      <a href="{% url 'invoices:invoice_detail' order.consolidated_into.pk %}"
+      <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
          class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
       </a>
     {% endif %}
 
     {% if order.status != "DRAFT" and order.status != "CANCELLED" %}
-      <form method="post" action="{% url 'invoices:sale_order_email' order.pk %}">
+      <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
@@ -226,7 +226,7 @@
       </div>
       <div class="p-3">
         <div class="mb-3">
-          {% include "invoices/partials/status_badge.html" with status=order.status %}
+          {% include "sales/partials/status_badge.html" with status=order.status %}
         </div>
         <table class="table table-sm mb-0" style="font-size:.82rem">
           <tbody>
@@ -263,7 +263,7 @@
         {% trans "Factura consolidada" %}
       </div>
       <div class="p-3">
-        <a href="{% url 'invoices:invoice_detail' order.consolidated_into.pk %}"
+        <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
            class="font-monospace fw-semibold text-decoration-none" style="color:#1e2130">
           {{ order.consolidated_into.display_number }}
         </a>
@@ -281,7 +281,7 @@
 <div class="modal fade" id="deliverModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <form method="post" action="{% url 'invoices:sale_order_deliver' order.pk %}">
+      <form method="post" action="{% url 'sales:sale_order_deliver' order.pk %}">
         {% csrf_token %}
         <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
           <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">

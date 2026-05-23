@@ -32,11 +32,11 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            hx-get="{% url 'invoices:customer_edit' customer.pk %}?hx_target=refresh"
+            hx-get="{% url 'sales:customer_edit' customer.pk %}?hx_target=refresh"
             hx-target="#customer-modal-body"
             data-modal-title="{% trans "Editar cliente" %}"
             hx-on::after-request="document.getElementById('customerModalTitle').textContent = this.dataset.modalTitle;
@@ -134,7 +134,7 @@
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Departamentos de entrega" %}</span>
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                hx-get="{% url 'invoices:department_create' customer.pk %}"
+                hx-get="{% url 'sales:department_create' customer.pk %}"
                 hx-target="#dept-modal-body"
                 hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Nuevo departamento" %}';
                                       bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
@@ -142,7 +142,7 @@
         </button>
       </div>
       <div id="dept-table-wrapper">
-        {% include "invoices/partials/department_table.html" with departments=departments customer=customer %}
+        {% include "sales/partials/department_table.html" with departments=departments customer=customer %}
       </div>
     </div>
 
@@ -151,7 +151,7 @@
     <div class="app-table-wrap">
       <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas" %}</span>
-        <a href="{% url 'invoices:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'sales:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-receipt me-1"></i>{% trans "Ver todas" %}
         </a>
       </div>
@@ -172,7 +172,7 @@
             {% for inv in invoices %}
             <tr>
               <td>
-                <a href="{% url 'invoices:invoice_detail' inv.pk %}"
+                <a href="{% url 'sales:invoice_detail' inv.pk %}"
                    class="text-decoration-none font-monospace small" style="color:#1e2130">
                   {{ inv.display_number }}
                 </a>
@@ -186,7 +186,7 @@
                 {{ inv.line_balance|floatformat:2|intcomma }}
               </td>
               <td class="text-center">
-                {% include "invoices/partials/status_badge.html" with status=inv.status %}
+                {% include "sales/partials/status_badge.html" with status=inv.status %}
               </td>
             </tr>
             {% endfor %}
@@ -219,7 +219,7 @@
               <td class="small text-nowrap text-muted">{{ pmt.date|date:"d/m/Y" }}</td>
               <td class="small">
                 {% for alloc in pmt.allocations.all %}
-                  <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
+                  <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
                      class="text-decoration-none font-monospace d-block small" style="color:#1e2130">
                     {{ alloc.invoice.display_number }}
                     <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>

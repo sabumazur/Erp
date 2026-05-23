@@ -27,10 +27,10 @@
     <p class="app-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:payment_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <form method="post" action="{% url 'invoices:payment_delete' payment.pk %}"
+    <form method="post" action="{% url 'sales:payment_delete' payment.pk %}"
           x-data
           x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar este pago? Las facturas cubiertas se reabrirán." %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
       {% csrf_token %}
@@ -70,7 +70,7 @@
           <tr>
             <th class="detail-key">{% trans "Cliente" %}</th>
             <td>
-              <a href="{% url 'invoices:customer_detail' payment.customer.pk %}"
+              <a href="{% url 'sales:customer_detail' payment.customer.pk %}"
                  class="fw-semibold text-decoration-none" style="color:#1e2130">
                 {{ payment.customer.name }}
               </a>
@@ -125,7 +125,7 @@
           {% for alloc in payment.allocations.all %}
           <tr>
             <td>
-              <a href="{% url 'invoices:invoice_detail' alloc.invoice.pk %}"
+              <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
                  class="text-decoration-none font-monospace small" style="color:#1e2130">
                 {{ alloc.invoice.display_number }}
               </a>
@@ -137,7 +137,7 @@
               {{ alloc.amount|floatformat:2|intcomma }}
             </td>
             <td class="text-center">
-              {% include "invoices/partials/status_badge.html" with status=alloc.invoice.status %}
+              {% include "sales/partials/status_badge.html" with status=alloc.invoice.status %}
             </td>
           </tr>
           {% empty %}

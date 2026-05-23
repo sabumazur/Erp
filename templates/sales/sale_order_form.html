@@ -19,7 +19,7 @@
     <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
     </a>
   </div>
@@ -41,7 +41,7 @@
     <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-sm"
-              hx-get="{% url 'invoices:item_row' %}?form_index={{ formset.total_form_count }}"
+              hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
               hx-target="#item-tbody"
               hx-swap="beforeend"
               hx-on::after-request="recalcGrandTotal()">
@@ -71,7 +71,7 @@
           </thead>
           <tbody id="item-tbody">
             {% for item_form in formset %}
-              {% include "invoices/partials/item_row.html" with form=item_form index=forloop.counter0 %}
+              {% include "sales/partials/item_row.html" with form=item_form index=forloop.counter0 %}
             {% endfor %}
           </tbody>
         </table>
@@ -108,18 +108,18 @@
     <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'invoices:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </form>
 
-{% include "invoices/partials/item_picker_modal.html" %}
-{% include "invoices/partials/customer_picker_modal.html" %}
+{% include "sales/partials/item_picker_modal.html" %}
+{% include "sales/partials/customer_picker_modal.html" %}
 
 <script>
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
-window.CUSTOMER_QUICK_CREATE_URL = "{% url 'invoices:customer_quick_create' %}";
-window.ITEM_QUICK_CREATE_URL     = "{% url 'invoices:item_quick_create' %}";
+window.CUSTOMER_QUICK_CREATE_URL = "{% url 'sales:customer_quick_create' %}";
+window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
 </script>
-{% include "invoices/partials/item_js.html" %}
+{% include "sales/partials/item_js.html" %}
 
 {% endblock %}

@@ -27,16 +27,16 @@
     <p class="app-header-sub">{% trans "Cotización" %} · {{ quotation.customer.name }}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <a href="{% url 'invoices:quotation_print' quotation.pk %}" target="_blank"
+    <a href="{% url 'sales:quotation_print' quotation.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
 
     {% if quotation.status != "DRAFT" and quotation.status != "CANCELLED" %}
-      <form method="post" action="{% url 'invoices:quotation_email' quotation.pk %}">
+      <form method="post" action="{% url 'sales:quotation_email' quotation.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
@@ -45,24 +45,24 @@
     {% endif %}
 
     {% if quotation.status == "DRAFT" %}
-      <a href="{% url 'invoices:quotation_edit' quotation.pk %}" class="btn btn-outline-secondary btn-sm">
+      <a href="{% url 'sales:quotation_edit' quotation.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
-      <form method="post" action="{% url 'invoices:quotation_confirm' quotation.pk %}"
+      <form method="post" action="{% url 'sales:quotation_confirm' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#f59e0b', ok:'Sí, confirmar'})">
         {% csrf_token %}
         <button class="btn btn-sm" style="background:#1e2130;color:#fff">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
-      <form method="post" action="{% url 'invoices:quotation_delete' quotation.pk %}"
+      <form method="post" action="{% url 'sales:quotation_delete' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
       </form>
 
     {% elif quotation.status == "CONFIRMED" %}
-      <form method="post" action="{% url 'invoices:quotation_send' quotation.pk %}">
+      <form method="post" action="{% url 'sales:quotation_send' quotation.pk %}">
         {% csrf_token %}
         <button class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-send me-1"></i>{% trans "Marcar enviada" %}
@@ -70,13 +70,13 @@
       </form>
 
     {% elif quotation.status == "SENT" %}
-      <form method="post" action="{% url 'invoices:quotation_accept' quotation.pk %}">
+      <form method="post" action="{% url 'sales:quotation_accept' quotation.pk %}">
         {% csrf_token %}
         <button class="btn btn-outline-success btn-sm">
           <i class="bi bi-hand-thumbs-up me-1"></i>{% trans "Aceptada" %}
         </button>
       </form>
-      <form method="post" action="{% url 'invoices:quotation_reject' quotation.pk %}"
+      <form method="post" action="{% url 'sales:quotation_reject' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Marcar como rechazada?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, rechazar'})">
         {% csrf_token %}
         <button class="btn btn-outline-danger btn-sm">
@@ -222,7 +222,7 @@
       </div>
       <div class="p-3">
         <div class="mb-3">
-          {% include "invoices/partials/status_badge.html" with status=quotation.status %}
+          {% include "sales/partials/status_badge.html" with status=quotation.status %}
         </div>
         <table class="table table-sm mb-0" style="font-size:.82rem">
           <tbody>
@@ -262,7 +262,7 @@
 <div class="modal fade" id="convertModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <form method="post" action="{% url 'invoices:quotation_convert' quotation.pk %}">
+      <form method="post" action="{% url 'sales:quotation_convert' quotation.pk %}">
         {% csrf_token %}
         <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
           <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">

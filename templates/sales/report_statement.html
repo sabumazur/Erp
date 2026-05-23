@@ -30,7 +30,7 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'invoices:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'sales:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if customer and lines %}
@@ -42,7 +42,7 @@
 </div>
 
 {# ── Filter form ──────────────────────────────────────────────────────────── #}
-{% include "invoices/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
+{% include "sales/partials/report_filter_panel.html" with show_customer=True customer_required=True show_dates=True %}
 
 {# ── Validation error ─────────────────────────────────────────────────────── #}
 {% if error %}
