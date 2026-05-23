@@ -31,7 +31,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("status",        _("Estado"),      sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-issue_date"
-    dt_url = "invoices:quotation_list"
+    dt_url = "sales:quotation_list"
     dt_row_template = "sales/partials/quotation_row.html"
     dt_filter_template = "sales/partials/quotation_filters.html"
     dt_search_placeholder = _("Número o cliente…")
@@ -91,7 +91,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+            {"label": _("Cotizaciones"), "url": reverse("sales:quotation_list")},
             {"label": _("Nueva cotización")},
         ]
         return ctx
@@ -107,7 +107,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
             formset.instance = quotation
             formset.save()
             messages.success(request, _("Cotización creada como borrador."))
-            return redirect("invoices:quotation_detail", pk=quotation.pk)
+            return redirect("sales:quotation_detail", pk=quotation.pk)
         ctx = self.get_context_data()
         ctx["form"] = form
         ctx["formset"] = formset
@@ -134,7 +134,7 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         q = self.object
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+            {"label": _("Cotizaciones"), "url": reverse("sales:quotation_list")},
             {"label": q.doc_number or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
@@ -149,7 +149,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
         if not q.is_editable:
             messages.error(request, _("Solo se pueden editar cotizaciones en Borrador."))
-            return None, redirect("invoices:quotation_detail", pk=q.pk)
+            return None, redirect("sales:quotation_detail", pk=q.pk)
         return q, None
 
     def get(self, request, pk):
@@ -173,7 +173,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
             form.save()
             formset.save()
             messages.success(request, _("Cotización actualizada."))
-            return redirect("invoices:quotation_detail", pk=q.pk)
+            return redirect("sales:quotation_detail", pk=q.pk)
         ctx = self.get_context_data(form=form, formset=formset, quotation=q)
         return self.render_to_response(ctx)
 
@@ -187,10 +187,10 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         if q:
             ctx["breadcrumbs"] = [
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                {"label": _("Cotizaciones"), "url": reverse("invoices:quotation_list")},
+                {"label": _("Cotizaciones"), "url": reverse("sales:quotation_list")},
                 {
                     "label": q.doc_number or str(_("Borrador")),
-                    "url": reverse("invoices:quotation_detail", args=[q.pk]),
+                    "url": reverse("sales:quotation_detail", args=[q.pk]),
                 },
                 {"label": _("Editar")},
             ]
@@ -210,7 +210,7 @@ class QuotationConfirmView(ERPBaseViewMixin, View):
             messages.success(request, _(f"Cotización confirmada: {q.doc_number}"))
         except (ValueError, Exception) as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:quotation_detail", pk=q.pk)
+        return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationSendView(ERPBaseViewMixin, View):
@@ -223,7 +223,7 @@ class QuotationSendView(ERPBaseViewMixin, View):
             messages.success(request, _("Cotización marcada como enviada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-            return redirect("invoices:quotation_detail", pk=q.pk)
+            return redirect("sales:quotation_detail", pk=q.pk)
         try:
             sent = send_quotation_email(q, request)
             if sent:
@@ -232,7 +232,7 @@ class QuotationSendView(ERPBaseViewMixin, View):
                 messages.warning(request, _("El cliente no tiene correo registrado."))
         except Exception as exc:
             messages.warning(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
-        return redirect("invoices:quotation_detail", pk=q.pk)
+        return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationEmailView(ERPBaseViewMixin, View):
@@ -248,7 +248,7 @@ class QuotationEmailView(ERPBaseViewMixin, View):
                 messages.warning(request, _("El cliente no tiene correo registrado."))
         except Exception as exc:
             messages.error(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
-        return redirect("invoices:quotation_detail", pk=q.pk)
+        return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationAcceptView(ERPBaseViewMixin, View):
@@ -261,7 +261,7 @@ class QuotationAcceptView(ERPBaseViewMixin, View):
             messages.success(request, _("Cotización marcada como aceptada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:quotation_detail", pk=q.pk)
+        return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationRejectView(ERPBaseViewMixin, View):
@@ -274,7 +274,7 @@ class QuotationRejectView(ERPBaseViewMixin, View):
             messages.success(request, _("Cotización marcada como rechazada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:quotation_detail", pk=q.pk)
+        return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationConvertView(ERPBaseViewMixin, View):
@@ -285,14 +285,14 @@ class QuotationConvertView(ERPBaseViewMixin, View):
         ncf_type = request.POST.get("ncf_type")
         if not ncf_type:
             messages.error(request, _("Debe seleccionar el tipo de comprobante fiscal."))
-            return redirect("invoices:quotation_detail", pk=q.pk)
+            return redirect("sales:quotation_detail", pk=q.pk)
         try:
             invoice = QuotationService.convert_to_invoice(q, int(ncf_type))
             messages.success(request, _("Cotización convertida. Factura borrador creada."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         except (ValueError, Exception) as exc:
             messages.error(request, str(exc))
-            return redirect("invoices:quotation_detail", pk=q.pk)
+            return redirect("sales:quotation_detail", pk=q.pk)
 
 
 class QuotationDeleteView(ERPBaseViewMixin, View):
@@ -302,10 +302,10 @@ class QuotationDeleteView(ERPBaseViewMixin, View):
         q = get_object_or_404(SalesDocument.quotations, pk=pk, organization=request.organization)
         if q.status != SalesDocument.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar cotizaciones en Borrador."))
-            return redirect("invoices:quotation_detail", pk=q.pk)
+            return redirect("sales:quotation_detail", pk=q.pk)
         q.hard_delete()
         messages.success(request, _("Cotización eliminada."))
-        return redirect("invoices:quotation_list")
+        return redirect("sales:quotation_list")
 
 
 class QuotationPrintView(ERPBaseViewMixin, View):

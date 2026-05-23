@@ -34,7 +34,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("depts",            _("Depts."),   sortable=False),
     ]
     dt_default_sort = "name"
-    dt_url = "invoices:customer_list"
+    dt_url = "sales:customer_list"
     dt_row_template = "sales/partials/customer_row.html"
     dt_filter_template = "sales/partials/customer_filters.html"
     dt_search_placeholder = _("Nombre o RNC…")
@@ -113,7 +113,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             if request.htmx:
                 return self._refresh_table(request, str(_("Cliente creado correctamente.")))
             messages.success(request, _("Cliente creado correctamente."))
-            return redirect("invoices:customer_list")
+            return redirect("sales:customer_list")
 
         if request.htmx:
             resp = render(
@@ -121,7 +121,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                 "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
-                    "action_url": reverse("invoices:customer_list"),
+                    "action_url": reverse("sales:customer_list"),
                     "submit_label": _("Crear"),
                     "hx_target": "#dt-results",
                 },
@@ -142,14 +142,14 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
 
     def get_success_url(self):
         from django.urls import reverse_lazy
-        return reverse_lazy("invoices:customer_list")
+        return reverse_lazy("sales:customer_list")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["module"] = "customer"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Clientes"), "url": reverse("invoices:customer_list")},
+            {"label": _("Clientes"), "url": reverse("sales:customer_list")},
             {"label": self.object.name},
         ]
         return ctx
@@ -168,7 +168,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
                 "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
-                    "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
+                    "action_url": reverse("sales:customer_edit", args=[customer.pk]),
                     "submit_label": _("Guardar"),
                     "hx_target": request.GET.get("hx_target", "#customer-table"),
                 },
@@ -210,7 +210,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
                 "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
-                    "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
+                    "action_url": reverse("sales:customer_edit", args=[customer.pk]),
                     "submit_label": _("Guardar"),
                     "hx_target": hx_target,
                 },
@@ -283,7 +283,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
                     dept_form=_DeptForm(),
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Clientes"), "url": reverse("invoices:customer_list")},
+                        {"label": _("Clientes"), "url": reverse("sales:customer_list")},
                         {"label": customer.name},
                     ],
                 ),
@@ -324,13 +324,13 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
                 }})
                 return resp
             messages.error(request, str(exc))
-            return redirect("invoices:customer_list")
+            return redirect("sales:customer_list")
         if request.htmx:
             return CustomerListView._refresh_table(
                 request, str(_(f"Cliente «{name}» eliminado.")),
             )
         messages.success(request, _(f"Cliente «{name}» eliminado."))
-        return redirect("invoices:customer_list")
+        return redirect("sales:customer_list")
 
 
 # ── Customer Department CRUD ──────────────────────────────────────────────────
@@ -354,7 +354,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
             {
                 "form": form,
                 "customer": customer,
-                "action_url": reverse("invoices:department_create", args=[customer_pk]),
+                "action_url": reverse("sales:department_create", args=[customer_pk]),
                 "submit_label": _("Crear"),
             },
         )
@@ -381,7 +381,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
                 )
                 return resp
             messages.success(request, _("Departamento creado."))
-            return redirect("invoices:customer_detail", pk=customer_pk)
+            return redirect("sales:customer_detail", pk=customer_pk)
 
         if request.htmx:
             resp = render(
@@ -390,7 +390,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
                 {
                     "form": form,
                     "customer": customer,
-                    "action_url": reverse("invoices:department_create", args=[customer_pk]),
+                    "action_url": reverse("sales:department_create", args=[customer_pk]),
                     "submit_label": _("Crear"),
                 },
             )
@@ -398,7 +398,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
             resp["HX-Reswap"] = "innerHTML"
             return resp
         messages.error(request, _("Por favor corrija los errores."))
-        return redirect("invoices:customer_detail", pk=customer_pk)
+        return redirect("sales:customer_detail", pk=customer_pk)
 
 
 class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
@@ -421,7 +421,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
             {
                 "form": form,
                 "customer": customer,
-                "action_url": reverse("invoices:department_edit", args=[customer_pk, pk]),
+                "action_url": reverse("sales:department_edit", args=[customer_pk, pk]),
                 "submit_label": _("Guardar"),
             },
         )
@@ -445,7 +445,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
                 )
                 return resp
             messages.success(request, _("Departamento actualizado."))
-            return redirect("invoices:customer_detail", pk=customer_pk)
+            return redirect("sales:customer_detail", pk=customer_pk)
 
         if request.htmx:
             resp = render(
@@ -454,7 +454,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
                 {
                     "form": form,
                     "customer": customer,
-                    "action_url": reverse("invoices:department_edit", args=[customer_pk, pk]),
+                    "action_url": reverse("sales:department_edit", args=[customer_pk, pk]),
                     "submit_label": _("Guardar"),
                 },
             )
@@ -462,7 +462,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
             resp["HX-Reswap"] = "innerHTML"
             return resp
         messages.error(request, _("Por favor corrija los errores."))
-        return redirect("invoices:customer_detail", pk=customer_pk)
+        return redirect("sales:customer_detail", pk=customer_pk)
 
 
 class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
@@ -480,7 +480,7 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
                 "sales/partials/department_table.html",
                 {"departments": departments, "customer": customer},
             )
-        return redirect("invoices:customer_detail", pk=customer_pk)
+        return redirect("sales:customer_detail", pk=customer_pk)
 
 
 class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
@@ -510,7 +510,7 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
                 }})
                 return resp
             messages.error(request, str(msg))
-            return redirect("invoices:customer_detail", pk=customer_pk)
+            return redirect("sales:customer_detail", pk=customer_pk)
 
         name = dept.name
         dept.delete()
@@ -528,4 +528,4 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
             return resp
 
         messages.success(request, _(f"Departamento «{name}» eliminado."))
-        return redirect("invoices:customer_detail", pk=customer_pk)
+        return redirect("sales:customer_detail", pk=customer_pk)

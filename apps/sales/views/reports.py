@@ -71,13 +71,13 @@ class Report607View(ERPBaseViewMixin, View):
         year = request.GET.get("year")
         if not (month and year):
             messages.error(request, _("Debe seleccionar mes y año."))
-            return redirect("invoices:reports")
+            return redirect("sales:reports")
 
         try:
             month, year = int(month), int(year)
         except (ValueError, TypeError):
             messages.error(request, _("Mes y año inválidos."))
-            return redirect("invoices:reports")
+            return redirect("sales:reports")
 
         invoices = (
             SalesDocument.invoices.filter(
@@ -129,13 +129,13 @@ class Report608View(ERPBaseViewMixin, View):
         year = request.GET.get("year")
         if not (month and year):
             messages.error(request, _("Debe seleccionar mes y año."))
-            return redirect("invoices:reports")
+            return redirect("sales:reports")
 
         try:
             month, year = int(month), int(year)
         except (ValueError, TypeError):
             messages.error(request, _("Mes y año inválidos."))
-            return redirect("invoices:reports")
+            return redirect("sales:reports")
 
         cancelled = (
             SalesDocument.invoices.filter(
@@ -220,7 +220,7 @@ class ReportAgingView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Antigüedad de Cuentas por Cobrar")},
                     ]
                 ),
@@ -292,7 +292,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
                     lines.append({
                         "date": inv.issue_date, "type": "invoice",
                         "ref":  inv.display_number,
-                        "url":  reverse("invoices:invoice_detail", args=[inv.pk]),
+                        "url":  reverse("sales:invoice_detail", args=[inv.pk]),
                         "debit": inv.total, "credit": _zero,
                     })
                     period_invoiced += inv.total
@@ -304,7 +304,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
                     lines.append({
                         "date": pmt.date, "type": "payment",
                         "ref":  f"PAG-{pmt.pk.hex[:8].upper()}",
-                        "url":  reverse("invoices:payment_detail", args=[pmt.pk]),
+                        "url":  reverse("sales:payment_detail", args=[pmt.pk]),
                         "debit": _zero, "credit": pmt.amount,
                     })
                     period_collected += pmt.amount
@@ -325,7 +325,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Estado de Cuenta")},
                     ]
                 ),
@@ -420,7 +420,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Ventas por Período")},
                     ]
                 ),
@@ -482,7 +482,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Facturas por Cliente")},
                     ]
                 ),
@@ -546,7 +546,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Cobros del Período")},
                     ]
                 ),
@@ -640,7 +640,7 @@ class ReportITBISView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Resumen de ITBIS")},
                     ]
                 ),
@@ -715,7 +715,7 @@ class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
                 **self.get_context(
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Reportes"), "url": reverse("invoices:reports")},
+                        {"label": _("Reportes"), "url": reverse("sales:reports")},
                         {"label": _("Ventas por Tipo de Comprobante")},
                     ]
                 ),

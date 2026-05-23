@@ -34,7 +34,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("status",         _("Estado"),     sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-delivery_date"
-    dt_url = "invoices:sale_order_list"
+    dt_url = "sales:sale_order_list"
     dt_row_template = "sales/partials/sale_order_row.html"
     dt_filter_template = "sales/partials/sale_order_filters.html"
     dt_search_placeholder = _("Número o cliente…")
@@ -99,7 +99,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": _("Órdenes de venta"), "url": reverse("sales:sale_order_list")},
             {"label": _("Nueva orden")},
         ]
         return ctx
@@ -115,7 +115,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
             formset.instance = order
             formset.save()
             messages.success(request, _("Orden de venta creada como borrador."))
-            return redirect("invoices:sale_order_detail", pk=order.pk)
+            return redirect("sales:sale_order_detail", pk=order.pk)
         ctx = self.get_context_data()
         ctx["form"] = form
         ctx["formset"] = formset
@@ -142,7 +142,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         o = self.object
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": _("Órdenes de venta"), "url": reverse("sales:sale_order_list")},
             {"label": o.doc_number or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
@@ -157,7 +157,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
         if not o.is_editable:
             messages.error(request, _("Solo se pueden editar órdenes en Borrador."))
-            return None, redirect("invoices:sale_order_detail", pk=o.pk)
+            return None, redirect("sales:sale_order_detail", pk=o.pk)
         return o, None
 
     def get(self, request, pk):
@@ -181,7 +181,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
             form.save()
             formset.save()
             messages.success(request, _("Orden de venta actualizada."))
-            return redirect("invoices:sale_order_detail", pk=o.pk)
+            return redirect("sales:sale_order_detail", pk=o.pk)
         ctx = self.get_context_data(form=form, formset=formset, order=o)
         return self.render_to_response(ctx)
 
@@ -195,10 +195,10 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         if o:
             ctx["breadcrumbs"] = [
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+                {"label": _("Órdenes de venta"), "url": reverse("sales:sale_order_list")},
                 {
                     "label": o.doc_number or str(_("Borrador")),
-                    "url": reverse("invoices:sale_order_detail", args=[o.pk]),
+                    "url": reverse("sales:sale_order_detail", args=[o.pk]),
                 },
                 {"label": _("Editar")},
             ]
@@ -218,7 +218,7 @@ class SaleOrderConfirmView(ERPBaseViewMixin, View):
             messages.success(request, _(f"Orden confirmada: {o.doc_number}"))
         except Exception as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:sale_order_detail", pk=o.pk)
+        return redirect("sales:sale_order_detail", pk=o.pk)
 
 
 class SaleOrderDeliverView(ERPBaseViewMixin, View):
@@ -229,13 +229,13 @@ class SaleOrderDeliverView(ERPBaseViewMixin, View):
         form = SaleOrderDeliverForm(request.POST)
         if not form.is_valid():
             messages.error(request, _("Debe indicar el nombre de quien recibe la entrega."))
-            return redirect("invoices:sale_order_detail", pk=o.pk)
+            return redirect("sales:sale_order_detail", pk=o.pk)
         try:
             SaleOrderService.mark_delivered(o, form.cleaned_data["signed_by"])
             messages.success(request, _(f"Orden marcada como entregada. Recibido por: {o.signed_by}"))
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:sale_order_detail", pk=o.pk)
+        return redirect("sales:sale_order_detail", pk=o.pk)
 
 
 class SaleOrderCancelView(ERPBaseViewMixin, View):
@@ -248,7 +248,7 @@ class SaleOrderCancelView(ERPBaseViewMixin, View):
             messages.success(request, _("Orden de venta anulada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:sale_order_detail", pk=o.pk)
+        return redirect("sales:sale_order_detail", pk=o.pk)
 
 
 class SaleOrderDeleteView(ERPBaseViewMixin, View):
@@ -258,10 +258,10 @@ class SaleOrderDeleteView(ERPBaseViewMixin, View):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
         if o.status != SalesDocument.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar órdenes en Borrador."))
-            return redirect("invoices:sale_order_detail", pk=o.pk)
+            return redirect("sales:sale_order_detail", pk=o.pk)
         o.hard_delete()
         messages.success(request, _("Orden eliminada."))
-        return redirect("invoices:sale_order_list")
+        return redirect("sales:sale_order_list")
 
 
 class SaleOrderEmailView(ERPBaseViewMixin, View):
@@ -277,7 +277,7 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
                 messages.warning(request, _("El cliente no tiene correo registrado."))
         except Exception as exc:
             messages.error(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
-        return redirect("invoices:sale_order_detail", pk=o.pk)
+        return redirect("sales:sale_order_detail", pk=o.pk)
 
 
 # ── Consolidation ─────────────────────────────────────────────────────────────
@@ -294,7 +294,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Órdenes de venta"), "url": reverse("invoices:sale_order_list")},
+            {"label": _("Órdenes de venta"), "url": reverse("sales:sale_order_list")},
             {"label": _("Consolidar en factura")},
         ]
         return ctx
@@ -359,7 +359,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                 department=cd.get("department"),
             )
             messages.success(request, _("Se generó la factura consolidada. Revise y confirme el e-NCF."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         except ValueError as exc:
             messages.error(request, str(exc))
             ctx = self.get_context_data()
@@ -398,7 +398,7 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
                 itbis_rate=line.itbis_rate,
             )
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
-        return redirect("invoices:sale_order_edit", pk=new_order.pk)
+        return redirect("sales:sale_order_edit", pk=new_order.pk)
 
 
 class SaleOrderPrintView(ERPBaseViewMixin, View):

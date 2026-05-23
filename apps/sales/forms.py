@@ -65,7 +65,7 @@ class CustomerForm(forms.ModelForm):
         self.fields["rnc_cedula"].widget.attrs.update(
             {
                 "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
-                "hx-get": reverse_lazy("invoices:rnc_lookup"),
+                "hx-get": reverse_lazy("sales:rnc_lookup"),
                 "hx-trigger": "blur",
                 "hx-target": "#rnc-lookup-result",
                 "hx-include": "closest form",
@@ -541,7 +541,7 @@ class SaleOrderForm(forms.ModelForm):
         # HTMX: when customer changes, swap the department <option> tags in place.
         self.fields["customer"].widget = forms.HiddenInput(attrs={
             "id": "id_customer",
-            "hx-get": reverse_lazy("invoices:departments_for_customer"),
+            "hx-get": reverse_lazy("sales:departments_for_customer"),
             "hx-trigger": "change",
             "hx-target": "#id_department",
             "hx-swap": "innerHTML",
@@ -862,7 +862,7 @@ class PaymentHeaderForm(forms.ModelForm):
         self.fields["customer"].widget.attrs.update(
             {
                 "class": "form-select",
-                "hx-get": reverse_lazy("invoices:payment_outstanding_invoices"),
+                "hx-get": reverse_lazy("sales:payment_outstanding_invoices"),
                 "hx-trigger": "change",
                 "hx-target": "#allocation-tbody",
                 "hx-swap": "innerHTML",

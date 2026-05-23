@@ -41,21 +41,21 @@ def set_active_org(client, org):
 class TestCustomerViews:
 
     def test_customer_list_requires_login(self, client):
-        resp = client.get(reverse("invoices:customer_list"))
+        resp = client.get(reverse("sales:customer_list"))
         assert resp.status_code in (302, 403)
 
     def test_customer_list_accessible_to_member(self, client):
         user, org, _ = make_member(Membership.Role.MEMBER)
         login(client, user)
         set_active_org(client, org)
-        resp = client.get(reverse("invoices:customer_list"))
+        resp = client.get(reverse("sales:customer_list"))
         assert resp.status_code == 200
 
     def test_create_customer_via_post(self, client):
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        resp = client.post(reverse("invoices:customer_list"), {
+        resp = client.post(reverse("sales:customer_list"), {
             "name": "Empresa Test S.R.L.",
             "id_type": "RNC",
             "rnc_cedula": "101234563",
@@ -82,7 +82,7 @@ class TestInvoiceListView:
         set_active_org(client, org)
         customer = CustomerFactory(organization=org)
         invoice = SalesDocumentFactory(organization=org, customer=customer)
-        resp = client.get(reverse("invoices:invoice_list"))
+        resp = client.get(reverse("sales:invoice_list"))
         assert resp.status_code == 200
 
 
@@ -101,7 +101,7 @@ class TestInvoiceConfirmView:
         user, org, invoice = self._setup()
         login(client, user)
         set_active_org(client, org)
-        resp = client.post(reverse("invoices:invoice_confirm", kwargs={"pk": invoice.pk}))
+        resp = client.post(reverse("sales:invoice_confirm", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         invoice.refresh_from_db()
         assert invoice.encf == "E310000000001"
@@ -109,7 +109,7 @@ class TestInvoiceConfirmView:
 
     def test_confirm_requires_login(self, client):
         _, org, invoice = self._setup()
-        resp = client.post(reverse("invoices:invoice_confirm", kwargs={"pk": invoice.pk}))
+        resp = client.post(reverse("sales:invoice_confirm", kwargs={"pk": invoice.pk}))
         assert resp.status_code in (302, 403)
 
 
@@ -125,7 +125,7 @@ class TestInvoiceCancelView:
         login(client, user)
         set_active_org(client, org)
         NCFService.confirm(invoice)
-        resp = client.post(reverse("invoices:invoice_cancel", kwargs={"pk": invoice.pk}))
+        resp = client.post(reverse("sales:invoice_cancel", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         invoice.refresh_from_db()
         assert invoice.status == SalesDocument.Status.CANCELLED
@@ -140,7 +140,7 @@ class TestInvoiceDeleteView:
         invoice = SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DRAFT)
         login(client, user)
         set_active_org(client, org)
-        resp = client.post(reverse("invoices:invoice_delete", kwargs={"pk": invoice.pk}))
+        resp = client.post(reverse("sales:invoice_delete", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         assert not SalesDocument.objects.filter(pk=invoice.pk).exists()
 
@@ -153,7 +153,7 @@ class TestInvoiceDeleteView:
         NCFService.confirm(invoice)
         login(client, user)
         set_active_org(client, org)
-        resp = client.post(reverse("invoices:invoice_delete", kwargs={"pk": invoice.pk}))
+        resp = client.post(reverse("sales:invoice_delete", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         assert SalesDocument.objects.filter(pk=invoice.pk).exists()
 
@@ -168,7 +168,7 @@ class TestReportViews:
         login(client, user)
         set_active_org(client, org)
         resp = client.get(
-            reverse("invoices:report_607"),
+            reverse("sales:report_607"),
             {"month": "1", "year": "2026"},
         )
         assert resp.status_code == 200
@@ -179,7 +179,7 @@ class TestReportViews:
         login(client, user)
         set_active_org(client, org)
         resp = client.get(
-            reverse("invoices:report_608"),
+            reverse("sales:report_608"),
             {"month": "1", "year": "2026"},
         )
         assert resp.status_code == 200
@@ -189,7 +189,7 @@ class TestReportViews:
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        resp = client.get(reverse("invoices:report_607"))
+        resp = client.get(reverse("sales:report_607"))
         assert resp.status_code == 302  # redirect with error message
 
 
@@ -242,12 +242,12 @@ class TestCustomerSearchView:
 
     def _get(self, client, org, q=""):
         from django.urls import reverse
-        return client.get(reverse("invoices:customer_search"), {"q": q})
+        return client.get(reverse("sales:customer_search"), {"q": q})
 
     def test_requires_login(self, client):
         from apps.accounts.tests.factories import OrganizationFactory
         org = OrganizationFactory()
-        resp = client.get("/invoices/htmx/customers/search/")
+        resp = client.get("/sales/htmx/customers/search/")
         assert resp.status_code in (302, 403)
 
     def test_returns_200(self, client):
@@ -301,13 +301,13 @@ class TestCustomerQuickCreateView:
     def _post(self, client, org, data):
         import urllib.parse
         from django.urls import reverse
-        return client.post(reverse("invoices:customer_quick_create"),
+        return client.post(reverse("sales:customer_quick_create"),
                            urllib.parse.urlencode(data),
                            content_type="application/x-www-form-urlencoded",
                            HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
     def test_requires_login(self, client):
-        resp = client.post("/invoices/htmx/customers/create/", {})
+        resp = client.post("/sales/htmx/customers/create/", {})
         assert resp.status_code in (302, 403)
 
     def test_creates_customer_returns_json(self, client):
@@ -376,10 +376,10 @@ class TestCustomerQuickCreateView:
 class TestItemSearchView:
 
     def _get(self, client, org, q=""):
-        return client.get(reverse("invoices:item_search"), {"q": q})
+        return client.get(reverse("sales:item_search"), {"q": q})
 
     def test_requires_login(self, client):
-        resp = client.get(reverse("invoices:item_search"))
+        resp = client.get(reverse("sales:item_search"))
         assert resp.status_code in (302, 403)
 
     def test_returns_200(self, client):

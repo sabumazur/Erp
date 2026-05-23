@@ -29,7 +29,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "days_due"
     dt_page_size = 25
-    dt_url = "invoices:payment_term_list"
+    dt_url = "sales:payment_term_list"
     dt_row_template = "sales/partials/payment_term_row.html"
     dt_filter_template = "sales/partials/payment_term_filters.html"
     dt_search_placeholder = _("Nombre…")
@@ -62,7 +62,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx.update(self.apply_datatable(f.qs))
         ctx["filter"]       = f
         ctx["form"]         = PaymentTermForm()
-        ctx["create_url"]   = reverse("invoices:payment_term_list")
+        ctx["create_url"]   = reverse("sales:payment_term_list")
         ctx["submit_label"] = _("Crear")
         ctx["breadcrumbs"]  = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -87,12 +87,12 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                     request, _("Término de pago creado correctamente.")
                 )
             messages.success(request, _("Término de pago creado correctamente."))
-            return redirect("invoices:payment_term_list")
+            return redirect("sales:payment_term_list")
 
         if request.htmx:
             resp = render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
-                "action_url":   reverse("invoices:payment_term_list"),
+                "action_url":   reverse("sales:payment_term_list"),
                 "submit_label": _("Crear"),
             })
             resp["HX-Retarget"] = "#payment-term-modal-body"
@@ -117,7 +117,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
         if request.htmx:
             return render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
-                "action_url":   reverse("invoices:payment_term_edit", args=[pk]),
+                "action_url":   reverse("sales:payment_term_edit", args=[pk]),
                 "submit_label": _("Guardar"),
             })
 
@@ -125,7 +125,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
             form=form, term=term,
             breadcrumbs=[
                 {"label": _("Dashboard"),          "url": reverse("accounts:dashboard")},
-                {"label": _("Términos de pago"),   "url": reverse("invoices:payment_term_list")},
+                {"label": _("Términos de pago"),   "url": reverse("sales:payment_term_list")},
                 {"label": term.name},
             ],
         )
@@ -142,12 +142,12 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
                     request, _("Término de pago actualizado correctamente.")
                 )
             messages.success(request, _("Término de pago actualizado correctamente."))
-            return redirect("invoices:payment_term_list")
+            return redirect("sales:payment_term_list")
 
         if request.htmx:
             resp = render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
-                "action_url":   reverse("invoices:payment_term_edit", args=[pk]),
+                "action_url":   reverse("sales:payment_term_edit", args=[pk]),
                 "submit_label": _("Guardar"),
             })
             resp["HX-Retarget"] = "#payment-term-modal-body"
@@ -158,7 +158,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
             form=form, term=term,
             breadcrumbs=[
                 {"label": _("Dashboard"),          "url": reverse("accounts:dashboard")},
-                {"label": _("Términos de pago"),   "url": reverse("invoices:payment_term_list")},
+                {"label": _("Términos de pago"),   "url": reverse("sales:payment_term_list")},
                 {"label": term.name},
             ],
         )
@@ -191,7 +191,7 @@ class PaymentTermDeleteView(ERPBaseViewMixin, View):
                 }})
                 return resp
             messages.error(request, str(msg))
-            return redirect("invoices:payment_term_list")
+            return redirect("sales:payment_term_list")
 
         term.delete()
         if request.htmx:
@@ -199,4 +199,4 @@ class PaymentTermDeleteView(ERPBaseViewMixin, View):
                 request, _(f"Término «{name}» eliminado.")
             )
         messages.success(request, _(f"Término «{name}» eliminado."))
-        return redirect("invoices:payment_term_list")
+        return redirect("sales:payment_term_list")

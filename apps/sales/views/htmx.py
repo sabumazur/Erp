@@ -6,10 +6,10 @@ Usage — swap these into your templates instead of injecting window.CUSTOMER_DE
 and window.ITEM_CATALOG on page load:
 
   Customer defaults (triggered by customer <select> change):
-    hx-get="{% url 'invoices:customer_defaults' %}?customer_id=<id>"
+    hx-get="{% url 'sales:customer_defaults' %}?customer_id=<id>"
 
   Item search (triggered by item search input):
-    hx-get="{% url 'invoices:item_search' %}?q=<query>"
+    hx-get="{% url 'sales:item_search' %}?q=<query>"
 """
 from django.db.models import Q
 from django.http import JsonResponse

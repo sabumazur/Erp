@@ -33,7 +33,7 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("allocations",    _("Facturas"), sortable=False),
     ]
     dt_default_sort = "-date"
-    dt_url = "invoices:payment_list"
+    dt_url = "sales:payment_list"
     dt_row_template = "sales/partials/payment_row.html"
     dt_filter_template = "sales/partials/payment_filters.html"
     dt_search_placeholder = _("Cliente o referencia…")
@@ -102,7 +102,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
                 form=form,
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                    {"label": _("Pagos"), "url": reverse("invoices:payment_list")},
+                    {"label": _("Pagos"), "url": reverse("sales:payment_list")},
                     {"label": _("Nuevo pago")},
                 ],
             ),
@@ -150,7 +150,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
                 allocations=allocations,
             )
             messages.success(request, _("Pago registrado exitosamente."))
-            return redirect("invoices:payment_detail", pk=payment.pk)
+            return redirect("sales:payment_detail", pk=payment.pk)
         except ValueError as exc:
             form.add_error(None, str(exc))
             return render(request, "sales/payment_form.html", self._ctx(request, form))
@@ -172,7 +172,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
                     payment=payment,
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                        {"label": _("Pagos"), "url": reverse("invoices:payment_list")},
+                        {"label": _("Pagos"), "url": reverse("sales:payment_list")},
                         {"label": str(payment)},
                     ],
                 ),
@@ -192,7 +192,7 @@ class PaymentDeleteView(ERPBaseViewMixin, View):
             messages.success(request, _("Pago eliminado y facturas reabiertas."))
         except Exception as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:payment_list")
+        return redirect("sales:payment_list")
 
 
 class OutstandingInvoicesView(ERPBaseViewMixin, View):

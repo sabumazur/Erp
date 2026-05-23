@@ -88,40 +88,40 @@ app_name = "sales"
 
 urlpatterns = [
     # ── Customers ─────────────────────────────────────────────────────────────
-    path("invoices/customers/",                    CustomerListView.as_view(),   name="customer_list"),
-    path("invoices/customers/<uuid:pk>/",          CustomerDetailView.as_view(), name="customer_detail"),
-    path("invoices/customers/<uuid:pk>/edit/",     CustomerUpdateView.as_view(), name="customer_edit"),
-    path("invoices/customers/<uuid:pk>/delete/",   CustomerDeleteView.as_view(), name="customer_delete"),
+    path("sales/customers/",                    CustomerListView.as_view(),   name="customer_list"),
+    path("sales/customers/<uuid:pk>/",          CustomerDetailView.as_view(), name="customer_detail"),
+    path("sales/customers/<uuid:pk>/edit/",     CustomerUpdateView.as_view(), name="customer_edit"),
+    path("sales/customers/<uuid:pk>/delete/",   CustomerDeleteView.as_view(), name="customer_delete"),
 
     # Customer departments
-    path("invoices/customers/<uuid:customer_pk>/departments/create/",
+    path("sales/customers/<uuid:customer_pk>/departments/create/",
          CustomerDepartmentCreateView.as_view(), name="department_create"),
-    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/edit/",
+    path("sales/customers/<uuid:customer_pk>/departments/<uuid:pk>/edit/",
          CustomerDepartmentUpdateView.as_view(), name="department_edit"),
-    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/toggle/",
+    path("sales/customers/<uuid:customer_pk>/departments/<uuid:pk>/toggle/",
          CustomerDepartmentToggleView.as_view(), name="department_toggle"),
-    path("invoices/customers/<uuid:customer_pk>/departments/<uuid:pk>/delete/",
+    path("sales/customers/<uuid:customer_pk>/departments/<uuid:pk>/delete/",
          CustomerDepartmentDeleteView.as_view(), name="department_delete"),
 
     # ── Invoices ──────────────────────────────────────────────────────────────
-    path("invoices/",                              InvoiceListView.as_view(),    name="invoice_list"),
-    path("invoices/create/",                       InvoiceCreateView.as_view(),  name="invoice_create"),
-    path("invoices/<uuid:pk>/",                    InvoiceDetailView.as_view(),  name="invoice_detail"),
-    path("invoices/<uuid:pk>/edit/",               InvoiceUpdateView.as_view(),  name="invoice_edit"),
+    path("sales/",                              InvoiceListView.as_view(),    name="invoice_list"),
+    path("sales/create/",                       InvoiceCreateView.as_view(),  name="invoice_create"),
+    path("sales/<uuid:pk>/",                    InvoiceDetailView.as_view(),  name="invoice_detail"),
+    path("sales/<uuid:pk>/edit/",               InvoiceUpdateView.as_view(),  name="invoice_edit"),
 
     # Invoice status transitions
-    path("invoices/<uuid:pk>/confirm/",            InvoiceConfirmView.as_view(), name="invoice_confirm"),
-    path("invoices/<uuid:pk>/send/",               InvoiceSendView.as_view(),    name="invoice_send"),
-    path("invoices/<uuid:pk>/pay/",                InvoicePayView.as_view(),     name="invoice_pay"),
-    path("invoices/<uuid:pk>/cancel/",             InvoiceCancelView.as_view(),  name="invoice_cancel"),
-    path("invoices/<uuid:pk>/delete/",             InvoiceDeleteView.as_view(),  name="invoice_delete"),
+    path("sales/<uuid:pk>/confirm/",            InvoiceConfirmView.as_view(), name="invoice_confirm"),
+    path("sales/<uuid:pk>/send/",               InvoiceSendView.as_view(),    name="invoice_send"),
+    path("sales/<uuid:pk>/pay/",                InvoicePayView.as_view(),     name="invoice_pay"),
+    path("sales/<uuid:pk>/cancel/",             InvoiceCancelView.as_view(),  name="invoice_cancel"),
+    path("sales/<uuid:pk>/delete/",             InvoiceDeleteView.as_view(),  name="invoice_delete"),
 
     # Credit / debit notes
-    path("invoices/<uuid:pk>/credit-note/",        CreditNoteCreateView.as_view(), name="credit_note_create"),
+    path("sales/<uuid:pk>/credit-note/",        CreditNoteCreateView.as_view(), name="credit_note_create"),
 
     # PDF / Print
-    path("invoices/<uuid:pk>/pdf/",                InvoicePDFView.as_view(),     name="invoice_pdf"),
-    path("invoices/<uuid:pk>/print/",              InvoicePrintView.as_view(),   name="invoice_print"),
+    path("sales/<uuid:pk>/pdf/",                InvoicePDFView.as_view(),     name="invoice_pdf"),
+    path("sales/<uuid:pk>/print/",              InvoicePrintView.as_view(),   name="invoice_print"),
 
     # ── Quotations ────────────────────────────────────────────────────────────
     path("quotations/",                            QuotationListView.as_view(),   name="quotation_list"),
@@ -162,37 +162,37 @@ urlpatterns = [
     path("payments/<uuid:pk>/delete/",             PaymentDeleteView.as_view(),    name="payment_delete"),
 
     # ── HTMX helpers ──────────────────────────────────────────────────────────
-    path("invoices/items/row/",                    InvoiceItemRowView.as_view(),      name="item_row"),
-    path("invoices/rnc-lookup/",                   RNCLookupView.as_view(),           name="rnc_lookup"),
-    path("invoices/customers/departments/",        CustomerDepartmentsView.as_view(), name="departments_for_customer"),
+    path("sales/items/row/",                    InvoiceItemRowView.as_view(),      name="item_row"),
+    path("sales/rnc-lookup/",                   RNCLookupView.as_view(),           name="rnc_lookup"),
+    path("sales/customers/departments/",        CustomerDepartmentsView.as_view(), name="departments_for_customer"),
     path("payments/outstanding-invoices/",         OutstandingInvoicesView.as_view(), name="payment_outstanding_invoices"),
-    path("invoices/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
-    path("invoices/items/search/",                  ItemSearchView.as_view(),          name="item_search"),
-    path("invoices/htmx/items/create/",            ItemQuickCreateView.as_view(),     name="item_quick_create"),
-    path("invoices/htmx/customers/search/",        CustomerSearchView.as_view(),      name="customer_search"),
-    path("invoices/htmx/customers/create/",        CustomerQuickCreateView.as_view(), name="customer_quick_create"),
+    path("sales/customer-defaults/",            CustomerDefaultsView.as_view(),    name="customer_defaults"),
+    path("sales/items/search/",                  ItemSearchView.as_view(),          name="item_search"),
+    path("sales/htmx/items/create/",            ItemQuickCreateView.as_view(),     name="item_quick_create"),
+    path("sales/htmx/customers/search/",        CustomerSearchView.as_view(),      name="customer_search"),
+    path("sales/htmx/customers/create/",        CustomerQuickCreateView.as_view(), name="customer_quick_create"),
 
     # ── Payment terms ────────────────────────────────────────────────────────
-    path("invoices/payment-terms/",                PaymentTermListView.as_view(),   name="payment_term_list"),
-    path("invoices/payment-terms/<int:pk>/edit/",  PaymentTermUpdateView.as_view(), name="payment_term_edit"),
-    path("invoices/payment-terms/<int:pk>/delete/",PaymentTermDeleteView.as_view(), name="payment_term_delete"),
+    path("sales/payment-terms/",                PaymentTermListView.as_view(),   name="payment_term_list"),
+    path("sales/payment-terms/<int:pk>/edit/",  PaymentTermUpdateView.as_view(), name="payment_term_edit"),
+    path("sales/payment-terms/<int:pk>/delete/",PaymentTermDeleteView.as_view(), name="payment_term_delete"),
 
     # ── NCF sequences ─────────────────────────────────────────────────────────
-    path("invoices/ncf/",                          NCFSequenceListView.as_view(),   name="ncf_sequences"),
-    path("invoices/ncf/<int:pk>/edit/",            NCFSequenceUpdateView.as_view(), name="ncf_sequence_edit"),
-    path("invoices/ncf/<int:pk>/delete/",          NCFSequenceDeleteView.as_view(), name="ncf_sequence_delete"),
+    path("sales/ncf/",                          NCFSequenceListView.as_view(),   name="ncf_sequences"),
+    path("sales/ncf/<int:pk>/edit/",            NCFSequenceUpdateView.as_view(), name="ncf_sequence_edit"),
+    path("sales/ncf/<int:pk>/delete/",          NCFSequenceDeleteView.as_view(), name="ncf_sequence_delete"),
 
     # ── DGII reports ──────────────────────────────────────────────────────────
-    path("invoices/reports/",                      ReportIndexView.as_view(),           name="reports"),
-    path("invoices/reports/607/",                  Report607View.as_view(),             name="report_607"),
-    path("invoices/reports/608/",                  Report608View.as_view(),             name="report_608"),
+    path("sales/reports/",                      ReportIndexView.as_view(),           name="reports"),
+    path("sales/reports/607/",                  Report607View.as_view(),             name="report_607"),
+    path("sales/reports/608/",                  Report608View.as_view(),             name="report_608"),
 
     # ── Management reports ────────────────────────────────────────────────────
-    path("invoices/reports/invoices-by-customer/", ReportInvoicesByCustomerView.as_view(), name="report_invoices_by_customer"),
-    path("invoices/reports/aging/",                ReportAgingView.as_view(),           name="report_aging"),
-    path("invoices/reports/statement/",            ReportStatementView.as_view(),       name="report_statement"),
-    path("invoices/reports/sales-by-period/",      ReportSalesByPeriodView.as_view(),   name="report_sales_period"),
-    path("invoices/reports/collections/",          ReportCollectionsView.as_view(),          name="report_collections"),
-    path("invoices/reports/itbis/",                ReportITBISView.as_view(),                name="report_itbis"),
-    path("invoices/reports/ncf-type/",             ReportSalesByNCFTypeView.as_view(),       name="report_ncf_type"),
+    path("sales/reports/invoices-by-customer/", ReportInvoicesByCustomerView.as_view(), name="report_invoices_by_customer"),
+    path("sales/reports/aging/",                ReportAgingView.as_view(),           name="report_aging"),
+    path("sales/reports/statement/",            ReportStatementView.as_view(),       name="report_statement"),
+    path("sales/reports/sales-by-period/",      ReportSalesByPeriodView.as_view(),   name="report_sales_period"),
+    path("sales/reports/collections/",          ReportCollectionsView.as_view(),          name="report_collections"),
+    path("sales/reports/itbis/",                ReportITBISView.as_view(),                name="report_itbis"),
+    path("sales/reports/ncf-type/",             ReportSalesByNCFTypeView.as_view(),       name="report_ncf_type"),
 ]

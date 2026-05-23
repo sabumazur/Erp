@@ -39,7 +39,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("status",        _("Estado"),  sortable=False, classes="text-center"),
     ]
     dt_default_sort = "-issue_date"
-    dt_url = "invoices:invoice_list"
+    dt_url = "sales:invoice_list"
     dt_row_template = "sales/partials/invoice_row.html"
     dt_filter_template = "sales/partials/invoice_filters.html"
     dt_search_placeholder = _("e-NCF o cliente…")
@@ -123,7 +123,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+            {"label": _("Facturas"), "url": reverse("sales:invoice_list")},
             {"label": invoice.doc_number or invoice.encf or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
@@ -142,7 +142,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+            {"label": _("Facturas"), "url": reverse("sales:invoice_list")},
             {"label": _("Nueva factura")},
         ]
         return ctx
@@ -158,7 +158,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
             formset.instance = invoice
             formset.save()
             messages.success(request, _("Factura creada como borrador."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data()
         ctx["form"] = form
         ctx["formset"] = formset
@@ -177,7 +177,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
                 _("Esta factura ya fue confirmada y no puede editarse. "
                   "Emita una Nota de Crédito para corregirla."),
             )
-            return None, redirect("invoices:invoice_detail", pk=invoice.pk)
+            return None, redirect("sales:invoice_detail", pk=invoice.pk)
         return invoice, None
 
     def get(self, request, pk):
@@ -201,7 +201,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
             form.save()
             formset.save()
             messages.success(request, _("Factura actualizada."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data(form=form, formset=formset, invoice=invoice)
         return self.render_to_response(ctx)
 
@@ -215,10 +215,10 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         if invoice:
             ctx["breadcrumbs"] = [
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+                {"label": _("Facturas"), "url": reverse("sales:invoice_list")},
                 {
                     "label": invoice.doc_number or str(_("Borrador")),
-                    "url": reverse("invoices:invoice_detail", args=[invoice.pk]),
+                    "url": reverse("sales:invoice_detail", args=[invoice.pk]),
                 },
                 {"label": _("Editar")},
             ]
@@ -238,7 +238,7 @@ class InvoiceConfirmView(ERPBaseViewMixin, View):
             messages.success(request, _(f"Factura confirmada. e-NCF asignado: {invoice.encf}"))
         except Exception as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:invoice_detail", pk=invoice.pk)
+        return redirect("sales:invoice_detail", pk=invoice.pk)
 
 
 class InvoiceSendView(ERPBaseViewMixin, View):
@@ -251,7 +251,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
             messages.success(request, _("Factura marcada como enviada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         try:
             sent = send_invoice_email(invoice, request)
             if sent:
@@ -260,7 +260,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
                 messages.warning(request, _("El cliente no tiene correo registrado."))
         except Exception as exc:
             messages.warning(request, _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)})
-        return redirect("invoices:invoice_detail", pk=invoice.pk)
+        return redirect("sales:invoice_detail", pk=invoice.pk)
 
 
 class InvoicePayView(ERPBaseViewMixin, View):
@@ -271,7 +271,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
         form = PaymentForm(request.POST)
         if not form.is_valid():
             messages.error(request, _("Por favor corrija los errores en el formulario de pago."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
 
         cd = form.cleaned_data
         try:
@@ -287,7 +287,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
             messages.success(request, _("Pago registrado. Factura marcada como pagada."))
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:invoice_detail", pk=invoice.pk)
+        return redirect("sales:invoice_detail", pk=invoice.pk)
 
 
 class InvoiceCancelView(ERPBaseViewMixin, View):
@@ -305,7 +305,7 @@ class InvoiceCancelView(ERPBaseViewMixin, View):
             )
         except ValueError as exc:
             messages.error(request, str(exc))
-        return redirect("invoices:invoice_detail", pk=invoice.pk)
+        return redirect("sales:invoice_detail", pk=invoice.pk)
 
 
 class InvoiceDeleteView(ERPBaseViewMixin, View):
@@ -316,10 +316,10 @@ class InvoiceDeleteView(ERPBaseViewMixin, View):
         invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         if invoice.status != SalesDocument.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar documentos en estado Borrador."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
         invoice.hard_delete()
         messages.success(request, _("Borrador eliminado."))
-        return redirect("invoices:invoice_list")
+        return redirect("sales:invoice_list")
 
 
 # ── Credit / Debit Note ───────────────────────────────────────────────────────
@@ -354,7 +354,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
             formset.instance = note
             formset.save()
             messages.success(request, _("Nota de Crédito/Débito creada como borrador."))
-            return redirect("invoices:invoice_detail", pk=note.pk)
+            return redirect("sales:invoice_detail", pk=note.pk)
         ctx = self.get_context_data(form=form, formset=formset, original=original)
         return self.render_to_response(ctx)
 
@@ -367,10 +367,10 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         if original:
             ctx["breadcrumbs"] = [
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-                {"label": _("Facturas"), "url": reverse("invoices:invoice_list")},
+                {"label": _("Facturas"), "url": reverse("sales:invoice_list")},
                 {
                     "label": original.doc_number or str(_("Borrador")),
-                    "url": reverse("invoices:invoice_detail", args=[original.pk]),
+                    "url": reverse("sales:invoice_detail", args=[original.pk]),
                 },
                 {"label": _("Nota de crédito/débito")},
             ]
@@ -390,7 +390,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
         )
         if invoice.status == SalesDocument.Status.DRAFT:
             messages.warning(request, _("El PDF solo está disponible para documentos confirmados."))
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
 
         try:
             from weasyprint import HTML as WeasyprintHTML
@@ -416,7 +416,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
                 request,
                 _("La generación de PDF requiere weasyprint. Instálelo con: pip install weasyprint"),
             )
-            return redirect("invoices:invoice_detail", pk=invoice.pk)
+            return redirect("sales:invoice_detail", pk=invoice.pk)
 
 
 class InvoicePrintView(ERPBaseViewMixin, View):
@@ -476,13 +476,13 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
                 )
                 return resp
             messages.success(request, _("Secuencia NCF registrada."))
-            return redirect("invoices:ncf_sequences")
+            return redirect("sales:ncf_sequences")
 
         if request.htmx:
             resp = render(
                 request,
                 "sales/partials/ncf_sequence_modal_form.html",
-                {"form": form, "action_url": reverse("invoices:ncf_sequences")},
+                {"form": form, "action_url": reverse("sales:ncf_sequences")},
             )
             resp["HX-Retarget"] = "#ncf-modal-body"
             resp["HX-Reswap"] = "innerHTML"
@@ -497,7 +497,7 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
     template_name = "sales/ncf_sequence_form.html"
     required_module = "sales"
     admin_required = True
-    success_url = reverse_lazy("invoices:ncf_sequences")
+    success_url = reverse_lazy("sales:ncf_sequences")
 
     def get_object(self):
         return get_object_or_404(NCFSequence, pk=self.kwargs["pk"], organization=self.request.organization)
@@ -506,7 +506,7 @@ class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Secuencias NCF"), "url": reverse("invoices:ncf_sequences")},
+            {"label": _("Secuencias NCF"), "url": reverse("sales:ncf_sequences")},
             {"label": self.object.get_ncf_type_display()},
         ]
         return ctx
@@ -525,7 +525,7 @@ class NCFSequenceDeleteView(ERPBaseViewMixin, View):
         label = seq.get_ncf_type_display()
         seq.delete()
         messages.success(request, _(f"Secuencia NCF «{label}» eliminada."))
-        return redirect("invoices:ncf_sequences")
+        return redirect("sales:ncf_sequences")
 
 
 # ── HTMX helpers ──────────────────────────────────────────────────────────────
