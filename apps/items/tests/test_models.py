@@ -123,7 +123,7 @@ class TestItemModel:
     def test_delete_raises_when_item_in_invoice_item(self):
         item = ItemFactory()
         with patch(
-            "apps.invoices.models.SalesDocumentItem.objects.filter",
+            "apps.sales.models.SalesDocumentItem.objects.filter",
             return_value=MagicMock(**{"exists.return_value": True}),
         ):
             with pytest.raises(ValueError, match="está en uso"):

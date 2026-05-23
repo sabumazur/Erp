@@ -226,7 +226,7 @@ class Command(BaseCommand):
         return items  # 25
 
     def _seed_payment_terms(self, org):
-        from apps.invoices.models import PaymentTerm
+        from apps.sales.models import PaymentTerm
 
         TERMS = [
             # (name, days_due, org_specific)
@@ -268,7 +268,7 @@ class Command(BaseCommand):
         return terms  # 25
 
     def _seed_customers(self, org, payment_terms):
-        from apps.invoices.models import Customer, NCFType
+        from apps.sales.models import Customer, NCFType
 
         ncf_type_cycle = [
             NCFType.B01_CREDITO_FISCAL, NCFType.CONSUMO,
@@ -299,7 +299,7 @@ class Command(BaseCommand):
         return customers  # 25
 
     def _seed_customer_departments(self, org, customers):
-        from apps.invoices.models import CustomerDepartment
+        from apps.sales.models import CustomerDepartment
 
         departments = []
         for i, customer in enumerate(customers):
@@ -316,7 +316,7 @@ class Command(BaseCommand):
         return departments  # 25
 
     def _seed_ncf_sequences(self, org):
-        from apps.invoices.models import NCFSequence
+        from apps.sales.models import NCFSequence
 
         B_TYPES = sorted(NCFSequence.PHYSICAL_TYPES)
         E_TYPES = sorted(NCFSequence.ELECTRONIC_TYPES)
@@ -362,7 +362,7 @@ class Command(BaseCommand):
         return seqs  # 25: 20 active + 5 inactive
 
     def _seed_document_sequences(self, org):
-        from apps.invoices.models import DocumentSequence
+        from apps.sales.models import DocumentSequence
 
         seqs = []
         for doc_type in [DocumentSequence.DocType.QUOTATION, DocumentSequence.DocType.SALE_ORDER]:
@@ -376,7 +376,7 @@ class Command(BaseCommand):
         return seqs  # 2
 
     def _seed_invoices(self, org, customers, items, departments):
-        from apps.invoices.models import SalesDocument, SalesDocumentItem
+        from apps.sales.models import SalesDocument, SalesDocumentItem
 
         today = date.today()
         all_invoices = []
@@ -494,7 +494,7 @@ class Command(BaseCommand):
         return all_invoices, all_items
 
     def _add_line_items(self, invoice, items, count=2):
-        from apps.invoices.models import SalesDocumentItem
+        from apps.sales.models import SalesDocumentItem
 
         added = []
         catalog_items = random.sample(items, min(count, len(items)))
@@ -511,7 +511,7 @@ class Command(BaseCommand):
         return added
 
     def _seed_payments(self, org, customers, invoices):
-        from apps.invoices.models import Payment, PaymentAllocation, SalesDocument
+        from apps.sales.models import Payment, PaymentAllocation, SalesDocument
 
         payable = [
             inv for inv in invoices

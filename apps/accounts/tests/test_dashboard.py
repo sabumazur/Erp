@@ -8,8 +8,8 @@ from decimal import Decimal
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.invoices.models import SalesDocument
-from apps.invoices.tests.factories import (
+from apps.sales.models import SalesDocument
+from apps.sales.tests.factories import (
     CustomerFactory,
     SalesDocumentFactory,
     SalesDocumentItemFactory,

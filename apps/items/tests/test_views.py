@@ -239,7 +239,7 @@ class TestItemDeleteView:
         item = ItemFactory(organization=admin_membership.organization)
         self._login(client, admin_membership)
         with patch(
-            "apps.invoices.models.SalesDocumentItem.objects.filter",
+            "apps.sales.models.SalesDocumentItem.objects.filter",
             return_value=MagicMock(**{"exists.return_value": True}),
         ):
             response = client.post(reverse("items:item_delete", args=[item.pk]))
@@ -251,7 +251,7 @@ class TestItemDeleteView:
         item = ItemFactory(organization=admin_membership.organization)
         self._login(client, admin_membership)
         with patch(
-            "apps.invoices.models.SalesDocumentItem.objects.filter",
+            "apps.sales.models.SalesDocumentItem.objects.filter",
             return_value=MagicMock(**{"exists.return_value": True}),
         ):
             response = client.post(

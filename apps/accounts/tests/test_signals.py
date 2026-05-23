@@ -59,7 +59,7 @@ class TestRemoveGhostOrg:
         assert not Organization.all_objects.filter(pk=ghost_org.pk).exists()
 
     def test_preserves_org_with_customers(self, owner_membership):
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
 
         ghost_user = UserFactory()
         ghost_org = OrganizationFactory(owner=ghost_user)

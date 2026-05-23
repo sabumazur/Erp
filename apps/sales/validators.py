@@ -9,12 +9,12 @@ Supported types:
   - Pasaporte / Exterior                        — length check only
 
 Usage (as Django field validators):
-    from apps.invoices.validators import validate_rnc_cedula
+    from apps.sales.validators import validate_rnc_cedula
 
     rnc_cedula = models.CharField(validators=[validate_rnc_cedula], ...)
 
 Usage (standalone):
-    from apps.invoices.validators import validate_rnc, validate_cedula
+    from apps.sales.validators import validate_rnc, validate_cedula
     ok, error = validate_rnc("101012345")
     ok, error = validate_cedula("00113918205")
 """

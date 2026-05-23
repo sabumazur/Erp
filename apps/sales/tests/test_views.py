@@ -8,9 +8,9 @@ from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, UserFactory, OrganizationFactory
-from apps.invoices.models import SalesDocument
-from apps.invoices.services import NCFService
-from apps.invoices.tests.factories import (
+from apps.sales.models import SalesDocument
+from apps.sales.services import NCFService
+from apps.sales.tests.factories import (
     CustomerFactory, SalesDocumentFactory, SalesDocumentItemFactory, NCFSequenceFactory,
 )
 
@@ -67,7 +67,7 @@ class TestCustomerViews:
             "notes": "",
         })
         assert resp.status_code == 302
-        from apps.invoices.models import Customer
+        from apps.sales.models import Customer
         assert Customer.objects.filter(organization=org, name="Empresa Test S.R.L.").exists()
 
 
@@ -198,7 +198,7 @@ class TestReportViews:
 @pytest.mark.django_db
 class TestCustomerQuickCreateForm:
     def _form(self, data, org=None):
-        from apps.invoices.forms import CustomerQuickCreateForm
+        from apps.sales.forms import CustomerQuickCreateForm
         if org is None:
             from apps.accounts.tests.factories import OrganizationFactory
             org = OrganizationFactory()
@@ -219,7 +219,7 @@ class TestCustomerQuickCreateForm:
         assert "rnc_cedula" in form.errors
 
     def test_duplicate_rnc_same_org(self):
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         c = CustomerFactory(rnc_cedula="101234563", id_type="RNC")
         form = self._form(
             {"name": "Otro", "id_type": "RNC", "rnc_cedula": c.rnc_cedula},
@@ -229,7 +229,7 @@ class TestCustomerQuickCreateForm:
         assert "rnc_cedula" in form.errors
 
     def test_same_rnc_different_org(self):
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         CustomerFactory(rnc_cedula="101234563", id_type="RNC")
         form = self._form({"name": "Y", "id_type": "RNC", "rnc_cedula": "101234563"})
         assert form.is_valid(), form.errors
@@ -261,7 +261,7 @@ class TestCustomerSearchView:
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         c_mine = CustomerFactory(organization=org, name="Mi Cliente")
         c_other = CustomerFactory(name="Otro Org")
         resp = self._get(client, org)
@@ -273,7 +273,7 @@ class TestCustomerSearchView:
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         CustomerFactory(organization=org, name="Ferretería Central")
         CustomerFactory(organization=org, name="Supermercado Norte")
         resp = self._get(client, org, q="Ferretería")
@@ -285,7 +285,7 @@ class TestCustomerSearchView:
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         for i in range(30):
             CustomerFactory(organization=org)
         resp = self._get(client, org)
@@ -344,7 +344,7 @@ class TestCustomerQuickCreateView:
 
     def test_duplicate_rnc_returns_422(self, client):
         import json
-        from apps.invoices.tests.factories import CustomerFactory
+        from apps.sales.tests.factories import CustomerFactory
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)

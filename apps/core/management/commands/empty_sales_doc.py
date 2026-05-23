@@ -23,7 +23,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from apps.invoices.models import (
+        from apps.sales.models import (
             SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
             DocumentSequence, NCFSequence,
         )

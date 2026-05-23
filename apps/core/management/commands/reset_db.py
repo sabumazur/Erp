@@ -70,7 +70,7 @@ class Command(BaseCommand):
             )
 
     def _wipe(self):
-        from apps.invoices.models import (
+        from apps.sales.models import (
             Customer, SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
             PaymentTerm, NCFSequence, DocumentSequence, CustomerDepartment,
         )

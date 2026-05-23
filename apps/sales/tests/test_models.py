@@ -8,9 +8,9 @@ import threading
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.invoices.models import SalesDocument, SalesDocumentItem, NCFSequence
-from apps.invoices.services import NCFService
-from apps.invoices.validators import validate_rnc, validate_cedula, validate_rnc_cedula
+from apps.sales.models import SalesDocument, SalesDocumentItem, NCFSequence
+from apps.sales.services import NCFService
+from apps.sales.validators import validate_rnc, validate_cedula, validate_rnc_cedula
 from .factories import (
     CustomerFactory, SalesDocumentFactory, SalesDocumentItemFactory,
     NCFSequenceFactory, PaymentFactory,

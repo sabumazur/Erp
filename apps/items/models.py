@@ -200,7 +200,7 @@ class Item(ERPBaseModel):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        from apps.invoices.models import SalesDocumentItem
+        from apps.sales.models import SalesDocumentItem
         if SalesDocumentItem.objects.filter(item=self).exists():
             raise ValueError(
                 f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos."

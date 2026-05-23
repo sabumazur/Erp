@@ -6,7 +6,7 @@ Run daily via cron or Celery beat:
 from django.core.management.base import BaseCommand
 
 from apps.accounts.models import Organization
-from apps.invoices.services import NCFService
+from apps.sales.services import NCFService
 
 
 class Command(BaseCommand):

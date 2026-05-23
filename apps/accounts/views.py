@@ -124,7 +124,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/dashboard.html"
 
     def get_context_data(self, **kwargs):
-        from apps.invoices.models import SalesDocument, Customer, Payment
+        from apps.sales.models import SalesDocument, Customer, Payment
 
         ctx = super().get_context_data(**kwargs)
         ctx["breadcrumbs"] = [{"label": _("Dashboard")}]

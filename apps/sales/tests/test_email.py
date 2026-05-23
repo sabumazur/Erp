@@ -1,8 +1,8 @@
 from unittest.mock import patch, MagicMock
 import pytest
-from apps.invoices.tests.factories import SalesDocumentFactory, CustomerFactory
+from apps.sales.tests.factories import SalesDocumentFactory, CustomerFactory
 from apps.accounts.tests.factories import OrganizationFactory
-from apps.invoices.email import send_quotation_email
+from apps.sales.email import send_quotation_email
 
 
 @pytest.mark.django_db
@@ -25,9 +25,9 @@ def test_send_quotation_email_context_includes_letterhead_url():
         captured_ctx.update(ctx)
         return "<html></html>"
 
-    with patch("apps.invoices.email._logo_url", return_value=expected_logo_url), \
-         patch("apps.invoices.email.render_to_string", side_effect=capture_render), \
-         patch("apps.invoices.email._quotation_pdf_bytes", return_value=None), \
+    with patch("apps.sales.email._logo_url", return_value=expected_logo_url), \
+         patch("apps.sales.email.render_to_string", side_effect=capture_render), \
+         patch("apps.sales.email._quotation_pdf_bytes", return_value=None), \
          patch("django.core.mail.EmailMultiAlternatives.send"):
         send_quotation_email(quotation, request)
 

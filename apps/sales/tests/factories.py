@@ -4,7 +4,7 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 
 from apps.accounts.tests.factories import OrganizationFactory, UserFactory
-from apps.invoices.models import (
+from apps.sales.models import (
     Customer, SalesDocument, SalesDocumentItem, NCFSequence, Payment,
 )
 

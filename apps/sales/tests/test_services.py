@@ -6,8 +6,8 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
-from apps.invoices.models import SalesDocument, SalesDocumentItem, Payment, PaymentAllocation
-from apps.invoices.services import PaymentService, QuotationService
+from apps.sales.models import SalesDocument, SalesDocumentItem, Payment, PaymentAllocation
+from apps.sales.services import PaymentService, QuotationService
 from .factories import (
     CustomerFactory,
     SalesDocumentFactory,
@@ -21,7 +21,7 @@ from .factories import (
 
 def make_confirmed_invoice(organization, customer, total=Decimal("1000.00")):
     """Return a CONFIRMED invoice with a single line item totalling `total`."""
-    from apps.invoices.models import NCFSequence as _NCFSeq
+    from apps.sales.models import NCFSequence as _NCFSeq
     _NCFSeq.objects.get_or_create(
         organization=organization, ncf_type=31, is_active=True,
         defaults={"current_seq": 0, "max_seq": 9999999999, "series": "E"},
@@ -41,7 +41,7 @@ def make_confirmed_invoice(organization, customer, total=Decimal("1000.00")):
     inv.recompute_totals()
     inv.refresh_from_db()
     # Manually confirm (assign encf)
-    from apps.invoices.services import NCFService
+    from apps.sales.services import NCFService
     NCFService.confirm(inv)
     inv.refresh_from_db()
     return inv
