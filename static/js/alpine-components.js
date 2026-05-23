@@ -61,6 +61,29 @@
     };
   }
 
+  function signatureHandler(currentUrl) {
+    return {
+      previewSrc: currentUrl || "",
+      hasSignature: !!currentUrl,
+      fileName: "",
+      change: function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        this.previewSrc = URL.createObjectURL(file);
+        this.hasSignature = true;
+        this.fileName = file.name;
+        this.$refs.clearInput.checked = false;
+      },
+      clear: function () {
+        this.previewSrc = "";
+        this.hasSignature = false;
+        this.fileName = "";
+        this.$refs.fileInput.value = "";
+        this.$refs.clearInput.checked = true;
+      },
+    };
+  }
+
   function itemForm(initialType) {
     return {
       itemType: initialType,
@@ -90,6 +113,7 @@
 
   window.passwordChecker = passwordChecker;
   window.avatarHandler = avatarHandler;
+  window.signatureHandler = signatureHandler;
   window.itemForm = itemForm;
   window.invoiceForm = invoiceForm;
 })();

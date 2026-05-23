@@ -77,13 +77,59 @@
 
           {% crispy form %}
 
-          {% if user.signature %}
-          <div class="mb-3">
-            <label class="form-label small text-muted">{% trans "Firma actual" %}</label><br>
-            <img src="{{ user.signature.url }}" alt="{% trans 'Firma' %}"
-                 style="max-height:80px; border:1px solid #dee2e6; border-radius:4px; padding:4px; background:#fff;">
+          <div class="mb-3"
+               x-data="signatureHandler('{% if user.signature %}{{ user.signature.url|escapejs }}{% endif %}')">
+            <label class="form-label small text-muted mb-2">{% trans "Firma" %}</label>
+
+            <div class="border rounded-2 bg-light p-3">
+              <div class="d-flex flex-column flex-sm-row align-items-center gap-3">
+                <div class="bg-white border rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:160px;height:72px;">
+                  <img x-show="hasSignature"
+                       :src="previewSrc"
+                       alt="{% trans 'Firma' %}"
+                       style="max-width:148px;max-height:60px;">
+                  <i x-show="!hasSignature"
+                     class="bi bi-vector-pen text-muted"
+                     style="font-size:1.5rem;"></i>
+                </div>
+
+                <div class="flex-grow-1 min-w-0">
+                  <p class="small fw-semibold mb-1">
+                    <span x-show="fileName" x-text="fileName"></span>
+                    <span x-show="!fileName && hasSignature">{% trans "Firma cargada" %}</span>
+                    <span x-show="!fileName && !hasSignature">{% trans "Sin firma cargada" %}</span>
+                  </p>
+                  <p class="text-muted mb-2" style="font-size:.75rem;">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
+
+                  <div class="d-flex flex-wrap gap-2">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            @click="$refs.fileInput.click()">
+                      <i class="bi bi-upload me-1"></i>{% trans "Subir archivo" %}
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            x-show="hasSignature"
+                            @click="clear()">
+                      <i class="bi bi-x-circle me-1"></i>{% trans "Quitar" %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <input type="file" name="signature" id="id_signature" accept=".png,.jpg,.jpeg"
+                   class="d-none" x-ref="fileInput" @change="change($event)">
+            <input type="checkbox" name="signature-clear" id="signature-clear_id"
+                   class="d-none" x-ref="clearInput">
+
+            {% if form.signature.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.signature.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
 
           <div class="d-flex justify-content-end mt-3">
             <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">

@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, HTML, Row, Column, Field
+from crispy_forms.layout import Layout, HTML, Row, Column
 from allauth.account.forms import SignupForm, ChangePasswordForm
 from apps.core.models import Module
 from .models import User, Organization, Membership, Team
@@ -198,5 +198,4 @@ class ProfileForm(forms.ModelForm):
                 Column("first_name", css_class="col-md-6"),
                 Column("last_name", css_class="col-md-6"),
             ),
-            Field("signature"),
         )
