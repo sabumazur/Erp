@@ -19,7 +19,7 @@ from ._helpers import _customer_defaults_json
 
 
 class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/quotation_list.html"
+    template_name = "sales/quotation_list.html"
     required_module = "invoices"
 
     dt_columns = [
@@ -32,8 +32,8 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "-issue_date"
     dt_url = "invoices:quotation_list"
-    dt_row_template = "invoices/partials/quotation_row.html"
-    dt_filter_template = "invoices/partials/quotation_filters.html"
+    dt_row_template = "sales/partials/quotation_row.html"
+    dt_filter_template = "sales/partials/quotation_filters.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "quotations"
 
@@ -80,7 +80,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 
 class QuotationCreateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/quotation_form.html"
+    template_name = "sales/quotation_form.html"
     required_module = "invoices"
 
     def get_context_data(self, **kwargs):
@@ -115,7 +115,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
 
 
 class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
-    template_name = "invoices/quotation_detail.html"
+    template_name = "sales/quotation_detail.html"
     required_module = "invoices"
     context_object_name = "quotation"
 
@@ -142,7 +142,7 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 
 class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/quotation_form.html"
+    template_name = "sales/quotation_form.html"
     required_module = "invoices"
 
     def _get_quotation(self, request, pk):
@@ -317,7 +317,7 @@ class QuotationPrintView(ERPBaseViewMixin, View):
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.QUOTATION,
         )
         return render(
-            request, "invoices/quotation_print.html",
+            request, "sales/quotation_print.html",
             {
                 "quotation": quotation,
                 "items": quotation.items.all(),

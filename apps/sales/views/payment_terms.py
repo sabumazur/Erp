@@ -18,7 +18,7 @@ from ..models import PaymentTerm
 # ── List + Create ─────────────────────────────────────────────────────────────
 
 class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/payment_term_list.html"
+    template_name = "sales/payment_term_list.html"
     required_module = "invoices"
     admin_required = True
 
@@ -30,8 +30,8 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_default_sort = "days_due"
     dt_page_size = 25
     dt_url = "invoices:payment_term_list"
-    dt_row_template = "invoices/partials/payment_term_row.html"
-    dt_filter_template = "invoices/partials/payment_term_filters.html"
+    dt_row_template = "sales/partials/payment_term_row.html"
+    dt_filter_template = "sales/partials/payment_term_filters.html"
     dt_search_placeholder = _("Nombre…")
 
     @classmethod
@@ -90,7 +90,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             return redirect("invoices:payment_term_list")
 
         if request.htmx:
-            resp = render(request, "invoices/partials/payment_term_modal_form.html", {
+            resp = render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
                 "action_url":   reverse("invoices:payment_term_list"),
                 "submit_label": _("Crear"),
@@ -115,7 +115,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
         form = PaymentTermForm(instance=term)
 
         if request.htmx:
-            return render(request, "invoices/partials/payment_term_modal_form.html", {
+            return render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
                 "action_url":   reverse("invoices:payment_term_edit", args=[pk]),
                 "submit_label": _("Guardar"),
@@ -129,7 +129,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
                 {"label": term.name},
             ],
         )
-        return render(request, "invoices/payment_term_form.html", ctx)
+        return render(request, "sales/payment_term_form.html", ctx)
 
     def post(self, request, pk):
         term = get_object_or_404(PaymentTerm, pk=pk, organization=request.organization)
@@ -145,7 +145,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
             return redirect("invoices:payment_term_list")
 
         if request.htmx:
-            resp = render(request, "invoices/partials/payment_term_modal_form.html", {
+            resp = render(request, "sales/partials/payment_term_modal_form.html", {
                 "form":         form,
                 "action_url":   reverse("invoices:payment_term_edit", args=[pk]),
                 "submit_label": _("Guardar"),
@@ -162,7 +162,7 @@ class PaymentTermUpdateView(ERPBaseViewMixin, View):
                 {"label": term.name},
             ],
         )
-        return render(request, "invoices/payment_term_form.html", ctx)
+        return render(request, "sales/payment_term_form.html", ctx)
 
 
 # ── Delete ────────────────────────────────────────────────────────────────────

@@ -76,7 +76,7 @@ class ItemSearchView(ERPBaseViewMixin, View):
             qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
 
         items = qs[:50]
-        return render(request, "invoices/partials/item_picker_results.html", {"items": items})
+        return render(request, "sales/partials/item_picker_results.html", {"items": items})
 
 
 class CustomerSearchView(ERPBaseViewMixin, View):
@@ -92,7 +92,7 @@ class CustomerSearchView(ERPBaseViewMixin, View):
                 Q(name__icontains=q) | Q(rnc_cedula__icontains=q)
             )
         customers = qs[:25]
-        return _render(request, "invoices/partials/customer_picker_results.html",
+        return _render(request, "sales/partials/customer_picker_results.html",
                        {"customers": customers})
 
 

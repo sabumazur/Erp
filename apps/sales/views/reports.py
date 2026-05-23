@@ -32,7 +32,7 @@ _MONTHS_ES = [
 
 
 class ReportIndexView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/reports.html"
+    template_name = "sales/reports.html"
     required_module = "invoices"
     admin_required = True
 
@@ -215,7 +215,7 @@ class ReportAgingView(ERPBaseViewMixin, View):
             grand_total += row["total"]
 
         return render(
-            request, "invoices/report_aging.html",
+            request, "sales/report_aging.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -320,7 +320,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
                 error = _("Fechas inválidas.")
 
         return render(
-            request, "invoices/report_statement.html",
+            request, "sales/report_statement.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -415,7 +415,7 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                 year = month = None
 
         return render(
-            request, "invoices/report_sales_period.html",
+            request, "sales/report_sales_period.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -477,7 +477,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                 error = _("Fechas inválidas.")
 
         return render(
-            request, "invoices/report_invoices_by_customer.html",
+            request, "sales/report_invoices_by_customer.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -541,7 +541,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
                 error = _("Fechas inválidas.")
 
         return render(
-            request, "invoices/report_collections.html",
+            request, "sales/report_collections.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -635,7 +635,7 @@ class ReportITBISView(ERPBaseViewMixin, View):
                 year = month = None
 
         return render(
-            request, "invoices/report_itbis.html",
+            request, "sales/report_itbis.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -710,7 +710,7 @@ class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
                 month = year = None
 
         return render(
-            request, "invoices/report_ncf_type.html",
+            request, "sales/report_ncf_type.html",
             {
                 **self.get_context(
                     breadcrumbs=[

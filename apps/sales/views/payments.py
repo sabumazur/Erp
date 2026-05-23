@@ -21,7 +21,7 @@ from ..services import PaymentService
 
 
 class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/payment_list.html"
+    template_name = "sales/payment_list.html"
     required_module = "invoices"
 
     dt_columns = [
@@ -34,8 +34,8 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "-date"
     dt_url = "invoices:payment_list"
-    dt_row_template = "invoices/partials/payment_row.html"
-    dt_filter_template = "invoices/partials/payment_filters.html"
+    dt_row_template = "sales/partials/payment_row.html"
+    dt_filter_template = "sales/partials/payment_filters.html"
     dt_search_placeholder = _("Cliente o referencia…")
     dt_id = "payments"
 
@@ -110,13 +110,13 @@ class PaymentCreateView(ERPBaseViewMixin, View):
 
     def get(self, request):
         form = PaymentHeaderForm(organization=request.organization, initial={"date": date.today()})
-        return render(request, "invoices/payment_form.html", self._ctx(request, form))
+        return render(request, "sales/payment_form.html", self._ctx(request, form))
 
     def post(self, request):
         form = PaymentHeaderForm(organization=request.organization, data=request.POST)
 
         if not form.is_valid():
-            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+            return render(request, "sales/payment_form.html", self._ctx(request, form))
 
         invoice_pks = request.POST.getlist("alloc_invoices")
         amounts_raw = request.POST.getlist("alloc_amounts")
@@ -137,7 +137,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
 
         if not allocations:
             form.add_error(None, _("Seleccione al menos una factura y un monto mayor a cero."))
-            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+            return render(request, "sales/payment_form.html", self._ctx(request, form))
 
         try:
             payment = PaymentService.register(
@@ -153,7 +153,7 @@ class PaymentCreateView(ERPBaseViewMixin, View):
             return redirect("invoices:payment_detail", pk=payment.pk)
         except ValueError as exc:
             form.add_error(None, str(exc))
-            return render(request, "invoices/payment_form.html", self._ctx(request, form))
+            return render(request, "sales/payment_form.html", self._ctx(request, form))
 
 
 class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
@@ -165,7 +165,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
             pk=pk, organization=request.organization,
         )
         return render(
-            request, "invoices/payment_detail.html",
+            request, "sales/payment_detail.html",
             {
                 **self.get_context(
                     module="payment",
@@ -224,6 +224,6 @@ class OutstandingInvoicesView(ERPBaseViewMixin, View):
             invoices = [inv for inv in qs if inv.line_balance > Decimal("0")]
 
         return render(
-            request, "invoices/partials/payment_allocation_rows.html",
+            request, "sales/partials/payment_allocation_rows.html",
             {"invoices": invoices},
         )

@@ -27,7 +27,7 @@ from ._helpers import _customer_defaults_json
 
 
 class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/invoice_list.html"
+    template_name = "sales/invoice_list.html"
     required_module = "invoices"
 
     dt_columns = [
@@ -40,8 +40,8 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "-issue_date"
     dt_url = "invoices:invoice_list"
-    dt_row_template = "invoices/partials/invoice_row.html"
-    dt_filter_template = "invoices/partials/invoice_filters.html"
+    dt_row_template = "sales/partials/invoice_row.html"
+    dt_filter_template = "sales/partials/invoice_filters.html"
     dt_search_placeholder = _("e-NCF o cliente…")
     dt_id = "invoices"
 
@@ -98,7 +98,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 
 class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
-    template_name = "invoices/invoice_detail.html"
+    template_name = "sales/invoice_detail.html"
     required_module = "invoices"
     context_object_name = "invoice"
 
@@ -131,7 +131,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 
 class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/invoice_form.html"
+    template_name = "sales/invoice_form.html"
     required_module = "invoices"
 
     def get_context_data(self, **kwargs):
@@ -166,7 +166,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
 
 
 class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/invoice_form.html"
+    template_name = "sales/invoice_form.html"
     required_module = "invoices"
 
     def _get_invoice(self, request, pk):
@@ -326,7 +326,7 @@ class InvoiceDeleteView(ERPBaseViewMixin, View):
 
 
 class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/credit_note_form.html"
+    template_name = "sales/credit_note_form.html"
     required_module = "invoices"
 
     def _get_original(self, request, pk):
@@ -397,7 +397,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
             from django.template.loader import render_to_string
 
             html_string = render_to_string(
-                "invoices/invoice_pdf.html",
+                "sales/invoice_pdf.html",
                 {
                     "invoice": invoice,
                     "items": invoice.items.all(),
@@ -428,7 +428,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         return render(
-            request, "invoices/invoice_print.html",
+            request, "sales/invoice_print.html",
             {
                 "invoice": invoice,
                 "items": invoice.items.all(),
@@ -442,7 +442,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
 
 
 class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/ncf_sequence_list.html"
+    template_name = "sales/ncf_sequence_list.html"
     required_module = "invoices"
     admin_required = True
 
@@ -468,7 +468,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
             if request.htmx:
                 resp = render(
                     request,
-                    "invoices/partials/ncf_sequence_table.html",
+                    "sales/partials/ncf_sequence_table.html",
                     {"sequences": self._sequences(request)},
                 )
                 resp["HX-Trigger"] = json.dumps(
@@ -481,7 +481,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
         if request.htmx:
             resp = render(
                 request,
-                "invoices/partials/ncf_sequence_modal_form.html",
+                "sales/partials/ncf_sequence_modal_form.html",
                 {"form": form, "action_url": reverse("invoices:ncf_sequences")},
             )
             resp["HX-Retarget"] = "#ncf-modal-body"
@@ -494,7 +494,7 @@ class NCFSequenceListView(ERPBaseViewMixin, TemplateView):
 
 class NCFSequenceUpdateView(ERPBaseViewMixin, UpdateView):
     form_class = NCFSequenceForm
-    template_name = "invoices/ncf_sequence_form.html"
+    template_name = "sales/ncf_sequence_form.html"
     required_module = "invoices"
     admin_required = True
     success_url = reverse_lazy("invoices:ncf_sequences")
@@ -537,7 +537,7 @@ class InvoiceItemRowView(ERPBaseViewMixin, View):
     def get(self, request):
         index = int(request.GET.get("form_index", 0))
         form = InvoiceItemForm(prefix=f"items-{index}")
-        return render(request, "invoices/partials/item_row.html", {"form": form, "index": index})
+        return render(request, "sales/partials/item_row.html", {"form": form, "index": index})
 
 
 class RNCLookupView(ERPBaseViewMixin, View):

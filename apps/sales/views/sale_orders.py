@@ -21,7 +21,7 @@ from ._helpers import _customer_defaults_json
 
 
 class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/sale_order_list.html"
+    template_name = "sales/sale_order_list.html"
     required_module = "invoices"
 
     dt_columns = [
@@ -35,8 +35,8 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "-delivery_date"
     dt_url = "invoices:sale_order_list"
-    dt_row_template = "invoices/partials/sale_order_row.html"
-    dt_filter_template = "invoices/partials/sale_order_filters.html"
+    dt_row_template = "sales/partials/sale_order_row.html"
+    dt_filter_template = "sales/partials/sale_order_filters.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "sale_orders"
 
@@ -88,7 +88,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 
 class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/sale_order_form.html"
+    template_name = "sales/sale_order_form.html"
     required_module = "invoices"
 
     def get_context_data(self, **kwargs):
@@ -123,7 +123,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
 
 
 class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
-    template_name = "invoices/sale_order_detail.html"
+    template_name = "sales/sale_order_detail.html"
     required_module = "invoices"
     context_object_name = "order"
 
@@ -150,7 +150,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
 
 class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/sale_order_form.html"
+    template_name = "sales/sale_order_form.html"
     required_module = "invoices"
 
     def _get_order(self, request, pk):
@@ -284,7 +284,7 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
 
 
 class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
-    template_name = "invoices/sale_order_consolidate.html"
+    template_name = "sales/sale_order_consolidate.html"
     required_module = "invoices"
     admin_required = True
 
@@ -337,7 +337,7 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                 pass
 
         return render(
-            request, "invoices/partials/consolidate_preview.html",
+            request, "sales/partials/consolidate_preview.html",
             {"orders": orders, "grand_total": grand_total},
         )
 
@@ -410,7 +410,7 @@ class SaleOrderPrintView(ERPBaseViewMixin, View):
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.SALE_ORDER,
         )
         return render(
-            request, "invoices/sale_order_print.html",
+            request, "sales/sale_order_print.html",
             {
                 "order": order,
                 "items": order.items.all(),
@@ -439,6 +439,6 @@ class CustomerDepartmentsView(ERPBaseViewMixin, View):
                 ).order_by("name")
             )
         return render(
-            request, "invoices/partials/department_options.html",
+            request, "sales/partials/department_options.html",
             {"departments": departments},
         )

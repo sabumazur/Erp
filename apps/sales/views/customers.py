@@ -22,7 +22,7 @@ from ._helpers import _customers_with_depts
 
 
 class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
-    template_name = "invoices/customer_list.html"
+    template_name = "sales/customer_list.html"
     required_module = "invoices"
 
     dt_columns = [
@@ -35,8 +35,8 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     ]
     dt_default_sort = "name"
     dt_url = "invoices:customer_list"
-    dt_row_template = "invoices/partials/customer_row.html"
-    dt_filter_template = "invoices/partials/customer_filters.html"
+    dt_row_template = "sales/partials/customer_row.html"
+    dt_filter_template = "sales/partials/customer_filters.html"
     dt_search_placeholder = _("Nombre o RNC…")
     dt_id = "customers"
 
@@ -118,7 +118,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if request.htmx:
             resp = render(
                 request,
-                "invoices/partials/customer_modal_form.html",
+                "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
                     "action_url": reverse("invoices:customer_list"),
@@ -136,7 +136,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     form_class = CustomerForm
-    template_name = "invoices/customer_form.html"
+    template_name = "sales/customer_form.html"
     required_module = "invoices"
     success_url = None  # set in form_valid
 
@@ -165,7 +165,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
             form = CustomerForm(instance=customer)
             return render(
                 request,
-                "invoices/partials/customer_modal_form.html",
+                "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
                     "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
@@ -191,7 +191,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
                 return resp
             resp = render(
                 self.request,
-                "invoices/partials/customer_table.html",
+                "sales/partials/customer_table.html",
                 {"customers": _customers_with_depts(self.request.organization)},
             )
             resp["HX-Trigger"] = json.dumps(
@@ -207,7 +207,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
             hx_target = self.request.POST.get("_hx_target", "#customer-table")
             resp = render(
                 self.request,
-                "invoices/partials/customer_modal_form.html",
+                "sales/partials/customer_modal_form.html",
                 {
                     "form": form,
                     "action_url": reverse("invoices:customer_edit", args=[customer.pk]),
@@ -274,7 +274,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         from ..forms import CustomerDepartmentForm as _DeptForm
         return render(
             request,
-            "invoices/customer_detail.html",
+            "sales/customer_detail.html",
             {
                 **self.get_context(
                     module="customer",
@@ -350,7 +350,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
         form = CustomerDepartmentForm()
         return render(
             request,
-            "invoices/partials/department_modal_form.html",
+            "sales/partials/department_modal_form.html",
             {
                 "form": form,
                 "customer": customer,
@@ -370,7 +370,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
             if request.htmx:
                 resp = render(
                     request,
-                    "invoices/partials/department_table.html",
+                    "sales/partials/department_table.html",
                     {"departments": self._departments(customer), "customer": customer},
                 )
                 resp["HX-Trigger"] = json.dumps(
@@ -386,7 +386,7 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
         if request.htmx:
             resp = render(
                 request,
-                "invoices/partials/department_modal_form.html",
+                "sales/partials/department_modal_form.html",
                 {
                     "form": form,
                     "customer": customer,
@@ -417,7 +417,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
         form = CustomerDepartmentForm(instance=dept)
         return render(
             request,
-            "invoices/partials/department_modal_form.html",
+            "sales/partials/department_modal_form.html",
             {
                 "form": form,
                 "customer": customer,
@@ -434,7 +434,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
             if request.htmx:
                 resp = render(
                     request,
-                    "invoices/partials/department_table.html",
+                    "sales/partials/department_table.html",
                     {"departments": self._departments(customer), "customer": customer},
                 )
                 resp["HX-Trigger"] = json.dumps(
@@ -450,7 +450,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
         if request.htmx:
             resp = render(
                 request,
-                "invoices/partials/department_modal_form.html",
+                "sales/partials/department_modal_form.html",
                 {
                     "form": form,
                     "customer": customer,
@@ -477,7 +477,7 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
             departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
             return render(
                 request,
-                "invoices/partials/department_table.html",
+                "sales/partials/department_table.html",
                 {"departments": departments, "customer": customer},
             )
         return redirect("invoices:customer_detail", pk=customer_pk)
@@ -519,7 +519,7 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
             departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
             resp = render(
                 request,
-                "invoices/partials/department_table.html",
+                "sales/partials/department_table.html",
                 {"departments": departments, "customer": customer},
             )
             resp["HX-Trigger"] = json.dumps(
