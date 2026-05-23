@@ -32,6 +32,8 @@ python manage.py seed_db               # Seed 25 DR sample records per model int
 python manage.py seed_db --no-input    # Skip confirmation prompt
 python manage.py cleanup_ghost_organizations          # Delete empty auto-created workspaces for invited users
 python manage.py cleanup_ghost_organizations --dry-run # Preview without deleting
+python manage.py empty_sales_doc               # Delete all invoices/quotations/sale orders + payments, reset sequences
+python manage.py empty_sales_doc --no-input    # Skip confirmation prompt
 ```
 
 Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
@@ -87,13 +89,13 @@ Plain `View` subclasses using `render()` must call `self.get_context(...)` not `
 
 ### Invoice system (`apps/sales/`)
 
-`Invoice` unified model with `doc_type` discriminator: `INVOICE`, `QUOTATION`, `SALE_ORDER`. Three scoped managers:
+`SalesDocument` unified model with `doc_type` discriminator: `INVOICE`, `QUOTATION`, `SALE_ORDER`. Three scoped managers:
 
 ```python
-Invoice.invoices      # INVOICE only
-Invoice.quotations    # QUOTATION only
-Invoice.sale_orders   # SALE_ORDER only
-Invoice.objects       # all doc_types (default)
+SalesDocument.invoices      # INVOICE only
+SalesDocument.quotations    # QUOTATION only
+SalesDocument.sale_orders   # SALE_ORDER only
+SalesDocument.objects       # all doc_types (default)
 ```
 
 **All fiscal/status transitions go through service classes** in `apps/sales/services.py` — never mutate `status` directly in views:
@@ -136,6 +138,8 @@ dt_id: str                     # localStorage key for column visibility
 Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. HTMX requests → return `components/datatable/results.html`. Use `build_datatable_context()` in action views needing table refresh after CRUD.
 
 Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
+
+**Row action pattern** — all list row templates use hover-reveal actions via `.dt-hover-actions` (CSS in `static/css/documents.css`). Actions are embedded in the primary text cell (not a separate action column), hidden at `opacity:0` and revealed on `tr:hover`. Buttons use `btn btn-link btn-sm p-0 text-secondary` (edit/view) or `text-danger` (delete) or `text-warning`/`text-success` (toggle). Do **not** add a separate action `<td>` — embed actions in the name/doc_number cell using `<span class="dt-hover-actions">`.
 
 ### Full-text search (`apps/core/search.py`)
 
@@ -214,7 +218,7 @@ All delete views POST-only, `admin_required = True`. Guard referential integrity
 - `CustomerDeleteView` — blocked if customer has invoices **or** payments.
 - `NCFSequenceDeleteView` — no guard; sequences always deletable (confirmation in template).
 - `PaymentTermDeleteView` — blocked if any `Customer` references term.
-- `CustomerDepartmentDeleteView` — blocked if any `Invoice` (sale order) references department.
+- `CustomerDepartmentDeleteView` — blocked if any `SalesDocument` (sale order) references department.
 
 HTMX-aware: `request.htmx` → partial response with `HX-Trigger` instead of redirect. Success → `showToast`; blocked → `showSwal` (SweetAlert2). Non-HTMX → `messages` + redirect.
 
