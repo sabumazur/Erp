@@ -1,11 +1,10 @@
-{% load i18n accounts_tags %}
+{% load i18n static accounts_tags %}
 
 <aside id="sidebar">
 
   {# ── Brand ──────────────────────────────────────────────────── #}
   <a href="{% url 'accounts:dashboard' %}" class="sidebar-brand">
-    <i class="bi bi-layers-half brand-icon"></i>
-    <span>SabSys</span>
+    <img src="{% static 'img/sabsys-erp-logo.png' %}" alt="SabSys" class="sidebar-brand-logo">
   </a>
 
   {% if user.is_authenticated and organization %}

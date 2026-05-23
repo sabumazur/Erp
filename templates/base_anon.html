@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block body %}
 <div class="auth-split">
@@ -6,7 +7,7 @@
   {# ── Form panel ──────────────────────────────────────────── #}
   <main class="auth-panel">
     <a href="/" class="auth-mobile-logo d-flex d-md-none">
-      <i class="bi bi-layers-half"></i> SabSys
+      <img src="{% static 'img/sabsys-logo.png' %}" alt="SabSys" style="height:28px;width:auto;">
     </a>
     {% include "partials/_messages.html" %}
     {% block content %}{% endblock %}
@@ -20,78 +21,6 @@
   display: flex;
   min-height: 100vh;
 }
-
-/* ── Brand panel ─────────────────────────────────────────── */
-.auth-brand {
-  width: 400px;
-  min-width: 400px;
-  background: #1e2130;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 40px 36px 28px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-
-.auth-brand-inner {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.auth-brand-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #fff;
-  text-decoration: none;
-  margin-bottom: 56px;
-}
-.auth-brand-logo .bi { font-size: 1.4rem; color: #5b9af5; }
-.auth-brand-logo:hover { color: #fff; }
-
-.auth-eyebrow {
-  display: block;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: #5b9af5;
-  margin-bottom: 10px;
-}
-
-.auth-brand-headline {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.7rem;
-  font-weight: 600;
-  line-height: 1.25;
-  color: #e8eaf2;
-  margin: 0;
-}
-
-.auth-feature-list {
-  list-style: none;
-  padding: 0;
-  margin: 2rem 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.auth-feature-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.82rem;
-  color: #9ba3bf;
-}
-.auth-feature-list .bi { color: #5b9af5; font-size: 0.9rem; flex-shrink: 0; }
-
-.auth-brand-copy { font-size: 0.7rem; color: #5c6480; margin: 0; }
 
 /* ── Form panel ──────────────────────────────────────────── */
 .auth-panel {
@@ -207,7 +136,6 @@
 
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 767.98px) {
-  .auth-brand { display: none !important; }
   .auth-panel { padding: 32px 16px; }
   .auth-card  { padding: 24px 20px; }
 }

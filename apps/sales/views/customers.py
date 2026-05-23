@@ -105,7 +105,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        form = CustomerForm(request.POST)
+        form = CustomerForm(request.POST, organization=request.organization)
         if form.is_valid():
             customer = form.save(commit=False)
             customer.organization = request.organization
@@ -128,6 +128,14 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             )
             resp["HX-Retarget"] = "#customer-modal-body"
             resp["HX-Reswap"] = "innerHTML"
+            if hasattr(form, "_rnc_duplicate_msg"):
+                resp["HX-Trigger"] = json.dumps({
+                    "showSwal": {
+                        "icon": "error",
+                        "title": str(_("RNC / Cédula duplicado")),
+                        "text": form._rnc_duplicate_msg,
+                    }
+                })
             return resp
         ctx = self.get_context_data()
         ctx["form"] = form
@@ -153,6 +161,11 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
             {"label": self.object.name},
         ]
         return ctx
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.request.organization
+        return kwargs
 
     def get_object(self):
         return get_object_or_404(
@@ -217,6 +230,14 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
             )
             resp["HX-Retarget"] = "#customer-modal-body"
             resp["HX-Reswap"] = "innerHTML"
+            if hasattr(form, "_rnc_duplicate_msg"):
+                resp["HX-Trigger"] = json.dumps({
+                    "showSwal": {
+                        "icon": "error",
+                        "title": str(_("RNC / Cédula duplicado")),
+                        "text": form._rnc_duplicate_msg,
+                    }
+                })
             return resp
         return super().form_invalid(form)
 

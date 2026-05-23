@@ -48,7 +48,7 @@ class CustomerForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "notes": forms.Textarea(attrs={"rows": 3}),
+            "notes": forms.Textarea(attrs={"rows": 1}),
         }
 
     change_reason = forms.CharField(
@@ -59,8 +59,9 @@ class CustomerForm(forms.ModelForm):
         }),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._organization = organization
         self.fields["rnc_cedula"].help_text = ""
         self.fields["rnc_cedula"].widget.attrs.update(
             {
@@ -166,6 +167,23 @@ class CustomerForm(forms.ModelForm):
                         "rnc_cedula",
                         _("Identificación inválida (4–20 caracteres alfanuméricos)."),
                     )
+
+        normalized = cleaned_data.get("rnc_cedula") or ""
+        if self._organization and normalized and "rnc_cedula" not in self.errors:
+            qs = Customer.objects.filter(
+                organization=self._organization,
+                rnc_cedula=normalized,
+                deleted_at__isnull=True,
+            )
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            existing = qs.first()
+            if existing:
+                self._rnc_duplicate_msg = str(
+                    _("Este RNC/cédula ya está asignado al cliente «%(name)s».")
+                    % {"name": existing.name}
+                )
+                self.add_error("rnc_cedula", self._rnc_duplicate_msg)
 
         return cleaned_data
 
@@ -274,7 +292,7 @@ class CustomerDepartmentForm(forms.ModelForm):
         model = CustomerDepartment
         fields = ["name", "contact_name", "phone", "address", "notes", "is_active"]
         widgets = {
-            "notes": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 1}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -844,7 +862,7 @@ class PaymentHeaderForm(forms.ModelForm):
         fields = ["customer", "date", "method", "reference", "notes"]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "notes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
+            "notes": forms.Textarea(attrs={"rows": 1, "class": "form-control"}),
         }
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
@@ -898,7 +916,7 @@ class PaymentForm(forms.ModelForm):
         fields = ["amount", "date", "method", "reference", "notes"]
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 1}),
         }
         error_messages = {
             "amount": {"required": _("El monto es obligatorio.")},
@@ -938,8 +956,8 @@ class CreditNoteForm(forms.ModelForm):
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),
             "due_date": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.Textarea(attrs={"rows": 3}),
-            "terms": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 1}),
+            "terms": forms.Textarea(attrs={"rows": 1}),
         }
         error_messages = {
             "ncf_type": {"required": _("El tipo de comprobante es obligatorio.")},

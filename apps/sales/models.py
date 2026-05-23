@@ -456,15 +456,6 @@ class DocumentSequence(models.Model):
 
 
 class SalesDocumentQuerySet(models.QuerySet):
-    def invoices(self):
-        return self.filter(doc_type=SalesDocument.DocType.INVOICE)
-
-    def quotations(self):
-        return self.filter(doc_type=SalesDocument.DocType.QUOTATION)
-
-    def sale_orders(self):
-        return self.filter(doc_type=SalesDocument.DocType.SALE_ORDER)
-
     def with_aging(self):
         """
         Annotate each row with an `aging_bucket` field (string) based on how
@@ -495,24 +486,14 @@ class SalesDocumentQuerySet(models.QuerySet):
         )
 
 
-class InvoiceTypeManager(models.Manager):
+class DocTypeManager(models.Manager):
+    def __init__(self, doc_type):
+        super().__init__()
+        self._doc_type = doc_type
+
     def get_queryset(self):
         return SalesDocumentQuerySet(self.model, using=self._db).filter(
-            doc_type=SalesDocument.DocType.INVOICE
-        )
-
-
-class QuotationManager(models.Manager):
-    def get_queryset(self):
-        return SalesDocumentQuerySet(self.model, using=self._db).filter(
-            doc_type=SalesDocument.DocType.QUOTATION
-        )
-
-
-class SaleOrderManager(models.Manager):
-    def get_queryset(self):
-        return SalesDocumentQuerySet(self.model, using=self._db).filter(
-            doc_type=SalesDocument.DocType.SALE_ORDER
+            doc_type=self._doc_type
         )
 
 
@@ -746,10 +727,10 @@ class SalesDocument(ERPBaseModel):
     )
 
     # ── Managers ──────────────────────────────────────────────────────────────
-    objects = models.Manager()  # all documents (default)
-    invoices = InvoiceTypeManager()  # doc_type=INVOICE
-    quotations = QuotationManager()  # doc_type=QUOTATION
-    sale_orders = SaleOrderManager()  # doc_type=SALE_ORDER
+    objects = models.Manager()
+    invoices = DocTypeManager("INVOICE")
+    quotations = DocTypeManager("QUOTATION")
+    sale_orders = DocTypeManager("SALE_ORDER")
 
     class Meta(ERPBaseModel.Meta):
         ordering = ["-created_at"]
