@@ -47,7 +47,7 @@ def send_invoice_email(invoice: SalesDocument, request) -> bool:
         "org": org,
         "logo_url": _logo_data_uri(org),
     }
-    html_body = render_to_string("invoices/email/invoice_email.html", ctx, request=request)
+    html_body = render_to_string("sales/email/invoice_email.html", ctx, request=request)
     doc_ref = invoice.encf or invoice.doc_number or _("Borrador")
     subject = f"Factura {doc_ref} – {org.name}"
     plain = f"Factura {doc_ref}\nTotal: {invoice.total}\n\nRevise este correo en un cliente compatible con HTML."
@@ -65,7 +65,7 @@ def _quotation_pdf_bytes(quotation: SalesDocument, request) -> bytes | None:
         return None
     org = quotation.organization
     html_string = render_to_string(
-        "invoices/quotation_print.html",
+        "sales/quotation_print.html",
         {
             "quotation": quotation,
             "items": quotation.items.all(),
@@ -89,7 +89,7 @@ def send_quotation_email(quotation: SalesDocument, request) -> bool:
         "org": org,
         "logo_url": _logo_data_uri(org),
     }
-    html_body = render_to_string("invoices/email/quotation_email.html", ctx, request=request)
+    html_body = render_to_string("sales/email/quotation_email.html", ctx, request=request)
     doc_ref = quotation.doc_number or _("Borrador")
     subject = f"Cotización {doc_ref} – {org.name}"
     plain = f"Cotización {doc_ref}\nTotal: {quotation.total}\n\nRevise este correo en un cliente compatible con HTML."
@@ -114,7 +114,7 @@ def send_sale_order_email(order: SalesDocument, request) -> bool:
         "org": org,
         "logo_url": _logo_data_uri(org),
     }
-    html_body = render_to_string("invoices/email/sale_order_email.html", ctx, request=request)
+    html_body = render_to_string("sales/email/sale_order_email.html", ctx, request=request)
     doc_ref = order.doc_number or _("Borrador")
     subject = f"Orden de Venta {doc_ref} – {org.name}"
     plain = f"Orden de Venta {doc_ref}\nTotal: {order.total}\n\nRevise este correo en un cliente compatible con HTML."
