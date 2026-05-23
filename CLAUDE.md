@@ -9,10 +9,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repo.
 pytest
 
 # Run a single test
-pytest apps/invoices/tests/test_services.py::TestNCFService::test_confirm_assigns_encf
+pytest apps/sales/tests/test_services.py::TestNCFService::test_confirm_assigns_encf
 
 # Run tests for a specific app
-pytest apps/invoices/
+pytest apps/sales/
 
 # Development server
 python manage.py runserver
@@ -85,7 +85,7 @@ Plain `View` subclasses using `render()` must call `self.get_context(...)` not `
 
 **`ModuleStaffMixin`** (`apps/core/views_modules.py`) — `ERPBaseViewMixin` subclass for staff-only views. Checks `request.user.is_staff`, skips org context. Use for platform-level admin (Module registry, etc.).
 
-### Invoice system (`apps/invoices/`)
+### Invoice system (`apps/sales/`)
 
 `Invoice` unified model with `doc_type` discriminator: `INVOICE`, `QUOTATION`, `SALE_ORDER`. Three scoped managers:
 
@@ -96,7 +96,7 @@ Invoice.sale_orders   # SALE_ORDER only
 Invoice.objects       # all doc_types (default)
 ```
 
-**All fiscal/status transitions go through service classes** in `apps/invoices/services.py` — never mutate `status` directly in views:
+**All fiscal/status transitions go through service classes** in `apps/sales/services.py` — never mutate `status` directly in views:
 
 - `NCFService` — confirms invoices, assigns e-NCF atomically via `NCFSequence.generate()` (`SELECT FOR UPDATE`). Dev fallback: fake "B"-series NCF.
 - `QuotationService` — DRAFT → CONFIRMED → SENT → ACCEPTED/REJECTED/EXPIRED → CONVERTED.
@@ -112,7 +112,7 @@ Dominican fiscal IDs in `NCFSequence` (one active per org+NCF type). Non-fiscal 
 - **B-series** (traditional comprobantes): codes 1–16, e.g. `B01_CREDITO_FISCAL`, `B02_CONSUMO`. Format: `B{type:02d}{seq:08d}` → `B0100000001`. Default `max_seq` = 99,999,999.
 - **E-series** (e-CF electrónico): codes 31–47, e.g. `CREDITO_FISCAL = 31`. Format: `E{type:02d}{seq:010d}` → `E310000000001`.
 
-RNC/cedula validation in `apps/invoices/validators.py`. DGII checksum uses **modulo 11** (weights `[7,9,8,6,5,4,3,2]`, check digit = `(11 - total%11) % 11`). Cedulas use different weights + modulo 10.
+RNC/cedula validation in `apps/sales/validators.py`. DGII checksum uses **modulo 11** (weights `[7,9,8,6,5,4,3,2]`, check digit = `(11 - total%11) % 11`). Cedulas use different weights + modulo 10.
 
 `NCFSequence` exposes `PHYSICAL_TYPES` + `ELECTRONIC_TYPES` frozensets. `Series`: `PHYSICAL = "B"`, `ELECTRONIC = "E"`; default `PHYSICAL`. Props: `preview_next` (next NCF without increment), `remaining` (unused slots). Dev fallback generates fake B-series 8-digit NCF — no collision with E-series.
 
@@ -151,22 +151,22 @@ fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish")
 
 All customer, invoice, payment, quotation, sale order, item list views call `fts_search`.
 
-### Reports (`apps/invoices/views/reports.py`)
+### Reports (`apps/sales/views/reports.py`)
 
-All report views: `admin_required = True`, module `"invoices"`.
+All report views: `admin_required = True`, module `"sales"`.
 
 | View | URL name | Description |
 |------|----------|-------------|
-| `ReportIndexView` | `invoices:reports` | Report hub with DGII deadline reminder |
-| `Report607View` | `invoices:report_607` | DGII 607 CSV (sales by month/year) |
-| `Report608View` | `invoices:report_608` | DGII 608 CSV (purchases by month/year) |
-| `ReportAgingView` | `invoices:report_aging` | AR aging buckets (current, 1–30, 31–60, 61–90, 90+) |
-| `ReportStatementView` | `invoices:report_statement` | Customer account statement |
-| `ReportSalesByPeriodView` | `invoices:report_sales_period` | Sales summary by day/month |
-| `ReportInvoicesByCustomerView` | `invoices:report_invoices_by_customer` | Invoices grouped by customer |
-| `ReportCollectionsView` | `invoices:report_collections` | Collections / payments received |
-| `ReportITBISView` | `invoices:report_itbis` | ITBIS (VAT) summary by period |
-| `ReportSalesByNCFTypeView` | `invoices:report_ncf_type` | Sales grouped by NCF type |
+| `ReportIndexView` | `sales:reports` | Report hub with DGII deadline reminder |
+| `Report607View` | `sales:report_607` | DGII 607 CSV (sales by month/year) |
+| `Report608View` | `sales:report_608` | DGII 608 CSV (purchases by month/year) |
+| `ReportAgingView` | `sales:report_aging` | AR aging buckets (current, 1–30, 31–60, 61–90, 90+) |
+| `ReportStatementView` | `sales:report_statement` | Customer account statement |
+| `ReportSalesByPeriodView` | `sales:report_sales_period` | Sales summary by day/month |
+| `ReportInvoicesByCustomerView` | `sales:report_invoices_by_customer` | Invoices grouped by customer |
+| `ReportCollectionsView` | `sales:report_collections` | Collections / payments received |
+| `ReportITBISView` | `sales:report_itbis` | ITBIS (VAT) summary by period |
+| `ReportSalesByNCFTypeView` | `sales:report_ncf_type` | Sales grouped by NCF type |
 
 ### Module management (`apps/core/views_modules.py`)
 
@@ -182,15 +182,15 @@ Staff-only CRUD for global `Module` registry. Uses `ModuleStaffMixin` (no org co
 
 Registered in `config/urls.py` at `plataforma/modules/`.
 
-### Payment Terms (`apps/invoices/views/payment_terms.py`)
+### Payment Terms (`apps/sales/views/payment_terms.py`)
 
-Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required = True`, `required_module = "invoices"`. Sidebar after "Secuencias NCF" for admins.
+Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required = True`, `required_module = "sales"`. Sidebar after "Secuencias NCF" for admins.
 
 | View | URL name | Description |
 |------|----------|-------------|
-| `PaymentTermListView` | `invoices:payment_term_list` | Datatable list + inline create |
-| `PaymentTermUpdateView` | `invoices:payment_term_edit` | HTMX modal edit |
-| `PaymentTermDeleteView` | `invoices:payment_term_delete` | Delete (blocked if customers reference term) |
+| `PaymentTermListView` | `sales:payment_term_list` | Datatable list + inline create |
+| `PaymentTermUpdateView` | `sales:payment_term_edit` | HTMX modal edit |
+| `PaymentTermDeleteView` | `sales:payment_term_delete` | Delete (blocked if customers reference term) |
 
 ### KPI cards (`templates/components/_kpi_cards.html`)
 
@@ -202,7 +202,7 @@ Each card: dict with `label`, `value`, `icon`, `color` (Bootstrap color), option
 
 ### Test factories
 
-All factories in `apps/accounts/tests/factories.py` + `apps/invoices/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Signal tests call `User.objects.create_user()` directly.
+All factories in `apps/accounts/tests/factories.py` + `apps/sales/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Signal tests call `User.objects.create_user()` directly.
 
 Global fixtures (`user`, `org`, `owner_membership`, `admin_membership`, `member_membership`, `viewer_membership`) in root `conftest.py`.
 
