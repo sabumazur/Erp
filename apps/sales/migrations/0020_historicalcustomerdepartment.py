@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
-                        to="invoices.customer",
+                        to="sales.customer",
                         verbose_name="cliente",
                     ),
                 ),

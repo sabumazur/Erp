@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="credit_debit_notes",
-                to="invoices.invoice",
+                to="sales.invoice",
                 verbose_name="NCF afectado",
             ),
         ),

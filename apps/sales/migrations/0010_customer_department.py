@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ("customer", models.ForeignKey(
                     on_delete=django.db.models.deletion.CASCADE,
                     related_name="departments",
-                    to="invoices.customer",
+                    to="sales.customer",
                     verbose_name="cliente",
                 )),
                 ("name",         models.CharField(max_length=200, verbose_name="nombre del departamento")),
@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="sale_orders",
-                to="invoices.customerdepartment",
+                to="sales.customerdepartment",
                 verbose_name="departamento de entrega",
             ),
         ),

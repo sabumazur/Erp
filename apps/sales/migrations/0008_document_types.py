@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="consolidated_orders",
-                to="invoices.invoice",
+                to="sales.invoice",
                 verbose_name="consolidada en",
             ),
         ),

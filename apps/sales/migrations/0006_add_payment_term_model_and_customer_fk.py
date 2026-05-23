@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="customers",
-                to="invoices.paymentterm",
+                to="sales.paymentterm",
                 verbose_name="término de pago",
             ),
         ),

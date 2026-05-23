@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="payments",
-                to="invoices.customer",
+                to="sales.customer",
                 verbose_name="cliente",
             ),
         ),
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="payments",
-                to="invoices.customer",
+                to="sales.customer",
                 verbose_name="cliente",
             ),
         ),
@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="allocations",
-                        to="invoices.invoice",
+                        to="sales.invoice",
                         verbose_name="factura",
                     ),
                 ),
@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="allocations",
-                        to="invoices.payment",
+                        to="sales.payment",
                         verbose_name="pago",
                     ),
                 ),

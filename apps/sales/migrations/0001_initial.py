@@ -124,7 +124,7 @@ class Migration(migrations.Migration):
                 ("customer", models.ForeignKey(
                     on_delete=django.db.models.deletion.PROTECT,
                     related_name="invoices",
-                    to="invoices.customer",
+                    to="sales.customer",
                     verbose_name="cliente",
                 )),
                 ("encf", models.CharField(blank=True, max_length=13, verbose_name="e-NCF")),
@@ -143,7 +143,7 @@ class Migration(migrations.Migration):
                     blank=True, null=True,
                     on_delete=django.db.models.deletion.PROTECT,
                     related_name="credit_debit_notes",
-                    to="invoices.invoice",
+                    to="sales.invoice",
                     verbose_name="NCF afectado",
                 )),
                 ("issue_date", models.DateField(default=django.utils.timezone.now, verbose_name="fecha de emisión")),
@@ -212,7 +212,7 @@ class Migration(migrations.Migration):
                 ("invoice", models.ForeignKey(
                     on_delete=django.db.models.deletion.CASCADE,
                     related_name="items",
-                    to="invoices.invoice",
+                    to="sales.invoice",
                     verbose_name="factura",
                 )),
                 ("description", models.CharField(max_length=500, verbose_name="descripción")),
@@ -265,7 +265,7 @@ class Migration(migrations.Migration):
                 ("invoice", models.ForeignKey(
                     on_delete=django.db.models.deletion.CASCADE,
                     related_name="payments",
-                    to="invoices.invoice",
+                    to="sales.invoice",
                     verbose_name="factura",
                 )),
                 ("amount", models.DecimalField(decimal_places=2, max_digits=14, verbose_name="monto")),
