@@ -8,11 +8,11 @@ from decimal import Decimal
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.invoices.models import Invoice
+from apps.invoices.models import SalesDocument
 from apps.invoices.tests.factories import (
     CustomerFactory,
-    InvoiceFactory,
-    InvoiceItemFactory,
+    SalesDocumentFactory,
+    SalesDocumentItemFactory,
     PaymentFactory,
 )
 
@@ -32,12 +32,12 @@ def _dashboard(client, membership):
     return client.get(reverse("accounts:dashboard"))
 
 
-def _make_invoice(org, status, amount, issue_date=None, due_date=None, doc_type=Invoice.DocType.INVOICE):
+def _make_invoice(org, status, amount, issue_date=None, due_date=None, doc_type=SalesDocument.DocType.INVOICE):
     """Create a confirmed invoice with one line item totalling `amount` (pre-ITBIS)."""
     if issue_date is None:
         issue_date = timezone.localdate()
     customer = CustomerFactory(organization=org)
-    inv = InvoiceFactory(
+    inv = SalesDocumentFactory(
         organization=org,
         customer=customer,
         status=status,
@@ -45,7 +45,7 @@ def _make_invoice(org, status, amount, issue_date=None, due_date=None, doc_type=
         due_date=due_date,
         doc_type=doc_type,
     )
-    InvoiceItemFactory(invoice=inv, unit_price=amount, itbis_rate="EXEMPT")
+    SalesDocumentItemFactory(document=inv, unit_price=amount, itbis_rate="EXEMPT")
     inv.recompute_totals()
     return inv
 
@@ -65,26 +65,26 @@ class TestDashboardKPIs:
 
     def test_month_invoiced_includes_confirmed(self, client, owner_membership):
         org = owner_membership.organization
-        inv = _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("5000.00"))
+        inv = _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("5000.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["month_invoiced"] == inv.total
 
     def test_month_invoiced_includes_paid(self, client, owner_membership):
         org = owner_membership.organization
-        inv = _make_invoice(org, Invoice.Status.PAID, Decimal("2000.00"))
+        inv = _make_invoice(org, SalesDocument.Status.PAID, Decimal("2000.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["month_invoiced"] == inv.total
 
     def test_month_invoiced_excludes_draft(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.DRAFT, Decimal("9999.00"))
+        _make_invoice(org, SalesDocument.Status.DRAFT, Decimal("9999.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["month_invoiced"] == Decimal("0")
 
     def test_month_invoiced_excludes_previous_month(self, client, owner_membership):
         org = owner_membership.organization
         _make_invoice(
-            org, Invoice.Status.CONFIRMED, Decimal("5000.00"),
+            org, SalesDocument.Status.CONFIRMED, Decimal("5000.00"),
             issue_date=_prev_month_date(),
         )
         ctx = _dashboard(client, owner_membership).context
@@ -106,22 +106,22 @@ class TestDashboardKPIs:
 
     def test_outstanding_sums_confirmed_sent_overdue(self, client, owner_membership):
         org = owner_membership.organization
-        inv1 = _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("1000.00"))
-        inv2 = _make_invoice(org, Invoice.Status.SENT, Decimal("2000.00"))
-        inv3 = _make_invoice(org, Invoice.Status.OVERDUE, Decimal("500.00"))
+        inv1 = _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
+        inv2 = _make_invoice(org, SalesDocument.Status.SENT, Decimal("2000.00"))
+        inv3 = _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("500.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["outstanding"] == inv1.total + inv2.total + inv3.total
 
     def test_outstanding_excludes_paid(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.PAID, Decimal("9000.00"))
+        _make_invoice(org, SalesDocument.Status.PAID, Decimal("9000.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["outstanding"] == Decimal("0")
 
     def test_overdue_total_and_count(self, client, owner_membership):
         org = owner_membership.organization
-        inv1 = _make_invoice(org, Invoice.Status.OVERDUE, Decimal("600.00"))
-        inv2 = _make_invoice(org, Invoice.Status.OVERDUE, Decimal("400.00"))
+        inv1 = _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("600.00"))
+        inv2 = _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("400.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["overdue_total"] == inv1.total + inv2.total
         assert ctx["overdue_count"] == 2
@@ -131,7 +131,7 @@ class TestDashboardKPIs:
         from apps.accounts.tests.factories import OrganizationFactory, MembershipFactory
         from apps.accounts.models import Membership
         other_org = OrganizationFactory()
-        _make_invoice(other_org, Invoice.Status.CONFIRMED, Decimal("99999.00"))
+        _make_invoice(other_org, SalesDocument.Status.CONFIRMED, Decimal("99999.00"))
         ctx = _dashboard(client, owner_membership).context
         assert ctx["month_invoiced"] == Decimal("0")
         assert ctx["outstanding"] == Decimal("0")
@@ -152,18 +152,18 @@ class TestDashboardCounts:
     def test_pending_quotations_counts_confirmed_and_sent(self, client, owner_membership):
         org = owner_membership.organization
         customer = CustomerFactory(organization=org)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.CONFIRMED, doc_type=Invoice.DocType.QUOTATION)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.SENT, doc_type=Invoice.DocType.QUOTATION)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.DRAFT, doc_type=Invoice.DocType.QUOTATION)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.CONFIRMED, doc_type=SalesDocument.DocType.QUOTATION)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.SENT, doc_type=SalesDocument.DocType.QUOTATION)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DRAFT, doc_type=SalesDocument.DocType.QUOTATION)
         ctx = _dashboard(client, owner_membership).context
         assert ctx["pending_quotations"] == 2
 
     def test_pending_sale_orders_counts_confirmed_and_delivered(self, client, owner_membership):
         org = owner_membership.organization
         customer = CustomerFactory(organization=org)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.CONFIRMED, doc_type=Invoice.DocType.SALE_ORDER)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.DELIVERED, doc_type=Invoice.DocType.SALE_ORDER)
-        InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.DRAFT, doc_type=Invoice.DocType.SALE_ORDER)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.CONFIRMED, doc_type=SalesDocument.DocType.SALE_ORDER)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DELIVERED, doc_type=SalesDocument.DocType.SALE_ORDER)
+        SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DRAFT, doc_type=SalesDocument.DocType.SALE_ORDER)
         ctx = _dashboard(client, owner_membership).context
         assert ctx["pending_sale_orders"] == 2
 
@@ -182,24 +182,24 @@ class TestDashboardTables:
 
     def test_recent_invoices_excludes_draft(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.DRAFT, Decimal("100.00"))
-        _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("200.00"))
+        _make_invoice(org, SalesDocument.Status.DRAFT, Decimal("100.00"))
+        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("200.00"))
         ctx = _dashboard(client, owner_membership).context
         for inv in ctx["recent_invoices"]:
-            assert inv.status != Invoice.Status.DRAFT
+            assert inv.status != SalesDocument.Status.DRAFT
 
     def test_recent_invoices_capped_at_8(self, client, owner_membership):
         org = owner_membership.organization
         for _ in range(10):
-            _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("100.00"))
+            _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("100.00"))
         ctx = _dashboard(client, owner_membership).context
         assert len(ctx["recent_invoices"]) <= 8
 
     def test_recent_invoices_ordered_by_issue_date_desc(self, client, owner_membership):
         org = owner_membership.organization
         today = timezone.localdate()
-        inv_old = _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("100.00"), issue_date=today - timedelta(days=5))
-        inv_new = _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("200.00"), issue_date=today)
+        inv_old = _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("100.00"), issue_date=today - timedelta(days=5))
+        inv_new = _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("200.00"), issue_date=today)
         ctx = _dashboard(client, owner_membership).context
         ids = [str(i.pk) for i in ctx["recent_invoices"]]
         assert ids.index(str(inv_new.pk)) < ids.index(str(inv_old.pk))
@@ -207,17 +207,17 @@ class TestDashboardTables:
     def test_overdue_invoices_capped_at_6(self, client, owner_membership):
         org = owner_membership.organization
         for _ in range(8):
-            _make_invoice(org, Invoice.Status.OVERDUE, Decimal("100.00"))
+            _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("100.00"))
         ctx = _dashboard(client, owner_membership).context
         assert len(ctx["overdue_invoices"]) <= 6
 
     def test_overdue_invoices_only_contains_overdue(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.OVERDUE, Decimal("100.00"))
-        _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("200.00"))
+        _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("100.00"))
+        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("200.00"))
         ctx = _dashboard(client, owner_membership).context
         for inv in ctx["overdue_invoices"]:
-            assert inv.status == Invoice.Status.OVERDUE
+            assert inv.status == SalesDocument.Status.OVERDUE
 
     def test_recent_payments_capped_at_6(self, client, owner_membership):
         org = owner_membership.organization
@@ -255,7 +255,7 @@ class TestDashboardCharts:
 
     def test_chart_invoiced_reflects_current_month(self, client, owner_membership):
         org = owner_membership.organization
-        inv = _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("4000.00"))
+        inv = _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("4000.00"))
         ctx = _dashboard(client, owner_membership).context
         # Last entry in chart_invoiced is current month
         assert ctx["chart_invoiced"][-1] == float(inv.total)
@@ -275,8 +275,8 @@ class TestDashboardCharts:
 
     def test_chart_status_populated_from_invoices(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("1000.00"))
-        _make_invoice(org, Invoice.Status.PAID, Decimal("2000.00"))
+        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
+        _make_invoice(org, SalesDocument.Status.PAID, Decimal("2000.00"))
         ctx = _dashboard(client, owner_membership).context
         assert len(ctx["chart_status_labels"]) == 2
         assert len(ctx["chart_status_counts"]) == 2
@@ -289,13 +289,13 @@ class TestDashboardCharts:
     def test_customer_datasets_capped_at_6(self, client, owner_membership):
         org = owner_membership.organization
         for _ in range(8):
-            _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("1000.00"))
+            _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
         ctx = _dashboard(client, owner_membership).context
         assert len(ctx["chart_customer_datasets"]) <= 6
 
     def test_customer_datasets_have_monthly_data(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, Invoice.Status.CONFIRMED, Decimal("1000.00"))
+        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
         ctx = _dashboard(client, owner_membership).context
         dataset = ctx["chart_customer_datasets"][0]
         assert "label" in dataset

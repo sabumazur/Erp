@@ -228,7 +228,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         from decimal import Decimal
         from django.db.models import DecimalField, Sum
         from django.db.models.functions import Coalesce
-        from ..models import Invoice, Payment
+        from ..models import SalesDocument, Payment
 
         customer = get_object_or_404(Customer, pk=pk, organization=request.organization)
         departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
@@ -237,8 +237,8 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         _dec_field = DecimalField(max_digits=14, decimal_places=2)
 
         invoices = list(
-            Invoice.invoices.filter(organization=request.organization, customer=customer)
-            .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+            SalesDocument.invoices.filter(organization=request.organization, customer=customer)
+            .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
             .annotate(
                 paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
             )
@@ -253,16 +253,16 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         total_paid = sum((inv.paid_amount for inv in invoices), _zero)
         balance = total_invoiced - total_paid
         overdue = sum(
-            inv.line_balance for inv in invoices if inv.status == Invoice.Status.OVERDUE
+            inv.line_balance for inv in invoices if inv.status == SalesDocument.Status.OVERDUE
         )
 
-        _aging = {b: _zero for b in Invoice.AgingBucket.values}
+        _aging = {b: _zero for b in SalesDocument.AgingBucket.values}
         for inv in invoices:
             if inv.line_balance > _zero:
                 _aging[inv.aging_bucket] += inv.line_balance
         aging_breakdown = [
-            {"label": Invoice.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
-            for b in Invoice.AgingBucket.values
+            {"label": SalesDocument.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
+            for b in SalesDocument.AgingBucket.values
         ]
 
         recent_payments = list(
@@ -488,11 +488,11 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, customer_pk, pk):
-        from ..models import Invoice
+        from ..models import SalesDocument
         customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
         dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
 
-        order_count = Invoice.sale_orders.filter(
+        order_count = SalesDocument.sale_orders.filter(
             organization=request.organization, department=dept
         ).count()
         if order_count:

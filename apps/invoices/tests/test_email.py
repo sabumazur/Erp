@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 import pytest
-from apps.invoices.tests.factories import InvoiceFactory, CustomerFactory
+from apps.invoices.tests.factories import SalesDocumentFactory, CustomerFactory
 from apps.accounts.tests.factories import OrganizationFactory
 from apps.invoices.email import send_quotation_email
 
@@ -9,7 +9,7 @@ from apps.invoices.email import send_quotation_email
 def test_send_quotation_email_context_includes_letterhead_url():
     org = OrganizationFactory()
     customer = CustomerFactory(organization=org, email="test@example.com")
-    quotation = InvoiceFactory(
+    quotation = SalesDocumentFactory(
         organization=org,
         customer=customer,
         doc_type="QUOTATION",

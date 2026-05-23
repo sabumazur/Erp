@@ -6,12 +6,12 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
-from apps.invoices.models import Invoice, InvoiceItem, Payment, PaymentAllocation
+from apps.invoices.models import SalesDocument, SalesDocumentItem, Payment, PaymentAllocation
 from apps.invoices.services import PaymentService, QuotationService
 from .factories import (
     CustomerFactory,
-    InvoiceFactory,
-    InvoiceItemFactory,
+    SalesDocumentFactory,
+    SalesDocumentItemFactory,
     NCFSequenceFactory,
     PaymentFactory,
 )
@@ -26,17 +26,17 @@ def make_confirmed_invoice(organization, customer, total=Decimal("1000.00")):
         organization=organization, ncf_type=31, is_active=True,
         defaults={"current_seq": 0, "max_seq": 9999999999, "series": "E"},
     )
-    inv = InvoiceFactory(
+    inv = SalesDocumentFactory(
         organization=organization,
         customer=customer,
         ncf_type=31,
-        status=Invoice.Status.DRAFT,
+        status=SalesDocument.Status.DRAFT,
     )
-    InvoiceItemFactory(
-        invoice=inv,
+    SalesDocumentItemFactory(
+        document=inv,
         quantity=Decimal("1"),
         unit_price=total / Decimal("1.18"),  # so total ≈ total after 18% ITBIS
-        itbis_rate=InvoiceItem.ITBISRate.RATE_18,
+        itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
     )
     inv.recompute_totals()
     inv.refresh_from_db()
@@ -86,7 +86,7 @@ class TestPaymentServiceRegister:
             allocations=[{"invoice": inv, "amount": inv.total}],
         )
         inv.refresh_from_db()
-        assert inv.status == Invoice.Status.PAID
+        assert inv.status == SalesDocument.Status.PAID
 
     def test_partial_payment_does_not_mark_paid(self):
         customer = CustomerFactory()
@@ -104,7 +104,7 @@ class TestPaymentServiceRegister:
             allocations=[{"invoice": inv, "amount": partial}],
         )
         inv.refresh_from_db()
-        assert inv.status != Invoice.Status.PAID
+        assert inv.status != SalesDocument.Status.PAID
 
     def test_raises_when_amount_exceeds_balance(self):
         customer = CustomerFactory()
@@ -197,13 +197,13 @@ class TestPaymentServiceDelete:
             allocations=[{"invoice": inv, "amount": inv.total}],
         )
         inv.refresh_from_db()
-        assert inv.status == Invoice.Status.PAID
+        assert inv.status == SalesDocument.Status.PAID
 
         PaymentService.delete(payment)
 
         assert not Payment.objects.filter(pk=payment.pk).exists()
         inv.refresh_from_db()
-        assert inv.status != Invoice.Status.PAID
+        assert inv.status != SalesDocument.Status.PAID
 
     def test_partial_payment_delete_does_not_reopen(self):
         customer = CustomerFactory()
@@ -223,12 +223,12 @@ class TestPaymentServiceDelete:
             allocations=[{"invoice": inv, "amount": inv.total / 2}],
         )
         inv.refresh_from_db()
-        assert inv.status == Invoice.Status.PAID
+        assert inv.status == SalesDocument.Status.PAID
 
         # Delete one of the two payments — invoice should reopen
         PaymentService.delete(p1)
         inv.refresh_from_db()
-        assert inv.status != Invoice.Status.PAID
+        assert inv.status != SalesDocument.Status.PAID
 
 
 # ── QuotationService ──────────────────────────────────────────────────────────
@@ -240,13 +240,13 @@ class TestQuotationService:
         if customer is None:
             customer = CustomerFactory()
         org = organization or customer.organization
-        q = InvoiceFactory(
+        q = SalesDocumentFactory(
             organization=org,
             customer=customer,
-            status=Invoice.Status.DRAFT,
-            doc_type=Invoice.DocType.QUOTATION,
+            status=SalesDocument.Status.DRAFT,
+            doc_type=SalesDocument.DocType.QUOTATION,
         )
-        InvoiceItemFactory(invoice=q, quantity=Decimal("1"), unit_price=Decimal("500"))
+        SalesDocumentItemFactory(document=q, quantity=Decimal("1"), unit_price=Decimal("500"))
         q.recompute_totals()
         return q
 
@@ -254,7 +254,7 @@ class TestQuotationService:
         q = self._draft_quotation()
         QuotationService.confirm(q)
         q.refresh_from_db()
-        assert q.status == Invoice.Status.CONFIRMED
+        assert q.status == SalesDocument.Status.CONFIRMED
         assert q.doc_number.startswith("COT-")
 
     def test_confirm_raises_if_not_draft(self):
@@ -268,7 +268,7 @@ class TestQuotationService:
         QuotationService.confirm(q)
         QuotationService.send(q)
         q.refresh_from_db()
-        assert q.status == Invoice.Status.SENT
+        assert q.status == SalesDocument.Status.SENT
 
     def test_accept_transitions_sent_to_accepted(self):
         q = self._draft_quotation()
@@ -276,7 +276,7 @@ class TestQuotationService:
         QuotationService.send(q)
         QuotationService.accept(q)
         q.refresh_from_db()
-        assert q.status == Invoice.Status.ACCEPTED
+        assert q.status == SalesDocument.Status.ACCEPTED
 
     def test_reject_transitions_sent_to_rejected(self):
         q = self._draft_quotation()
@@ -284,7 +284,7 @@ class TestQuotationService:
         QuotationService.send(q)
         QuotationService.reject(q)
         q.refresh_from_db()
-        assert q.status == Invoice.Status.REJECTED
+        assert q.status == SalesDocument.Status.REJECTED
 
     def test_convert_to_invoice_creates_draft_invoice(self):
         customer = CustomerFactory()
@@ -296,13 +296,13 @@ class TestQuotationService:
         NCFSequenceFactory(organization=customer.organization, ncf_type=31, current_seq=0)
         invoice = QuotationService.convert_to_invoice(q, ncf_type=31)
 
-        assert invoice.doc_type == Invoice.DocType.INVOICE
-        assert invoice.status == Invoice.Status.DRAFT
+        assert invoice.doc_type == SalesDocument.DocType.INVOICE
+        assert invoice.status == SalesDocument.Status.DRAFT
         assert invoice.customer == customer
         assert invoice.items.count() == q.items.count()
 
         q.refresh_from_db()
-        assert q.status == Invoice.Status.CONVERTED
+        assert q.status == SalesDocument.Status.CONVERTED
 
     def test_convert_raises_if_not_accepted(self):
         q = self._draft_quotation()
@@ -325,4 +325,4 @@ class TestQuotationService:
         count = QuotationService.expire_bulk(org)
         assert count >= 1
         q.refresh_from_db()
-        assert q.status == Invoice.Status.EXPIRED
+        assert q.status == SalesDocument.Status.EXPIRED

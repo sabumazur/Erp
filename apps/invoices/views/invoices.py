@@ -20,7 +20,7 @@ from ..forms import (
     InvoiceForm, InvoiceItemForm, InvoiceItemFormSet, InvoiceItemFormSetCreate,
     PaymentForm, CreditNoteForm, NCFSequenceForm,
 )
-from ..models import Invoice, InvoiceItem, NCFSequence, Payment
+from ..models import SalesDocument, SalesDocumentItem, NCFSequence, Payment
 from ..email import send_invoice_email, _signature_url
 from ..services import NCFService, PaymentService
 from ._helpers import _customer_defaults_json
@@ -54,7 +54,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         org = self.request.organization
-        qs = Invoice.invoices.filter(organization=org).select_related("customer")
+        qs = SalesDocument.invoices.filter(organization=org).select_related("customer")
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["encf"])
@@ -64,14 +64,14 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
         if not self.request.htmx:
             today = date.today()
-            agg = Invoice.invoices.filter(organization=org).aggregate(
+            agg = SalesDocument.invoices.filter(organization=org).aggregate(
                 total_count=Count("id"),
                 pending_count=Count("id", filter=Q(status__in=[
-                    Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE,
+                    SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE,
                 ])),
-                overdue_count=Count("id", filter=Q(status=Invoice.Status.OVERDUE)),
+                overdue_count=Count("id", filter=Q(status=SalesDocument.Status.OVERDUE)),
                 paid_month=Sum("total", filter=Q(
-                    status=Invoice.Status.PAID,
+                    status=SalesDocument.Status.PAID,
                     issue_date__month=today.month,
                     issue_date__year=today.year,
                 )),
@@ -104,7 +104,7 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
     def get_object(self):
         return get_object_or_404(
-            Invoice.objects.select_related("customer", "organization", "encf_modified"),
+            SalesDocument.objects.select_related("customer", "organization", "encf_modified"),
             pk=self.kwargs["pk"],
             organization=self.request.organization,
         )
@@ -153,7 +153,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         if form.is_valid() and formset.is_valid():
             invoice = form.save(commit=False)
             invoice.organization = request.organization
-            invoice.doc_type = Invoice.DocType.INVOICE
+            invoice.doc_type = SalesDocument.DocType.INVOICE
             invoice.save()
             formset.instance = invoice
             formset.save()
@@ -170,7 +170,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_invoice(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         if not invoice.is_editable:
             messages.error(
                 request,
@@ -232,7 +232,7 @@ class InvoiceConfirmView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         try:
             NCFService.confirm(invoice)
             messages.success(request, _(f"Factura confirmada. e-NCF asignado: {invoice.encf}"))
@@ -245,7 +245,7 @@ class InvoiceSendView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         try:
             NCFService.mark_sent(invoice)
             messages.success(request, _("Factura marcada como enviada."))
@@ -267,7 +267,7 @@ class InvoicePayView(ERPBaseViewMixin, View):
     required_module = "invoices"
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         form = PaymentForm(request.POST)
         if not form.is_valid():
             messages.error(request, _("Por favor corrija los errores en el formulario de pago."))
@@ -295,7 +295,7 @@ class InvoiceCancelView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
         try:
             NCFService.cancel(invoice)
             messages.success(
@@ -313,8 +313,8 @@ class InvoiceDeleteView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        invoice = get_object_or_404(Invoice, pk=pk, organization=request.organization)
-        if invoice.status != Invoice.Status.DRAFT:
+        invoice = get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
+        if invoice.status != SalesDocument.Status.DRAFT:
             messages.error(request, _("Solo se pueden eliminar documentos en estado Borrador."))
             return redirect("invoices:invoice_detail", pk=invoice.pk)
         invoice.hard_delete()
@@ -330,7 +330,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
     required_module = "invoices"
 
     def _get_original(self, request, pk):
-        return get_object_or_404(Invoice, pk=pk, organization=request.organization)
+        return get_object_or_404(SalesDocument, pk=pk, organization=request.organization)
 
     def get(self, request, pk):
         original = self._get_original(request, pk)
@@ -348,7 +348,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
             note.organization = request.organization
             note.customer = original.customer
             note.encf_modified = original
-            note.doc_type = Invoice.DocType.INVOICE
+            note.doc_type = SalesDocument.DocType.INVOICE
             note.payment_condition = original.payment_condition
             note.save()
             formset.instance = note
@@ -385,10 +385,10 @@ class InvoicePDFView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            Invoice.objects.select_related("customer", "organization"),
+            SalesDocument.objects.select_related("customer", "organization"),
             pk=pk, organization=request.organization,
         )
-        if invoice.status == Invoice.Status.DRAFT:
+        if invoice.status == SalesDocument.Status.DRAFT:
             messages.warning(request, _("El PDF solo está disponible para documentos confirmados."))
             return redirect("invoices:invoice_detail", pk=invoice.pk)
 
@@ -424,8 +424,8 @@ class InvoicePrintView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            Invoice.objects.select_related("customer", "organization"),
-            pk=pk, organization=request.organization, doc_type=Invoice.DocType.INVOICE,
+            SalesDocument.objects.select_related("customer", "organization"),
+            pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         return render(
             request, "invoices/invoice_print.html",

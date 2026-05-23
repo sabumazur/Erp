@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.admin import ERPHistoryAdmin
 from .models import (
-    Customer, CustomerDepartment, DocumentSequence, Invoice, InvoiceItem,
+    Customer, CustomerDepartment, DocumentSequence, SalesDocument, SalesDocumentItem,
     NCFSequence, Payment, PaymentAllocation, PaymentTerm,
 )
 
@@ -32,16 +32,16 @@ class CustomerDepartmentAdmin(ERPHistoryAdmin):
     readonly_fields = ["created_at", "updated_at"]
 
 
-class InvoiceItemInline(admin.TabularInline):
-    model  = InvoiceItem
+class SalesDocumentItemInline(admin.TabularInline):
+    model  = SalesDocumentItem
     extra  = 0
     fields = ["item", "description", "quantity", "unit_price", "itbis_rate",
               "line_total", "itbis_amount", "line_total_with_itbis"]
     readonly_fields = ["line_total", "itbis_amount", "line_total_with_itbis"]
 
 
-@admin.register(Invoice)
-class InvoiceAdmin(ERPHistoryAdmin):
+@admin.register(SalesDocument)
+class SalesDocumentAdmin(ERPHistoryAdmin):
     list_display   = ["display_number", "doc_type", "customer", "issue_date", "total", "status", "organization"]
     list_filter    = ["doc_type", "status", "ncf_type", "organization"]
     search_fields  = ["encf", "doc_number", "customer__name", "customer__rnc_cedula"]
@@ -50,7 +50,7 @@ class InvoiceAdmin(ERPHistoryAdmin):
         "subtotal", "itbis_18", "itbis_16", "total",
         "dgii_status", "dgii_track_id", "xml_content",
     ]
-    inlines = [InvoiceItemInline]
+    inlines = [SalesDocumentItemInline]
     fieldsets = (
         (_("Tipo"), {
             "fields": ("doc_type", "organization", "customer", "status"),

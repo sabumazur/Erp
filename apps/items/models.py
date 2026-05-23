@@ -82,7 +82,7 @@ class Item(ERPBaseModel):
     Codes are auto-generated for SALE and BOTH items when left blank.
     PURCHASE-only items keep code optional/manual.
 
-    The `item` FK on InvoiceItem is optional; name, unit_price, and
+    The `item` FK on SalesDocumentItem is optional; name, unit_price, and
     itbis_rate are always editable — the FK is a catalog snapshot reference.
     """
 
@@ -200,8 +200,8 @@ class Item(ERPBaseModel):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        from apps.invoices.models import InvoiceItem
-        if InvoiceItem.objects.filter(item=self).exists():
+        from apps.invoices.models import SalesDocumentItem
+        if SalesDocumentItem.objects.filter(item=self).exists():
             raise ValueError(
                 f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos."
             )

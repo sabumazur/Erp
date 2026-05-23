@@ -455,15 +455,15 @@ class DocumentSequence(models.Model):
 # ── Custom managers ───────────────────────────────────────────────────────────
 
 
-class InvoiceQuerySet(models.QuerySet):
+class SalesDocumentQuerySet(models.QuerySet):
     def invoices(self):
-        return self.filter(doc_type=Invoice.DocType.INVOICE)
+        return self.filter(doc_type=SalesDocument.DocType.INVOICE)
 
     def quotations(self):
-        return self.filter(doc_type=Invoice.DocType.QUOTATION)
+        return self.filter(doc_type=SalesDocument.DocType.QUOTATION)
 
     def sale_orders(self):
-        return self.filter(doc_type=Invoice.DocType.SALE_ORDER)
+        return self.filter(doc_type=SalesDocument.DocType.SALE_ORDER)
 
     def with_aging(self):
         """
@@ -495,31 +495,31 @@ class InvoiceQuerySet(models.QuerySet):
         )
 
 
-class InvoiceManager(models.Manager):
+class InvoiceTypeManager(models.Manager):
     def get_queryset(self):
-        return InvoiceQuerySet(self.model, using=self._db).filter(
-            doc_type=Invoice.DocType.INVOICE
+        return SalesDocumentQuerySet(self.model, using=self._db).filter(
+            doc_type=SalesDocument.DocType.INVOICE
         )
 
 
 class QuotationManager(models.Manager):
     def get_queryset(self):
-        return InvoiceQuerySet(self.model, using=self._db).filter(
-            doc_type=Invoice.DocType.QUOTATION
+        return SalesDocumentQuerySet(self.model, using=self._db).filter(
+            doc_type=SalesDocument.DocType.QUOTATION
         )
 
 
 class SaleOrderManager(models.Manager):
     def get_queryset(self):
-        return InvoiceQuerySet(self.model, using=self._db).filter(
-            doc_type=Invoice.DocType.SALE_ORDER
+        return SalesDocumentQuerySet(self.model, using=self._db).filter(
+            doc_type=SalesDocument.DocType.SALE_ORDER
         )
 
 
 # ── Invoice (unified document model) ─────────────────────────────────────────
 
 
-class Invoice(ERPBaseModel):
+class SalesDocument(ERPBaseModel):
     class DocType(models.TextChoices):
         INVOICE = "INVOICE", _("Factura")
         QUOTATION = "QUOTATION", _("Cotización")
@@ -747,7 +747,7 @@ class Invoice(ERPBaseModel):
 
     # ── Managers ──────────────────────────────────────────────────────────────
     objects = models.Manager()  # all documents (default)
-    invoices = InvoiceManager()  # doc_type=INVOICE
+    invoices = InvoiceTypeManager()  # doc_type=INVOICE
     quotations = QuotationManager()  # doc_type=QUOTATION
     sale_orders = SaleOrderManager()  # doc_type=SALE_ORDER
 
@@ -853,12 +853,12 @@ class Invoice(ERPBaseModel):
         itbis_18 = sum(
             i.itbis_amount
             for i in items
-            if i.itbis_rate == InvoiceItem.ITBISRate.RATE_18
+            if i.itbis_rate == SalesDocumentItem.ITBISRate.RATE_18
         )
         itbis_16 = sum(
             i.itbis_amount
             for i in items
-            if i.itbis_rate == InvoiceItem.ITBISRate.RATE_16
+            if i.itbis_rate == SalesDocumentItem.ITBISRate.RATE_16
         )
         self.subtotal = subtotal
         self.itbis_18 = itbis_18
@@ -897,10 +897,10 @@ class Invoice(ERPBaseModel):
                 )
 
 
-# ── InvoiceItem ───────────────────────────────────────────────────────────────
+# ── SalesDocumentItem ─────────────────────────────────────────────────────────
 
 
-class InvoiceItem(models.Model):
+class SalesDocumentItem(models.Model):
     class ITBISRate(models.TextChoices):
         EXEMPT = "EXEMPT", _("Exento (0%)")
         RATE_0 = "RATE_0", _("Tasa 0% (exportación)")
@@ -914,8 +914,8 @@ class InvoiceItem(models.Model):
         ITBISRate.RATE_18: Decimal("0.18"),
     }
 
-    invoice = models.ForeignKey(
-        Invoice,
+    document = models.ForeignKey(
+        SalesDocument,
         on_delete=models.CASCADE,
         related_name="items",
         verbose_name=_("documento"),
@@ -1081,7 +1081,7 @@ class PaymentAllocation(models.Model):
         verbose_name=_("pago"),
     )
     invoice = models.ForeignKey(
-        Invoice,
+        SalesDocument,
         on_delete=models.PROTECT,
         related_name="allocations",
         verbose_name=_("factura"),
@@ -1105,3 +1105,4 @@ class PaymentAllocation(models.Model):
 
     def __str__(self):
         return f"{self.payment} → {self.invoice}: {self.amount}"
+

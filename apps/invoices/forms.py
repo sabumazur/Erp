@@ -13,8 +13,8 @@ from apps.items.models import Item as _Item
 from .models import (
     Customer,
     CustomerDepartment,
-    Invoice,
-    InvoiceItem,
+    SalesDocument,
+    SalesDocumentItem,
     Payment,
     NCFSequence,
     PaymentTerm,
@@ -310,7 +310,7 @@ class InvoiceForm(forms.ModelForm):
     use_required_attribute = False
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = [
             "customer",
             "ncf_type",
@@ -401,7 +401,7 @@ class QuotationForm(forms.ModelForm):
     use_required_attribute = False
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = [
             "customer",
             "issue_date",
@@ -489,7 +489,7 @@ class SaleOrderForm(forms.ModelForm):
     use_required_attribute = False
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = [
             "customer",
             "department",
@@ -644,7 +644,7 @@ class ConsolidateForm(forms.Form):
     )
     ncf_type = forms.ChoiceField(
         label=_("Tipo de comprobante"),
-        choices=[(k, v) for k, v in Invoice._meta.get_field("ncf_type").choices],
+        choices=[(k, v) for k, v in SalesDocument._meta.get_field("ncf_type").choices],
     )
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -745,7 +745,7 @@ class PaymentTermForm(forms.ModelForm):
 
 class InvoiceItemForm(forms.ModelForm):
     class Meta:
-        model = InvoiceItem
+        model = SalesDocumentItem
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
         widgets = {
             "item": forms.HiddenInput(),
@@ -807,8 +807,8 @@ class InvoiceItemForm(forms.ModelForm):
 
 
 InvoiceItemFormSet = inlineformset_factory(
-    Invoice,
-    InvoiceItem,
+    SalesDocument,
+    SalesDocumentItem,
     form=InvoiceItemForm,
     extra=0,
     can_delete=True,
@@ -817,8 +817,8 @@ InvoiceItemFormSet = inlineformset_factory(
 )
 
 InvoiceItemFormSetCreate = inlineformset_factory(
-    Invoice,
-    InvoiceItem,
+    SalesDocument,
+    SalesDocumentItem,
     form=InvoiceItemForm,
     extra=1,
     can_delete=True,
@@ -933,7 +933,7 @@ class CreditNoteForm(forms.ModelForm):
     use_required_attribute = False
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = ["ncf_type", "issue_date", "due_date", "notes", "terms"]
         widgets = {
             "issue_date": forms.DateInput(attrs={"type": "date"}),

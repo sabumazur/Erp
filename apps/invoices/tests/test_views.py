@@ -8,10 +8,10 @@ from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, UserFactory, OrganizationFactory
-from apps.invoices.models import Invoice
+from apps.invoices.models import SalesDocument
 from apps.invoices.services import NCFService
 from apps.invoices.tests.factories import (
-    CustomerFactory, InvoiceFactory, InvoiceItemFactory, NCFSequenceFactory,
+    CustomerFactory, SalesDocumentFactory, SalesDocumentItemFactory, NCFSequenceFactory,
 )
 
 
@@ -81,7 +81,7 @@ class TestInvoiceListView:
         login(client, user)
         set_active_org(client, org)
         customer = CustomerFactory(organization=org)
-        invoice = InvoiceFactory(organization=org, customer=customer)
+        invoice = SalesDocumentFactory(organization=org, customer=customer)
         resp = client.get(reverse("invoices:invoice_list"))
         assert resp.status_code == 200
 
@@ -93,8 +93,8 @@ class TestInvoiceConfirmView:
         user, org, _ = make_member()
         seq = NCFSequenceFactory(organization=org, ncf_type=31)
         customer = CustomerFactory(organization=org, rnc_cedula="101234567")
-        invoice = InvoiceFactory(organization=org, customer=customer, ncf_type=31)
-        InvoiceItemFactory(invoice=invoice, unit_price=Decimal("1000.00"))
+        invoice = SalesDocumentFactory(organization=org, customer=customer, ncf_type=31)
+        SalesDocumentItemFactory(document=invoice, unit_price=Decimal("1000.00"))
         return user, org, invoice
 
     def test_confirm_assigns_encf(self, client):
@@ -105,7 +105,7 @@ class TestInvoiceConfirmView:
         assert resp.status_code == 302
         invoice.refresh_from_db()
         assert invoice.encf == "E310000000001"
-        assert invoice.status == Invoice.Status.CONFIRMED
+        assert invoice.status == SalesDocument.Status.CONFIRMED
 
     def test_confirm_requires_login(self, client):
         _, org, invoice = self._setup()
@@ -120,15 +120,15 @@ class TestInvoiceCancelView:
         user, org, _ = make_member()
         seq = NCFSequenceFactory(organization=org, ncf_type=31)
         customer = CustomerFactory(organization=org, rnc_cedula="101234567")
-        invoice = InvoiceFactory(organization=org, customer=customer, ncf_type=31)
-        InvoiceItemFactory(invoice=invoice)
+        invoice = SalesDocumentFactory(organization=org, customer=customer, ncf_type=31)
+        SalesDocumentItemFactory(document=invoice)
         login(client, user)
         set_active_org(client, org)
         NCFService.confirm(invoice)
         resp = client.post(reverse("invoices:invoice_cancel", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         invoice.refresh_from_db()
-        assert invoice.status == Invoice.Status.CANCELLED
+        assert invoice.status == SalesDocument.Status.CANCELLED
 
 
 @pytest.mark.django_db
@@ -137,25 +137,25 @@ class TestInvoiceDeleteView:
     def test_delete_draft_succeeds(self, client):
         user, org, _ = make_member()
         customer = CustomerFactory(organization=org)
-        invoice = InvoiceFactory(organization=org, customer=customer, status=Invoice.Status.DRAFT)
+        invoice = SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DRAFT)
         login(client, user)
         set_active_org(client, org)
         resp = client.post(reverse("invoices:invoice_delete", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
-        assert not Invoice.objects.filter(pk=invoice.pk).exists()
+        assert not SalesDocument.objects.filter(pk=invoice.pk).exists()
 
     def test_delete_confirmed_fails(self, client):
         user, org, _ = make_member()
         seq = NCFSequenceFactory(organization=org, ncf_type=31)
         customer = CustomerFactory(organization=org, rnc_cedula="101234567")
-        invoice = InvoiceFactory(organization=org, customer=customer, ncf_type=31)
-        InvoiceItemFactory(invoice=invoice)
+        invoice = SalesDocumentFactory(organization=org, customer=customer, ncf_type=31)
+        SalesDocumentItemFactory(document=invoice)
         NCFService.confirm(invoice)
         login(client, user)
         set_active_org(client, org)
         resp = client.post(reverse("invoices:invoice_delete", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
-        assert Invoice.objects.filter(pk=invoice.pk).exists()
+        assert SalesDocument.objects.filter(pk=invoice.pk).exists()
 
 
 # ── Report views ──────────────────────────────────────────────────────────────

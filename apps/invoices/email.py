@@ -6,7 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 
-from .models import Invoice
+from .models import SalesDocument
 
 
 def _logo_data_uri(org):
@@ -35,7 +35,7 @@ def _signature_url(user, request):
     return None
 
 
-def send_invoice_email(invoice: Invoice, request) -> bool:
+def send_invoice_email(invoice: SalesDocument, request) -> bool:
     """Render invoice_email.html and send to customer. Returns True if sent."""
     to_email = invoice.customer.email
     if not to_email:
@@ -57,7 +57,7 @@ def send_invoice_email(invoice: Invoice, request) -> bool:
     return True
 
 
-def _quotation_pdf_bytes(quotation: Invoice, request) -> bytes | None:
+def _quotation_pdf_bytes(quotation: SalesDocument, request) -> bytes | None:
     """Generate PDF from quotation_print.html via WeasyPrint. Returns None if unavailable."""
     try:
         from weasyprint import HTML as WeasyprintHTML
@@ -77,7 +77,7 @@ def _quotation_pdf_bytes(quotation: Invoice, request) -> bytes | None:
     return WeasyprintHTML(string=html_string, base_url=request.build_absolute_uri("/")).write_pdf()
 
 
-def send_quotation_email(quotation: Invoice, request) -> bool:
+def send_quotation_email(quotation: SalesDocument, request) -> bool:
     """Render quotation_email.html and send to customer with PDF attachment. Returns True if sent."""
     to_email = quotation.customer.email
     if not to_email:
@@ -102,7 +102,7 @@ def send_quotation_email(quotation: Invoice, request) -> bool:
     return True
 
 
-def send_sale_order_email(order: Invoice, request) -> bool:
+def send_sale_order_email(order: SalesDocument, request) -> bool:
     """Render sale_order_email.html and send to customer. Returns True if sent."""
     to_email = order.customer.email
     if not to_email:

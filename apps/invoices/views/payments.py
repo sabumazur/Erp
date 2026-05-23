@@ -16,7 +16,7 @@ from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import PaymentFilter
 from ..forms import PaymentHeaderForm, PaymentForm
-from ..models import Invoice, Payment, PaymentAllocation
+from ..models import SalesDocument, Payment, PaymentAllocation
 from ..services import PaymentService
 
 
@@ -130,8 +130,8 @@ class PaymentCreateView(ERPBaseViewMixin, View):
             if amt <= Decimal("0"):
                 continue
             try:
-                inv = Invoice.invoices.get(pk=pk_str, organization=request.organization)
-            except Invoice.DoesNotExist:
+                inv = SalesDocument.invoices.get(pk=pk_str, organization=request.organization)
+            except SalesDocument.DoesNotExist:
                 continue
             allocations.append({"invoice": inv, "amount": amt})
 
@@ -205,13 +205,13 @@ class OutstandingInvoicesView(ERPBaseViewMixin, View):
             _zero = Decimal("0.00")
             _dec = DecimalField(max_digits=14, decimal_places=2)
             qs = (
-                Invoice.invoices.filter(
+                SalesDocument.invoices.filter(
                     organization=request.organization,
                     customer_id=customer_id,
                     status__in=[
-                        Invoice.Status.CONFIRMED,
-                        Invoice.Status.SENT,
-                        Invoice.Status.OVERDUE,
+                        SalesDocument.Status.CONFIRMED,
+                        SalesDocument.Status.SENT,
+                        SalesDocument.Status.OVERDUE,
                     ],
                 )
                 .annotate(

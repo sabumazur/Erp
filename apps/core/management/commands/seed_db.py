@@ -195,7 +195,7 @@ class Command(BaseCommand):
             counts["Invoice (INVOICE)"]    = sum(1 for i in invoices if i.doc_type == "INVOICE")
             counts["Invoice (QUOTATION)"]  = sum(1 for i in invoices if i.doc_type == "QUOTATION")
             counts["Invoice (SALE_ORDER)"] = sum(1 for i in invoices if i.doc_type == "SALE_ORDER")
-            counts["InvoiceItem"] = len(inv_items)
+            counts["SalesDocumentItem"] = len(inv_items)
 
             payments, allocs = self._seed_payments(org, customers, invoices)
             counts["Payment"] = len(payments)
@@ -376,7 +376,7 @@ class Command(BaseCommand):
         return seqs  # 2
 
     def _seed_invoices(self, org, customers, items, departments):
-        from apps.invoices.models import Invoice, InvoiceItem
+        from apps.invoices.models import SalesDocument, SalesDocumentItem
 
         today = date.today()
         all_invoices = []
@@ -385,11 +385,11 @@ class Command(BaseCommand):
 
         # ── 25 INVOICE records ────────────────────────────────────────────────
         inv_statuses = (
-            [Invoice.Status.DRAFT]     * 5 +
-            [Invoice.Status.CONFIRMED] * 8 +
-            [Invoice.Status.SENT]      * 5 +
-            [Invoice.Status.PAID]      * 5 +
-            [Invoice.Status.CANCELLED] * 2
+            [SalesDocument.Status.DRAFT]     * 5 +
+            [SalesDocument.Status.CONFIRMED] * 8 +
+            [SalesDocument.Status.SENT]      * 5 +
+            [SalesDocument.Status.PAID]      * 5 +
+            [SalesDocument.Status.CANCELLED] * 2
         )
         for i in range(25):
             customer = customers[i % len(customers)]
@@ -397,16 +397,16 @@ class Command(BaseCommand):
             encf     = ""
             ncf_type = 1  # B01 Crédito Fiscal
 
-            if status in (Invoice.Status.CONFIRMED, Invoice.Status.SENT,
-                          Invoice.Status.PAID, Invoice.Status.CANCELLED):
+            if status in (SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT,
+                          SalesDocument.Status.PAID, SalesDocument.Status.CANCELLED):
                 encf = f"B01{encf_counter:08d}"
                 encf_counter += 1
 
             issue = today - timedelta(days=random.randint(0, 90))
             due   = issue + timedelta(days=30)
 
-            inv = Invoice.objects.create(
-                doc_type=Invoice.DocType.INVOICE,
+            inv = SalesDocument.objects.create(
+                doc_type=SalesDocument.DocType.INVOICE,
                 organization=org,
                 customer=customer,
                 ncf_type=ncf_type,
@@ -415,10 +415,10 @@ class Command(BaseCommand):
                 issue_date=issue,
                 due_date=due,
                 payment_condition=random.choice([
-                    Invoice.PaymentCondition.CASH,
-                    Invoice.PaymentCondition.CREDIT,
+                    SalesDocument.PaymentCondition.CASH,
+                    SalesDocument.PaymentCondition.CREDIT,
                 ]),
-                currency=Invoice.Currency.DOP,
+                currency=SalesDocument.Currency.DOP,
                 notes=f"Factura de muestra #{i + 1}",
             )
             all_invoices.append(inv)
@@ -426,11 +426,11 @@ class Command(BaseCommand):
 
         # ── 25 QUOTATION records ──────────────────────────────────────────────
         quot_statuses = (
-            [Invoice.Status.DRAFT]     * 5 +
-            [Invoice.Status.CONFIRMED] * 8 +
-            [Invoice.Status.SENT]      * 5 +
-            [Invoice.Status.ACCEPTED]  * 4 +
-            [Invoice.Status.EXPIRED]   * 3
+            [SalesDocument.Status.DRAFT]     * 5 +
+            [SalesDocument.Status.CONFIRMED] * 8 +
+            [SalesDocument.Status.SENT]      * 5 +
+            [SalesDocument.Status.ACCEPTED]  * 4 +
+            [SalesDocument.Status.EXPIRED]   * 3
         )
         quot_counter = 1
         for i in range(25):
@@ -438,19 +438,19 @@ class Command(BaseCommand):
             status   = quot_statuses[i]
             issue    = today - timedelta(days=random.randint(0, 60))
             doc_num  = ""
-            if status != Invoice.Status.DRAFT:
+            if status != SalesDocument.Status.DRAFT:
                 doc_num = f"COT-{today.year}-{quot_counter:04d}"
                 quot_counter += 1
 
-            q = Invoice.objects.create(
-                doc_type=Invoice.DocType.QUOTATION,
+            q = SalesDocument.objects.create(
+                doc_type=SalesDocument.DocType.QUOTATION,
                 organization=org,
                 customer=customer,
                 status=status,
                 issue_date=issue,
                 valid_until=issue + timedelta(days=30),
-                payment_condition=Invoice.PaymentCondition.CREDIT,
-                currency=Invoice.Currency.DOP,
+                payment_condition=SalesDocument.PaymentCondition.CREDIT,
+                currency=SalesDocument.Currency.DOP,
                 doc_number=doc_num,
                 notes=f"Cotización de muestra #{i + 1}",
             )
@@ -459,10 +459,10 @@ class Command(BaseCommand):
 
         # ── 25 SALE_ORDER records ─────────────────────────────────────────────
         so_statuses = (
-            [Invoice.Status.DRAFT]     * 5 +
-            [Invoice.Status.CONFIRMED] * 8 +
-            [Invoice.Status.DELIVERED] * 7 +
-            [Invoice.Status.INVOICED]  * 5
+            [SalesDocument.Status.DRAFT]     * 5 +
+            [SalesDocument.Status.CONFIRMED] * 8 +
+            [SalesDocument.Status.DELIVERED] * 7 +
+            [SalesDocument.Status.INVOICED]  * 5
         )
         so_counter = 1
         for i in range(25):
@@ -471,20 +471,20 @@ class Command(BaseCommand):
             status   = so_statuses[i]
             issue    = today - timedelta(days=random.randint(0, 45))
             doc_num  = ""
-            if status != Invoice.Status.DRAFT:
+            if status != SalesDocument.Status.DRAFT:
                 doc_num = f"OV-{today.year}-{so_counter:04d}"
                 so_counter += 1
 
-            so = Invoice.objects.create(
-                doc_type=Invoice.DocType.SALE_ORDER,
+            so = SalesDocument.objects.create(
+                doc_type=SalesDocument.DocType.SALE_ORDER,
                 organization=org,
                 customer=customer,
                 department=dept if dept.customer == customer else None,
                 status=status,
                 issue_date=issue,
                 delivery_date=issue + timedelta(days=7),
-                payment_condition=Invoice.PaymentCondition.CREDIT,
-                currency=Invoice.Currency.DOP,
+                payment_condition=SalesDocument.PaymentCondition.CREDIT,
+                currency=SalesDocument.Currency.DOP,
                 doc_number=doc_num,
                 notes=f"Orden de venta de muestra #{i + 1}",
             )
@@ -494,13 +494,13 @@ class Command(BaseCommand):
         return all_invoices, all_items
 
     def _add_line_items(self, invoice, items, count=2):
-        from apps.invoices.models import InvoiceItem
+        from apps.invoices.models import SalesDocumentItem
 
         added = []
         catalog_items = random.sample(items, min(count, len(items)))
         for cat in catalog_items:
-            ii = InvoiceItem.objects.create(
-                invoice=invoice,
+            ii = SalesDocumentItem.objects.create(
+                document=invoice,
                 item=cat,
                 description=cat.name,
                 quantity=Decimal(str(random.randint(1, 10))),
@@ -511,15 +511,15 @@ class Command(BaseCommand):
         return added
 
     def _seed_payments(self, org, customers, invoices):
-        from apps.invoices.models import Payment, PaymentAllocation, Invoice
+        from apps.invoices.models import Payment, PaymentAllocation, SalesDocument
 
         payable = [
             inv for inv in invoices
-            if inv.doc_type == Invoice.DocType.INVOICE
+            if inv.doc_type == SalesDocument.DocType.INVOICE
             and inv.status in (
-                Invoice.Status.CONFIRMED,
-                Invoice.Status.SENT,
-                Invoice.Status.PAID,
+                SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.SENT,
+                SalesDocument.Status.PAID,
             )
         ]
 

@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.accounts.tests.factories import OrganizationFactory, UserFactory
 from apps.invoices.models import (
-    Customer, Invoice, InvoiceItem, NCFSequence, Payment,
+    Customer, SalesDocument, SalesDocumentItem, NCFSequence, Payment,
 )
 
 
@@ -34,29 +34,29 @@ class NCFSequenceFactory(DjangoModelFactory):
     is_active = True
 
 
-class InvoiceFactory(DjangoModelFactory):
+class SalesDocumentFactory(DjangoModelFactory):
     class Meta:
-        model = Invoice
+        model = SalesDocument
 
     organization = factory.SubFactory(OrganizationFactory)
     customer = factory.SubFactory(CustomerFactory,
                                    organization=factory.SelfAttribute("..organization"))
     ncf_type = 31
     issue_date = factory.LazyFunction(lambda: timezone.now().date())
-    payment_condition = Invoice.PaymentCondition.CASH
-    currency = Invoice.Currency.DOP
-    status = Invoice.Status.DRAFT
+    payment_condition = SalesDocument.PaymentCondition.CASH
+    currency = SalesDocument.Currency.DOP
+    status = SalesDocument.Status.DRAFT
 
 
-class InvoiceItemFactory(DjangoModelFactory):
+class SalesDocumentItemFactory(DjangoModelFactory):
     class Meta:
-        model = InvoiceItem
+        model = SalesDocumentItem
 
-    invoice = factory.SubFactory(InvoiceFactory)
+    document = factory.SubFactory(SalesDocumentFactory)
     description = factory.Sequence(lambda n: f"Servicio {n}")
     quantity = Decimal("1.0000")
     unit_price = Decimal("1000.00")
-    itbis_rate = InvoiceItem.ITBISRate.RATE_18
+    itbis_rate = SalesDocumentItem.ITBISRate.RATE_18
 
 
 class PaymentFactory(DjangoModelFactory):

@@ -2,17 +2,17 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Invoice, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod, PaymentTerm
+from .models import SalesDocument, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod, PaymentTerm
 
 
 class InvoiceFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
         choices=[
-            (s.value, s.label) for s in Invoice.Status
+            (s.value, s.label) for s in SalesDocument.Status
             if s in (
-                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
-                Invoice.Status.SENT, Invoice.Status.PAID,
-                Invoice.Status.OVERDUE, Invoice.Status.CANCELLED,
+                SalesDocument.Status.DRAFT, SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.SENT, SalesDocument.Status.PAID,
+                SalesDocument.Status.OVERDUE, SalesDocument.Status.CANCELLED,
             )
         ],
         empty_label=_("Todos los estados"),
@@ -53,7 +53,7 @@ class InvoiceFilter(django_filters.FilterSet):
     )
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = ["status", "ncf_type", "customer", "issue_date_after", "issue_date_before", "encf"]
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -67,11 +67,11 @@ class InvoiceFilter(django_filters.FilterSet):
 class QuotationFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
         choices=[
-            (s.value, s.label) for s in Invoice.Status
+            (s.value, s.label) for s in SalesDocument.Status
             if s in (
-                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED, Invoice.Status.SENT,
-                Invoice.Status.ACCEPTED, Invoice.Status.REJECTED,
-                Invoice.Status.EXPIRED, Invoice.Status.CONVERTED,
+                SalesDocument.Status.DRAFT, SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT,
+                SalesDocument.Status.ACCEPTED, SalesDocument.Status.REJECTED,
+                SalesDocument.Status.EXPIRED, SalesDocument.Status.CONVERTED,
             )
         ],
         empty_label=_("Todos los estados"),
@@ -106,7 +106,7 @@ class QuotationFilter(django_filters.FilterSet):
     )
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = ["status", "customer", "issue_date_after", "issue_date_before", "doc_number"]
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -120,11 +120,11 @@ class QuotationFilter(django_filters.FilterSet):
 class SaleOrderFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
         choices=[
-            (s.value, s.label) for s in Invoice.Status
+            (s.value, s.label) for s in SalesDocument.Status
             if s in (
-                Invoice.Status.DRAFT, Invoice.Status.CONFIRMED,
-                Invoice.Status.DELIVERED, Invoice.Status.INVOICED,
-                Invoice.Status.CANCELLED,
+                SalesDocument.Status.DRAFT, SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.DELIVERED, SalesDocument.Status.INVOICED,
+                SalesDocument.Status.CANCELLED,
             )
         ],
         empty_label=_("Todos los estados"),
@@ -165,7 +165,7 @@ class SaleOrderFilter(django_filters.FilterSet):
     )
 
     class Meta:
-        model = Invoice
+        model = SalesDocument
         fields = ["status", "customer", "department",
                   "delivery_date_after", "delivery_date_before", "doc_number"]
 

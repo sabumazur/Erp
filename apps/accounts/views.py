@@ -124,7 +124,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/dashboard.html"
 
     def get_context_data(self, **kwargs):
-        from apps.invoices.models import Invoice, Customer, Payment
+        from apps.invoices.models import SalesDocument, Customer, Payment
 
         ctx = super().get_context_data(**kwargs)
         ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
@@ -138,9 +138,9 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         _zero = Decimal("0")
         ctx["today"] = today
 
-        _inv = Invoice.invoices.filter(organization=org, deleted_at__isnull=True)
-        _quot = Invoice.quotations.filter(organization=org, deleted_at__isnull=True)
-        _so = Invoice.sale_orders.filter(organization=org, deleted_at__isnull=True)
+        _inv = SalesDocument.invoices.filter(organization=org, deleted_at__isnull=True)
+        _quot = SalesDocument.quotations.filter(organization=org, deleted_at__isnull=True)
+        _so = SalesDocument.sale_orders.filter(organization=org, deleted_at__isnull=True)
 
         # ── KPIs ──────────────────────────────────────────────────────────────
 
@@ -148,10 +148,10 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             _inv.filter(
                 issue_date__gte=month_start,
                 status__in=[
-                    Invoice.Status.CONFIRMED,
-                    Invoice.Status.SENT,
-                    Invoice.Status.PAID,
-                    Invoice.Status.OVERDUE,
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.PAID,
+                    SalesDocument.Status.OVERDUE,
                 ],
             )
             .aggregate(t=Sum("total"))["t"] or _zero
@@ -166,16 +166,16 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ctx["outstanding"] = (
             _inv.filter(
                 status__in=[
-                    Invoice.Status.CONFIRMED,
-                    Invoice.Status.SENT,
-                    Invoice.Status.OVERDUE,
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.OVERDUE,
                 ],
             )
             .aggregate(t=Sum("total"))["t"] or _zero
         )
 
         ctx["overdue_total"] = (
-            _inv.filter(status=Invoice.Status.OVERDUE)
+            _inv.filter(status=SalesDocument.Status.OVERDUE)
             .aggregate(t=Sum("total"))["t"] or _zero
         )
 
@@ -184,25 +184,25 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ctx["customer_count"] = Customer.objects.for_org(org).count()
 
         ctx["pending_quotations"] = _quot.filter(
-            status__in=[Invoice.Status.CONFIRMED, Invoice.Status.SENT],
+            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT],
         ).count()
 
         ctx["pending_sale_orders"] = _so.filter(
-            status__in=[Invoice.Status.CONFIRMED, Invoice.Status.DELIVERED],
+            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.DELIVERED],
         ).count()
 
-        ctx["overdue_count"] = _inv.filter(status=Invoice.Status.OVERDUE).count()
+        ctx["overdue_count"] = _inv.filter(status=SalesDocument.Status.OVERDUE).count()
 
         # ── Tables ────────────────────────────────────────────────────────────
 
         ctx["recent_invoices"] = (
-            _inv.exclude(status=Invoice.Status.DRAFT)
+            _inv.exclude(status=SalesDocument.Status.DRAFT)
             .select_related("customer")
             .order_by("-issue_date")[:8]
         )
 
         ctx["overdue_invoices"] = (
-            _inv.filter(status=Invoice.Status.OVERDUE)
+            _inv.filter(status=SalesDocument.Status.OVERDUE)
             .select_related("customer")
             .order_by("due_date")[:6]
         )
@@ -237,10 +237,10 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             for row in _inv.filter(
                 issue_date__gte=six_months_ago,
                 status__in=[
-                    Invoice.Status.CONFIRMED,
-                    Invoice.Status.SENT,
-                    Invoice.Status.PAID,
-                    Invoice.Status.OVERDUE,
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.PAID,
+                    SalesDocument.Status.OVERDUE,
                 ],
             )
             .annotate(month=TruncMonth("issue_date"))
@@ -262,18 +262,18 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ctx["chart_collected"] = [pay_by_month.get(m, 0.0) for m in months_list]
 
         _STATUS_LABELS = {
-            Invoice.Status.CONFIRMED: "Confirmada",
-            Invoice.Status.SENT: "Enviada",
-            Invoice.Status.PAID: "Pagada",
-            Invoice.Status.OVERDUE: "Vencida",
-            Invoice.Status.DRAFT: "Borrador",
+            SalesDocument.Status.CONFIRMED: "Confirmada",
+            SalesDocument.Status.SENT: "Enviada",
+            SalesDocument.Status.PAID: "Pagada",
+            SalesDocument.Status.OVERDUE: "Vencida",
+            SalesDocument.Status.DRAFT: "Borrador",
         }
         _STATUS_COLORS = {
-            Invoice.Status.CONFIRMED: "#0d6efd",
-            Invoice.Status.SENT: "#0dcaf0",
-            Invoice.Status.PAID: "#198754",
-            Invoice.Status.OVERDUE: "#dc3545",
-            Invoice.Status.DRAFT: "#adb5bd",
+            SalesDocument.Status.CONFIRMED: "#0d6efd",
+            SalesDocument.Status.SENT: "#0dcaf0",
+            SalesDocument.Status.PAID: "#198754",
+            SalesDocument.Status.OVERDUE: "#dc3545",
+            SalesDocument.Status.DRAFT: "#adb5bd",
         }
 
         status_counts_qs = {
@@ -298,10 +298,10 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ]
 
         _inv_status_filter = [
-            Invoice.Status.CONFIRMED,
-            Invoice.Status.SENT,
-            Invoice.Status.PAID,
-            Invoice.Status.OVERDUE,
+            SalesDocument.Status.CONFIRMED,
+            SalesDocument.Status.SENT,
+            SalesDocument.Status.PAID,
+            SalesDocument.Status.OVERDUE,
         ]
 
         top_customers = list(

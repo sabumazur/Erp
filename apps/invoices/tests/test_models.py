@@ -8,11 +8,11 @@ import threading
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.invoices.models import Invoice, InvoiceItem, NCFSequence
+from apps.invoices.models import SalesDocument, SalesDocumentItem, NCFSequence
 from apps.invoices.services import NCFService
 from apps.invoices.validators import validate_rnc, validate_cedula, validate_rnc_cedula
 from .factories import (
-    CustomerFactory, InvoiceFactory, InvoiceItemFactory,
+    CustomerFactory, SalesDocumentFactory, SalesDocumentItemFactory,
     NCFSequenceFactory, PaymentFactory,
 )
 
@@ -78,12 +78,12 @@ class TestNCFConcurrency:
 class TestInvoiceItemSignals:
 
     def test_invoice_totals_updated_on_item_save(self):
-        invoice = InvoiceFactory()
-        InvoiceItemFactory(
-            invoice=invoice,
+        invoice = SalesDocumentFactory()
+        SalesDocumentItemFactory(
+            document=invoice,
             quantity=Decimal("2"),
             unit_price=Decimal("1000.00"),
-            itbis_rate=InvoiceItem.ITBISRate.RATE_18,
+            itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
         )
         invoice.refresh_from_db()
         assert invoice.subtotal  == Decimal("2000.00")
@@ -92,24 +92,24 @@ class TestInvoiceItemSignals:
         assert invoice.total     == Decimal("2360.00")
 
     def test_itbis_16_computed_separately(self):
-        invoice = InvoiceFactory()
-        InvoiceItemFactory(
-            invoice=invoice,
+        invoice = SalesDocumentFactory()
+        SalesDocumentItemFactory(
+            document=invoice,
             quantity=Decimal("1"),
             unit_price=Decimal("500.00"),
-            itbis_rate=InvoiceItem.ITBISRate.RATE_16,
+            itbis_rate=SalesDocumentItem.ITBISRate.RATE_16,
         )
         invoice.refresh_from_db()
         assert invoice.itbis_16 == Decimal("80.00")
         assert invoice.itbis_18 == Decimal("0.00")
 
     def test_exempt_item_contributes_zero_itbis(self):
-        invoice = InvoiceFactory()
-        InvoiceItemFactory(
-            invoice=invoice,
+        invoice = SalesDocumentFactory()
+        SalesDocumentItemFactory(
+            document=invoice,
             quantity=Decimal("1"),
             unit_price=Decimal("200.00"),
-            itbis_rate=InvoiceItem.ITBISRate.EXEMPT,
+            itbis_rate=SalesDocumentItem.ITBISRate.EXEMPT,
         )
         invoice.refresh_from_db()
         assert invoice.itbis_18 == Decimal("0.00")
@@ -118,12 +118,12 @@ class TestInvoiceItemSignals:
         assert invoice.total    == Decimal("200.00")
 
     def test_totals_recalculated_on_item_delete(self):
-        invoice = InvoiceFactory()
-        item = InvoiceItemFactory(
-            invoice=invoice,
+        invoice = SalesDocumentFactory()
+        item = SalesDocumentItemFactory(
+            document=invoice,
             quantity=Decimal("1"),
             unit_price=Decimal("1000.00"),
-            itbis_rate=InvoiceItem.ITBISRate.RATE_18,
+            itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
         )
         invoice.refresh_from_db()
         assert invoice.total == Decimal("1180.00")
@@ -141,19 +141,19 @@ class TestNCFService:
 
     def _invoice_with_item(self):
         seq = NCFSequenceFactory(ncf_type=31)
-        invoice = InvoiceFactory(
+        invoice = SalesDocumentFactory(
             organization=seq.organization,
             customer=CustomerFactory(organization=seq.organization, rnc_cedula="101123456"),
             ncf_type=31,
         )
-        InvoiceItemFactory(invoice=invoice)
+        SalesDocumentItemFactory(document=invoice)
         return invoice
 
     def test_confirm_assigns_encf(self):
         invoice = self._invoice_with_item()
         NCFService.confirm(invoice)
         assert invoice.encf == "E310000000001"
-        assert invoice.status == Invoice.Status.CONFIRMED
+        assert invoice.status == SalesDocument.Status.CONFIRMED
 
     def test_confirm_raises_if_not_draft(self):
         invoice = self._invoice_with_item()
@@ -166,13 +166,13 @@ class TestNCFService:
         NCFService.confirm(invoice)
         NCFService.mark_sent(invoice)
         NCFService.mark_paid(invoice)
-        assert invoice.status == Invoice.Status.PAID
+        assert invoice.status == SalesDocument.Status.PAID
 
     def test_cancel_sets_cancelled_status(self):
         invoice = self._invoice_with_item()
         NCFService.confirm(invoice)
         NCFService.cancel(invoice)
-        assert invoice.status == Invoice.Status.CANCELLED
+        assert invoice.status == SalesDocument.Status.CANCELLED
 
     def test_cannot_cancel_paid_invoice(self):
         invoice = self._invoice_with_item()
@@ -191,7 +191,7 @@ class TestDGIIValidation:
     def test_credito_fiscal_requires_rnc(self):
         """Tipo 31 must have buyer RNC."""
         customer = CustomerFactory(rnc_cedula="")  # no RNC
-        invoice = InvoiceFactory(
+        invoice = SalesDocumentFactory(
             organization=customer.organization,
             customer=customer,
             ncf_type=31,
@@ -201,14 +201,14 @@ class TestDGIIValidation:
 
     def test_nota_credito_requires_encf_modified(self):
         """Tipo 34 must reference another invoice."""
-        invoice = InvoiceFactory(ncf_type=34, encf_modified=None)
+        invoice = SalesDocumentFactory(ncf_type=34, encf_modified=None)
         with pytest.raises(ValidationError):
             invoice.clean()
 
     def test_consumo_without_rnc_is_valid(self):
         """Tipo 32 with no RNC should pass validation."""
         customer = CustomerFactory(rnc_cedula="")
-        invoice = InvoiceFactory(
+        invoice = SalesDocumentFactory(
             organization=customer.organization,
             customer=customer,
             ncf_type=32,

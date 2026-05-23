@@ -20,7 +20,7 @@ from django.db.models import Sum as _Sum
 from django.db.models.functions import Coalesce as _Coalesce
 from django.db.models import DecimalField as _DecimalField
 
-from .models import DocumentSequence, Invoice, InvoiceItem, NCFSequence, Payment, PaymentAllocation
+from .models import DocumentSequence, SalesDocument, SalesDocumentItem, NCFSequence, Payment, PaymentAllocation
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class NCFService:
     """
-    Handles the atomic assignment of an e-NCF to a confirmed Invoice.
+    Handles the atomic assignment of an e-NCF to a confirmed SalesDocument.
 
     Usage (inside a view POST handler):
         try:
@@ -40,9 +40,9 @@ class NCFService:
 
     @staticmethod
     @transaction.atomic
-    def confirm(invoice: Invoice) -> Invoice:
+    def confirm(invoice: SalesDocument) -> SalesDocument:
         """
-        Transition an Invoice from DRAFT → CONFIRMED by assigning the next
+        Transition a SalesDocument from DRAFT → CONFIRMED by assigning the next
         e-NCF from the organization's active sequence for the invoice's NCF type.
 
         Raises:
@@ -52,10 +52,10 @@ class NCFService:
             ValidationError — if the invoice fails DGII business-rule validation
                               (e.g. missing RNC for Crédito Fiscal).
         """
-        if invoice.doc_type != Invoice.DocType.INVOICE:
+        if invoice.doc_type != SalesDocument.DocType.INVOICE:
             raise ValueError(_("Solo se pueden confirmar facturas fiscales con este servicio."))
 
-        if invoice.status != Invoice.Status.DRAFT:
+        if invoice.status != SalesDocument.Status.DRAFT:
             raise ValueError(
                 f"Solo se pueden confirmar facturas en estado Borrador. "
                 f"Estado actual: {invoice.get_status_display()}."
@@ -79,64 +79,64 @@ class NCFService:
             encf = f"B{invoice.ncf_type:02d}{fake_seq:08d}"
 
         invoice.encf = encf
-        invoice.status = Invoice.Status.CONFIRMED
+        invoice.status = SalesDocument.Status.CONFIRMED
         invoice.save(update_fields=["encf", "status", "updated_at"])
 
         return invoice
 
     @staticmethod
-    def mark_sent(invoice: Invoice) -> Invoice:
+    def mark_sent(invoice: SalesDocument) -> SalesDocument:
         """Transition CONFIRMED → SENT."""
-        if invoice.status != Invoice.Status.CONFIRMED:
+        if invoice.status != SalesDocument.Status.CONFIRMED:
             raise ValueError("Solo se pueden enviar facturas confirmadas.")
-        invoice.status = Invoice.Status.SENT
+        invoice.status = SalesDocument.Status.SENT
         invoice.save(update_fields=["status", "updated_at"])
         return invoice
 
     @staticmethod
-    def mark_paid(invoice: Invoice) -> Invoice:
+    def mark_paid(invoice: SalesDocument) -> SalesDocument:
         """
         Transition CONFIRMED / SENT / OVERDUE → PAID.
         Called automatically by PaymentService when the sum of allocations
         covers the invoice total.
         """
-        allowed = (Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE)
+        allowed = (SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE)
         if invoice.status not in allowed:
             raise ValueError("La factura no puede marcarse como pagada en su estado actual.")
-        invoice.status = Invoice.Status.PAID
+        invoice.status = SalesDocument.Status.PAID
         invoice.save(update_fields=["status", "updated_at"])
         return invoice
 
     @staticmethod
-    def reopen(invoice: Invoice) -> Invoice:
+    def reopen(invoice: SalesDocument) -> SalesDocument:
         """
         Reverse PAID → SENT.
         Called by PaymentService.delete() when a payment that fully covered
         this invoice is deleted.
         """
-        if invoice.status != Invoice.Status.PAID:
+        if invoice.status != SalesDocument.Status.PAID:
             raise ValueError("Solo se pueden reabrir facturas en estado Pagada.")
-        invoice.status = Invoice.Status.SENT
+        invoice.status = SalesDocument.Status.SENT
         invoice.save(update_fields=["status", "updated_at"])
         return invoice
 
     @staticmethod
-    def cancel(invoice: Invoice) -> Invoice:
+    def cancel(invoice: SalesDocument) -> SalesDocument:
         """
         Cancel a confirmed/sent/overdue invoice.
         The e-NCF is retained (to appear in format 608) and the invoice is
         soft-deleted after status change.
         DRAFT invoices are just hard-deleted (no e-NCF was assigned).
         """
-        if invoice.status == Invoice.Status.PAID:
+        if invoice.status == SalesDocument.Status.PAID:
             raise ValueError(
                 "No se puede anular una factura pagada. "
                 "Emita una Nota de Crédito en su lugar."
             )
-        if invoice.status == Invoice.Status.CANCELLED:
+        if invoice.status == SalesDocument.Status.CANCELLED:
             raise ValueError("La factura ya está anulada.")
 
-        invoice.status = Invoice.Status.CANCELLED
+        invoice.status = SalesDocument.Status.CANCELLED
         invoice.save(update_fields=["status", "updated_at"])
         return invoice
 
@@ -149,13 +149,13 @@ class NCFService:
         """
         today = timezone.now().date()
         updated = (
-            Invoice.invoices
+            SalesDocument.invoices
             .filter(
                 organization=organization,
-                status=Invoice.Status.SENT,
+                status=SalesDocument.Status.SENT,
                 due_date__lt=today,
             )
-            .update(status=Invoice.Status.OVERDUE)
+            .update(status=SalesDocument.Status.OVERDUE)
         )
         return updated
 
@@ -174,11 +174,11 @@ class QuotationService:
 
     @staticmethod
     @transaction.atomic
-    def confirm(quotation: Invoice) -> Invoice:
+    def confirm(quotation: SalesDocument) -> SalesDocument:
         """DRAFT → CONFIRMED. Assigns doc_number from DocumentSequence."""
-        if quotation.doc_type != Invoice.DocType.QUOTATION:
+        if quotation.doc_type != SalesDocument.DocType.QUOTATION:
             raise ValueError(_("Este documento no es una cotización."))
-        if quotation.status != Invoice.Status.DRAFT:
+        if quotation.status != SalesDocument.Status.DRAFT:
             raise ValueError(
                 f"Solo se pueden confirmar cotizaciones en Borrador. "
                 f"Estado actual: {quotation.get_status_display()}."
@@ -188,69 +188,69 @@ class QuotationService:
             quotation.organization, DocumentSequence.DocType.QUOTATION
         )
         quotation.doc_number = doc_number
-        quotation.status = Invoice.Status.CONFIRMED
+        quotation.status = SalesDocument.Status.CONFIRMED
         quotation.save(update_fields=["doc_number", "status", "updated_at"])
         return quotation
 
     @staticmethod
-    def send(quotation: Invoice) -> Invoice:
+    def send(quotation: SalesDocument) -> SalesDocument:
         """CONFIRMED → SENT."""
-        if quotation.status != Invoice.Status.CONFIRMED:
+        if quotation.status != SalesDocument.Status.CONFIRMED:
             raise ValueError(_("Solo se pueden enviar cotizaciones confirmadas."))
-        quotation.status = Invoice.Status.SENT
+        quotation.status = SalesDocument.Status.SENT
         quotation.save(update_fields=["status", "updated_at"])
         return quotation
 
     @staticmethod
-    def accept(quotation: Invoice) -> Invoice:
+    def accept(quotation: SalesDocument) -> SalesDocument:
         """SENT → ACCEPTED."""
-        if quotation.status != Invoice.Status.SENT:
+        if quotation.status != SalesDocument.Status.SENT:
             raise ValueError(_("Solo se pueden aceptar cotizaciones enviadas."))
-        quotation.status = Invoice.Status.ACCEPTED
+        quotation.status = SalesDocument.Status.ACCEPTED
         quotation.save(update_fields=["status", "updated_at"])
         return quotation
 
     @staticmethod
-    def reject(quotation: Invoice) -> Invoice:
+    def reject(quotation: SalesDocument) -> SalesDocument:
         """SENT → REJECTED."""
-        if quotation.status != Invoice.Status.SENT:
+        if quotation.status != SalesDocument.Status.SENT:
             raise ValueError(_("Solo se pueden rechazar cotizaciones enviadas."))
-        quotation.status = Invoice.Status.REJECTED
+        quotation.status = SalesDocument.Status.REJECTED
         quotation.save(update_fields=["status", "updated_at"])
         return quotation
 
     @staticmethod
-    def expire(quotation: Invoice) -> Invoice:
+    def expire(quotation: SalesDocument) -> SalesDocument:
         """Any non-terminal status → EXPIRED."""
         terminal = (
-            Invoice.Status.CONVERTED,
-            Invoice.Status.REJECTED,
-            Invoice.Status.CANCELLED,
-            Invoice.Status.EXPIRED,
+            SalesDocument.Status.CONVERTED,
+            SalesDocument.Status.REJECTED,
+            SalesDocument.Status.CANCELLED,
+            SalesDocument.Status.EXPIRED,
         )
         if quotation.status in terminal:
             raise ValueError(_("Esta cotización ya está en un estado terminal."))
-        quotation.status = Invoice.Status.EXPIRED
+        quotation.status = SalesDocument.Status.EXPIRED
         quotation.save(update_fields=["status", "updated_at"])
         return quotation
 
     @staticmethod
     @transaction.atomic
-    def convert_to_invoice(quotation: Invoice, ncf_type: int) -> Invoice:
+    def convert_to_invoice(quotation: SalesDocument, ncf_type: int) -> SalesDocument:
         """
         ACCEPTED → CONVERTED.
 
-        Creates a new DRAFT Invoice copying customer, items, totals, currency
+        Creates a new DRAFT SalesDocument copying customer, items, totals, currency
         and notes from the quotation. The NCF type is provided by the user.
-        Returns the new Invoice.
+        Returns the new SalesDocument.
         """
-        if quotation.doc_type != Invoice.DocType.QUOTATION:
+        if quotation.doc_type != SalesDocument.DocType.QUOTATION:
             raise ValueError(_("Este documento no es una cotización."))
-        if quotation.status != Invoice.Status.ACCEPTED:
+        if quotation.status != SalesDocument.Status.ACCEPTED:
             raise ValueError(_("Solo se pueden convertir cotizaciones aceptadas."))
 
-        invoice = Invoice.objects.create(
-            doc_type=Invoice.DocType.INVOICE,
+        invoice = SalesDocument.objects.create(
+            doc_type=SalesDocument.DocType.INVOICE,
             organization=quotation.organization,
             customer=quotation.customer,
             ncf_type=ncf_type,
@@ -261,13 +261,13 @@ class QuotationService:
             exchange_rate=quotation.exchange_rate,
             notes=quotation.notes,
             terms=quotation.terms,
-            status=Invoice.Status.DRAFT,
+            status=SalesDocument.Status.DRAFT,
         )
 
         # Copy line items
         for item in quotation.items.all():
-            InvoiceItem.objects.create(
-                invoice=invoice,
+            SalesDocumentItem.objects.create(
+                document=invoice,
                 description=item.description,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
@@ -275,7 +275,7 @@ class QuotationService:
             )
 
         # Mark quotation as converted
-        quotation.status = Invoice.Status.CONVERTED
+        quotation.status = SalesDocument.Status.CONVERTED
         quotation.save(update_fields=["status", "updated_at"])
 
         return invoice
@@ -288,13 +288,13 @@ class QuotationService:
         """
         today = timezone.now().date()
         updated = (
-            Invoice.quotations
+            SalesDocument.quotations
             .filter(
                 organization=organization,
-                status__in=[Invoice.Status.CONFIRMED, Invoice.Status.SENT],
+                status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT],
                 valid_until__lt=today,
             )
-            .update(status=Invoice.Status.EXPIRED)
+            .update(status=SalesDocument.Status.EXPIRED)
         )
         return updated
 
@@ -312,11 +312,11 @@ class SaleOrderService:
 
     @staticmethod
     @transaction.atomic
-    def confirm(order: Invoice) -> Invoice:
+    def confirm(order: SalesDocument) -> SalesDocument:
         """DRAFT → CONFIRMED. Assigns doc_number from DocumentSequence."""
-        if order.doc_type != Invoice.DocType.SALE_ORDER:
+        if order.doc_type != SalesDocument.DocType.SALE_ORDER:
             raise ValueError(_("Este documento no es una orden de venta."))
-        if order.status != Invoice.Status.DRAFT:
+        if order.status != SalesDocument.Status.DRAFT:
             raise ValueError(
                 f"Solo se pueden confirmar órdenes en Borrador. "
                 f"Estado actual: {order.get_status_display()}."
@@ -326,38 +326,38 @@ class SaleOrderService:
             order.organization, DocumentSequence.DocType.SALE_ORDER
         )
         order.doc_number = doc_number
-        order.status = Invoice.Status.CONFIRMED
+        order.status = SalesDocument.Status.CONFIRMED
         order.save(update_fields=["doc_number", "status", "updated_at"])
         return order
 
     @staticmethod
-    def mark_delivered(order: Invoice, signed_by: str) -> Invoice:
+    def mark_delivered(order: SalesDocument, signed_by: str) -> SalesDocument:
         """CONFIRMED → DELIVERED. Records who signed the delivery."""
-        if order.doc_type != Invoice.DocType.SALE_ORDER:
+        if order.doc_type != SalesDocument.DocType.SALE_ORDER:
             raise ValueError(_("Este documento no es una orden de venta."))
-        if order.status != Invoice.Status.CONFIRMED:
+        if order.status != SalesDocument.Status.CONFIRMED:
             raise ValueError(_("Solo se pueden marcar como entregadas órdenes confirmadas."))
         if not signed_by or not signed_by.strip():
             raise ValueError(_("Debe indicar el nombre de quien recibe la entrega."))
 
         order.signed_by = signed_by.strip()
-        order.status = Invoice.Status.DELIVERED
+        order.status = SalesDocument.Status.DELIVERED
         order.save(update_fields=["signed_by", "status", "updated_at"])
         return order
 
     @staticmethod
-    def cancel(order: Invoice) -> Invoice:
+    def cancel(order: SalesDocument) -> SalesDocument:
         """DRAFT / CONFIRMED → CANCELLED."""
-        if order.doc_type != Invoice.DocType.SALE_ORDER:
+        if order.doc_type != SalesDocument.DocType.SALE_ORDER:
             raise ValueError(_("Este documento no es una orden de venta."))
-        if order.status in (Invoice.Status.DELIVERED, Invoice.Status.INVOICED):
+        if order.status in (SalesDocument.Status.DELIVERED, SalesDocument.Status.INVOICED):
             raise ValueError(
                 _("No se puede anular una orden entregada o facturada.")
             )
-        if order.status == Invoice.Status.CANCELLED:
+        if order.status == SalesDocument.Status.CANCELLED:
             raise ValueError(_("La orden ya está anulada."))
 
-        order.status = Invoice.Status.CANCELLED
+        order.status = SalesDocument.Status.CANCELLED
         order.save(update_fields=["status", "updated_at"])
         return order
 
@@ -370,7 +370,7 @@ class SaleOrderService:
         period_end: date,
         ncf_type: int,
         department=None,
-    ) -> Invoice:
+    ) -> SalesDocument:
         """
         Consolidate all DELIVERED sale orders for a customer within a date range
         into a single new DRAFT Invoice.
@@ -390,13 +390,13 @@ class SaleOrderService:
         Raises ValueError if no eligible orders are found.
         """
         qs = (
-            Invoice.sale_orders
+            SalesDocument.sale_orders
             .select_related("customer")
             .prefetch_related("items")
             .filter(
                 organization=organization,
                 customer=customer,
-                status=Invoice.Status.DELIVERED,
+                status=SalesDocument.Status.DELIVERED,
                 consolidated_into__isnull=True,
                 delivery_date__gte=period_start,
                 delivery_date__lte=period_end,
@@ -422,20 +422,20 @@ class SaleOrderService:
         first = orders[0]
 
         dept_label = f" · Depto.: {department.name}" if department else ""
-        invoice = Invoice.objects.create(
-            doc_type=Invoice.DocType.INVOICE,
+        invoice = SalesDocument.objects.create(
+            doc_type=SalesDocument.DocType.INVOICE,
             organization=organization,
             customer=customer,
             ncf_type=ncf_type,
             issue_date=date.today(),
-            payment_condition=Invoice.PaymentCondition.CREDIT,
+            payment_condition=SalesDocument.PaymentCondition.CREDIT,
             currency=first.currency,
             exchange_rate=first.exchange_rate,
             notes=_(
                 f"Consolidación de {len(orders)} orden(es) de venta. "
                 f"Período: {period_start} – {period_end}.{dept_label}"
             ),
-            status=Invoice.Status.DRAFT,
+            status=SalesDocument.Status.DRAFT,
         )
 
         for order in orders:
@@ -446,8 +446,8 @@ class SaleOrderService:
             date_str = order.delivery_date.strftime("%d/%m/%Y") if order.delivery_date else ""
             ref = order.doc_number or str(order.pk)[:8]
 
-            InvoiceItem.objects.create(
-                invoice=invoice,
+            SalesDocumentItem.objects.create(
+                document=invoice,
                 description=f"Entrega {ref} – {date_str}",
                 quantity=1,
                 unit_price=order.subtotal,
@@ -455,7 +455,7 @@ class SaleOrderService:
             )
 
             order.consolidated_into = invoice
-            order.status = Invoice.Status.INVOICED
+            order.status = SalesDocument.Status.INVOICED
             order.save(update_fields=["consolidated_into", "status", "updated_at"])
 
         # Recompute invoice totals now that all items exist
@@ -478,7 +478,7 @@ class PaymentService:
     _DEC  = _DecimalField(max_digits=14, decimal_places=2)
 
     @classmethod
-    def _outstanding(cls, invoice: Invoice) -> _Decimal:
+    def _outstanding(cls, invoice: SalesDocument) -> _Decimal:
         """Return the current outstanding balance for an invoice."""
         paid = invoice.allocations.aggregate(
             t=_Coalesce(_Sum("amount"), cls._ZERO, output_field=cls._DEC)
@@ -595,11 +595,11 @@ class PaymentService:
         # Re-open invoices whose coverage is now incomplete
         for inv_pk in affected:
             try:
-                inv = Invoice.objects.get(pk=inv_pk)
-            except Invoice.DoesNotExist:
+                inv = SalesDocument.objects.get(pk=inv_pk)
+            except SalesDocument.DoesNotExist:
                 continue
 
-            if inv.status != Invoice.Status.PAID:
+            if inv.status != SalesDocument.Status.PAID:
                 continue
 
             outstanding = _Coalesce(_Sum("amount"), _zero, output_field=_DecimalField(max_digits=14, decimal_places=2))
@@ -625,4 +625,4 @@ def _dominant_itbis_rate(rates: list) -> str:
     unique = set(rates)
     if len(unique) == 1:
         return unique.pop()
-    return InvoiceItem.ITBISRate.EXEMPT
+    return SalesDocumentItem.ITBISRate.EXEMPT

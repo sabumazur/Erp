@@ -13,7 +13,7 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
-from ..models import Customer, Invoice, InvoiceItem, NCFType, Payment
+from ..models import Customer, SalesDocument, SalesDocumentItem, NCFType, Payment
 
 _AGING_CSS = {
     "current": "text-success",
@@ -80,13 +80,13 @@ class Report607View(ERPBaseViewMixin, View):
             return redirect("invoices:reports")
 
         invoices = (
-            Invoice.invoices.filter(
+            SalesDocument.invoices.filter(
                 organization=request.organization,
                 issue_date__month=month,
                 issue_date__year=year,
             )
-            .exclude(status=Invoice.Status.DRAFT)
-            .exclude(status=Invoice.Status.CANCELLED)
+            .exclude(status=SalesDocument.Status.DRAFT)
+            .exclude(status=SalesDocument.Status.CANCELLED)
             .select_related("customer", "encf_modified")
             .prefetch_related("allocations__payment")
             .order_by("issue_date", "encf")
@@ -138,9 +138,9 @@ class Report608View(ERPBaseViewMixin, View):
             return redirect("invoices:reports")
 
         cancelled = (
-            Invoice.invoices.filter(
+            SalesDocument.invoices.filter(
                 organization=request.organization,
-                status=Invoice.Status.CANCELLED,
+                status=SalesDocument.Status.CANCELLED,
                 updated_at__month=month,
                 updated_at__year=year,
             )
@@ -174,9 +174,9 @@ class ReportAgingView(ERPBaseViewMixin, View):
         if customer_id:
             selected_customer = get_object_or_404(Customer, pk=customer_id, organization=request.organization)
 
-        qs = Invoice.invoices.filter(
+        qs = SalesDocument.invoices.filter(
             organization=request.organization,
-            status__in=[Invoice.Status.CONFIRMED, Invoice.Status.SENT, Invoice.Status.OVERDUE],
+            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE],
         )
         if selected_customer:
             qs = qs.filter(customer=selected_customer)
@@ -196,21 +196,21 @@ class ReportAgingView(ERPBaseViewMixin, View):
             if cpk not in customers_map:
                 customers_map[cpk] = {
                     "customer": inv.customer,
-                    "buckets": {b: _zero for b in Invoice.AgingBucket.values},
+                    "buckets": {b: _zero for b in SalesDocument.AgingBucket.values},
                     "total": _zero,
                 }
             customers_map[cpk]["buckets"][inv.aging_bucket] += inv.line_balance
             customers_map[cpk]["total"] += inv.line_balance
 
-        col_totals = {b: _zero for b in Invoice.AgingBucket.values}
+        col_totals = {b: _zero for b in SalesDocument.AgingBucket.values}
         grand_total = _zero
         rows = sorted(customers_map.values(), key=lambda r: r["customer"].name)
         for row in rows:
             row["bucket_cells"] = [
                 {"amount": row["buckets"][b], "css": _AGING_CSS[b]}
-                for b in Invoice.AgingBucket.values
+                for b in SalesDocument.AgingBucket.values
             ]
-            for b in Invoice.AgingBucket.values:
+            for b in SalesDocument.AgingBucket.values:
                 col_totals[b] += row["buckets"][b]
             grand_total += row["total"]
 
@@ -226,12 +226,12 @@ class ReportAgingView(ERPBaseViewMixin, View):
                 ),
                 "rows": rows,
                 "bucket_headers": [
-                    {"label": Invoice.AgingBucket(b).label, "css": _AGING_CSS[b]}
-                    for b in Invoice.AgingBucket.values
+                    {"label": SalesDocument.AgingBucket(b).label, "css": _AGING_CSS[b]}
+                    for b in SalesDocument.AgingBucket.values
                 ],
                 "col_total_cells": [
                     {"amount": col_totals[b], "css": _AGING_CSS[b]}
-                    for b in Invoice.AgingBucket.values
+                    for b in SalesDocument.AgingBucket.values
                 ],
                 "grand_total": grand_total,
                 "today": timezone.now().date(),
@@ -270,10 +270,10 @@ class ReportStatementView(ERPBaseViewMixin, View):
                 d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
 
                 inv_before = (
-                    Invoice.invoices.filter(
+                    SalesDocument.invoices.filter(
                         organization=request.organization, customer=customer, issue_date__lt=d_from,
                     )
-                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                     .aggregate(t=Coalesce(Sum("total"), _zero, output_field=_dec))["t"]
                 )
                 pmt_before = Payment.objects.filter(
@@ -282,11 +282,11 @@ class ReportStatementView(ERPBaseViewMixin, View):
                 opening_balance = inv_before - pmt_before
 
                 for inv in (
-                    Invoice.invoices.filter(
+                    SalesDocument.invoices.filter(
                         organization=request.organization, customer=customer,
                         issue_date__gte=d_from, issue_date__lte=d_to,
                     )
-                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                     .order_by("issue_date", "created_at")
                 ):
                     lines.append({
@@ -362,11 +362,11 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                 if month:
                     by_day = True
                     inv_qs = (
-                        Invoice.invoices.filter(
+                        SalesDocument.invoices.filter(
                             organization=request.organization,
                             issue_date__year=year, issue_date__month=month,
                         )
-                        .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                        .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                         .annotate(period=TruncDay("issue_date"))
                         .values("period")
                         .annotate(total=Coalesce(Sum("total"), _zero, output_field=_dec))
@@ -382,10 +382,10 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                     )
                 else:
                     inv_qs = (
-                        Invoice.invoices.filter(
+                        SalesDocument.invoices.filter(
                             organization=request.organization, issue_date__year=year,
                         )
-                        .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                        .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                         .annotate(period=TruncMonth("issue_date"))
                         .values("period")
                         .annotate(total=Coalesce(Sum("total"), _zero, output_field=_dec))
@@ -458,13 +458,13 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                 d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
 
                 invoices = list(
-                    Invoice.invoices.filter(
+                    SalesDocument.invoices.filter(
                         organization=request.organization,
                         customer=customer,
                         issue_date__gte=d_from,
                         issue_date__lte=d_to,
                     )
-                    .exclude(status=Invoice.Status.DRAFT)
+                    .exclude(status=SalesDocument.Status.DRAFT)
                     .order_by("issue_date", "created_at")
                 )
 
@@ -580,18 +580,18 @@ class ReportITBISView(ERPBaseViewMixin, View):
                     by_day = True
 
                 qs = (
-                    InvoiceItem.objects.filter(
-                        invoice__organization=request.organization,
-                        invoice__doc_type=Invoice.DocType.INVOICE,
-                        invoice__deleted_at__isnull=True,
-                        invoice__issue_date__year=year,
+                    SalesDocumentItem.objects.filter(
+                        document__organization=request.organization,
+                        document__doc_type=SalesDocument.DocType.INVOICE,
+                        document__deleted_at__isnull=True,
+                        document__issue_date__year=year,
                     )
-                    .exclude(invoice__status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .exclude(document__status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                 )
                 if month:
-                    qs = qs.filter(invoice__issue_date__month=month)
+                    qs = qs.filter(document__issue_date__month=month)
 
-                trunc = TruncDay("invoice__issue_date") if by_day else TruncMonth("invoice__issue_date")
+                trunc = TruncDay("document__issue_date") if by_day else TruncMonth("document__issue_date")
 
                 raw = (
                     qs.annotate(period=trunc)
@@ -611,12 +611,12 @@ class ReportITBISView(ERPBaseViewMixin, View):
                                          "base_16": _zero, "itbis_16": _zero,
                                          "base_18": _zero, "itbis_18": _zero}
                     rate = r["itbis_rate"]
-                    if rate in (InvoiceItem.ITBISRate.EXEMPT, InvoiceItem.ITBISRate.RATE_0):
+                    if rate in (SalesDocumentItem.ITBISRate.EXEMPT, SalesDocumentItem.ITBISRate.RATE_0):
                         period_map[p]["exempt"] += r["base"]
-                    elif rate == InvoiceItem.ITBISRate.RATE_16:
+                    elif rate == SalesDocumentItem.ITBISRate.RATE_16:
                         period_map[p]["base_16"]  += r["base"]
                         period_map[p]["itbis_16"] += r["tax"]
-                    elif rate == InvoiceItem.ITBISRate.RATE_18:
+                    elif rate == SalesDocumentItem.ITBISRate.RATE_18:
                         period_map[p]["base_18"]  += r["base"]
                         period_map[p]["itbis_18"] += r["tax"]
 
@@ -674,12 +674,12 @@ class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
 
                 ncf_labels = dict(NCFType.choices)
                 raw = (
-                    Invoice.invoices.filter(
+                    SalesDocument.invoices.filter(
                         organization=request.organization,
                         issue_date__year=year,
                         issue_date__month=month,
                     )
-                    .exclude(status__in=[Invoice.Status.DRAFT, Invoice.Status.CANCELLED])
+                    .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
                     .values("ncf_type")
                     .annotate(
                         count=Count("id"),

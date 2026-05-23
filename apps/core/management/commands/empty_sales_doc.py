@@ -24,14 +24,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from apps.invoices.models import (
-            Invoice, InvoiceItem, Payment, PaymentAllocation,
+            SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
             DocumentSequence, NCFSequence,
         )
 
         counts = {
-            "invoices":    Invoice.invoices.count(),
-            "quotations":  Invoice.quotations.count(),
-            "sale_orders": Invoice.sale_orders.count(),
+            "invoices":    SalesDocument.invoices.count(),
+            "quotations":  SalesDocument.quotations.count(),
+            "sale_orders": SalesDocument.sale_orders.count(),
             "payments":    Payment.all_objects.count(),
         }
         total_docs = counts["invoices"] + counts["quotations"] + counts["sale_orders"]
@@ -55,13 +55,13 @@ class Command(BaseCommand):
             pay_hist_deleted, _ = Payment.history.model.objects.all().delete()
             pay_deleted, _ = Payment.all_objects.all().delete()
 
-            items_deleted, _ = InvoiceItem.objects.all().delete()
+            items_deleted, _ = SalesDocumentItem.objects.all().delete()
 
-            inv_hist_deleted, _ = Invoice.history.model.objects.all().delete()
+            inv_hist_deleted, _ = SalesDocument.history.model.objects.all().delete()
 
             # Null self-referential FKs before deletion to avoid constraint errors.
-            Invoice.objects.all().update(consolidated_into=None, encf_modified=None)
-            Invoice.objects.all().delete()
+            SalesDocument.objects.all().update(consolidated_into=None, encf_modified=None)
+            SalesDocument.objects.all().delete()
 
             doc_seqs_reset = DocumentSequence.objects.all().update(current_seq=0)
             ncf_seqs_reset = NCFSequence.objects.all().update(current_seq=0)

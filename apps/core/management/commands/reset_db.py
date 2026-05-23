@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
     def _wipe(self):
         from apps.invoices.models import (
-            Customer, Invoice, InvoiceItem, Payment, PaymentAllocation,
+            Customer, SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
             PaymentTerm, NCFSequence, DocumentSequence, CustomerDepartment,
         )
         from apps.items.models import Item, ItemCodeSequence
@@ -81,15 +81,15 @@ class Command(BaseCommand):
         self.stdout.write("Wiping database...")
 
         Customer.history.model.objects.all().delete()
-        Invoice.history.model.objects.all().delete()
+        SalesDocument.history.model.objects.all().delete()
         Payment.history.model.objects.all().delete()
 
         PaymentAllocation.objects.all().delete()
         Payment.all_objects.all().delete()
-        InvoiceItem.objects.all().delete()
+        SalesDocumentItem.objects.all().delete()
 
-        Invoice.objects.all().update(encf_modified=None, consolidated_into=None)
-        Invoice.objects.all().delete()
+        SalesDocument.objects.all().update(encf_modified=None, consolidated_into=None)
+        SalesDocument.objects.all().delete()
 
         CustomerDepartment.all_objects.all().delete()
         Customer.all_objects.all().delete()
