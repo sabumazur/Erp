@@ -106,7 +106,11 @@
       "Bash(Find-Item -Path \"C:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\accounts\" -Name \"*manager*\" -Type File)",
       "Skill(caveman:caveman-review)",
       "Skill(caveman:caveman-review:*)",
-      "Bash(Remove-Item -Recurse -Force \".claude/worktrees/exciting-austin-2e5afc\")"
+      "Bash(Remove-Item -Recurse -Force \".claude/worktrees/exciting-austin-2e5afc\")",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\sabsys\" -Directory | Where-Object { $_.Name -eq \"apps\" -or $_.Name -eq \"templates\" })",
+      "Bash(xargs grep -l \"class.*Invoice\")",
+      "PowerShell(Select-String -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\invoices\\\\forms.py\" -Pattern \"\\\\bInvoice\\\\b|\\\\bInvoiceItem\\\\b\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line\\)\" })"
     ]
   }
 }
