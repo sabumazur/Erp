@@ -17,11 +17,13 @@
        style="font-size:.85rem;color:#1e2130">{{ row.name }}</a>
     <span class="dt-hover-actions">
       <a href="{% url 'items:item_detail' row.pk %}"
+         data-action="view"
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
         <i class="bi bi-eye"></i>
       </a>
       {% if membership.is_admin %}
       <button type="button" class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem"
+              data-action="edit"
               hx-get="{% url 'items:item_edit' row.pk %}"
               hx-target="#item-modal-body"
               hx-on::after-request="
@@ -49,6 +51,7 @@
         <i class="bi bi-toggle-{% if row.is_active %}on{% else %}off{% endif %}"></i>
       </button>
       <button type="button" class="btn btn-link btn-sm p-0 text-danger" title="{% trans 'Eliminar' %}" style="font-size:0.85rem"
+              data-action="delete"
               onclick="Swal.fire({
                 icon: 'warning',
                 title: '{% trans "¿Eliminar artículo?" %}',

@@ -78,6 +78,7 @@ def build_datatable_context(
     url="",
     row_template="",
     filter_template="",
+    ribbon_template="",
     search_placeholder="Buscar…",
     dt_id="main",
 ):
@@ -113,6 +114,7 @@ def build_datatable_context(
         "dt_url": url,
         "dt_row_template": row_template,
         "dt_filter_template": filter_template,
+        "dt_ribbon_template": ribbon_template,
         "dt_search_placeholder": search_placeholder,
         "dt_id": dt_id,
         "dt_q": q,
@@ -151,6 +153,7 @@ class DataTableMixin:
     dt_url: str = ""
     dt_row_template: str = ""
     dt_filter_template: str = ""
+    dt_ribbon_template: str = ""
     dt_search_placeholder: str = "Buscar…"
     dt_id: str = "main"
 
@@ -165,6 +168,7 @@ class DataTableMixin:
             url=self.dt_url,
             row_template=self.dt_row_template,
             filter_template=self.dt_filter_template,
+            ribbon_template=self.dt_ribbon_template,
             search_placeholder=self.dt_search_placeholder,
             dt_id=self.dt_id,
         )

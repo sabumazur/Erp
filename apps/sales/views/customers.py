@@ -37,6 +37,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_url = "sales:customer_list"
     dt_row_template = "sales/partials/customer_row.html"
     dt_filter_template = "sales/partials/customer_filters.html"
+    dt_ribbon_template = "sales/partials/customer_ribbon.html"
     dt_search_placeholder = _("Nombre o RNC…")
     dt_id = "customers"
 

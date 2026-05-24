@@ -37,6 +37,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_url = "sales:sale_order_list"
     dt_row_template = "sales/partials/sale_order_row.html"
     dt_filter_template = "sales/partials/sale_order_filters.html"
+    dt_ribbon_template = "sales/partials/sale_order_ribbon.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "sale_orders"
 

@@ -16,6 +16,7 @@
     dt_search_placeholder str
 
   Optional context:
+    dt_ribbon_template   str              path to ribbon actions partial (inside dt-ribbon)
     dt_filter_template   str              path to filter-fields partial (offcanvas body)
     filter               FilterSet        needed if dt_filter_template is set
     active_filter_count  int              badge count on the Filtros button
@@ -29,6 +30,17 @@
      x-init="init()"
      tabindex="0"
      @keydown="handleKey($event)">
+
+  {# ── Command ribbon (populated by dt_ribbon_template when set) ─────────── #}
+  {% if dt_ribbon_template %}
+  <div class="dt-ribbon">
+    <div class="dt-ribbon-left">
+      {% include dt_ribbon_template %}
+    </div>
+    <div class="dt-ribbon-right">
+    </div>
+  </div>
+  {% endif %}
 
   {# ── Filter form — wraps search, hidden state inputs, and the offcanvas ──── #}
   <form id="dt-form" method="get"

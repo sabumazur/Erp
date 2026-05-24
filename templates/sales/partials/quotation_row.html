@@ -11,11 +11,13 @@
     </a>
     <span class="dt-hover-actions">
       <a href="{% url 'sales:quotation_detail' row.pk %}"
+         data-action="view"
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
         <i class="bi bi-eye"></i>
       </a>
       {% if row.status == 'DRAFT' %}
       <a href="{% url 'sales:quotation_edit' row.pk %}"
+         data-action="edit"
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem">
         <i class="bi bi-pencil"></i>
       </a>

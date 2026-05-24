@@ -22,10 +22,12 @@
           </a>
           <span class="dt-hover-actions">
             <a href="{% url 'sales:customer_detail' row.pk %}"
+               data-action="view"
                class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
               <i class="bi bi-eye"></i>
             </a>
             <button type="button" class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem"
+                    data-action="edit"
                     hx-get="{% url 'sales:customer_edit' row.pk %}?hx_target=%23dt-results"
                     hx-target="#customer-modal-body"
                     hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
@@ -33,6 +35,7 @@
               <i class="bi bi-pencil"></i>
             </button>
             <button type="button" class="btn btn-link btn-sm p-0 text-danger" title="{% trans 'Eliminar' %}" style="font-size:0.85rem"
+                    data-action="delete"
                     onclick="Swal.fire({
                       icon: 'warning',
                       title: '{% trans "¿Eliminar cliente?" %}',

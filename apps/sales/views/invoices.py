@@ -43,6 +43,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_url = "sales:invoice_list"
     dt_row_template = "sales/partials/invoice_row.html"
     dt_filter_template = "sales/partials/invoice_filters.html"
+    dt_ribbon_template = "sales/partials/invoice_ribbon.html"
     dt_search_placeholder = _("e-NCF o cliente…")
     dt_id = "invoices"
 

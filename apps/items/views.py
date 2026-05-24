@@ -38,6 +38,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_url = "items:item_list"
     dt_row_template = "items/partials/item_row.html"
     dt_filter_template = "items/partials/item_filters.html"
+    dt_ribbon_template = "items/partials/item_ribbon.html"
     dt_search_placeholder = _("Nombre o código…")
 
     @classmethod
