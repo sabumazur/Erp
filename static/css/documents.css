@@ -349,6 +349,13 @@
   font-size: 0.75rem;
 }
 
+.dt-ribbon .form-control,
+.dt-ribbon .input-group-text {
+  font-size: 0.8rem;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
 /* ── DataTable: row kebab menu ──────────────────────────────── */
 
 .dt-row-actions {
