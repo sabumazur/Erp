@@ -42,12 +42,9 @@
     <input type="hidden" name="sort" id="dt-sort-input" value="{{ dt_sort }}">
     <input type="hidden" name="page" id="dt-page-input" value="{{ dt_page_obj.number }}">
 
-    {# ── Command ribbon — actions LEFT, search/filter RIGHT ──────────────── #}
+    {# ── Command ribbon — search/filter LEFT, actions RIGHT ─────────────── #}
     <div class="dt-ribbon">
       <div class="dt-ribbon-left">
-        {% if dt_ribbon_template %}{% include dt_ribbon_template %}{% endif %}
-      </div>
-      <div class="dt-ribbon-right">
 
         {# Search input #}
         <div class="input-group" style="max-width:260px">
@@ -102,6 +99,9 @@
           </ul>
         </div>
 
+      </div>
+      <div class="dt-ribbon-right">
+        {% if dt_ribbon_template %}{% include dt_ribbon_template %}{% endif %}
       </div>
     </div>{# /dt-ribbon #}
 
