@@ -23,12 +23,17 @@
         this.visible = saved ? JSON.parse(saved) : defaultVisible.slice();
         this.$nextTick(function () { self.applyColVisibility(); });
 
-        document.addEventListener("htmx:afterSwap", function (e) {
+        this._swapHandler = function (e) {
           if (e.detail.target && e.detail.target.id === "dt-results") {
             self.applyColVisibility();
             self.clearSelection();
           }
-        });
+        };
+        document.addEventListener("htmx:afterSwap", this._swapHandler);
+      },
+
+      destroy: function () {
+        document.removeEventListener("htmx:afterSwap", this._swapHandler);
       },
 
       // ── Column visibility ────────────────────────────────────────────────
@@ -42,9 +47,10 @@
         this.applyColVisibility();
       },
       applyColVisibility: function () {
+        var $el = this.$el;
         this.allCols.forEach(function (col) {
           var show = this.visible.includes(col);
-          document.querySelectorAll('[data-col="' + col + '"]').forEach(function (el) {
+          $el.querySelectorAll('[data-col="' + col + '"]').forEach(function (el) {
             el.style.display = show ? "" : "none";
           });
         }, this);
@@ -62,7 +68,7 @@
           return;
         }
         // Deselect previous row if any
-        if (this.selectedRow) {
+        if (this.selectedRow && document.contains(this.selectedRow)) {
           this.selectedRow.classList.remove("dt-row-selected");
         }
         // Select new row
@@ -74,7 +80,7 @@
       },
 
       clearSelection: function () {
-        if (this.selectedRow) {
+        if (this.selectedRow && document.contains(this.selectedRow)) {
           this.selectedRow.classList.remove("dt-row-selected");
         }
         this.selectedRow = null;
@@ -89,10 +95,10 @@
         if (key !== "ArrowUp" && key !== "ArrowDown" && key !== "Enter" && key !== "Delete") {
           return;
         }
-        event.preventDefault();
 
         if (key === "Enter") {
           if (this.selectedDetailUrl) {
+            event.preventDefault();
             window.location.href = this.selectedDetailUrl;
           }
           return;
@@ -100,6 +106,7 @@
 
         if (key === "Delete") {
           if (this.selectedPk !== null) {
+            event.preventDefault();
             document.dispatchEvent(new CustomEvent("dt:delete-selected", {
               detail: { pk: this.selectedPk, status: this.selectedStatus }
             }));
@@ -108,6 +115,7 @@
         }
 
         // Arrow navigation
+        event.preventDefault();
         var tbody = this.$el.querySelector("table tbody");
         if (!tbody) return;
         var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr"));
@@ -120,6 +128,10 @@
         }
 
         var idx = rows.indexOf(this.selectedRow);
+        if (idx === -1) {
+          this.selectRow(key === "ArrowDown" ? rows[0] : rows[rows.length - 1]);
+          return;
+        }
         if (key === "ArrowDown") {
           if (idx < rows.length - 1) this.selectRow(rows[idx + 1]);
         } else {
