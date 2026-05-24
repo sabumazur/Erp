@@ -24,8 +24,8 @@
     </ul>
 
     {# ── Facturación ─────────────────────────────────────────── #}
-    {% can_access_module membership "invoices" as has_invoices %}
-    {% if has_invoices %}
+    {% can_access_module membership "sales" as has_sales %}
+    {% if has_sales %}
     <div class="sidebar-section-label">{% trans "Facturación" %}</div>
     <ul class="sidebar-nav">
       <li>

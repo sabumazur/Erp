@@ -82,6 +82,7 @@
   </div>
 </div>
 
+{% if has_sales_access %}
 {# ── KPI metric cards ── #}
 <div class="row g-2 mb-3">
   <div class="col-sm-6 col-xl-3">
@@ -330,9 +331,11 @@
   </div>
 </div>
 
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{% if has_sales_access %}
 {{ chart_months|json_script:"chart-months" }}
 {{ chart_invoiced|json_script:"chart-invoiced" }}
 {{ chart_collected|json_script:"chart-collected" }}
@@ -349,4 +352,5 @@ window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   chartNoCustomerDataText: "{% trans 'Sin datos de clientes.' %}"
 });
 </script>
+{% endif %}
 {% endblock %}

@@ -68,6 +68,10 @@ class Organization(ERPBaseModel):
     )
     logo = models.ImageField(upload_to="org_logos/", null=True, blank=True, verbose_name=_("logotipo"), validators=[validate_image_size])
     is_active = models.BooleanField(default=True, verbose_name=_("activo"))
+    is_auto_created_workspace = models.BooleanField(
+        default=False,
+        verbose_name=_("espacio creado automáticamente"),
+    )
 
     # Contact & identity
     tax_id = models.CharField(max_length=50, blank=True, verbose_name=_("RNC/Cédula"))

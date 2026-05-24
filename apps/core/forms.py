@@ -23,7 +23,7 @@ class ModuleForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
         }
         help_texts = {
-            "slug": _("Identificador único del módulo (ej. invoices, inventory)."),
+            "slug": _("Identificador único del módulo (ej. sales, inventory)."),
             "icon": _("Clase Bootstrap Icons (ej. bi-grid, bi-bag-fill)."),
         }
         error_messages = {

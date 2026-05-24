@@ -1,7 +1,9 @@
 import uuid
 from django.conf import settings
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 
@@ -25,6 +27,22 @@ class SoftDeleteQuerySet(models.QuerySet):
     def for_org(self, organization):
         """Scope any queryset to the active organization."""
         return self.filter(organization=organization)
+
+    def delete(self):
+        """Soft-delete each object so instance deletion policies are enforced."""
+        deleted = {}
+        count = 0
+        with transaction.atomic(using=self.db):
+            for obj in self.iterator():
+                obj.delete()
+                label = obj._meta.label
+                deleted[label] = deleted.get(label, 0) + 1
+                count += 1
+        return count, deleted
+
+    def hard_delete(self):
+        """Physically remove records in an explicit destructive workflow."""
+        return super().delete()
 
 
 class SoftDeleteManager(models.Manager):
@@ -63,6 +81,8 @@ class SoftDeleteModel(models.Model):
 
 class Module(models.Model):
     """System-level registry of ERP modules available in this installation."""
+    PROTECTED_SLUGS = {"sales"}
+
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, blank=True, default="bi-grid")
@@ -76,6 +96,37 @@ class Module(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        if not self.pk:
+            return
+
+        original_slug = (
+            type(self).objects.filter(pk=self.pk).values_list("slug", flat=True).first()
+        )
+        if original_slug == self.slug:
+            return
+
+        if original_slug in self.PROTECTED_SLUGS:
+            raise ValidationError(
+                {"slug": _("The canonical sales module slug cannot be changed.")}
+            )
+        if self.teams.exists():
+            raise ValidationError(
+                {"slug": _("An assigned module slug cannot be changed.")}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, using=None, keep_parents=False):
+        if self.slug in self.PROTECTED_SLUGS:
+            raise ValidationError(_("The canonical sales module cannot be deleted."))
+        if self.teams.exists():
+            raise ValidationError(_("An assigned module cannot be deleted."))
+        return super().delete(using=using, keep_parents=keep_parents)
 
 
 # ── ERPBaseModel ──────────────────────────────────────────────────────────────

@@ -1,18 +1,22 @@
 """
-Deletes all sales documents (invoices, quotations, sale orders) across all
-organizations, along with their payments, line items, and history records.
+Physically deletes all sales documents, including previously soft-deleted
+records, across all organizations, along with their payments, line items,
+and history records.
 Resets DocumentSequence and NCFSequence counters to zero.
 
 Usage:
-    python manage.py empty_sale_orders
-    python manage.py empty_sale_orders --no-input
+    python manage.py empty_sales_doc
+    python manage.py empty_sales_doc --no-input
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 
 class Command(BaseCommand):
-    help = "Delete all invoices, quotations, and sale orders; reset document sequences."
+    help = (
+        "Physically delete all sales documents, including soft-deleted rows, "
+        "and reset document sequences."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -29,9 +33,9 @@ class Command(BaseCommand):
         )
 
         counts = {
-            "invoices":    SalesDocument.invoices.count(),
-            "quotations":  SalesDocument.quotations.count(),
-            "sale_orders": SalesDocument.sale_orders.count(),
+            "invoices":    SalesDocument.all_objects.filter(doc_type=SalesDocument.DocType.INVOICE).count(),
+            "quotations":  SalesDocument.all_objects.filter(doc_type=SalesDocument.DocType.QUOTATION).count(),
+            "sale_orders": SalesDocument.all_objects.filter(doc_type=SalesDocument.DocType.SALE_ORDER).count(),
             "payments":    Payment.all_objects.count(),
         }
         total_docs = counts["invoices"] + counts["quotations"] + counts["sale_orders"]
@@ -60,8 +64,8 @@ class Command(BaseCommand):
             inv_hist_deleted, _ = SalesDocument.history.model.objects.all().delete()
 
             # Null self-referential FKs before deletion to avoid constraint errors.
-            SalesDocument.objects.all().update(consolidated_into=None, encf_modified=None)
-            SalesDocument.objects.all().delete()
+            SalesDocument.all_objects.all().update(consolidated_into=None, encf_modified=None)
+            SalesDocument.all_objects.all().delete()
 
             doc_seqs_reset = DocumentSequence.objects.all().update(current_seq=0)
             ncf_seqs_reset = NCFSequence.objects.all().update(current_seq=0)

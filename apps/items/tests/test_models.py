@@ -2,6 +2,7 @@ import uuid
 import pytest
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
+from django.core.exceptions import ValidationError
 
 from apps.accounts.tests.factories import OrganizationFactory
 from apps.items.models import Item, ItemCodeSequence
@@ -117,6 +118,39 @@ class TestItemModel:
         item.save()
         item.refresh_from_db()
         assert item.code == "MANUAL-01"
+
+    def test_auto_code_skips_manual_code_in_sequence(self):
+        org = OrganizationFactory()
+        ItemFactory(organization=org, code="ART-0001")
+        item = Item.objects.create(
+            organization=org,
+            name="Generated",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("10.00"),
+        )
+        assert item.code == "ART-0002"
+
+    def test_auto_code_retries_generated_code_conflict(self):
+        org = OrganizationFactory()
+        ItemFactory(organization=org, code="ART-0001")
+        with patch.object(
+            ItemCodeSequence,
+            "generate",
+            side_effect=["ART-0001", "ART-0002"],
+        ):
+            item = Item.objects.create(
+                organization=org,
+                name="Retried",
+                item_type=Item.ItemType.SALE,
+                unit_price=Decimal("10.00"),
+            )
+        assert item.code == "ART-0002"
+
+    @pytest.mark.parametrize("field", ["unit_price", "cost_price"])
+    def test_negative_price_fails_model_validation(self, field):
+        item = ItemFactory(**{field: Decimal("-0.01")})
+        with pytest.raises(ValidationError):
+            item.full_clean()
 
     # ── Delete guard ──────────────────────────────────────────────────────
 

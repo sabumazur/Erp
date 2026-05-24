@@ -167,6 +167,33 @@ class TestChangeMemberRoleView:
         member_membership.refresh_from_db()
         assert member_membership.role == Membership.Role.ADMIN
 
+    def test_admin_cannot_demote_owner_when_another_owner_exists(self, client, admin_membership):
+        target = MembershipFactory(
+            organization=admin_membership.organization,
+            role=Membership.Role.OWNER,
+        )
+        _login(client, admin_membership)
+        response = client.post(
+            reverse("accounts:member_role", args=[target.pk]),
+            {"role": Membership.Role.MEMBER},
+        )
+        assert response.status_code == 403
+        target.refresh_from_db()
+        assert target.role == Membership.Role.OWNER
+
+    def test_owner_can_demote_another_owner(self, client, owner_membership):
+        target = MembershipFactory(
+            organization=owner_membership.organization,
+            role=Membership.Role.OWNER,
+        )
+        _login(client, owner_membership)
+        client.post(
+            reverse("accounts:member_role", args=[target.pk]),
+            {"role": Membership.Role.MEMBER},
+        )
+        target.refresh_from_db()
+        assert target.role == Membership.Role.MEMBER
+
 
 # ── Remove member ─────────────────────────────────────────────────────────────
 
@@ -196,6 +223,25 @@ class TestRemoveMemberView:
         pk = owner_membership.pk
         client.post(reverse("accounts:member_remove", args=[pk]))
         assert Membership.objects.filter(pk=pk).exists()
+
+    def test_admin_cannot_remove_owner_when_another_owner_exists(self, client, admin_membership):
+        target = MembershipFactory(
+            organization=admin_membership.organization,
+            role=Membership.Role.OWNER,
+        )
+        _login(client, admin_membership)
+        response = client.post(reverse("accounts:member_remove", args=[target.pk]))
+        assert response.status_code == 403
+        assert Membership.objects.filter(pk=target.pk).exists()
+
+    def test_owner_can_remove_another_owner(self, client, owner_membership):
+        target = MembershipFactory(
+            organization=owner_membership.organization,
+            role=Membership.Role.OWNER,
+        )
+        _login(client, owner_membership)
+        client.post(reverse("accounts:member_remove", args=[target.pk]))
+        assert not Membership.objects.filter(pk=target.pk).exists()
 
 
 # ── Resend invitation ─────────────────────────────────────────────────────────
@@ -283,6 +329,14 @@ class TestSwitchOrganizationView:
             reverse("accounts:switch_org", args=[member_membership.organization.slug])
         )
         assert response.status_code == 302
+
+    def test_cannot_switch_to_inactive_organization(self, client, member_membership):
+        other = MembershipFactory(user=member_membership.user)
+        other.organization.is_active = False
+        other.organization.save(update_fields=["is_active", "updated_at"])
+        _login(client, member_membership)
+        client.post(reverse("accounts:switch_org", args=[other.organization.slug]))
+        assert client.session["active_org_slug"] == member_membership.organization.slug
 
 
 # ── Teams ─────────────────────────────────────────────────────────────────────

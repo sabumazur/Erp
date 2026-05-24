@@ -8,6 +8,8 @@ from decimal import Decimal
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.accounts.tests.factories import TeamFactory
+from apps.core.models import Module
 from apps.sales.models import SalesDocument
 from apps.sales.tests.factories import (
     CustomerFactory,
@@ -320,3 +322,21 @@ class TestDashboardEdgeCases:
     def test_today_in_context(self, client, owner_membership):
         ctx = _dashboard(client, owner_membership).context
         assert ctx["today"] == timezone.localdate()
+
+    def test_sales_denied_member_sees_no_sales_context_or_values(self, client, member_membership):
+        team = TeamFactory(organization=member_membership.organization)
+        team.modules.add(Module.objects.create(name="Inventory", slug="inventory"))
+        member_membership.team = team
+        member_membership.save(update_fields=["team", "updated_at"])
+        _make_invoice(
+            member_membership.organization,
+            SalesDocument.Status.CONFIRMED,
+            Decimal("98765.43"),
+        )
+
+        response = _dashboard(client, member_membership)
+
+        assert response.status_code == 200
+        assert response.context["has_sales_access"] is False
+        assert "month_invoiced" not in response.context
+        assert "98765.43" not in response.content.decode()

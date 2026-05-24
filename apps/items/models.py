@@ -2,10 +2,12 @@ from decimal import Decimal
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector
-from django.db import models, transaction
+from django.core.validators import MinValueValidator
+from django.db import IntegrityError, models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import ERPBaseModel
+from apps.core.search import fts_search
 
 
 # ── Item code sequence ────────────────────────────────────────────────────────
@@ -55,16 +57,25 @@ class ItemCodeSequence(models.Model):
         Uses SELECT FOR UPDATE to prevent duplicates under concurrent saves.
         Format: PREFIX-NNNN  (e.g. ART-0001)
         Pads to 4 digits; expands naturally beyond 9999 (ART-10000, etc.).
+
+        Skips any sequence values whose code already exists as a manual entry
+        (including soft-deleted rows) to avoid collisions with hand-entered codes.
         """
         with transaction.atomic():
             seq, _ = cls.objects.select_for_update().get_or_create(
                 organization=organization,
                 defaults={"prefix": "ART", "current_seq": 0},
             )
-            seq.current_seq += 1
+            while True:
+                seq.current_seq += 1
+                candidate = f"{seq.prefix}-{seq.current_seq:04d}"
+                if not Item.all_objects.filter(
+                    organization=organization, code=candidate
+                ).exists():
+                    break
             seq.save(update_fields=["current_seq", "updated_at"])
 
-        return f"{seq.prefix}-{seq.current_seq:04d}"
+        return candidate
 
 
 # ── Item ──────────────────────────────────────────────────────────────────────
@@ -146,6 +157,7 @@ class Item(ERPBaseModel):
         max_digits=14,
         decimal_places=2,
         default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
         verbose_name=_("precio de venta"),
     )
     cost_price = models.DecimalField(
@@ -153,6 +165,7 @@ class Item(ERPBaseModel):
         decimal_places=2,
         null=True,
         blank=True,
+        validators=[MinValueValidator(Decimal("0.00"))],
         verbose_name=_("precio de costo"),
     )
     itbis_rate = models.CharField(
@@ -193,11 +206,25 @@ class Item(ERPBaseModel):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Auto-generate code for sale/both items that have no code yet.
-        # Only fires on first save (new item) — never overwrites an existing code.
-        if not self.code and self.item_type in self.AUTO_CODE_TYPES:
-            self.code = ItemCodeSequence.generate(self.organization)
-        super().save(*args, **kwargs)
+        should_generate = (
+            self._state.adding
+            and not self.code
+            and self.item_type in self.AUTO_CODE_TYPES
+        )
+        if not should_generate:
+            return super().save(*args, **kwargs)
+
+        # A manual code may be inserted after sequence allocation but before
+        # INSERT. Reserve a new code and retry that narrow uniqueness race.
+        for attempt in range(5):
+            try:
+                with transaction.atomic():
+                    self.code = ItemCodeSequence.generate(self.organization)
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                self.code = ""
+                if attempt == 4:
+                    raise
 
     def delete(self, *args, **kwargs):
         from apps.sales.models import SalesDocumentItem
@@ -220,3 +247,24 @@ class Item(ERPBaseModel):
                 (self.unit_price - self.cost_price) / self.unit_price * 100
             ).quantize(Decimal("0.01"))
         return None
+
+
+def item_catalog_search(organization, q, *, sale_only=True, limit=10):
+    """
+    Org-scoped, FTS+trigram item search used by all picker and autocomplete views.
+
+    Args:
+        organization: the active tenant
+        q:            raw search string (empty → return top items by name)
+        sale_only:    True  → SALE + BOTH only (invoice/quotation/sale-order pickers)
+                      False → all item_types (purchase order pickers, future)
+        limit:        max rows returned
+    """
+    qs = Item.objects.for_org(organization).filter(is_active=True)
+    if sale_only:
+        qs = qs.filter(item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH])
+    if q:
+        qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["code"])
+    else:
+        qs = qs.order_by("name")
+    return qs[:limit]

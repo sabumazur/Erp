@@ -45,7 +45,10 @@ class ItemForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
+        if self.organization is None and self.instance.pk:
+            self.organization = self.instance.organization
         self.fields["cost_price"].required = False
         self.fields["item_type"].initial = Item.ItemType.SALE
         # Help text rendered via Alpine below the field instead of a static string
@@ -85,3 +88,15 @@ class ItemForm(forms.ModelForm):
             "notes",
             "change_reason",
         )
+
+    def clean_code(self):
+        code = (self.cleaned_data.get("code") or "").strip()
+        if code and self.organization is not None:
+            qs = Item.objects.filter(organization=self.organization, code=code)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError(
+                    _("Ya existe un artículo con este código.")
+                )
+        return code

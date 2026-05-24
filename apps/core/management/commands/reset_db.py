@@ -1,5 +1,6 @@
 """
 Wipes ALL database records, preserving (and restoring) the superuser account.
+Module registry rows are removed; run seed_modules after reset when needed.
 
 Usage:
     python manage.py reset_db
@@ -11,7 +12,7 @@ from django.db import transaction
 
 
 class Command(BaseCommand):
-    help = "Wipe all data and restore the superuser account."
+    help = "Wipe all data and restore the superuser; run seed_modules afterward."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -50,24 +51,13 @@ class Command(BaseCommand):
             sv_ln      = "SabSys"
             sv_pw_hash = make_password("Admin1234!")
 
-        # Must run outside the main transaction — ALTER TABLE not allowed with
-        # pending trigger events in PostgreSQL.
-        self._patch_orphaned_columns()
-
         with transaction.atomic():
             self._wipe()
             self._restore_superuser(sv_email, sv_fn, sv_ln, sv_pw_hash)
 
-        self.stdout.write(self.style.SUCCESS("Reset complete."))
-
-    def _patch_orphaned_columns(self):
-        from django.db import connection
-
-        with connection.cursor() as cur:
-            cur.execute(
-                "ALTER TABLE invoices_customer "
-                "ALTER COLUMN default_payment_method SET DEFAULT 'TRANSFER'"
-            )
+        self.stdout.write(
+            self.style.SUCCESS("Reset complete. Run seed_modules to restore module grants.")
+        )
 
     def _wipe(self):
         from apps.sales.models import (
@@ -88,8 +78,8 @@ class Command(BaseCommand):
         Payment.all_objects.all().delete()
         SalesDocumentItem.objects.all().delete()
 
-        SalesDocument.objects.all().update(encf_modified=None, consolidated_into=None)
-        SalesDocument.objects.all().delete()
+        SalesDocument.all_objects.all().update(encf_modified=None, consolidated_into=None)
+        SalesDocument.all_objects.all().delete()
 
         CustomerDepartment.all_objects.all().delete()
         Customer.all_objects.all().delete()

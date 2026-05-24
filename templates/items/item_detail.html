@@ -42,6 +42,7 @@
     <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
+    {% if membership.is_admin %}
     <a href="{% url 'items:item_edit' item.pk %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
     </a>
@@ -54,6 +55,7 @@
         {% if item.is_active %}{% trans "Desactivar" %}{% else %}{% trans "Activar" %}{% endif %}
       </button>
     </form>
+    {% endif %}
   </div>
 </div>
 
@@ -70,6 +72,7 @@
           <div class="app-metric-label">{% trans "Precio de venta" %}</div>
         </div>
       </div>
+      {% if membership.is_admin %}
       <div class="col-sm-4">
         <div class="app-metric-card">
           <div class="app-metric-value">{{ item.cost_price|floatformat:2|intcomma|default:"—" }}</div>
@@ -81,6 +84,7 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
       <div class="col-sm-4">
         <div class="app-metric-card">
           <div class="app-metric-value" style="line-height:1.6">

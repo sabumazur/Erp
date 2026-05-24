@@ -7,7 +7,10 @@ import pytest
 from django.urls import reverse
 
 from apps.accounts.models import Membership
-from apps.accounts.tests.factories import MembershipFactory, UserFactory, OrganizationFactory
+from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFactory, OrganizationFactory
+from apps.core.models import Module
+from apps.items.tests.factories import ItemFactory
+from apps.sales.forms import InvoiceItemForm
 from apps.sales.models import SalesDocument
 from apps.sales.services import NCFService
 from apps.sales.tests.factories import (
@@ -85,6 +88,17 @@ class TestInvoiceListView:
         resp = client.get(reverse("sales:invoice_list"))
         assert resp.status_code == 200
 
+    def test_invoice_list_denied_without_sales_module(self, client):
+        user, org, membership = make_member(Membership.Role.MEMBER)
+        team = TeamFactory(organization=org)
+        team.modules.add(Module.objects.create(name="Inventory", slug="inventory"))
+        membership.team = team
+        membership.save(update_fields=["team", "updated_at"])
+        login(client, user)
+        set_active_org(client, org)
+        resp = client.get(reverse("sales:invoice_list"))
+        assert resp.status_code == 403
+
 
 @pytest.mark.django_db
 class TestInvoiceConfirmView:
@@ -156,6 +170,64 @@ class TestInvoiceDeleteView:
         resp = client.post(reverse("sales:invoice_delete", kwargs={"pk": invoice.pk}))
         assert resp.status_code == 302
         assert SalesDocument.objects.filter(pk=invoice.pk).exists()
+
+
+@pytest.mark.django_db
+class TestInvoiceItemCatalogValidation:
+
+    def _form(self, item, organization, instance=None):
+        return InvoiceItemForm(
+            {
+                "item": str(item.pk),
+                "description": "Catalog line",
+                "quantity": "1",
+                "unit_price": "10.00",
+                "itbis_rate": "RATE_18",
+            },
+            instance=instance,
+            organization=organization,
+        )
+
+    def test_rejects_item_from_other_organization(self):
+        org = OrganizationFactory()
+        item = ItemFactory()
+        form = self._form(item, org)
+        assert not form.is_valid()
+        assert "item" in form.errors
+
+    def test_rejects_inactive_new_item(self):
+        org = OrganizationFactory()
+        item = ItemFactory(organization=org, is_active=False)
+        form = self._form(item, org)
+        assert not form.is_valid()
+        assert "item" in form.errors
+
+    def test_existing_line_retains_deactivated_item(self):
+        org = OrganizationFactory()
+        document = SalesDocumentFactory(organization=org)
+        item = ItemFactory(organization=org, is_active=False)
+        line = SalesDocumentItemFactory(document=document, item=item)
+        form = self._form(item, org, instance=line)
+        assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+class TestItemQuickCreateView:
+
+    def test_rejects_negative_price(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+        response = client.post(
+            reverse("sales:item_quick_create"),
+            {
+                "name": "Invalid item",
+                "unit": "UNIT",
+                "unit_price": "-1.00",
+                "itbis_rate": "RATE_18",
+            },
+        )
+        assert response.status_code == 422
 
 
 # ── Report views ──────────────────────────────────────────────────────────────

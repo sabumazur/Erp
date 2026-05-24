@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Organization)
 class OrganizationAdmin(ERPHistoryAdmin):
-    list_display = ["name", "slug", "owner", "is_active"]
+    list_display = ["name", "slug", "owner", "is_active", "is_auto_created_workspace"]
     search_fields = ["name", "slug"]
     prepopulated_fields = {"slug": ("name",)}
 

@@ -134,6 +134,28 @@ class TestInvoiceItemSignals:
         assert invoice.subtotal  == Decimal("0.00")
 
 
+@pytest.mark.django_db
+class TestSalesDocumentSoftDeleteManagers:
+
+    @pytest.mark.parametrize(
+        ("doc_type", "manager_name"),
+        [
+            (SalesDocument.DocType.INVOICE, "invoices"),
+            (SalesDocument.DocType.QUOTATION, "quotations"),
+            (SalesDocument.DocType.SALE_ORDER, "sale_orders"),
+        ],
+    )
+    def test_soft_deleted_documents_are_hidden_from_normal_managers(
+        self, doc_type, manager_name
+    ):
+        document = SalesDocumentFactory(doc_type=doc_type)
+        document.delete()
+
+        assert not SalesDocument.objects.filter(pk=document.pk).exists()
+        assert not getattr(SalesDocument, manager_name).filter(pk=document.pk).exists()
+        assert SalesDocument.all_objects.filter(pk=document.pk).exists()
+
+
 # ── NCFService ────────────────────────────────────────────────────────────────
 
 @pytest.mark.django_db

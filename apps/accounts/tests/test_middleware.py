@@ -68,6 +68,24 @@ class TestOrganizationMiddleware:
         _apply(req)
         assert req.session.get("active_org_slug") == m.organization.slug
 
+    def test_inactive_selected_org_falls_back_to_usable_membership(self):
+        inactive = MembershipFactory()
+        fallback = MembershipFactory(user=inactive.user)
+        inactive.organization.is_active = False
+        inactive.organization.save(update_fields=["is_active", "updated_at"])
+        req = _request(inactive.user, session={"active_org_slug": inactive.organization.slug})
+        _apply(req)
+        assert req.organization == fallback.organization
+        assert req.session["active_org_slug"] == fallback.organization.slug
+
+    def test_deleted_org_is_not_resolved(self):
+        membership = MembershipFactory()
+        membership.organization.delete()
+        req = _request(membership.user, session={"active_org_slug": membership.organization.slug})
+        _apply(req)
+        assert req.organization is None
+        assert "active_org_slug" not in req.session
+
     # ── User with no memberships ──────────────────────────────────────────
 
     def test_user_with_no_membership_gets_no_org(self):

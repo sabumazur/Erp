@@ -2,6 +2,7 @@ import re
 from datetime import date, timedelta
 
 from django import forms
+from django.db.models import Q
 from django.forms import inlineformset_factory
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
@@ -791,8 +792,22 @@ class InvoiceItemForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
         self.fields["item"].required = False
+        if organization is not None:
+            item_filter = Q(
+                is_active=True,
+                item_type__in=[_Item.ItemType.SALE, _Item.ItemType.BOTH],
+            )
+            if self.instance.pk and self.instance.item_id:
+                item_filter |= Q(pk=self.instance.item_id)
+            self.fields["item"].queryset = _Item.objects.filter(
+                item_filter,
+                organization=organization,
+            )
+        else:
+            self.fields["item"].queryset = _Item.objects.none()
         self.fields["quantity"] = forms.IntegerField(
             min_value=1,
             widget=forms.NumberInput(

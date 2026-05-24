@@ -2,11 +2,8 @@ import pytest
 from django.utils import timezone
 
 from apps.accounts.models import User, Organization, Membership, Invitation
-from apps.accounts.signals import _remove_ghost_org
-from apps.accounts.tests.factories import UserFactory, OrganizationFactory, MembershipFactory
+from apps.accounts.tests.factories import UserFactory, OrganizationFactory
 
-
-# ── create_default_organization signal ───────────────────────────────────────
 
 @pytest.mark.django_db
 class TestCreateDefaultOrganization:
@@ -43,48 +40,7 @@ class TestCreateDefaultOrganization:
         org = Organization.objects.get(owner=user)
         assert "jane" in org.name.lower()
 
-
-# ── _remove_ghost_org helper ──────────────────────────────────────────────────
-
-@pytest.mark.django_db
-class TestRemoveGhostOrg:
-
-    def test_removes_solo_empty_org(self, owner_membership):
-        ghost_user = UserFactory()
-        ghost_org = OrganizationFactory(owner=ghost_user)
-        MembershipFactory(user=ghost_user, organization=ghost_org, role=Membership.Role.OWNER)
-
-        _remove_ghost_org(ghost_user, owner_membership.organization)
-
-        assert not Organization.all_objects.filter(pk=ghost_org.pk).exists()
-
-    def test_preserves_org_with_customers(self, owner_membership):
-        from apps.sales.tests.factories import CustomerFactory
-
-        ghost_user = UserFactory()
-        ghost_org = OrganizationFactory(owner=ghost_user)
-        MembershipFactory(user=ghost_user, organization=ghost_org, role=Membership.Role.OWNER)
-        CustomerFactory(organization=ghost_org)
-
-        _remove_ghost_org(ghost_user, owner_membership.organization)
-
-        assert Organization.objects.filter(pk=ghost_org.pk).exists()
-
-    def test_preserves_shared_org(self, owner_membership):
-        user = UserFactory()
-        shared_org = OrganizationFactory(owner=user)
-        MembershipFactory(user=user, organization=shared_org, role=Membership.Role.OWNER)
-        MembershipFactory(organization=shared_org, role=Membership.Role.MEMBER)
-
-        _remove_ghost_org(user, owner_membership.organization)
-
-        assert Organization.objects.filter(pk=shared_org.pk).exists()
-
-    def test_does_not_remove_invited_org(self, owner_membership):
-        user = UserFactory()
-        solo_org = owner_membership.organization
-        MembershipFactory(user=user, organization=solo_org, role=Membership.Role.MEMBER)
-
-        _remove_ghost_org(user, solo_org)
-
-        assert Organization.objects.filter(pk=solo_org.pk).exists()
+    def test_personal_workspace_is_marked_as_auto_created(self):
+        user = User.objects.create_user(email="personal@example.com", password="Str0ng!Pass1")
+        org = Organization.objects.get(owner=user)
+        assert org.is_auto_created_workspace is True

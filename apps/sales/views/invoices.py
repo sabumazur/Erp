@@ -137,7 +137,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", InvoiceForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSetCreate())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
@@ -149,7 +149,7 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
 
     def post(self, request):
         form = InvoiceForm(organization=request.organization, data=request.POST)
-        formset = InvoiceItemFormSet(request.POST)
+        formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             invoice = form.save(commit=False)
             invoice.organization = request.organization
@@ -186,7 +186,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
             return redir
         ctx = self.get_context_data(
             form=InvoiceForm(organization=request.organization, instance=invoice),
-            formset=InvoiceItemFormSet(instance=invoice),
+            formset=InvoiceItemFormSet(instance=invoice, form_kwargs={"organization": request.organization}),
             invoice=invoice,
         )
         return self.render_to_response(ctx)
@@ -196,7 +196,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         form = InvoiceForm(organization=request.organization, data=request.POST, instance=invoice)
-        formset = InvoiceItemFormSet(request.POST, instance=invoice)
+        formset = InvoiceItemFormSet(request.POST, instance=invoice, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
@@ -208,7 +208,7 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", InvoiceForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSet(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "invoice"
         invoice = kwargs.get("invoice")
@@ -335,14 +335,14 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
     def get(self, request, pk):
         original = self._get_original(request, pk)
         form = CreditNoteForm(initial={"issue_date": date.today(), "ncf_type": 4})
-        formset = InvoiceItemFormSet()
+        formset = InvoiceItemFormSet(form_kwargs={"organization": request.organization})
         ctx = self.get_context_data(form=form, formset=formset, original=original)
         return self.render_to_response(ctx)
 
     def post(self, request, pk):
         original = self._get_original(request, pk)
         form = CreditNoteForm(request.POST)
-        formset = InvoiceItemFormSet(request.POST)
+        formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             note = form.save(commit=False)
             note.organization = request.organization
@@ -361,7 +361,7 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", CreditNoteForm())
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSet(form_kwargs={"organization": self.request.organization}))
         ctx["module"] = "invoice"
         original = kwargs.get("original")
         if original:
@@ -536,7 +536,7 @@ class InvoiceItemRowView(ERPBaseViewMixin, View):
 
     def get(self, request):
         index = int(request.GET.get("form_index", 0))
-        form = InvoiceItemForm(prefix=f"items-{index}")
+        form = InvoiceItemForm(prefix=f"items-{index}", organization=request.organization)
         return render(request, "sales/partials/item_row.html", {"form": form, "index": index})
 
 

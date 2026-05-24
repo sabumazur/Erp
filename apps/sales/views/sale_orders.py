@@ -94,7 +94,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", SaleOrderForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSetCreate())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
@@ -106,7 +106,7 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
 
     def post(self, request):
         form = SaleOrderForm(organization=request.organization, data=request.POST)
-        formset = InvoiceItemFormSet(request.POST)
+        formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             order = form.save(commit=False)
             order.organization = request.organization
@@ -166,7 +166,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
             return redir
         ctx = self.get_context_data(
             form=SaleOrderForm(organization=request.organization, instance=o),
-            formset=InvoiceItemFormSet(instance=o),
+            formset=InvoiceItemFormSet(instance=o, form_kwargs={"organization": request.organization}),
             order=o,
         )
         return self.render_to_response(ctx)
@@ -176,7 +176,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         form = SaleOrderForm(organization=request.organization, data=request.POST, instance=o)
-        formset = InvoiceItemFormSet(request.POST, instance=o)
+        formset = InvoiceItemFormSet(request.POST, instance=o, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
@@ -188,7 +188,7 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", SaleOrderForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSet(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "sale-order"
         o = kwargs.get("order")

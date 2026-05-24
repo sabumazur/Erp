@@ -9,30 +9,6 @@ from .models import User, Organization, Membership, Invitation
 from .permissions import assign_org_permissions, revoke_org_permissions
 
 
-def _remove_ghost_org(user, invited_org):
-    """
-    Hard-delete any empty auto-created workspace the user owns, excluding
-    invited_org.  Called after a user accepts an invitation so we never leave
-    behind a ghost workspace that was created for them by the post_save signal
-    before this guard was deployed.
-    """
-    candidates = (
-        Organization.objects
-        .filter(memberships__user=user, memberships__role=Membership.Role.OWNER)
-        .exclude(pk=invited_org.pk)
-    )
-    for org in candidates:
-        if org.memberships.count() != 1:
-            continue  # shared org — leave it alone
-        has_data = (
-            org.customers.exists()
-            or org.invoices.exists()
-            or org.payments.exists()
-        )
-        if not has_data:
-            org.hard_delete()
-
-
 @receiver(post_save, sender=User)
 def create_default_organization(sender, instance, created, **kwargs):
     """Auto-create a personal workspace on every new user registration."""
@@ -66,6 +42,7 @@ def create_default_organization(sender, instance, created, **kwargs):
                 name=f"{instance.email.split('@')[0]}'s Workspace",
                 slug=slug,
                 owner=instance,
+                is_auto_created_workspace=True,
             )
     except IntegrityError:
         # Race condition: another request beat us to this slug.
@@ -75,6 +52,7 @@ def create_default_organization(sender, instance, created, **kwargs):
             name=f"{instance.email.split('@')[0]}'s Workspace",
             slug=slug,
             owner=instance,
+            is_auto_created_workspace=True,
         )
 
     Membership.objects.create(
@@ -117,7 +95,6 @@ def accept_pending_invitation(sender, request, user, **kwargs):
             )
             invitation.accepted_at = timezone.now()
             invitation.save(update_fields=["accepted_at"])
-        _remove_ghost_org(user, invitation.organization)
         if created:
             messages.success(request, f"¡Te has unido a {invitation.organization.name}!")
         request.session["active_org_slug"] = invitation.organization.slug

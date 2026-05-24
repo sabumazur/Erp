@@ -10,8 +10,8 @@ def can_access_module(membership, module_slug):
     Returns True if the given membership has access to the module.
 
     Usage in templates:
-        {% can_access_module membership "invoices" as has_invoices %}
-        {% if has_invoices %} ... {% endif %}
+        {% can_access_module membership "sales" as has_sales %}
+        {% if has_sales %} ... {% endif %}
     """
     return _can_access_module(membership, module_slug)
 
@@ -35,6 +35,6 @@ def startswith(value, arg):
     Returns True if the string value starts with arg.
 
     Usage:
-        {% if request.path|startswith:"/invoices/" %} ... {% endif %}
+        {% if request.path|startswith:"/sales/" %} ... {% endif %}
     """
     return str(value).startswith(str(arg))

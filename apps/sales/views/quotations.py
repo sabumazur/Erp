@@ -86,7 +86,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", QuotationForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSetCreate())
+        ctx.setdefault("formset", InvoiceItemFormSetCreate(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
@@ -98,7 +98,7 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
 
     def post(self, request):
         form = QuotationForm(organization=request.organization, data=request.POST)
-        formset = InvoiceItemFormSet(request.POST)
+        formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             quotation = form.save(commit=False)
             quotation.organization = request.organization
@@ -158,7 +158,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
             return redir
         ctx = self.get_context_data(
             form=QuotationForm(organization=request.organization, instance=q),
-            formset=InvoiceItemFormSet(instance=q),
+            formset=InvoiceItemFormSet(instance=q, form_kwargs={"organization": request.organization}),
             quotation=q,
         )
         return self.render_to_response(ctx)
@@ -168,7 +168,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         if redir:
             return redir
         form = QuotationForm(organization=request.organization, data=request.POST, instance=q)
-        formset = InvoiceItemFormSet(request.POST, instance=q)
+        formset = InvoiceItemFormSet(request.POST, instance=q, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
@@ -180,7 +180,7 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.setdefault("form", QuotationForm(organization=self.request.organization))
-        ctx.setdefault("formset", InvoiceItemFormSet())
+        ctx.setdefault("formset", InvoiceItemFormSet(form_kwargs={"organization": self.request.organization}))
         ctx["customer_defaults_json"] = _customer_defaults_json(self.request)
         ctx["module"] = "quotation"
         q = kwargs.get("quotation")

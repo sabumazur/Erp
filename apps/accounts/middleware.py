@@ -16,25 +16,28 @@ class OrganizationMiddleware:
         if not request.user.is_authenticated:
             return
 
+        usable_memberships = (
+            Membership.objects
+            .select_related("organization")
+            .filter(
+                user=request.user,
+                organization__is_active=True,
+                organization__deleted_at__isnull=True,
+            )
+        )
         slug = request.session.get("active_org_slug")
 
         if slug:
             try:
-                membership = (
-                    Membership.objects
-                    .select_related("organization")
-                    .get(user=request.user, organization__slug=slug)
-                )
+                membership = usable_memberships.get(organization__slug=slug)
                 request.organization = membership.organization
                 request.membership = membership
                 return
             except Membership.DoesNotExist:
-                del request.session["active_org_slug"]
+                request.session.pop("active_org_slug", None)
 
         membership = (
-            Membership.objects
-            .select_related("organization")
-            .filter(user=request.user)
+            usable_memberships
             .order_by("created_at")
             .first()
         )

@@ -17,6 +17,7 @@ from django.shortcuts import render as _render
 from django.views import View
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.items.models import item_catalog_search
 from ..forms import CustomerQuickCreateForm, ItemQuickCreateForm
 from ..models import Customer
 
@@ -60,23 +61,9 @@ class ItemSearchView(ERPBaseViewMixin, View):
     required_module = "sales"
 
     def get(self, request):
-        from apps.items.models import Item
-        from django.shortcuts import render
-
         q = request.GET.get("q", "").strip()
-        org = request.organization
-
-        qs = Item.objects.filter(
-            organization=org,
-            is_active=True,
-            item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH],
-        ).order_by("name")
-
-        if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
-
-        items = qs[:50]
-        return render(request, "sales/partials/item_picker_results.html", {"items": items})
+        items = item_catalog_search(request.organization, q, sale_only=True, limit=50)
+        return _render(request, "sales/partials/item_picker_results.html", {"items": items})
 
 
 class CustomerSearchView(ERPBaseViewMixin, View):

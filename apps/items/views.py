@@ -12,17 +12,16 @@ from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
 from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
-from apps.core.search import fts_search
 from .filters import ItemFilter
 from .forms import ItemForm
-from .models import Item
+from .models import Item, item_catalog_search
 
 
 # ── List + Create ─────────────────────────────────────────────────────────────
 
 class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     template_name = "items/item_list.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     dt_columns = [
         DTColumn("code",       _("Código"),   sortable=True),
@@ -42,6 +41,12 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_search_placeholder = _("Nombre o código…")
 
     @classmethod
+    def columns_for(cls, request):
+        if request.membership.is_admin:
+            return cls.dt_columns
+        return [column for column in cls.dt_columns if column.key != "cost_price"]
+
+    @classmethod
     def refresh_table(cls, request, msg, msg_type="success"):
         """
         Called by action views (create / edit / toggle / delete) to refresh
@@ -51,7 +56,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = Item.objects.for_org(request.organization)
         f = ItemFilter(request.GET, queryset=qs)
         ctx = build_datatable_context(
-            request, f.qs, cls.dt_columns,
+            request, f.qs, cls.columns_for(request),
             default_sort=cls.dt_default_sort,
             page_size=cls.dt_page_size,
             url=cls.dt_url,
@@ -71,9 +76,21 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         qs = Item.objects.for_org(self.request.organization)
         f  = ItemFilter(self.request.GET, queryset=qs)
-        ctx.update(self.apply_datatable(f.qs))
+        ctx.update(build_datatable_context(
+            self.request,
+            f.qs,
+            self.columns_for(self.request),
+            default_sort=self.dt_default_sort,
+            page_size=self.dt_page_size,
+            url=self.dt_url,
+            row_template=self.dt_row_template,
+            filter_template=self.dt_filter_template,
+            search_placeholder=self.dt_search_placeholder,
+            dt_id=self.dt_id,
+        ))
         ctx["filter"] = f
-        ctx["form"]   = ItemForm()
+        if self.request.membership.is_admin:
+            ctx["form"] = ItemForm(organization=self.request.organization)
         ctx["module"]              = "item"
         ctx["create_url"]          = reverse("items:item_list")
         ctx["submit_label"]        = _("Crear")
@@ -93,7 +110,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if not request.membership.is_admin:
             from django.core.exceptions import PermissionDenied
             raise PermissionDenied
-        form = ItemForm(request.POST)
+        form = ItemForm(request.POST, organization=request.organization)
         if form.is_valid():
             item = form.save(commit=False)
             item.organization = request.organization
@@ -123,14 +140,14 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
     template_name = "items/item_detail.html"
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=request.organization)
         return render(request, self.template_name, self.get_context(
             module="item",
             item=item,
-            history_records=self.get_history(item),
+            history_records=self.get_history(item) if request.membership.is_admin else [],
             breadcrumbs=[
                 {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
                 {"label": _("Artículos"), "url": reverse("items:item_list")},
@@ -142,12 +159,12 @@ class ItemDetailView(HistoryMixin, ERPBaseViewMixin, View):
 # ── Update ────────────────────────────────────────────────────────────────────
 
 class ItemUpdateView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def get(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=request.organization)
-        form = ItemForm(instance=item)
+        form = ItemForm(instance=item, organization=request.organization)
 
         if request.htmx:
             return render(request, "items/partials/item_modal_form.html", {
@@ -170,7 +187,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         item = get_object_or_404(Item, pk=pk, organization=request.organization)
-        form = ItemForm(request.POST, instance=item)
+        form = ItemForm(request.POST, instance=item, organization=request.organization)
 
         if form.is_valid():
             item = form.save()
@@ -206,7 +223,7 @@ class ItemUpdateView(ERPBaseViewMixin, View):
 # ── Toggle active / inactive ─────────────────────────────────────────────────
 
 class ItemToggleView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -226,7 +243,7 @@ class ItemToggleView(ERPBaseViewMixin, View):
 # ── Delete ────────────────────────────────────────────────────────────────────
 
 class ItemDeleteView(ERPBaseViewMixin, View):
-    required_module = "invoices"
+    required_module = "sales"
     admin_required = True
 
     def post(self, request, pk):
@@ -259,25 +276,15 @@ class ItemSearchView(ERPBaseViewMixin, View):
     Returns matching items for the line-item autocomplete.
 
     GET params:
-      q     — search string (min 2 chars)
-      type  — SALE | PURCHASE | BOTH | (empty = all)  default: SALE
+      q — search string (min 2 chars)
     """
-    required_module = "invoices"
+    required_module = "sales"
 
     def get(self, request):
         q         = request.GET.get("q", "").strip()
-        item_type = request.GET.get("type", "SALE")
 
         if len(q) < 2:
             return HttpResponse("")
 
-        qs = Item.objects.for_org(request.organization).filter(is_active=True)
-
-        if item_type == "SALE":
-            qs = qs.filter(item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH])
-        elif item_type == "PURCHASE":
-            qs = qs.filter(item_type__in=[Item.ItemType.PURCHASE, Item.ItemType.BOTH])
-
-        qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["code"])[:10]
-
-        return render(request, "items/partials/item_search_results.html", {"items": qs})
+        items = item_catalog_search(request.organization, q, sale_only=True, limit=10)
+        return render(request, "items/partials/item_search_results.html", {"items": items})

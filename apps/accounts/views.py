@@ -124,19 +124,22 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
     template_name = "accounts/dashboard.html"
 
     def get_context_data(self, **kwargs):
-        from apps.sales.models import SalesDocument, Customer, Payment
-
         ctx = super().get_context_data(**kwargs)
         ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
+        ctx["today"] = timezone.localdate()
 
         org = self.request.organization
-        if not org:
+        ctx["has_sales_access"] = bool(
+            org and can_access_module(self.request.membership, "sales")
+        )
+        if not org or not ctx["has_sales_access"]:
             return ctx
 
-        today = timezone.localdate()
+        from apps.sales.models import SalesDocument, Customer, Payment
+
+        today = ctx["today"]
         month_start = today.replace(day=1)
         _zero = Decimal("0")
-        ctx["today"] = today
 
         _inv = SalesDocument.invoices.filter(organization=org, deleted_at__isnull=True)
         _quot = SalesDocument.quotations.filter(organization=org, deleted_at__isnull=True)
@@ -367,9 +370,19 @@ class ProfileView(ERPBaseViewMixin, UpdateView):
 
 class SwitchOrganizationView(LoginRequiredMixin, TemplateView):
     def post(self, request, slug):
-        org = get_object_or_404(Organization, slug=slug, is_active=True)
-        if request.user.memberships.filter(organization=org).exists():
-            request.session["active_org_slug"] = slug
+        membership = (
+            Membership.objects
+            .select_related("organization")
+            .filter(
+                user=request.user,
+                organization__slug=slug,
+                organization__is_active=True,
+                organization__deleted_at__isnull=True,
+            )
+            .first()
+        )
+        if membership:
+            request.session["active_org_slug"] = membership.organization.slug
         referer = request.META.get("HTTP_REFERER", "")
         if url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
             return redirect(referer)
@@ -446,25 +459,36 @@ class ChangeMemberRoleView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        membership = get_object_or_404(
-            Membership, pk=pk, organization=request.organization
-        )
-        if membership.user == request.user:
-            messages.error(request, "No puedes cambiar tu propio rol.")
-            return redirect("accounts:members")
-
         new_role = request.POST.get("role")
         if new_role not in dict(Membership.Role.choices):
             messages.error(request, "Rol inválido.")
             return redirect("accounts:members")
 
-        # Only OWNERs may assign OWNER or ADMIN roles (prevents ADMINs from
-        # expanding the privilege pool beyond their own level).
-        if new_role in (Membership.Role.OWNER, Membership.Role.ADMIN) and request.membership.role != Membership.Role.OWNER:
-            raise PermissionDenied
+        with transaction.atomic():
+            locked = Membership.objects.select_for_update()
+            actor = get_object_or_404(locked, pk=request.membership.pk)
+            membership = get_object_or_404(
+                locked, pk=pk, organization=request.organization
+            )
+            if membership.user == request.user:
+                messages.error(request, "No puedes cambiar tu propio rol.")
+                return redirect("accounts:members")
 
-        membership.role = new_role
-        membership.save()
+            if membership.role == Membership.Role.OWNER and actor.role != Membership.Role.OWNER:
+                raise PermissionDenied
+            if new_role in (Membership.Role.OWNER, Membership.Role.ADMIN) and actor.role != Membership.Role.OWNER:
+                raise PermissionDenied
+            if membership.role == Membership.Role.OWNER and new_role != Membership.Role.OWNER:
+                owner_ids = list(locked.filter(
+                    organization=request.organization,
+                    role=Membership.Role.OWNER,
+                ).values_list("pk", flat=True))
+                if len(owner_ids) <= 1:
+                    messages.error(request, "No se puede cambiar al último propietario.")
+                    return redirect("accounts:members")
+
+            membership.role = new_role
+            membership.save(update_fields=["role", "updated_at"])
         messages.success(request, f"El rol de {membership.user.full_name} ha sido actualizado a {membership.get_role_display()}.")
         return redirect("accounts:members")
 
@@ -473,24 +497,29 @@ class RemoveMemberView(ERPBaseViewMixin, View):
     admin_required = True
 
     def post(self, request, pk):
-        membership = get_object_or_404(
-            Membership, pk=pk, organization=request.organization
-        )
-        if membership.user == request.user:
-            messages.error(request, "No puedes eliminarte a ti mismo.")
-            return redirect("accounts:members")
-
-        if membership.role == Membership.Role.OWNER:
-            owner_count = Membership.objects.filter(
-                organization=request.organization,
-                role=Membership.Role.OWNER,
-            ).count()
-            if owner_count <= 1:
-                messages.error(request, "No se puede eliminar al último propietario.")
+        with transaction.atomic():
+            locked = Membership.objects.select_for_update()
+            actor = get_object_or_404(locked, pk=request.membership.pk)
+            membership = get_object_or_404(
+                locked, pk=pk, organization=request.organization
+            )
+            if membership.user == request.user:
+                messages.error(request, "No puedes eliminarte a ti mismo.")
                 return redirect("accounts:members")
 
-        revoke_org_permissions(membership)
-        membership.delete()
+            if membership.role == Membership.Role.OWNER:
+                if actor.role != Membership.Role.OWNER:
+                    raise PermissionDenied
+                owner_ids = list(locked.filter(
+                    organization=request.organization,
+                    role=Membership.Role.OWNER,
+                ).values_list("pk", flat=True))
+                if len(owner_ids) <= 1:
+                    messages.error(request, "No se puede eliminar al último propietario.")
+                    return redirect("accounts:members")
+
+            revoke_org_permissions(membership)
+            membership.delete()
         messages.success(request, f"{membership.user.full_name} ha sido eliminado.")
         return redirect("accounts:members")
 
@@ -612,7 +641,6 @@ class AcceptInvitationView(View):
         return redirect("accounts:dashboard")
 
     def _accept(self, request, invitation):
-        from .signals import _remove_ghost_org
         with transaction.atomic():
             Membership.objects.get_or_create(
                 user=request.user,
@@ -621,7 +649,6 @@ class AcceptInvitationView(View):
             )
             invitation.accepted_at = timezone.now()
             invitation.save(update_fields=["accepted_at"])
-        _remove_ghost_org(request.user, invitation.organization)
         request.session["active_org_slug"] = invitation.organization.slug
 
 
@@ -804,33 +831,37 @@ class LeaveOrganizationView(LoginRequiredMixin, View):
 
     def post(self, request):
         org = request.organization
-        membership = request.membership
 
-        if not org or not membership:
+        if not org or not request.membership:
             return redirect("accounts:dashboard")
 
-        # Must transfer ownership before leaving if sole owner
-        if membership.role == Membership.Role.OWNER:
-            owner_count = Membership.objects.filter(
-                organization=org, role=Membership.Role.OWNER
-            ).count()
-            if owner_count <= 1:
-                messages.error(
-                    request,
-                    "Eres el único propietario de esta organización. "
-                    "Transfiere la propiedad a otro miembro antes de salir.",
-                )
-                return redirect("accounts:members")
+        with transaction.atomic():
+            locked = Membership.objects.select_for_update()
+            membership = get_object_or_404(locked, pk=request.membership.pk)
 
-        # Must keep at least one organization
-        remaining_count = request.user.memberships.exclude(organization=org).count()
-        if remaining_count == 0:
-            messages.error(request, "No puedes abandonar tu única organización.")
-            return redirect("accounts:dashboard")
+            # Must transfer ownership before leaving if sole owner.
+            if membership.role == Membership.Role.OWNER:
+                owner_ids = list(locked.filter(
+                    organization=org,
+                    role=Membership.Role.OWNER,
+                ).values_list("pk", flat=True))
+                if len(owner_ids) <= 1:
+                    messages.error(
+                        request,
+                        "Eres el único propietario de esta organización. "
+                        "Transfiere la propiedad a otro miembro antes de salir.",
+                    )
+                    return redirect("accounts:members")
 
-        org_name = org.name
-        revoke_org_permissions(membership)
-        membership.delete()
+            # Must keep at least one organization.
+            remaining_count = request.user.memberships.exclude(organization=org).count()
+            if remaining_count == 0:
+                messages.error(request, "No puedes abandonar tu única organización.")
+                return redirect("accounts:dashboard")
+
+            org_name = org.name
+            revoke_org_permissions(membership)
+            membership.delete()
 
         next_membership = (
             request.user.memberships

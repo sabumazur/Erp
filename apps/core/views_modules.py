@@ -1,7 +1,7 @@
 import json
 
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -209,7 +209,14 @@ class ModuleDeleteView(ModuleStaffMixin, View):
     def post(self, request, pk):
         module = get_object_or_404(Module, pk=pk)
         name = module.name
-        module.delete()
+        try:
+            module.delete()
+        except ValidationError as exc:
+            msg = exc.messages[0]
+            if request.htmx:
+                return ModuleListView.refresh_table(request, msg, "error")
+            messages.error(request, msg)
+            return redirect("core:module_list")
 
         if request.htmx:
             return ModuleListView.refresh_table(request, _(f"Módulo «{name}» eliminado."))

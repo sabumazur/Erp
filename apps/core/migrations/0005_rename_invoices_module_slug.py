@@ -3,14 +3,25 @@ from django.db import migrations
 
 def rename_slug(apps, schema_editor):
     Module = apps.get_model("core", "Module")
-    # Remove any existing "sales" placeholder module (prevents slug uniqueness conflict)
-    Module.objects.filter(slug="sales").delete()
-    # Rename the active "invoices" module to "sales"
-    Module.objects.filter(slug="invoices").update(
-        slug="sales",
-        name="Ventas",
-        description="Facturas, cotizaciones, órdenes de venta, clientes y reportes DGII (606/607/608)",
-    )
+    invoices = Module.objects.filter(slug="invoices").first()
+    sales = Module.objects.filter(slug="sales").first()
+    metadata = {
+        "name": "Ventas",
+        "description": (
+            "Facturas, cotizaciones, órdenes de venta, clientes y reportes "
+            "DGII (606/607/608)"
+        ),
+    }
+
+    if invoices and not sales:
+        Module.objects.filter(pk=invoices.pk).update(slug="sales", **metadata)
+        return
+
+    if sales:
+        if invoices:
+            sales.teams.add(*invoices.teams.all())
+            Module.objects.filter(pk=invoices.pk).delete()
+        Module.objects.filter(pk=sales.pk).update(**metadata)
 
 
 def reverse_rename_slug(apps, schema_editor):

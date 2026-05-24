@@ -12,17 +12,17 @@ class TestCanAccessModule:
     # ── No membership ─────────────────────────────────────────────────────
 
     def test_none_membership_returns_false(self):
-        assert can_access_module(None, "invoices") is False
+        assert can_access_module(None, "sales") is False
 
     # ── Owner / Admin → always True ───────────────────────────────────────
 
     def test_owner_always_true(self):
         m = MembershipFactory(role=Membership.Role.OWNER)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     def test_admin_always_true(self):
         m = MembershipFactory(role=Membership.Role.ADMIN)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     def test_owner_true_even_for_unknown_module(self):
         m = MembershipFactory(role=Membership.Role.OWNER)
@@ -32,30 +32,30 @@ class TestCanAccessModule:
 
     def test_member_no_team_returns_true(self):
         m = MembershipFactory(role=Membership.Role.MEMBER, team=None)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     def test_viewer_no_team_returns_true(self):
         m = MembershipFactory(role=Membership.Role.VIEWER, team=None)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     # ── Team with no modules → True (empty = unrestricted) ───────────────
 
     def test_member_on_team_with_no_modules_returns_true(self):
         team = TeamFactory()
         m = MembershipFactory(role=Membership.Role.MEMBER, organization=team.organization, team=team)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     # ── Team with modules → only allowed slugs pass ───────────────────────
 
     def test_member_on_team_with_matching_module_returns_true(self):
-        module = Module.objects.create(name="Invoices", slug="invoices", is_active=True)
+        module = Module.objects.create(name="Sales", slug="sales", is_active=True)
         team = TeamFactory()
         team.modules.add(module)
         m = MembershipFactory(role=Membership.Role.MEMBER, organization=team.organization, team=team)
-        assert can_access_module(m, "invoices") is True
+        assert can_access_module(m, "sales") is True
 
     def test_member_on_team_with_disallowed_module_returns_false(self):
-        module = Module.objects.create(name="Invoices", slug="invoices", is_active=True)
+        module = Module.objects.create(name="Sales", slug="sales", is_active=True)
         team = TeamFactory()
         team.modules.add(module)
         m = MembershipFactory(role=Membership.Role.MEMBER, organization=team.organization, team=team)
@@ -73,4 +73,4 @@ class TestCanAccessModule:
         team = TeamFactory()
         team.modules.add(module)
         m = MembershipFactory(role=Membership.Role.VIEWER, organization=team.organization, team=team)
-        assert can_access_module(m, "invoices") is False
+        assert can_access_module(m, "sales") is False

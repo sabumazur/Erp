@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import Invitation, Membership
+from apps.accounts.models import Invitation, Membership, Organization, User
 from apps.accounts.tests.factories import UserFactory, MembershipFactory
 
 
@@ -164,6 +164,16 @@ class TestAcceptInvitationView:
 
         assert client.session["active_org_slug"] == owner_membership.organization.slug
 
+    def test_accept_retains_existing_personal_workspace(self, client, owner_membership):
+        invitee = User.objects.create_user(email="retained@example.com", password="Str0ng!Pass1")
+        personal = Organization.objects.get(owner=invitee)
+        invitation = self._make_invitation(owner_membership, email="retained@example.com")
+
+        client.force_login(invitee)
+        client.get(reverse("accounts:accept_invitation", args=[invitation.pk]))
+
+        assert Organization.objects.filter(pk=personal.pk).exists()
+
     def test_accept_with_owner_role(self, client, owner_membership):
         invitation = self._make_invitation(owner_membership, role=Membership.Role.OWNER)
         invitee = UserFactory(email="invitee@example.com")
@@ -319,6 +329,23 @@ class TestAcceptPendingInvitationSignal:
             user=invitee,
             organization=owner_membership.organization,
         ).exists()
+
+    def test_login_accept_retains_existing_personal_workspace(self, client, owner_membership):
+        invitee = User.objects.create_user(email="retained-login@example.com", password="Str0ngP@ss!")
+        personal = Organization.objects.get(owner=invitee)
+        Invitation.create_for(
+            email=invitee.email,
+            organization=owner_membership.organization,
+            role=Membership.Role.MEMBER,
+            invited_by=owner_membership.user,
+        )
+
+        client.post(
+            reverse("account_login"),
+            {"login": invitee.email, "password": "Str0ngP@ss!"},
+        )
+
+        assert Organization.objects.filter(pk=personal.pk).exists()
 
     def test_login_auto_accept_marks_invitation_used(self, client, owner_membership):
         invitation = Invitation.create_for(

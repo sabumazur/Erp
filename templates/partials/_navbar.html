@@ -29,8 +29,8 @@
   {% if user.is_authenticated %}
 
   {# ── Quick-create dropdown ──────────────────────────────── #}
-  {% can_access_module membership "invoices" as has_invoices %}
-  {% if has_invoices %}
+  {% can_access_module membership "sales" as has_sales %}
+  {% if has_sales %}
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-no-caret d-flex align-items-center"
             type="button" data-bs-toggle="dropdown" aria-label="{% trans 'Crear nuevo' %}">
@@ -105,11 +105,11 @@
 </header>
 
 {% if user.is_authenticated and organization %}
-{% can_access_module membership "invoices" as has_invoices %}
-{% if has_invoices %}
+{% can_access_module membership "sales" as has_sales %}
+{% if has_sales %}
 <nav id="subnav">
   <a href="{% url 'sales:customer_list' %}"
-     class="subnav-link {% if 'invoices/customers' in request.path %}active{% endif %}">
+     class="subnav-link {% if 'sales/customers' in request.path %}active{% endif %}">
     <i class="bi bi-person-lines-fill"></i>
     <span>{% trans "Clientes" %}</span>
   </a>
@@ -120,7 +120,7 @@
   </a>
   {% if membership.is_admin %}
   <a href="{% url 'sales:payment_term_list' %}"
-     class="subnav-link {% if 'invoices/payment-terms' in request.path %}active{% endif %}">
+     class="subnav-link {% if 'sales/payment-terms' in request.path %}active{% endif %}">
     <i class="bi bi-calendar-check"></i>
     <span>{% trans "Términos de pago" %}</span>
   </a>

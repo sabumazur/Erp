@@ -15,6 +15,10 @@ class TestUserSignal:
         membership = Membership.objects.get(user=user)
         assert membership.role == Membership.Role.OWNER
 
+    def test_signup_workspace_is_marked_auto_created(self):
+        user = User.objects.create_user(email="workspace@example.com", password="pass")
+        assert Organization.objects.get(owner=user).is_auto_created_workspace is True
+
     def test_slug_is_unique_on_collision(self):
         User.objects.create_user(email="test@a.com", password="pass")
         User.objects.create_user(email="test@b.com", password="pass")

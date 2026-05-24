@@ -8,7 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from apps.core.models import ERPBaseModel
+from apps.core.models import ERPBaseModel, SoftDeleteQuerySet
 
 
 # ── NCF type choices ──────────────────────────────────────────────────────────
@@ -455,7 +455,7 @@ class DocumentSequence(models.Model):
 # ── Custom managers ───────────────────────────────────────────────────────────
 
 
-class SalesDocumentQuerySet(models.QuerySet):
+class SalesDocumentQuerySet(SoftDeleteQuerySet):
     def with_aging(self):
         """
         Annotate each row with an `aging_bucket` field (string) based on how
@@ -486,15 +486,21 @@ class SalesDocumentQuerySet(models.QuerySet):
         )
 
 
-class DocTypeManager(models.Manager):
+class SalesDocumentManager(models.Manager):
+    def get_queryset(self):
+        return SalesDocumentQuerySet(self.model, using=self._db).alive()
+
+    def for_org(self, organization):
+        return self.get_queryset().for_org(organization)
+
+
+class DocTypeManager(SalesDocumentManager):
     def __init__(self, doc_type):
         super().__init__()
         self._doc_type = doc_type
 
     def get_queryset(self):
-        return SalesDocumentQuerySet(self.model, using=self._db).filter(
-            doc_type=self._doc_type
-        )
+        return super().get_queryset().filter(doc_type=self._doc_type)
 
 
 # ── Invoice (unified document model) ─────────────────────────────────────────
@@ -727,7 +733,8 @@ class SalesDocument(ERPBaseModel):
     )
 
     # ── Managers ──────────────────────────────────────────────────────────────
-    objects = models.Manager()
+    objects = SalesDocumentManager()
+    all_objects = models.Manager()
     invoices = DocTypeManager("INVOICE")
     quotations = DocTypeManager("QUOTATION")
     sale_orders = DocTypeManager("SALE_ORDER")
@@ -902,10 +909,10 @@ class SalesDocumentItem(models.Model):
         verbose_name=_("documento"),
     )
     # Optional reference to the items catalog.
-    # SET_NULL keeps the line intact if the catalog entry is deleted.
+    # Referenced entries are deactivated rather than deleted.
     item = models.ForeignKey(
         "items.Item",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="line_items",

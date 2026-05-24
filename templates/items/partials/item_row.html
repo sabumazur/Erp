@@ -17,6 +17,7 @@
          class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
         <i class="bi bi-eye"></i>
       </a>
+      {% if membership.is_admin %}
       <button type="button" class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem"
               hx-get="{% url 'items:item_edit' row.pk %}"
               hx-target="#item-modal-body"
@@ -61,6 +62,7 @@
               })">
         <i class="bi bi-trash"></i>
       </button>
+      {% endif %}
     </span>
   </td>
 
@@ -80,9 +82,11 @@
     {{ row.unit_price|floatformat:2|intcomma }}
   </td>
 
+  {% if membership.is_admin %}
   <td data-col="cost_price" class="text-end font-monospace text-muted" style="font-size:.83rem">
     {{ row.cost_price|floatformat:2|intcomma|default:"—" }}
   </td>
+  {% endif %}
 
   <td data-col="itbis_rate">
     {% if row.itbis_rate == 'RATE_18' %}

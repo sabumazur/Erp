@@ -52,6 +52,11 @@ class TestCreateOrganizationPost:
         c.post(CREATE_URL, {"name": "Acme S.R.L.", "owner_email": "owner@acme.com"})
         assert Organization.objects.filter(name="Acme S.R.L.").exists()
 
+    def test_staff_created_organization_is_not_auto_workspace(self, client, owner_membership, mailoutbox):
+        c = self._staff_client(client, owner_membership)
+        c.post(CREATE_URL, {"name": "Managed Org", "owner_email": "owner@managed.com"})
+        assert Organization.objects.get(name="Managed Org").is_auto_created_workspace is False
+
     def test_creates_owner_invitation(self, client, owner_membership, mailoutbox):
         c = self._staff_client(client, owner_membership)
         c.post(CREATE_URL, {"name": "Acme S.R.L.", "owner_email": "owner@acme.com"})

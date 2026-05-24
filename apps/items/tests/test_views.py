@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from django.urls import reverse
 
+from apps.accounts.tests.factories import TeamFactory
+from apps.core.models import Module
 from apps.items.models import Item
 from apps.items.tests.factories import ItemFactory
 
@@ -38,6 +40,15 @@ class TestItemListView:
         self._login(client, member_membership)
         response = client.get(reverse("items:item_list"))
         assert response.status_code == 200
+
+    def test_list_denied_without_sales_module(self, client, member_membership):
+        team = TeamFactory(organization=member_membership.organization)
+        team.modules.add(Module.objects.create(name="Inventory", slug="inventory"))
+        member_membership.team = team
+        member_membership.save(update_fields=["team", "updated_at"])
+        self._login(client, member_membership)
+        response = client.get(reverse("items:item_list"))
+        assert response.status_code == 403
 
     def test_list_org_scoped(self, client, member_membership):
         own = ItemFactory(organization=member_membership.organization)
@@ -78,6 +89,31 @@ class TestItemListView:
         assert response.status_code == 200
         assert b"form" in response.content.lower()
 
+    def test_duplicate_manual_code_returns_form_error(self, client, admin_membership):
+        ItemFactory(organization=admin_membership.organization, code="MANUAL-01")
+        self._login(client, admin_membership)
+        response = client.post(
+            reverse("items:item_list"),
+            data={**VALID_DATA, "code": "MANUAL-01"},
+        )
+        assert response.status_code == 200
+        assert Item.objects.filter(
+            organization=admin_membership.organization,
+            code="MANUAL-01",
+        ).count() == 1
+
+    def test_negative_price_returns_form_error(self, client, admin_membership):
+        self._login(client, admin_membership)
+        response = client.post(
+            reverse("items:item_list"),
+            data={**VALID_DATA, "unit_price": "-1.00"},
+        )
+        assert response.status_code == 200
+        assert not Item.objects.filter(
+            organization=admin_membership.organization,
+            name=VALID_DATA["name"],
+        ).exists()
+
 
 @pytest.mark.django_db
 class TestItemDetailView:
@@ -104,6 +140,17 @@ class TestItemDetailView:
         self._login(client, member_membership)
         response = client.get(reverse("items:item_detail", args=[item.pk]))
         assert response.status_code == 404
+
+    def test_non_admin_detail_hides_cost_and_mutation_controls(self, client, member_membership):
+        item = ItemFactory(
+            organization=member_membership.organization,
+            cost_price="8765.43",
+        )
+        self._login(client, member_membership)
+        content = client.get(reverse("items:item_detail", args=[item.pk])).content.decode()
+        assert "8765.43" not in content
+        assert "Precio de costo" not in content
+        assert reverse("items:item_edit", args=[item.pk]) not in content
 
 
 @pytest.mark.django_db
@@ -326,4 +373,15 @@ class TestItemSearchView:
         )
         self._login(client, member_membership)
         response = client.get(reverse("items:item_search"), {"q": "Solo", "type": "SALE"})
+        assert purchase_item.name.encode() not in response.content
+
+    def test_search_cannot_bypass_sales_filter_with_purchase_type(self, client, member_membership):
+        purchase_item = ItemFactory(
+            organization=member_membership.organization,
+            name="Purchase Only",
+            item_type=Item.ItemType.PURCHASE,
+            is_active=True,
+        )
+        self._login(client, member_membership)
+        response = client.get(reverse("items:item_search"), {"q": "Purchase", "type": "PURCHASE"})
         assert purchase_item.name.encode() not in response.content
