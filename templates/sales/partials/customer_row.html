@@ -3,7 +3,9 @@
   Per-row partial for the customer datatable. Variable: row = Customer.
   Requires active_depts and dept_count annotations from _customers_with_depts().
 {% endcomment %}
-<tr>
+<tr data-pk="{{ row.pk }}"
+    data-status=""
+    data-detail-url="{% url 'sales:customer_detail' row.pk %}">
 
   <td data-col="name">
     <div class="d-flex align-items-center gap-2">

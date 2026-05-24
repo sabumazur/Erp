@@ -26,7 +26,9 @@
        [{% for col in dt_columns %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endfor %}],
        [{% for col in dt_columns %}{% if col.visible %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}]
      )"
-     x-init="init()">
+     x-init="init()"
+     tabindex="0"
+     @keydown="handleKey($event)">
 
   {# ── Filter form — wraps search, hidden state inputs, and the offcanvas ──── #}
   <form id="dt-form" method="get"
@@ -138,7 +140,9 @@
 
   {# ── Table card — #dt-results is the HTMX swap target ───────────────────── #}
   <div class="card shadow-sm">
-    <div id="dt-results" class="card-body p-0">
+    <div id="dt-results" class="card-body p-0"
+         @click="$event.target.closest('tr[data-pk]') && selectRow($event.target.closest('tr[data-pk]'))"
+         @dblclick="$event.target.closest('tr[data-pk]') && $event.target.closest('tr[data-pk]').dataset.detailUrl && (window.location.href = $event.target.closest('tr[data-pk]').dataset.detailUrl)">
       {% include "components/datatable/results.html" %}
     </div>
   </div>

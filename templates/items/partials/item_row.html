@@ -4,7 +4,10 @@
   Called inside {% for row in dt_page_obj %} in components/datatable/results.html.
   The loop variable is 'row'; all cells carry data-col="<key>" for col-visibility.
 {% endcomment %}
-<tr class="{% if not row.is_active %}text-muted{% endif %}">
+<tr class="{% if not row.is_active %}text-muted{% endif %}"
+    data-pk="{{ row.pk }}"
+    data-status=""
+    data-detail-url="{% url 'items:item_detail' row.pk %}">
 
   <td data-col="code" class="font-monospace" style="font-size:.8rem">{{ row.code|default:"—" }}</td>
 

@@ -1,6 +1,8 @@
 {% load i18n humanize %}
 {% comment %}Per-row partial for the invoice datatable. Variable: row = Invoice instance.{% endcomment %}
-<tr>
+<tr data-pk="{{ row.pk }}"
+    data-status="{{ row.status }}"
+    data-detail-url="{% url 'sales:invoice_detail' row.pk %}">
 
   <td data-col="encf" class="font-monospace fw-semibold">
     <a href="{% url 'sales:invoice_detail' row.pk %}"
