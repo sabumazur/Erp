@@ -1,34 +1,53 @@
 {% load i18n %}
-<tr>
+<tr data-pk="{{ row.pk }}"
+    data-status=""
+    data-detail-url="">
 
   <td data-col="name" class="fw-semibold" style="font-size:.85rem;color:#1e2130">
     {{ row.name }}
-    <span class="dt-hover-actions">
-      <button type="button" class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem"
-              hx-get="{% url 'sales:payment_term_edit' row.pk %}"
-              hx-target="#payment-term-modal-body"
-              hx-on::after-request="
-                document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
-                bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
-        <i class="bi bi-pencil"></i>
-      </button>
-      <button type="button" class="btn btn-link btn-sm p-0 text-danger" title="{% trans 'Eliminar' %}" style="font-size:0.85rem"
-              onclick="Swal.fire({
-                icon: 'warning',
-                title: '{% trans "¿Eliminar término?" %}',
-                html: '<strong>{{ row.name|escapejs }}</strong>',
-                showCancelButton: true,
-                confirmButtonText: '{% trans "Eliminar" %}',
-                cancelButtonText: '{% trans "Cancelar" %}',
-                confirmButtonColor: '#dc3545',
-              }).then(r => {
-                if (r.isConfirmed)
-                  htmx.ajax('POST', '{% url "sales:payment_term_delete" row.pk %}',
-                    { target: '#dt-results', swap: 'innerHTML',
-                      values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
-              })">
-        <i class="bi bi-trash"></i>
-      </button>
+    <span class="dt-row-actions">
+      <div class="dropdown dt-kebab">
+        <button type="button"
+                class="btn btn-link btn-sm p-0 dt-kebab-btn"
+                data-bs-toggle="dropdown"
+                data-bs-boundary="viewport"
+                aria-expanded="false"
+                tabindex="-1">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <button type="button" class="dropdown-item" data-action="edit"
+                    hx-get="{% url 'sales:payment_term_edit' row.pk %}"
+                    hx-target="#payment-term-modal-body"
+                    hx-on::after-request="
+                      document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
+                      bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+              <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+            </button>
+          </li>
+          <li><hr class="dropdown-divider my-1"></li>
+          <li>
+            <button type="button" class="dropdown-item text-danger" data-action="delete"
+                    onclick="Swal.fire({
+                      icon: 'warning',
+                      title: '{% trans "¿Eliminar término?" %}',
+                      html: '<strong>{{ row.name|escapejs }}</strong>',
+                      showCancelButton: true,
+                      confirmButtonText: '{% trans "Eliminar" %}',
+                      cancelButtonText: '{% trans "Cancelar" %}',
+                      confirmButtonColor: '#dc3545',
+                    }).then(r => {
+                      if (r.isConfirmed)
+                        htmx.ajax('POST', '{% url 'sales:payment_term_delete' row.pk %}',
+                          { target: '#dt-results', swap: 'innerHTML',
+                            values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                    })">
+              <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+            </button>
+          </li>
+        </ul>
+      </div>
     </span>
   </td>
 
@@ -39,6 +58,5 @@
   <td data-col="description" class="small text-muted">
     {{ row.description|default:"—" }}
   </td>
-
 
 </tr>

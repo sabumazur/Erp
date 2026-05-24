@@ -31,6 +31,7 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_page_size = 25
     dt_url = "sales:payment_term_list"
     dt_row_template = "sales/partials/payment_term_row.html"
+    dt_ribbon_template = "sales/partials/payment_term_ribbon.html"
     dt_filter_template = "sales/partials/payment_term_filters.html"
     dt_search_placeholder = _("Nombre…")
 
