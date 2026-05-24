@@ -15,8 +15,8 @@
 </button>
 
 <button type="button" class="btn btn-outline-secondary"
-        :disabled="!canAct"
-        :class="{'disabled': !canAct}"
-        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=edit]')?.click()">
+        :disabled="!canAct || selectedStatus !== 'DRAFT'"
+        :class="{'disabled': !canAct || selectedStatus !== 'DRAFT'}"
+        @click="canAct && selectedStatus === 'DRAFT' && document.querySelector('tr.dt-row-selected [data-action=edit]')?.click()">
   <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
 </button>
