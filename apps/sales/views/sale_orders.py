@@ -59,7 +59,18 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        ctx.update(self.apply_datatable(f.qs))
+        org_qs = SalesDocument.sale_orders.filter(organization=org)
+        status_pills = [
+            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8",
+             "count": org_qs.filter(status="DRAFT").count()},
+            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6",
+             "count": org_qs.filter(status="CONFIRMED").count()},
+            {"value": "DELIVERED", "label": _("Entregada"), "color": "#06b6d4",
+             "count": org_qs.filter(status="DELIVERED").count()},
+            {"value": "INVOICED",  "label": _("Facturada"), "color": "#10b981",
+             "count": org_qs.filter(status="INVOICED").count()},
+        ]
+        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
         if not self.request.htmx:
             agg = SalesDocument.sale_orders.filter(organization=org).aggregate(

@@ -42,6 +42,24 @@
   </div>
   {% endif %}
 
+  {# ── Status filter pills ──────────────────────────────────────────────────── #}
+  {% if dt_status_pills %}
+  <div class="dt-status-pills">
+    <a href="?{% if dt_sort %}sort={{ dt_sort }}&{% endif %}"
+       class="dt-pill {% if not dt_active_status %}dt-pill-active{% endif %}">
+      {% trans "Todos" %}
+    </a>
+    {% for pill in dt_status_pills %}
+    <a href="?status={{ pill.value }}{% if dt_sort %}&sort={{ dt_sort }}{% endif %}"
+       class="dt-pill {% if dt_active_status == pill.value %}dt-pill-active{% endif %}"
+       {% if dt_active_status == pill.value %}style="--pill-color: {{ pill.color }};"{% endif %}>
+      {{ pill.label }}
+      {% if pill.count is not None %}<span class="dt-pill-count">{{ pill.count }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {# ── Filter form — wraps search, hidden state inputs, and the offcanvas ──── #}
   <form id="dt-form" method="get"
         hx-get="{% url dt_url %}"

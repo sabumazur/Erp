@@ -507,3 +507,76 @@ tr.dt-row-selected:hover > td {
   align-items: center;
   flex-wrap: wrap;
 }
+
+/* ── Status filter pills ────────────────────────────────────────────────────── */
+
+.dt-status-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.dt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dt-pill:hover {
+  color: #334155;
+  background: #e2e8f0;
+  text-decoration: none;
+}
+
+.dt-pill-active {
+  background: color-mix(in srgb, var(--pill-color, #0078d4) 12%, white);
+  color: var(--pill-color, #0078d4);
+  border-color: color-mix(in srgb, var(--pill-color, #0078d4) 30%, white);
+  font-weight: 600;
+}
+
+.dt-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--pill-color, #0078d4) 80%, white);
+  color: white;
+}
+
+/* ── Table row density ──────────────────────────────────────────────────────── */
+
+/* Target: ~32-34px rows. Bootstrap table-sm gives 0.3rem padding, but we
+   nudge td font-size to 0.8125rem (13px) for tighter information density. */
+.card .table.table-sm td,
+.card .table.table-sm th {
+  font-size: 0.8125rem;
+}
+
+/* ── Horizontal scroll for app-table-wrap ───────────────────────────────────── */
+
+.app-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-table-wrap > table,
+.app-table-wrap .table {
+  min-width: 580px;
+}
