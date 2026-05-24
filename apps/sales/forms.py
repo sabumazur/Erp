@@ -522,8 +522,8 @@ class SaleOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "delivery_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "issue_date": forms.DateInput(attrs={"type": "date", "id": "id_issue_date"}, format="%Y-%m-%d"),
+            "delivery_date": forms.DateInput(attrs={"type": "date", "id": "id_delivery_date"}, format="%Y-%m-%d"),
             "notes": forms.TextInput(),
         }
         error_messages = {
@@ -541,6 +541,8 @@ class SaleOrderForm(forms.ModelForm):
                 organization=organization
             )
         self.fields["delivery_date"].required = False
+        if self.instance._state.adding and not self.is_bound and "delivery_date" not in self.initial:
+            self.initial["delivery_date"] = date.today()
         self.fields["department"].required = False
         self.fields["department"].empty_label = _("— Sin departamento —")
 

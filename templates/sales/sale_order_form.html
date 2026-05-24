@@ -119,6 +119,16 @@
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'sales:customer_quick_create' %}";
 window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
+
+(function () {
+  var issueInput    = document.getElementById('id_issue_date');
+  var deliveryInput = document.getElementById('id_delivery_date');
+  if (issueInput && deliveryInput) {
+    issueInput.addEventListener('change', function () {
+      deliveryInput.value = issueInput.value;
+    });
+  }
+})();
 </script>
 {% include "sales/partials/item_js.html" %}
 

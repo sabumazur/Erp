@@ -10,7 +10,7 @@ from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFactory, OrganizationFactory
 from apps.core.models import Module
 from apps.items.tests.factories import ItemFactory
-from apps.sales.forms import InvoiceItemForm
+from apps.sales.forms import InvoiceItemForm, SaleOrderForm
 from apps.sales.models import SalesDocument
 from apps.sales.services import NCFService
 from apps.sales.tests.factories import (
@@ -298,7 +298,41 @@ class TestItemQuickCreateView:
         assert response.status_code == 422
 
 
-# ── Report views ──────────────────────────────────────────────────────────────
+# -- Sale order form behavior --------------------------------------------------
+
+@pytest.mark.django_db
+class TestSaleOrderFormView:
+
+    def test_new_order_defaults_delivery_date_to_today(self):
+        from datetime import date
+
+        form = SaleOrderForm(organization=OrganizationFactory())
+
+        assert form.initial["delivery_date"] == date.today()
+
+    @pytest.mark.parametrize("view_name", ["sale_order_create", "sale_order_edit"])
+    def test_issue_date_change_updates_delivery_date_on_create_and_edit(self, client, view_name):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        kwargs = {}
+        if view_name == "sale_order_edit":
+            order = SalesDocumentFactory(
+                organization=org,
+                customer=CustomerFactory(organization=org),
+                doc_type=SalesDocument.DocType.SALE_ORDER,
+            )
+            kwargs["pk"] = order.pk
+
+        response = client.get(reverse(f"sales:{view_name}", kwargs=kwargs))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "issueInput.addEventListener('change'" in content
+        assert "deliveryInput.value = issueInput.value" in content
+
+
+# -- Report views --------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestReportViews:
