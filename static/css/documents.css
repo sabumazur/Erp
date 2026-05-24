@@ -349,20 +349,51 @@
   font-size: 0.75rem;
 }
 
-/* ── DataTable: row hover actions ───────────────────────────── */
+/* ── DataTable: row kebab menu ──────────────────────────────── */
 
-.dt-hover-actions {
-  opacity: 0;
-  transition: opacity 0.14s ease;
+.dt-row-actions {
   display: inline-flex;
-  gap: 2px;
   align-items: center;
   vertical-align: middle;
   margin-left: 6px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
 }
 
-tr:hover .dt-hover-actions {
+tr:hover .dt-row-actions,
+tr.dt-row-selected .dt-row-actions {
   opacity: 1;
+}
+
+.dt-kebab-btn {
+  line-height: 1;
+  color: #94a3b8 !important;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+}
+
+.dt-kebab-btn:hover {
+  color: #334155 !important;
+  background: #f1f5f9;
+}
+
+.dt-kebab .dropdown-menu {
+  font-size: 0.8125rem;
+  min-width: 140px;
+  padding: 4px 0;
+}
+
+.dt-kebab .dropdown-item {
+  padding: 5px 12px;
+}
+
+.dt-kebab .dropdown-item i {
+  font-size: 0.75rem;
+  width: 14px;
 }
 
 /* ── Row selection ──────────────────────────────────────────── */
@@ -380,9 +411,7 @@ tr.dt-row-selected:hover > td {
   background-color: #bfdbfe;
 }
 
-tr.dt-row-selected .dt-hover-actions {
-  opacity: 1; /* always show actions on selected row */
-}
+/* .dt-row-selected .dt-row-actions opacity handled in the kebab block above */
 
 /* ── Table header style ─────────────────────────────────────── */
 

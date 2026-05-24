@@ -9,19 +9,31 @@
        class="text-decoration-none" style="color:#1e2130">
       {{ row.display_number }}
     </a>
-    <span class="dt-hover-actions">
-      <a href="{% url 'sales:sale_order_detail' row.pk %}"
-         data-action="view"
-         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
-        <i class="bi bi-eye"></i>
-      </a>
-      {% if row.status == 'DRAFT' %}
-      <a href="{% url 'sales:sale_order_edit' row.pk %}"
-         data-action="edit"
-         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem">
-        <i class="bi bi-pencil"></i>
-      </a>
-      {% endif %}
+    <span class="dt-row-actions">
+      <div class="dropdown dt-kebab">
+        <button type="button"
+                class="btn btn-link btn-sm p-0 dt-kebab-btn"
+                data-bs-toggle="dropdown"
+                data-bs-boundary="viewport"
+                aria-expanded="false"
+                tabindex="-1">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <a class="dropdown-item" href="{% url 'sales:sale_order_detail' row.pk %}" data-action="view">
+              <i class="bi bi-eye me-2"></i>{% trans "Ver" %}
+            </a>
+          </li>
+          {% if row.status == 'DRAFT' %}
+          <li>
+            <a class="dropdown-item" href="{% url 'sales:sale_order_edit' row.pk %}" data-action="edit">
+              <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </span>
   </td>
 
