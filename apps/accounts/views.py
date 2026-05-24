@@ -141,7 +141,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         month_start = today.replace(day=1)
         _zero = Decimal("0")
 
-        _inv = SalesDocument.invoices.filter(organization=org, deleted_at__isnull=True)
+        _inv = SalesDocument.invoices.filter(organization=org, deleted_at__isnull=True).with_signed_totals()
         _quot = SalesDocument.quotations.filter(organization=org, deleted_at__isnull=True)
         _so = SalesDocument.sale_orders.filter(organization=org, deleted_at__isnull=True)
 
@@ -157,7 +157,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
                     SalesDocument.Status.OVERDUE,
                 ],
             )
-            .aggregate(t=Sum("total"))["t"] or _zero
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
         )
 
         ctx["month_collected"] = (
@@ -174,12 +174,12 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
                     SalesDocument.Status.OVERDUE,
                 ],
             )
-            .aggregate(t=Sum("total"))["t"] or _zero
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
         )
 
         ctx["overdue_total"] = (
             _inv.filter(status=SalesDocument.Status.OVERDUE)
-            .aggregate(t=Sum("total"))["t"] or _zero
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
         )
 
         # ── Counts ────────────────────────────────────────────────────────────
@@ -248,7 +248,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             )
             .annotate(month=TruncMonth("issue_date"))
             .values("month")
-            .annotate(total=Sum("total"))
+            .annotate(total=Sum("signed_total"))
         }
 
         pay_by_month = {
@@ -310,7 +310,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         top_customers = list(
             _inv.filter(issue_date__gte=six_months_ago, status__in=_inv_status_filter)
             .values("customer__id", "customer__name")
-            .annotate(total=Sum("total"))
+            .annotate(total=Sum("signed_total"))
             .order_by("-total")[:6]
         )
 
@@ -325,7 +325,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
                 )
                 .annotate(month=TruncMonth("issue_date"))
                 .values("customer__id", "month")
-                .annotate(total=Sum("total"))
+                .annotate(total=Sum("signed_total"))
             )
 
             cust_data = {cid: {} for cid in top_ids}

@@ -77,7 +77,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = CustomerFilter(self.request.GET, queryset=qs)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["form"] = CustomerForm()
+        ctx["form"] = CustomerForm(organization=org)
 
         if not self.request.htmx:
             today = date.today()
@@ -175,7 +175,7 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     def get(self, request, *args, **kwargs):
         if request.htmx:
             customer = self.get_object()
-            form = CustomerForm(instance=customer)
+            form = CustomerForm(instance=customer, organization=request.organization)
             return render(
                 request,
                 "sales/partials/customer_modal_form.html",
@@ -260,6 +260,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         invoices = list(
             SalesDocument.invoices.filter(organization=request.organization, customer=customer)
             .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+            .with_signed_totals()
             .annotate(
                 paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
             )
@@ -268,9 +269,9 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         )
 
         for inv in invoices:
-            inv.line_balance = inv.total - inv.paid_amount
+            inv.line_balance = inv.signed_total - inv.paid_amount
 
-        total_invoiced = sum((inv.total for inv in invoices), _zero)
+        total_invoiced = sum((inv.signed_total for inv in invoices), _zero)
         total_paid = sum((inv.paid_amount for inv in invoices), _zero)
         balance = total_invoiced - total_paid
         overdue = sum(

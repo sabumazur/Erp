@@ -2,7 +2,7 @@ import io
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Count, DecimalField, Sum
+from django.db.models import Case, Count, DecimalField, F, Sum, When
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -177,7 +177,7 @@ class ReportAgingView(ERPBaseViewMixin, View):
         qs = SalesDocument.invoices.filter(
             organization=request.organization,
             status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE],
-        )
+        ).with_signed_totals()
         if selected_customer:
             qs = qs.filter(customer=selected_customer)
 
@@ -186,7 +186,7 @@ class ReportAgingView(ERPBaseViewMixin, View):
             .select_related("customer")
         )
         for inv in invoices:
-            inv.line_balance = inv.total - inv.paid_amount
+            inv.line_balance = inv.signed_total - inv.paid_amount
 
         customers_map = {}
         for inv in invoices:
@@ -274,7 +274,8 @@ class ReportStatementView(ERPBaseViewMixin, View):
                         organization=request.organization, customer=customer, issue_date__lt=d_from,
                     )
                     .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
-                    .aggregate(t=Coalesce(Sum("total"), _zero, output_field=_dec))["t"]
+                    .with_signed_totals()
+                    .aggregate(t=Coalesce(Sum("signed_total"), _zero, output_field=_dec))["t"]
                 )
                 pmt_before = Payment.objects.filter(
                     organization=request.organization, customer=customer, date__lt=d_from,
@@ -287,15 +288,16 @@ class ReportStatementView(ERPBaseViewMixin, View):
                         issue_date__gte=d_from, issue_date__lte=d_to,
                     )
                     .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                    .with_signed_totals()
                     .order_by("issue_date", "created_at")
                 ):
                     lines.append({
                         "date": inv.issue_date, "type": "invoice",
                         "ref":  inv.display_number,
                         "url":  reverse("sales:invoice_detail", args=[inv.pk]),
-                        "debit": inv.total, "credit": _zero,
+                        "debit": inv.signed_total, "credit": _zero,
                     })
-                    period_invoiced += inv.total
+                    period_invoiced += inv.signed_total
 
                 for pmt in Payment.objects.filter(
                     organization=request.organization, customer=customer,
@@ -367,9 +369,10 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                             issue_date__year=year, issue_date__month=month,
                         )
                         .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                        .with_signed_totals()
                         .annotate(period=TruncDay("issue_date"))
                         .values("period")
-                        .annotate(total=Coalesce(Sum("total"), _zero, output_field=_dec))
+                        .annotate(total=Coalesce(Sum("signed_total"), _zero, output_field=_dec))
                     )
                     pmt_qs = (
                         Payment.objects.filter(
@@ -386,9 +389,10 @@ class ReportSalesByPeriodView(ERPBaseViewMixin, View):
                             organization=request.organization, issue_date__year=year,
                         )
                         .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                        .with_signed_totals()
                         .annotate(period=TruncMonth("issue_date"))
                         .values("period")
-                        .annotate(total=Coalesce(Sum("total"), _zero, output_field=_dec))
+                        .annotate(total=Coalesce(Sum("signed_total"), _zero, output_field=_dec))
                     )
                     pmt_qs = (
                         Payment.objects.filter(
@@ -464,14 +468,15 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                         issue_date__gte=d_from,
                         issue_date__lte=d_to,
                     )
-                    .exclude(status=SalesDocument.Status.DRAFT)
+                    .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                    .with_signed_totals()
                     .order_by("issue_date", "created_at")
                 )
 
                 for inv in invoices:
-                    totals["subtotal"] += inv.subtotal
-                    totals["itbis_18"] += inv.itbis_18
-                    totals["total"]    += inv.total
+                    totals["subtotal"] += inv.signed_subtotal
+                    totals["itbis_18"] += inv.signed_itbis_18
+                    totals["total"]    += inv.signed_total
 
             except (ValueError, TypeError):
                 error = _("Fechas inválidas.")
@@ -594,11 +599,23 @@ class ReportITBISView(ERPBaseViewMixin, View):
                 trunc = TruncDay("document__issue_date") if by_day else TruncMonth("document__issue_date")
 
                 raw = (
-                    qs.annotate(period=trunc)
+                    qs.annotate(
+                        period=trunc,
+                        signed_line_total=Case(
+                            When(document__ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("line_total")),
+                            default=F("line_total"),
+                            output_field=_dec,
+                        ),
+                        signed_tax=Case(
+                            When(document__ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("itbis_amount")),
+                            default=F("itbis_amount"),
+                            output_field=_dec,
+                        ),
+                    )
                     .values("period", "itbis_rate")
                     .annotate(
-                        base=Coalesce(Sum("line_total"),    _zero, output_field=_dec),
-                        tax= Coalesce(Sum("itbis_amount"),  _zero, output_field=_dec),
+                        base=Coalesce(Sum("signed_line_total"), _zero, output_field=_dec),
+                        tax= Coalesce(Sum("signed_tax"), _zero, output_field=_dec),
                     )
                     .order_by("period", "itbis_rate")
                 )
@@ -680,13 +697,14 @@ class ReportSalesByNCFTypeView(ERPBaseViewMixin, View):
                         issue_date__month=month,
                     )
                     .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                    .with_signed_totals()
                     .values("ncf_type")
                     .annotate(
                         count=Count("id"),
-                        subtotal=Coalesce(Sum("subtotal"),  _zero, output_field=_dec),
-                        itbis_18=Coalesce(Sum("itbis_18"), _zero, output_field=_dec),
-                        itbis_16=Coalesce(Sum("itbis_16"), _zero, output_field=_dec),
-                        total=Coalesce(Sum("total"),        _zero, output_field=_dec),
+                        subtotal=Coalesce(Sum("signed_subtotal"), _zero, output_field=_dec),
+                        itbis_18=Coalesce(Sum("signed_itbis_18"), _zero, output_field=_dec),
+                        itbis_16=Coalesce(Sum("signed_itbis_16"), _zero, output_field=_dec),
+                        total=Coalesce(Sum("signed_total"), _zero, output_field=_dec),
                     )
                     .order_by("ncf_type")
                 )

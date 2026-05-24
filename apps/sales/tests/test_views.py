@@ -173,6 +173,74 @@ class TestInvoiceDeleteView:
 
 
 @pytest.mark.django_db
+class TestInvoiceRouteDocumentTypeIsolation:
+
+    @pytest.mark.parametrize(
+        ("route_name", "method", "data"),
+        [
+            ("invoice_detail", "get", {}),
+            ("invoice_edit", "get", {}),
+            ("invoice_confirm", "post", {}),
+            ("invoice_send", "post", {}),
+            ("invoice_pay", "post", {"amount": "1.00", "date": "2026-05-24", "method": "TRANSFER"}),
+            ("invoice_cancel", "post", {}),
+            ("invoice_delete", "post", {}),
+            ("credit_note_create", "get", {}),
+            ("invoice_pdf", "get", {}),
+            ("invoice_print", "get", {}),
+        ],
+    )
+    def test_invoice_routes_reject_quotation_ids(self, client, route_name, method, data):
+        user, org, _ = make_member()
+        quotation = SalesDocumentFactory(
+            organization=org,
+            customer=CustomerFactory(organization=org),
+            doc_type=SalesDocument.DocType.QUOTATION,
+        )
+        login(client, user)
+        set_active_org(client, org)
+        url = reverse(f"sales:{route_name}", kwargs={"pk": quotation.pk})
+        response = getattr(client, method)(url, data)
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestCreditNoteCreateView:
+
+    def test_creates_note_against_issued_invoice(self, client):
+        user, org, _ = make_member()
+        customer = CustomerFactory(organization=org)
+        invoice = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            status=SalesDocument.Status.CONFIRMED,
+            encf="E310000000001",
+        )
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.post(
+            reverse("sales:credit_note_create", kwargs={"pk": invoice.pk}),
+            {
+                "ncf_type": "34",
+                "issue_date": "2026-05-24",
+                "due_date": "",
+                "notes": "",
+                "terms": "",
+                "items-TOTAL_FORMS": "0",
+                "items-INITIAL_FORMS": "0",
+                "items-MIN_NUM_FORMS": "0",
+                "items-MAX_NUM_FORMS": "1000",
+            },
+        )
+
+        assert response.status_code == 302
+        assert SalesDocument.invoices.filter(
+            ncf_type=34, encf_modified=invoice, organization=org
+        ).exists()
+
+
+@pytest.mark.django_db
 class TestInvoiceItemCatalogValidation:
 
     def _form(self, item, organization, instance=None):
@@ -263,6 +331,43 @@ class TestReportViews:
         set_active_org(client, org)
         resp = client.get(reverse("sales:report_607"))
         assert resp.status_code == 302  # redirect with error message
+
+    def test_credit_note_reduces_customer_report_total(self, client):
+        from django.utils import timezone
+
+        user, org, _ = make_member()
+        customer = CustomerFactory(organization=org)
+        invoice = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            status=SalesDocument.Status.CONFIRMED,
+            encf="E310000000001",
+        )
+        SalesDocumentItemFactory(document=invoice, unit_price=Decimal("100.00"), itbis_rate="EXEMPT")
+        note = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            status=SalesDocument.Status.CONFIRMED,
+            ncf_type=34,
+            encf="E340000000001",
+            encf_modified=invoice,
+        )
+        SalesDocumentItemFactory(document=note, unit_price=Decimal("40.00"), itbis_rate="EXEMPT")
+        today = timezone.localdate()
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(
+            reverse("sales:report_invoices_by_customer"),
+            {
+                "customer": str(customer.pk),
+                "date_from": today.isoformat(),
+                "date_to": today.isoformat(),
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.context["totals"]["total"] == Decimal("60.00")
 
 
 # ── CustomerQuickCreateForm ───────────────────────────────────────────────────

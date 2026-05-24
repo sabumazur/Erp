@@ -6,6 +6,7 @@ from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
+from django.db.models import Case, DecimalField, F, When
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.core.models import ERPBaseModel, SoftDeleteQuerySet
@@ -173,10 +174,19 @@ class Customer(ERPBaseModel):
         return self.name
 
     def clean(self):
+        super().clean()
         from .validators import validate_rnc_cedula
 
         if self.rnc_cedula:
             validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
+        if (
+            self.payment_term_id
+            and self.organization_id
+            and self.payment_term.organization_id not in (None, self.organization_id)
+        ):
+            raise ValidationError(
+                {"payment_term": _("El termino de pago no pertenece a esta organizacion.")}
+            )
 
     def delete(self, *args, **kwargs):
         if self.invoices.exists() or self.payments.exists():
@@ -252,6 +262,21 @@ class CustomerDepartment(ERPBaseModel):
     def __str__(self):
         return f"{self.customer.name} — {self.name}"
 
+    def clean(self):
+        super().clean()
+        if (
+            self.customer_id
+            and self.organization_id
+            and self.customer.organization_id != self.organization_id
+        ):
+            raise ValidationError(
+                {"customer": _("El cliente no pertenece a esta organizacion.")}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 # ── NCF Sequence ──────────────────────────────────────────────────────────────
 
@@ -321,6 +346,37 @@ class NCFSequence(models.Model):
     def __str__(self):
         w = self._seq_width()
         return f"{self.organization} · {self.get_ncf_type_display()} · {self.series}{self.ncf_type:02d}{self.current_seq:0{w}d}"
+
+    def clean(self):
+        super().clean()
+        if self.series == self.Series.PHYSICAL and self.ncf_type not in self.PHYSICAL_TYPES:
+            raise ValidationError({"ncf_type": _("El tipo de NCF no corresponde a la serie B.")})
+        if self.series == self.Series.ELECTRONIC and self.ncf_type not in self.ELECTRONIC_TYPES:
+            raise ValidationError({"ncf_type": _("El tipo de NCF no corresponde a la serie E.")})
+        if self.current_seq > self.max_seq:
+            raise ValidationError({"current_seq": _("La secuencia actual no puede exceder la maxima.")})
+        if self.pk:
+            original = type(self).objects.filter(pk=self.pk).only("current_seq").first()
+            if original and self.current_seq < original.current_seq:
+                raise ValidationError(
+                    {"current_seq": _("La secuencia actual no puede reducirse despues de asignar NCF.")}
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        issued = SalesDocument.all_objects.filter(
+            organization=self.organization,
+            doc_type=SalesDocument.DocType.INVOICE,
+            ncf_type=self.ncf_type,
+        ).exclude(encf="").exists()
+        if issued:
+            raise ValidationError(
+                _("No se puede eliminar una secuencia que ya emitio comprobantes; desactivela.")
+            )
+        return super().delete(*args, **kwargs)
 
     @property
     def preview_next(self) -> str:
@@ -456,6 +512,31 @@ class DocumentSequence(models.Model):
 
 
 class SalesDocumentQuerySet(SoftDeleteQuerySet):
+    def with_signed_totals(self):
+        output_field = DecimalField(max_digits=14, decimal_places=2)
+        return self.annotate(
+            signed_subtotal=Case(
+                When(ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("subtotal")),
+                default=F("subtotal"),
+                output_field=output_field,
+            ),
+            signed_itbis_18=Case(
+                When(ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("itbis_18")),
+                default=F("itbis_18"),
+                output_field=output_field,
+            ),
+            signed_itbis_16=Case(
+                When(ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("itbis_16")),
+                default=F("itbis_16"),
+                output_field=output_field,
+            ),
+            signed_total=Case(
+                When(ncf_type__in=SalesDocument.CREDIT_NOTE_TYPES, then=-F("total")),
+                default=F("total"),
+                output_field=output_field,
+            ),
+        )
+
     def with_aging(self):
         """
         Annotate each row with an `aging_bucket` field (string) based on how
@@ -507,6 +588,10 @@ class DocTypeManager(SalesDocumentManager):
 
 
 class SalesDocument(ERPBaseModel):
+    CREDIT_NOTE_TYPES = (NCFType.B04_NOTA_CREDITO, NCFType.NOTA_CREDITO)
+    DEBIT_NOTE_TYPES = (NCFType.B03_NOTA_DEBITO, NCFType.NOTA_DEBITO)
+    NOTE_TYPES = CREDIT_NOTE_TYPES + DEBIT_NOTE_TYPES
+
     class DocType(models.TextChoices):
         INVOICE = "INVOICE", _("Factura")
         QUOTATION = "QUOTATION", _("Cotización")
@@ -834,6 +919,13 @@ class SalesDocument(ERPBaseModel):
     def itbis_total(self):
         return self.itbis_18 + self.itbis_16
 
+    @property
+    def is_credit_note(self):
+        return self.ncf_type in self.CREDIT_NOTE_TYPES
+
+    def signed_value(self, value):
+        return -value if self.is_credit_note else value
+
     def recompute_totals(self):
         """Recompute subtotal, itbis_18, itbis_16 and total from line items."""
         items = self.items.all()
@@ -857,32 +949,83 @@ class SalesDocument(ERPBaseModel):
         )
 
     def clean(self):
+        super().clean()
+        if (
+            self.customer_id
+            and self.organization_id
+            and self.customer.organization_id != self.organization_id
+        ):
+            raise ValidationError({"customer": _("El cliente no pertenece a esta organizacion.")})
+        if self.department_id:
+            if self.doc_type != self.DocType.SALE_ORDER:
+                raise ValidationError({"department": _("Solo una orden de venta puede tener departamento.")})
+            if (
+                self.department.organization_id != self.organization_id
+                or self.department.customer_id != self.customer_id
+            ):
+                raise ValidationError(
+                    {"department": _("El departamento no pertenece al cliente y organizacion del documento.")}
+                )
+        if self.consolidated_into_id:
+            if self.doc_type != self.DocType.SALE_ORDER:
+                raise ValidationError(
+                    {"consolidated_into": _("Solo una orden de venta puede consolidarse.")}
+                )
+            if (
+                self.consolidated_into.organization_id != self.organization_id
+                or self.consolidated_into.doc_type != self.DocType.INVOICE
+            ):
+                raise ValidationError(
+                    {"consolidated_into": _("La factura consolidada no pertenece a esta organizacion.")}
+                )
+
         # NCF rules only apply to invoices
         if self.doc_type != self.DocType.INVOICE:
+            if self.encf_modified_id:
+                raise ValidationError({"encf_modified": _("Solo una factura fiscal puede afectar un NCF.")})
             return
 
-        _nota_types = (
-            NCFType.B03_NOTA_DEBITO,
-            NCFType.B04_NOTA_CREDITO,
-            NCFType.NOTA_DEBITO,
-            NCFType.NOTA_CREDITO,
-        )
         _credito_fiscal_types = (NCFType.B01_CREDITO_FISCAL, NCFType.CREDITO_FISCAL)
 
         # Nota de Crédito / Débito must reference another invoice
-        if self.ncf_type in _nota_types:
+        if self.ncf_type in self.NOTE_TYPES:
             if not self.encf_modified_id:
                 raise ValidationError(
                     _(
                         "Las Notas de Crédito y Débito deben referenciar el NCF afectado."
                     )
                 )
+            if (
+                self.encf_modified_id == self.pk
+                or self.encf_modified.organization_id != self.organization_id
+                or self.encf_modified.doc_type != self.DocType.INVOICE
+                or self.encf_modified.ncf_type in self.NOTE_TYPES
+                or not self.encf_modified.encf
+                or self.encf_modified.status
+                not in (
+                    self.Status.CONFIRMED,
+                    self.Status.SENT,
+                    self.Status.PAID,
+                    self.Status.OVERDUE,
+                )
+            ):
+                raise ValidationError(
+                    {"encf_modified": _("El NCF afectado debe ser una factura emitida de esta organizacion.")}
+                )
+        elif self.encf_modified_id:
+            raise ValidationError(
+                {"encf_modified": _("Solo una nota de credito o debito puede afectar otro NCF.")}
+            )
         # Crédito Fiscal requires buyer RNC
         if self.ncf_type in _credito_fiscal_types:
             if self.customer_id and not self.customer.rnc_cedula:
                 raise ValidationError(
                     _("La Factura de Crédito Fiscal requiere el RNC del comprador.")
                 )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 # ── SalesDocumentItem ─────────────────────────────────────────────────────────
@@ -923,11 +1066,13 @@ class SalesDocumentItem(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("1.0000"),
+        validators=[MinValueValidator(Decimal("0.0001"))],
         verbose_name=_("cantidad"),
     )
     unit_price = models.DecimalField(
         max_digits=14,
         decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
         verbose_name=_("precio unitario (sin ITBIS)"),
     )
     itbis_rate = models.CharField(
@@ -961,6 +1106,16 @@ class SalesDocumentItem(models.Model):
         verbose_name = _("línea de documento")
         verbose_name_plural = _("líneas de documento")
         ordering = ["pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=0),
+                name="sales_line_quantity_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(unit_price__gte=0),
+                name="sales_line_unit_price_nonnegative",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.description} × {self.quantity}"
@@ -972,7 +1127,17 @@ class SalesDocumentItem(models.Model):
         self.itbis_amount = (self.line_total * rate).quantize(Decimal("0.01"))
         self.line_total_with_itbis = self.line_total + self.itbis_amount
 
+    def clean(self):
+        super().clean()
+        if (
+            self.item_id
+            and self.document_id
+            and self.item.organization_id != self.document.organization_id
+        ):
+            raise ValidationError({"item": _("El articulo no pertenece a esta organizacion.")})
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         self.compute()
         super().save(*args, **kwargs)
 
@@ -1005,6 +1170,7 @@ class Payment(ERPBaseModel):
     amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
         verbose_name=_("monto total recibido"),
     )
     date = models.DateField(default=timezone.now, verbose_name=_("fecha de pago"))
@@ -1029,6 +1195,12 @@ class Payment(ERPBaseModel):
         indexes = [
             GinIndex(fields=["reference"], opclasses=["gin_trgm_ops"], name="payment_reference_trgm_idx"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="payment_amount_positive",
+            ),
+        ]
 
     def __str__(self):
         return f"Pago {self.amount} – {self.customer} ({self.date})"
@@ -1049,6 +1221,19 @@ class Payment(ERPBaseModel):
         raise ValueError(
             "Use PaymentService.delete() para eliminar pagos y revertir sus efectos."
         )
+
+    def clean(self):
+        super().clean()
+        if (
+            self.customer_id
+            and self.organization_id
+            and self.customer.organization_id != self.organization_id
+        ):
+            raise ValidationError({"customer": _("El cliente no pertenece a esta organizacion.")})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 # ── PaymentAllocation ─────────────────────────────────────────────────────────
@@ -1077,6 +1262,7 @@ class PaymentAllocation(models.Model):
     amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
         verbose_name=_("monto aplicado"),
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1088,9 +1274,27 @@ class PaymentAllocation(models.Model):
             models.UniqueConstraint(
                 fields=["payment", "invoice"],
                 name="unique_payment_invoice_allocation",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="allocation_amount_positive",
+            ),
         ]
 
     def __str__(self):
         return f"{self.payment} → {self.invoice}: {self.amount}"
+
+    def clean(self):
+        super().clean()
+        if self.payment_id and self.invoice_id:
+            if self.payment.organization_id != self.invoice.organization_id:
+                raise ValidationError(_("El pago y la factura deben pertenecer a la misma organizacion."))
+            if self.payment.customer_id != self.invoice.customer_id:
+                raise ValidationError(_("El pago y la factura deben pertenecer al mismo cliente."))
+            if self.invoice.doc_type != SalesDocument.DocType.INVOICE:
+                raise ValidationError(_("Los pagos solo pueden aplicarse a facturas."))
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 

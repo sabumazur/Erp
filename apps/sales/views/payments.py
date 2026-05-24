@@ -214,6 +214,7 @@ class OutstandingInvoicesView(ERPBaseViewMixin, View):
                         SalesDocument.Status.OVERDUE,
                     ],
                 )
+                .exclude(ncf_type__in=SalesDocument.NOTE_TYPES)
                 .annotate(
                     paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec)
                 )

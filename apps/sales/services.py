@@ -6,11 +6,9 @@ All public functions assume they are called from within a request/view context
 where request.organization is already set.
 """
 import logging
-import uuid
 from datetime import date
 
-from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -64,29 +62,23 @@ class NCFService:
         # Run DGII field-level validation
         invoice.full_clean()
 
-        # Assign next NCF atomically
-        try:
-            encf = NCFSequence.generate(invoice.organization, invoice.ncf_type)
-        except ValueError:
-            if not settings.DEBUG:
-                raise
-            # ── Dev-mode fallback ──────────────────────────────────────────────
-            # No active NCFSequence configured. Generate a locally-unique fake
-            # NCF using the 'B' series format (8-digit physical sequence) so
-            # fake numbers never collide with real E-series electronic sequences.
-            # Format: B{type:02d}{8-digit random}  →  e.g. B0109473826
-            fake_seq = uuid.uuid4().int % 100_000_000  # max 8 digits
-            encf = f"B{invoice.ncf_type:02d}{fake_seq:08d}"
+        # Assign the next authorized fiscal number atomically.
+        encf = NCFSequence.generate(invoice.organization, invoice.ncf_type)
 
         invoice.encf = encf
         invoice.status = SalesDocument.Status.CONFIRMED
-        invoice.save(update_fields=["encf", "status", "updated_at"])
+        try:
+            invoice.save(update_fields=["encf", "status", "updated_at"])
+        except IntegrityError as exc:
+            raise ValueError(_("El NCF generado ya esta registrado; revise la secuencia activa.")) from exc
 
         return invoice
 
     @staticmethod
     def mark_sent(invoice: SalesDocument) -> SalesDocument:
         """Transition CONFIRMED → SENT."""
+        if invoice.doc_type != SalesDocument.DocType.INVOICE:
+            raise ValueError(_("Este documento no es una factura."))
         if invoice.status != SalesDocument.Status.CONFIRMED:
             raise ValueError("Solo se pueden enviar facturas confirmadas.")
         invoice.status = SalesDocument.Status.SENT
@@ -100,6 +92,8 @@ class NCFService:
         Called automatically by PaymentService when the sum of allocations
         covers the invoice total.
         """
+        if invoice.doc_type != SalesDocument.DocType.INVOICE or invoice.ncf_type in SalesDocument.NOTE_TYPES:
+            raise ValueError(_("Solo las facturas ordinarias pueden marcarse como pagadas."))
         allowed = (SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE)
         if invoice.status not in allowed:
             raise ValueError("La factura no puede marcarse como pagada en su estado actual.")
@@ -114,6 +108,8 @@ class NCFService:
         Called by PaymentService.delete() when a payment that fully covered
         this invoice is deleted.
         """
+        if invoice.doc_type != SalesDocument.DocType.INVOICE or invoice.ncf_type in SalesDocument.NOTE_TYPES:
+            raise ValueError(_("Solo las facturas ordinarias pueden reabrirse."))
         if invoice.status != SalesDocument.Status.PAID:
             raise ValueError("Solo se pueden reabrir facturas en estado Pagada.")
         invoice.status = SalesDocument.Status.SENT
@@ -128,6 +124,8 @@ class NCFService:
         soft-deleted after status change.
         DRAFT invoices are just hard-deleted (no e-NCF was assigned).
         """
+        if invoice.doc_type != SalesDocument.DocType.INVOICE:
+            raise ValueError(_("Este documento no es una factura."))
         if invoice.status == SalesDocument.Status.PAID:
             raise ValueError(
                 "No se puede anular una factura pagada. "
@@ -268,6 +266,7 @@ class QuotationService:
         for item in quotation.items.all():
             SalesDocumentItem.objects.create(
                 document=invoice,
+                item=item.item,
                 description=item.description,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
@@ -389,6 +388,14 @@ class SaleOrderService:
 
         Raises ValueError if no eligible orders are found.
         """
+        if customer.organization_id != organization.pk:
+            raise ValueError(_("El cliente no pertenece a esta organizacion."))
+        if department and (
+            department.organization_id != organization.pk
+            or department.customer_id != customer.pk
+        ):
+            raise ValueError(_("El departamento no pertenece al cliente y organizacion indicados."))
+
         qs = (
             SalesDocument.sale_orders
             .select_related("customer")
@@ -507,8 +514,24 @@ class PaymentService:
         Auto-marks each invoice as PAID when its allocations fully cover its total.
         Returns the saved Payment instance.
         """
+        if customer.organization_id != organization.pk:
+            raise ValueError(_("El cliente no pertenece a esta organizacion."))
         if not allocations:
             raise ValueError(_("Debe aplicar el pago a al menos una factura."))
+
+        supplied_ids = [a["invoice"].pk for a in allocations]
+        if len(supplied_ids) != len(set(supplied_ids)):
+            raise ValueError(_("Una factura no puede repetirse en el mismo pago."))
+        locked = {
+            inv.pk: inv
+            for inv in SalesDocument.invoices.select_for_update().filter(pk__in=supplied_ids)
+        }
+        if set(locked) != set(supplied_ids):
+            raise ValueError(_("Una de las facturas seleccionadas no existe o no esta disponible."))
+        allocations = [
+            {"invoice": locked[a["invoice"].pk], "amount": a["amount"]}
+            for a in allocations
+        ]
 
         total = sum(a["amount"] for a in allocations)
         if total <= 0:
@@ -527,6 +550,19 @@ class PaymentService:
 
             if inv.organization_id != organization.pk:
                 raise ValueError(_(f"La factura {inv.display_number} no pertenece a esta organización."))
+
+            if inv.customer_id != customer.pk:
+                raise ValueError(_(f"La factura {inv.display_number} no pertenece al cliente seleccionado."))
+
+            if inv.ncf_type in SalesDocument.NOTE_TYPES:
+                raise ValueError(_("Los pagos no pueden aplicarse a notas de credito o debito."))
+
+            if inv.status not in (
+                SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.SENT,
+                SalesDocument.Status.OVERDUE,
+            ):
+                raise ValueError(_(f"La factura {inv.display_number} no esta pendiente de cobro."))
 
             if amt <= _zero:
                 raise ValueError(_(f"El monto para {inv.display_number} debe ser mayor a cero."))

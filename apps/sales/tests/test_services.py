@@ -35,7 +35,7 @@ def make_confirmed_invoice(organization, customer, total=Decimal("1000.00")):
     SalesDocumentItemFactory(
         document=inv,
         quantity=Decimal("1"),
-        unit_price=total / Decimal("1.18"),  # so total ≈ total after 18% ITBIS
+        unit_price=(total / Decimal("1.18")).quantize(Decimal("0.01")),
         itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
     )
     inv.recompute_totals()
@@ -175,6 +175,66 @@ class TestPaymentServiceRegister:
 
         assert payment.amount == inv1.total + inv2.total
         assert PaymentAllocation.objects.filter(payment=payment).count() == 2
+
+    def test_rejects_invoice_for_different_customer_in_same_org(self):
+        customer = CustomerFactory()
+        other_customer = CustomerFactory(organization=customer.organization)
+        inv = make_confirmed_invoice(customer.organization, other_customer)
+
+        with pytest.raises(ValueError, match="cliente seleccionado"):
+            PaymentService.register(
+                organization=customer.organization,
+                customer=customer,
+                payment_date=timezone.now().date(),
+                method=Payment.Method.TRANSFER,
+                reference="",
+                notes="",
+                allocations=[{"invoice": inv, "amount": inv.total}],
+            )
+
+    def test_rejects_duplicate_allocation_rows(self):
+        customer = CustomerFactory()
+        inv = make_confirmed_invoice(customer.organization, customer)
+
+        with pytest.raises(ValueError, match="repetirse"):
+            PaymentService.register(
+                organization=customer.organization,
+                customer=customer,
+                payment_date=timezone.now().date(),
+                method=Payment.Method.TRANSFER,
+                reference="",
+                notes="",
+                allocations=[
+                    {"invoice": inv, "amount": Decimal("10.00")},
+                    {"invoice": inv, "amount": Decimal("10.00")},
+                ],
+            )
+
+    def test_rejects_credit_note_payment(self):
+        customer = CustomerFactory()
+        org = customer.organization
+        original = make_confirmed_invoice(org, customer)
+        NCFSequenceFactory(organization=org, ncf_type=34, current_seq=0)
+        note = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            ncf_type=34,
+            encf_modified=original,
+        )
+        SalesDocumentItemFactory(document=note)
+        from apps.sales.services import NCFService
+        NCFService.confirm(note)
+
+        with pytest.raises(ValueError, match="notas"):
+            PaymentService.register(
+                organization=org,
+                customer=customer,
+                payment_date=timezone.now().date(),
+                method=Payment.Method.TRANSFER,
+                reference="",
+                notes="",
+                allocations=[{"invoice": note, "amount": note.total}],
+            )
 
 
 # ── PaymentService.delete ─────────────────────────────────────────────────────

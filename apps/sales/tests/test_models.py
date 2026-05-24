@@ -8,7 +8,8 @@ import threading
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.sales.models import SalesDocument, SalesDocumentItem, NCFSequence
+from apps.sales.models import CustomerDepartment, SalesDocument, SalesDocumentItem, NCFSequence
+from apps.accounts.tests.factories import OrganizationFactory
 from apps.sales.services import NCFService
 from apps.sales.validators import validate_rnc, validate_cedula, validate_rnc_cedula
 from .factories import (
@@ -44,6 +45,20 @@ class TestNCFSequence:
         seq = NCFSequenceFactory(ncf_type=31, current_seq=5, max_seq=5)
         with pytest.raises(ValueError, match="agotada"):
             NCFSequence.generate(seq.organization, 31)
+
+    def test_cannot_lower_current_sequence(self):
+        seq = NCFSequenceFactory(ncf_type=31, current_seq=3)
+        seq.current_seq = 2
+        with pytest.raises(ValidationError):
+            seq.save()
+
+    def test_cannot_delete_sequence_after_ncf_issued(self):
+        seq = NCFSequenceFactory(ncf_type=31)
+        invoice = SalesDocumentFactory(organization=seq.organization, ncf_type=31)
+        invoice.encf = "E310000000001"
+        invoice.save()
+        with pytest.raises(ValidationError):
+            seq.delete()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -213,7 +228,7 @@ class TestDGIIValidation:
     def test_credito_fiscal_requires_rnc(self):
         """Tipo 31 must have buyer RNC."""
         customer = CustomerFactory(rnc_cedula="")  # no RNC
-        invoice = SalesDocumentFactory(
+        invoice = SalesDocumentFactory.build(
             organization=customer.organization,
             customer=customer,
             ncf_type=31,
@@ -223,7 +238,7 @@ class TestDGIIValidation:
 
     def test_nota_credito_requires_encf_modified(self):
         """Tipo 34 must reference another invoice."""
-        invoice = SalesDocumentFactory(ncf_type=34, encf_modified=None)
+        invoice = SalesDocumentFactory.build(ncf_type=34, encf_modified=None)
         with pytest.raises(ValidationError):
             invoice.clean()
 
@@ -236,6 +251,30 @@ class TestDGIIValidation:
             ncf_type=32,
         )
         invoice.clean()  # should not raise
+
+    def test_rejects_customer_from_another_organization(self):
+        org = OrganizationFactory()
+        invoice = SalesDocumentFactory.build(organization=org, customer=CustomerFactory())
+        with pytest.raises(ValidationError):
+            invoice.clean()
+
+    def test_rejects_cross_organization_department(self):
+        customer = CustomerFactory()
+        other_customer = CustomerFactory()
+        department = CustomerDepartment(
+            organization=other_customer.organization,
+            customer=other_customer,
+            name="Other branch",
+        )
+        department.save()
+        order = SalesDocumentFactory.build(
+            organization=customer.organization,
+            customer=customer,
+            doc_type=SalesDocument.DocType.SALE_ORDER,
+            department=department,
+        )
+        with pytest.raises(ValidationError):
+            order.clean()
 
 
 # ── RNC / Cédula validators ───────────────────────────────────────────────────

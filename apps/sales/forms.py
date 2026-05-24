@@ -63,6 +63,10 @@ class CustomerForm(forms.ModelForm):
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._organization = organization
+        if organization:
+            self.fields["payment_term"].queryset = PaymentTerm.objects.filter(
+                Q(organization__isnull=True) | Q(organization=organization)
+            ).order_by("days_due", "name")
         self.fields["rnc_cedula"].help_text = ""
         self.fields["rnc_cedula"].widget.attrs.update(
             {
@@ -551,6 +555,7 @@ class SaleOrderForm(forms.ModelForm):
         if customer_id:
             self.fields["department"].queryset = CustomerDepartment.objects.filter(
                 customer_id=customer_id,
+                organization=organization,
                 is_active=True,
                 deleted_at__isnull=True,
             ).order_by("name")
@@ -679,6 +684,7 @@ class ConsolidateForm(forms.Form):
         if customer_id:
             self.fields["department"].queryset = CustomerDepartment.objects.filter(
                 customer_id=customer_id,
+                organization=organization,
                 is_active=True,
                 deleted_at__isnull=True,
             ).order_by("name")
@@ -1000,8 +1006,10 @@ class NCFSequenceForm(forms.ModelForm):
         model = NCFSequence
         fields = ["ncf_type", "series", "current_seq", "max_seq", "is_active"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if organization is not None and not self.instance.pk:
+            self.instance.organization = organization
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
