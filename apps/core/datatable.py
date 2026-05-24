@@ -78,8 +78,10 @@ def build_datatable_context(
     url="",
     row_template="",
     filter_template="",
+    ribbon_template="",
     search_placeholder="Buscar…",
     dt_id="main",
+    status_pills=None,
 ):
     """
     Standalone function that applies sort + pagination to *qs* and returns
@@ -113,10 +115,13 @@ def build_datatable_context(
         "dt_url": url,
         "dt_row_template": row_template,
         "dt_filter_template": filter_template,
+        "dt_ribbon_template": ribbon_template,
         "dt_search_placeholder": search_placeholder,
         "dt_id": dt_id,
         "dt_q": q,
         "active_filter_count": active_filter_count,
+        "dt_status_pills": status_pills or [],
+        "dt_active_status": request.GET.get("status", ""),
     }
 
 
@@ -151,10 +156,12 @@ class DataTableMixin:
     dt_url: str = ""
     dt_row_template: str = ""
     dt_filter_template: str = ""
+    dt_ribbon_template: str = ""
     dt_search_placeholder: str = "Buscar…"
     dt_id: str = "main"
+    dt_status_pills: list = []
 
-    def apply_datatable(self, qs) -> dict:
+    def apply_datatable(self, qs, status_pills=None) -> dict:
         """Apply sort + pagination to *qs*. Merge the returned dict into ctx."""
         return build_datatable_context(
             self.request,
@@ -165,6 +172,8 @@ class DataTableMixin:
             url=self.dt_url,
             row_template=self.dt_row_template,
             filter_template=self.dt_filter_template,
+            ribbon_template=self.dt_ribbon_template,
             search_placeholder=self.dt_search_placeholder,
             dt_id=self.dt_id,
+            status_pills=status_pills if status_pills is not None else self.dt_status_pills,
         )

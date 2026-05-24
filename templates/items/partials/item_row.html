@@ -4,7 +4,10 @@
   Called inside {% for row in dt_page_obj %} in components/datatable/results.html.
   The loop variable is 'row'; all cells carry data-col="<key>" for col-visibility.
 {% endcomment %}
-<tr class="{% if not row.is_active %}text-muted{% endif %}">
+<tr class="{% if not row.is_active %}text-muted{% endif %}"
+    data-pk="{{ row.pk }}"
+    data-status=""
+    data-detail-url="{% url 'items:item_detail' row.pk %}">
 
   <td data-col="code" class="font-monospace" style="font-size:.8rem">{{ row.code|default:"—" }}</td>
 
@@ -12,57 +15,76 @@
     <a href="{% url 'items:item_detail' row.pk %}"
        class="text-decoration-none fw-semibold"
        style="font-size:.85rem;color:#1e2130">{{ row.name }}</a>
-    <span class="dt-hover-actions">
-      <a href="{% url 'items:item_detail' row.pk %}"
-         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
-        <i class="bi bi-eye"></i>
-      </a>
-      {% if membership.is_admin %}
-      <button type="button" class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Editar' %}" style="font-size:0.85rem"
-              hx-get="{% url 'items:item_edit' row.pk %}"
-              hx-target="#item-modal-body"
-              hx-on::after-request="
-                document.getElementById('itemModalLabel').textContent = '{% trans "Editar artículo" %}';
-                bootstrap.Modal.getOrCreateInstance('#itemModal').show();">
-        <i class="bi bi-pencil"></i>
-      </button>
-      <button type="button"
-              class="btn btn-link btn-sm p-0 {% if row.is_active %}text-warning{% else %}text-success{% endif %}"
-              title="{% if row.is_active %}{% trans 'Desactivar' %}{% else %}{% trans 'Activar' %}{% endif %}"
-              style="font-size:0.85rem"
-              onclick="Swal.fire({
-                icon: 'question',
-                title: '{% if row.is_active %}{% trans "¿Desactivar artículo?" %}{% else %}{% trans "¿Activar artículo?" %}{% endif %}',
-                html: '<strong>{{ row.name|escapejs }}</strong>',
-                showCancelButton: true,
-                confirmButtonText: '{% trans "Confirmar" %}',
-                cancelButtonText: '{% trans "Cancelar" %}',
-              }).then(r => {
-                if (r.isConfirmed)
-                  htmx.ajax('POST', '{% url "items:item_toggle" row.pk %}',
-                    { target: '#dt-results', swap: 'innerHTML',
-                      values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
-              })">
-        <i class="bi bi-toggle-{% if row.is_active %}on{% else %}off{% endif %}"></i>
-      </button>
-      <button type="button" class="btn btn-link btn-sm p-0 text-danger" title="{% trans 'Eliminar' %}" style="font-size:0.85rem"
-              onclick="Swal.fire({
-                icon: 'warning',
-                title: '{% trans "¿Eliminar artículo?" %}',
-                html: '<strong>{{ row.name|escapejs }}</strong>',
-                showCancelButton: true,
-                confirmButtonText: '{% trans "Eliminar" %}',
-                cancelButtonText: '{% trans "Cancelar" %}',
-                confirmButtonColor: '#dc3545',
-              }).then(r => {
-                if (r.isConfirmed)
-                  htmx.ajax('POST', '{% url "items:item_delete" row.pk %}',
-                    { target: '#dt-results', swap: 'innerHTML',
-                      values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
-              })">
-        <i class="bi bi-trash"></i>
-      </button>
-      {% endif %}
+    <span class="dt-row-actions">
+      <div class="dropdown dt-kebab">
+        <button type="button"
+                class="btn btn-link btn-sm p-0 dt-kebab-btn"
+                data-bs-toggle="dropdown"
+                data-bs-boundary="viewport"
+                aria-expanded="false"
+                tabindex="-1">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <a class="dropdown-item" href="{% url 'items:item_detail' row.pk %}" data-action="view">
+              <i class="bi bi-eye me-2"></i>{% trans "Ver" %}
+            </a>
+          </li>
+          {% if membership.is_admin %}
+          <li>
+            <button type="button" class="dropdown-item" data-action="edit"
+                    hx-get="{% url 'items:item_edit' row.pk %}"
+                    hx-target="#item-modal-body"
+                    hx-on::after-request="
+                      document.getElementById('itemModalLabel').textContent = '{% trans "Editar artículo" %}';
+                      bootstrap.Modal.getOrCreateInstance('#itemModal').show();">
+              <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+            </button>
+          </li>
+          <li>
+            <button type="button"
+                    class="dropdown-item {% if row.is_active %}text-warning{% else %}text-success{% endif %}"
+                    onclick="Swal.fire({
+                      icon: 'question',
+                      title: '{% if row.is_active %}{% trans "¿Desactivar artículo?" %}{% else %}{% trans "¿Activar artículo?" %}{% endif %}',
+                      html: '<strong>{{ row.name|escapejs }}</strong>',
+                      showCancelButton: true,
+                      confirmButtonText: '{% trans "Confirmar" %}',
+                      cancelButtonText: '{% trans "Cancelar" %}',
+                    }).then(r => {
+                      if (r.isConfirmed)
+                        htmx.ajax('POST', '{% url "items:item_toggle" row.pk %}',
+                          { target: '#dt-results', swap: 'innerHTML',
+                            values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                    })">
+              <i class="bi bi-toggle-{% if row.is_active %}on{% else %}off{% endif %} me-2"></i>
+              {% if row.is_active %}{% trans "Desactivar" %}{% else %}{% trans "Activar" %}{% endif %}
+            </button>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <button type="button" class="dropdown-item text-danger" data-action="delete"
+                    onclick="Swal.fire({
+                      icon: 'warning',
+                      title: '{% trans "¿Eliminar artículo?" %}',
+                      html: '<strong>{{ row.name|escapejs }}</strong>',
+                      showCancelButton: true,
+                      confirmButtonText: '{% trans "Eliminar" %}',
+                      cancelButtonText: '{% trans "Cancelar" %}',
+                      confirmButtonColor: '#dc3545',
+                    }).then(r => {
+                      if (r.isConfirmed)
+                        htmx.ajax('POST', '{% url "items:item_delete" row.pk %}',
+                          { target: '#dt-results', swap: 'innerHTML',
+                            values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                    })">
+              <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+            </button>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </span>
   </td>
 

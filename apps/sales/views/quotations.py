@@ -34,6 +34,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_url = "sales:quotation_list"
     dt_row_template = "sales/partials/quotation_row.html"
     dt_filter_template = "sales/partials/quotation_filters.html"
+    dt_ribbon_template = "sales/partials/quotation_ribbon.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "quotations"
 
@@ -52,7 +53,22 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = QuotationFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        ctx.update(self.apply_datatable(f.qs))
+        org_qs = SalesDocument.quotations.filter(organization=org)
+        status_pills = [
+            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8",
+             "count": org_qs.filter(status="DRAFT").count()},
+            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6",
+             "count": org_qs.filter(status="CONFIRMED").count()},
+            {"value": "SENT",      "label": _("Enviada"),   "color": "#06b6d4",
+             "count": org_qs.filter(status="SENT").count()},
+            {"value": "ACCEPTED",  "label": _("Aceptada"),  "color": "#10b981",
+             "count": org_qs.filter(status="ACCEPTED").count()},
+            {"value": "REJECTED",  "label": _("Rechazada"), "color": "#ef4444",
+             "count": org_qs.filter(status="REJECTED").count()},
+            {"value": "EXPIRED",   "label": _("Expirada"),  "color": "#f97316",
+             "count": org_qs.filter(status="EXPIRED").count()},
+        ]
+        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
         if not self.request.htmx:
             agg = SalesDocument.quotations.filter(organization=org).aggregate(

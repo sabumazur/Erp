@@ -1,0 +1,30 @@
+{% load i18n %}
+{# Ribbon actions for the customer list. Rendered inside .dt-ribbon-left inside #dt-wrapper (Alpine dtTable() scope). #}
+
+<button type="button" class="btn btn-primary"
+        data-bs-toggle="modal" data-bs-target="#customerModal">
+  <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
+</button>
+
+<span class="dt-ribbon-sep"></span>
+
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct"
+        :class="{'disabled': !canAct}"
+        @click="canAct && (window.location.href = document.querySelector('tr.dt-row-selected [data-action=view]')?.href || '#')">
+  <i class="bi bi-eye me-1"></i>{% trans "Ver" %}
+</button>
+
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct"
+        :class="{'disabled': !canAct}"
+        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=edit]')?.click()">
+  <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+</button>
+
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct"
+        :class="{'disabled': !canAct, 'text-danger': canAct}"
+        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=delete]')?.click()">
+  <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
+</button>
