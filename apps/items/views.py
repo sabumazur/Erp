@@ -86,6 +86,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             url=self.dt_url,
             row_template=self.dt_row_template,
             filter_template=self.dt_filter_template,
+            ribbon_template=self.dt_ribbon_template,
             search_placeholder=self.dt_search_placeholder,
             dt_id=self.dt_id,
         ))
