@@ -320,6 +320,25 @@ tr:hover .dt-hover-actions {
   opacity: 1;
 }
 
+/* ── Row selection ──────────────────────────────────────────── */
+
+tr.dt-row-selected > td {
+  background-color: #dbeafe;
+}
+
+tr.dt-row-selected > td:first-child {
+  border-left: 3px solid var(--module-accent, #0078d4);
+  padding-left: 9px; /* compensate 3px border: original is 12px, 12-3=9 */
+}
+
+tr.dt-row-selected:hover > td {
+  background-color: #bfdbfe;
+}
+
+tr.dt-row-selected .dt-hover-actions {
+  opacity: 1; /* always show actions on selected row */
+}
+
 /* ── Table header style ─────────────────────────────────────── */
 
 .table th .btn-link {
