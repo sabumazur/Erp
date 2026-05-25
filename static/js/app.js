@@ -17,6 +17,7 @@
     initPasswordToggles();
     initSidebarState();
     initAutoPrint();
+    if (typeof initSessionTimeout === "function") initSessionTimeout();
 
     // Datatable
     initDatatableFilters();

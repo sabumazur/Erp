@@ -17,6 +17,7 @@ from .views import (
     AssignMemberTeamView,
     CreateOrganizationView,
     LeaveOrganizationView,
+    SessionKeepaliveView,
 )
 
 app_name = "accounts"
@@ -24,6 +25,7 @@ app_name = "accounts"
 urlpatterns = [
     path("", DashboardView.as_view(), name="dashboard"),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("session/keepalive/", SessionKeepaliveView.as_view(), name="session_keepalive"),
     path("switch-org/<slug:slug>/", SwitchOrganizationView.as_view(), name="switch_org"),
 
     # Organisation management

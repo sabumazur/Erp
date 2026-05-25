@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Organization, Team, Membership, Invitation
+from .models import User, Organization, Team, Membership, Invitation, SecurityAuditEvent
 from apps.core.admin import ERPHistoryAdmin
 
 
@@ -44,3 +44,23 @@ class InvitationAdmin(ERPHistoryAdmin):
     list_filter = ["organization", "role"]
     search_fields = ["email"]
     readonly_fields = ["accepted_at", "expires_at", "invited_by"]
+
+
+@admin.register(SecurityAuditEvent)
+class SecurityAuditEventAdmin(admin.ModelAdmin):
+    list_display = ["created_at", "event_type", "email", "organization", "ip_address"]
+    list_filter = ["event_type", "organization"]
+    search_fields = ["email", "ip_address", "user_agent"]
+    readonly_fields = [
+        "id", "event_type", "user", "email", "organization",
+        "ip_address", "user_agent", "metadata", "created_at",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

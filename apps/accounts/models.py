@@ -2,6 +2,7 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -219,3 +220,67 @@ class Invitation(ERPBaseModel):
     @property
     def is_pending(self):
         return self.accepted_at is None and self.deleted_at is None and not self.is_expired
+
+
+class SecurityAuditEventQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError(_("Los eventos de seguridad no se pueden modificar."))
+
+    def delete(self):
+        raise ValidationError(_("Los eventos de seguridad solo se eliminan por retención."))
+
+    def purge_before(self, cutoff):
+        return models.QuerySet.delete(self.filter(created_at__lt=cutoff))
+
+
+class SecurityAuditEvent(models.Model):
+    class EventType(models.TextChoices):
+        LOGIN_SUCCESS = "login_success", _("Inicio de sesión exitoso")
+        LOGIN_FAILED = "login_failed", _("Inicio de sesión fallido")
+        LOGOUT = "logout", _("Cierre de sesión")
+        SESSION_IDLE_EXPIRED = "session_idle_expired", _("Sesión expirada por inactividad")
+        SESSION_ABSOLUTE_EXPIRED = "session_absolute_expired", _("Sesión expirada por límite máximo")
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event_type = models.CharField(max_length=40, choices=EventType.choices, db_index=True)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="security_audit_events",
+    )
+    email = models.EmailField(blank=True)
+    organization = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="security_audit_events",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=200, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    objects = SecurityAuditEventQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("evento de seguridad")
+        verbose_name_plural = _("eventos de seguridad")
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["organization", "-created_at"]),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError(_("Los eventos de seguridad no se pueden modificar."))
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+            raise ValidationError(_("Los eventos de seguridad solo se eliminan por retención."))
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} - {self.email or self.user_id or 'anonymous'}"

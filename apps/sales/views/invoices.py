@@ -77,34 +77,6 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ]
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
-        if not self.request.htmx:
-            today = date.today()
-            pending = Q(status__in=[
-                SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE,
-            ]) & ~Q(ncf_type__in=SalesDocument.NOTE_TYPES)
-            agg = SalesDocument.invoices.filter(organization=org).with_signed_totals().aggregate(
-                total_count=Count("id"),
-                pending_count=Count("id", filter=pending),
-                overdue_count=Count("id", filter=Q(status=SalesDocument.Status.OVERDUE)),
-                paid_month=Sum("signed_total", filter=Q(
-                    status=SalesDocument.Status.PAID,
-                    issue_date__month=today.month,
-                    issue_date__year=today.year,
-                )),
-            )
-            paid_total = agg["paid_month"] or Decimal("0.00")
-            ctx["stats"] = [
-                {"label": _("Total facturas"),      "value": agg["total_count"],
-                 "icon": "bi-receipt",              "color": "primary"},
-                {"label": _("Pendientes de cobro"), "value": agg["pending_count"],
-                 "icon": "bi-hourglass-split",      "color": "info"},
-                {"label": _("Vencidas"),            "value": agg["overdue_count"],
-                 "icon": "bi-exclamation-circle",   "color": "danger",
-                 "trend": _("requieren atención") if agg["overdue_count"] else None,
-                 "trend_up": False if agg["overdue_count"] else None},
-                {"label": _("Cobrado este mes"),    "value": f"RD$ {paid_total:,.2f}",
-                 "icon": "bi-cash-coin",            "color": "success"},
-            ]
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

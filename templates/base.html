@@ -60,6 +60,10 @@
 <script src="{% static 'js/payment-form.js' %}"></script>
 <script src="{% static 'js/modals.js' %}"></script>
 <script src="{% static 'js/dashboard.js' %}"></script>
+{% if user.is_authenticated %}
+<script id="session-timeout-config" type="application/json">{"expiresAt":"{{ request.session_expires_at|date:'c'|escapejs }}","expiryReason":"{{ request.session_expiry_reason|escapejs }}","serverNow":"{{ request.session_server_now|date:'c'|escapejs }}","warningSeconds":{{ request.session_warning_seconds }},"keepaliveUrl":"{% url 'accounts:session_keepalive' %}","loginUrl":"{% url 'account_login' %}"}</script>
+<script src="{% static 'js/session-timeout.js' %}"></script>
+{% endif %}
 <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

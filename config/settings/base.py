@@ -23,6 +23,7 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.usersessions",
     "guardian",
     "crispy_forms",
     "crispy_bootstrap5",
@@ -55,6 +56,8 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "apps.accounts.middleware.OrganizationMiddleware",
+    "apps.accounts.middleware.SessionTimeoutMiddleware",
+    "allauth.usersessions.middleware.UserSessionsMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -117,6 +120,14 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 LOGIN_REDIRECT_URL = "accounts:dashboard"
 LOGOUT_REDIRECT_URL = "account_login"
 LOGIN_URL = "account_login"
+
+SESSION_IDLE_TIMEOUT_SECONDS = config("SESSION_IDLE_TIMEOUT_SECONDS", cast=int, default=20 * 60)
+SESSION_WARNING_SECONDS = config("SESSION_WARNING_SECONDS", cast=int, default=2 * 60)
+SESSION_ABSOLUTE_TIMEOUT_SECONDS = config("SESSION_ABSOLUTE_TIMEOUT_SECONDS", cast=int, default=8 * 60 * 60)
+SESSION_COOKIE_AGE = SESSION_ABSOLUTE_TIMEOUT_SECONDS
+SECURITY_AUDIT_RETENTION_DAYS = config("SECURITY_AUDIT_RETENTION_DAYS", cast=int, default=365)
+
+USERSESSIONS_TRACK_ACTIVITY = True
 
 ACCOUNT_RATE_LIMITS = {
     "login_failed":          "5/300s",   # 5 failed attempts → 5-minute lockout

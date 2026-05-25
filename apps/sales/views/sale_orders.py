@@ -72,25 +72,6 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ]
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
-        if not self.request.htmx:
-            agg = SalesDocument.sale_orders.filter(organization=org).aggregate(
-                total_count=Count("id"),
-                pending_count=Count("id", filter=Q(status__in=[
-                    SalesDocument.Status.DRAFT, SalesDocument.Status.CONFIRMED,
-                ])),
-                delivered_count=Count("id", filter=Q(status=SalesDocument.Status.DELIVERED)),
-                invoiced_count=Count("id", filter=Q(status=SalesDocument.Status.INVOICED)),
-            )
-            ctx["stats"] = [
-                {"label": _("Total órdenes"),   "value": agg["total_count"],
-                 "icon": "bi-cart3",            "color": "primary"},
-                {"label": _("Pendientes"),      "value": agg["pending_count"],
-                 "icon": "bi-hourglass-split",  "color": "warning"},
-                {"label": _("Entregadas"),      "value": agg["delivered_count"],
-                 "icon": "bi-truck",            "color": "info"},
-                {"label": _("Facturadas"),      "value": agg["invoiced_count"],
-                 "icon": "bi-receipt-cutoff",   "color": "success"},
-            ]
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

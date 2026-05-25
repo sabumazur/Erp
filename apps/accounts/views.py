@@ -10,6 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Sum
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -116,6 +117,16 @@ class ERPBaseViewMixin(LoginRequiredMixin):
             ),
             **kwargs,
         }
+
+
+class SessionKeepaliveView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        return JsonResponse({
+            "expires_at": request.session_expires_at.isoformat(),
+            "expiry_reason": request.session_expiry_reason,
+            "warning_seconds": settings.SESSION_WARNING_SECONDS,
+            "server_now": request.session_server_now.isoformat(),
+        })
 
 
 # ── Dashboard & Profile ───────────────────────────────────────────────────────

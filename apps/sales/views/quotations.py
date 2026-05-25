@@ -70,23 +70,6 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ]
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
-        if not self.request.htmx:
-            agg = SalesDocument.quotations.filter(organization=org).aggregate(
-                total_count=Count("id"),
-                draft_count=Count("id", filter=Q(status=SalesDocument.Status.DRAFT)),
-                sent_count=Count("id", filter=Q(status=SalesDocument.Status.SENT)),
-                accepted_count=Count("id", filter=Q(status=SalesDocument.Status.ACCEPTED)),
-            )
-            ctx["stats"] = [
-                {"label": _("Total cotizaciones"), "value": agg["total_count"],
-                 "icon": "bi-file-text",           "color": "primary"},
-                {"label": _("Borradores"),          "value": agg["draft_count"],
-                 "icon": "bi-pencil-square",        "color": "secondary"},
-                {"label": _("Enviadas"),            "value": agg["sent_count"],
-                 "icon": "bi-send",                 "color": "info"},
-                {"label": _("Aceptadas"),           "value": agg["accepted_count"],
-                 "icon": "bi-check-circle",         "color": "success"},
-            ]
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

@@ -60,30 +60,6 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
-        if not self.request.htmx:
-            today = date.today()
-            agg = Payment.objects.filter(organization=org).aggregate(
-                total_count=Count("id"),
-                total_amount=Sum("amount"),
-                month_count=Count("id", filter=Q(
-                    date__month=today.month, date__year=today.year,
-                )),
-                month_amount=Sum("amount", filter=Q(
-                    date__month=today.month, date__year=today.year,
-                )),
-            )
-            total_amount = agg["total_amount"] or Decimal("0.00")
-            month_amount = agg["month_amount"] or Decimal("0.00")
-            ctx["stats"] = [
-                {"label": _("Total pagos"),       "value": agg["total_count"],
-                 "icon": "bi-cash-stack",         "color": "primary"},
-                {"label": _("Monto total"),        "value": f"RD$ {total_amount:,.2f}",
-                 "icon": "bi-wallet2",             "color": "success"},
-                {"label": _("Pagos este mes"),     "value": agg["month_count"],
-                 "icon": "bi-calendar-check",      "color": "info"},
-                {"label": _("Cobrado este mes"),   "value": f"RD$ {month_amount:,.2f}",
-                 "icon": "bi-graph-up-arrow",      "color": "warning"},
-            ]
         ctx["module"] = "payment"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

@@ -1,12 +1,21 @@
+import logging
+
 from django.contrib import messages
+from django.contrib.auth.signals import (
+    user_logged_in as django_user_logged_in,
+    user_logged_out,
+    user_login_failed,
+)
 from django.db import transaction, IntegrityError
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.text import slugify
 from allauth.account.signals import user_logged_in
-from .models import User, Organization, Membership, Invitation
+from .models import User, Organization, Membership, Invitation, SecurityAuditEvent
 from .permissions import assign_org_permissions, revoke_org_permissions
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=User)
@@ -98,3 +107,65 @@ def accept_pending_invitation(sender, request, user, **kwargs):
         if created:
             messages.success(request, f"¡Te has unido a {invitation.organization.name}!")
         request.session["active_org_slug"] = invitation.organization.slug
+
+
+def _security_event_request_fields(request):
+    if request is None:
+        return {"ip_address": None, "user_agent": ""}
+    return {
+        "ip_address": request.META.get("REMOTE_ADDR") or None,
+        "user_agent": request.META.get("HTTP_USER_AGENT", "")[:200],
+    }
+
+
+def _record_security_event(**fields):
+    try:
+        SecurityAuditEvent.objects.create(**fields)
+    except Exception:
+        logger.exception("Unable to record security audit event '%s'.", fields["event_type"])
+
+
+@receiver(django_user_logged_in)
+def record_login_success(sender, request, user, **kwargs):
+    if request is not None:
+        logged_in_at = timezone.now().isoformat()
+        request.session.setdefault("session_started_at", logged_in_at)
+        request.session["session_last_activity_at"] = logged_in_at
+    _record_security_event(
+        event_type=SecurityAuditEvent.EventType.LOGIN_SUCCESS,
+        user=user,
+        email=user.email,
+        organization=getattr(request, "organization", None),
+        **_security_event_request_fields(request),
+    )
+
+
+@receiver(user_login_failed)
+def record_login_failure(sender, credentials, request, **kwargs):
+    attempted_email = (
+        credentials.get("login")
+        or credentials.get("email")
+        or credentials.get("username")
+        or ""
+    ).lower()
+    user = User.objects.filter(email__iexact=attempted_email).first() if attempted_email else None
+    _record_security_event(
+        event_type=SecurityAuditEvent.EventType.LOGIN_FAILED,
+        user=user,
+        email=attempted_email,
+        **_security_event_request_fields(request),
+    )
+
+
+@receiver(user_logged_out)
+def record_logout(sender, request, user, **kwargs):
+    if user is None:
+        return
+    event_type = getattr(request, "_security_logout_reason", SecurityAuditEvent.EventType.LOGOUT)
+    _record_security_event(
+        event_type=event_type,
+        user=user,
+        email=user.email,
+        organization=getattr(request, "organization", None),
+        **_security_event_request_fields(request),
+    )
