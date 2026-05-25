@@ -34,6 +34,8 @@ python manage.py cleanup_ghost_organizations          # Delete empty auto-create
 python manage.py cleanup_ghost_organizations --dry-run # Preview without deleting
 python manage.py empty_sales_doc               # Delete all invoices/quotations/sale orders + payments, reset sequences
 python manage.py empty_sales_doc --no-input    # Skip confirmation prompt
+python manage.py audit_module_access           # Read-only audit of team module access config
+python manage.py audit_module_access --strict  # Exit non-zero if audit findings found
 ```
 
 Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
@@ -126,21 +128,54 @@ All list views use shared datatable pattern for sorting, pagination, HTMX filter
 **`DataTableMixin`** — add to any `ListView`/`View`; set class attrs:
 
 ```python
-dt_columns: list[DTColumn]     # column definitions (key, label, sortable, visible, numeric)
+dt_columns: list[DTColumn]     # column definitions (key, label, sortable, visible, numeric, classes)
 dt_default_sort: str           # e.g. "name" or "-created_at"
-dt_page_size: int              # rows per page (default 25)
+dt_page_size: int              # rows per page (default 15)
 dt_url: str                    # URL name for HTMX refreshes, e.g. "items:item_list"
 dt_row_template: str           # per-row partial template path
+dt_ribbon_template: str        # command ribbon actions partial (rendered in .dt-ribbon-right)
 dt_filter_template: str        # filter offcanvas body template path (optional)
 dt_search_placeholder: str     # search input placeholder
 dt_id: str                     # localStorage key for column visibility
+dt_status_pills: list          # list of (value, label) tuples for status filter pills
 ```
 
-Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. HTMX requests → return `components/datatable/results.html`. Use `build_datatable_context()` in action views needing table refresh after CRUD.
+Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. Pass `status_pills=` kwarg to override `dt_status_pills` per-request. HTMX requests → return `components/datatable/results.html`. Use `build_datatable_context()` in action views needing table refresh after CRUD.
 
 Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
 
-**Row action pattern** — all list row templates use hover-reveal actions via `.dt-hover-actions` (CSS in `static/css/documents.css`). Actions are embedded in the primary text cell (not a separate action column), hidden at `opacity:0` and revealed on `tr:hover`. Buttons use `btn btn-link btn-sm p-0 text-secondary` (edit/view) or `text-danger` (delete) or `text-warning`/`text-success` (toggle). Do **not** add a separate action `<td>` — embed actions in the name/doc_number cell using `<span class="dt-hover-actions">`.
+**Command ribbon pattern** — each list view has a `_ribbon.html` partial (e.g. `sales/partials/invoice_ribbon.html`). Registered via `dt_ribbon_template`. Rendered inside `.dt-ribbon-right`. Ribbon buttons bind to Alpine.js row selection state:
+- `canAct` — `true` when a row is selected
+- `selectedStatus` — `data-status` value of selected `<tr>`
+- `selectedPk` — `data-pk` value of selected `<tr>`
+- `:disabled="!canAct"` gates context-sensitive buttons (Ver, Editar, etc.)
+- `:disabled="!canAct || selectedStatus !== 'DRAFT'"` for edit (status-gated)
+
+**Row `<tr>` data attributes** (required for ribbon + selection):
+```html
+<tr data-pk="{{ row.pk }}"
+    data-status="{{ row.status }}"
+    data-detail-url="{% url 'sales:model_detail' row.pk %}">
+```
+
+**Row action pattern** — all list row templates use a kebab dropdown (`.dt-kebab`) embedded in the primary text cell. Do **not** add a separate action `<td>` and do **not** use the old `.dt-hover-actions` pattern. Structure:
+```html
+<span class="dt-row-actions">
+  <div class="dropdown dt-kebab">
+    <button type="button" class="btn btn-link btn-sm p-0 dt-kebab-btn"
+            data-bs-toggle="dropdown" data-bs-boundary="viewport" tabindex="-1">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+      <li><a class="dropdown-item" href="..." data-action="view">...</a></li>
+      {% if row.status == 'DRAFT' %}
+      <li><a class="dropdown-item" href="..." data-action="edit">...</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</span>
+```
+`data-action="view"` / `data-action="edit"` on kebab items let ribbon buttons locate the correct link via `querySelector('[data-action=view]')`. Selection clears automatically on HTMX swap.
 
 ### Full-text search (`apps/core/search.py`)
 
@@ -259,7 +294,7 @@ HTMX-aware: `request.htmx` → partial response with `HX-Trigger` instead of red
 
 ### Items app (`apps/items/`)
 
-`Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for `SALE`/`BOTH` via `ItemCodeSequence.generate()` if blank. `cost_price` nullable; `margin` valid only when set. `InvoiceItem` FK to `Item` optional — line items can be free-text.
+`Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for `SALE`/`BOTH` via `ItemCodeSequence.generate()` if blank — generation retries up to 5× on uniqueness race (checks `all_objects` including soft-deleted). `cost_price` nullable; `margin` valid only when set. `unit_price` and `cost_price` have `MinValueValidator(0.00)`. `InvoiceItem` FK to `Item` optional — line items can be free-text.
 
 Search: GIN trgm on `name`/`code` (migration `items/0006`); item list uses `fts_search` with `fts_fields=["name"]`, `trgm_fields=["code"]`.
 
