@@ -3,13 +3,47 @@ apps/invoices/signals.py
 Post-save signals that keep SalesDocument totals in sync whenever line items change.
 """
 import logging
+import time
 
+from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from .models import SalesDocumentItem
+from .models import SalesDocument, SalesDocumentItem, Payment
 
 logger = logging.getLogger(__name__)
+
+
+def _bust_dashboard(org_id):
+    cache.delete(f"dashboard:{org_id}")
+
+
+def _bust_aging(org_id):
+    cache.set(f"aging_gen:{org_id}", int(time.time()), timeout=None)
+
+
+@receiver(post_save, sender=SalesDocument)
+def invalidate_dashboard_on_doc_save(sender, instance, **kwargs):
+    _bust_dashboard(instance.organization_id)
+    _bust_aging(instance.organization_id)
+
+
+@receiver(post_delete, sender=SalesDocument)
+def invalidate_dashboard_on_doc_delete(sender, instance, **kwargs):
+    _bust_dashboard(instance.organization_id)
+    _bust_aging(instance.organization_id)
+
+
+@receiver(post_save, sender=Payment)
+def invalidate_dashboard_on_payment_save(sender, instance, **kwargs):
+    _bust_dashboard(instance.organization_id)
+    _bust_aging(instance.organization_id)
+
+
+@receiver(post_delete, sender=Payment)
+def invalidate_dashboard_on_payment_delete(sender, instance, **kwargs):
+    _bust_dashboard(instance.organization_id)
+    _bust_aging(instance.organization_id)
 
 
 @receiver(post_save, sender=SalesDocumentItem)
