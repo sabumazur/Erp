@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
@@ -149,65 +150,11 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         from apps.sales.models import SalesDocument, Customer, Payment
 
         today = ctx["today"]
-        month_start = today.replace(day=1)
         _zero = Decimal("0")
 
         _inv = SalesDocument.invoices.filter(organization=org, deleted_at__isnull=True).with_signed_totals()
-        _quot = SalesDocument.quotations.filter(organization=org, deleted_at__isnull=True)
-        _so = SalesDocument.sale_orders.filter(organization=org, deleted_at__isnull=True)
 
-        # ── KPIs ──────────────────────────────────────────────────────────────
-
-        ctx["month_invoiced"] = (
-            _inv.filter(
-                issue_date__gte=month_start,
-                status__in=[
-                    SalesDocument.Status.CONFIRMED,
-                    SalesDocument.Status.SENT,
-                    SalesDocument.Status.PAID,
-                    SalesDocument.Status.OVERDUE,
-                ],
-            )
-            .aggregate(t=Sum("signed_total"))["t"] or _zero
-        )
-
-        ctx["month_collected"] = (
-            Payment.objects.for_org(org)
-            .filter(date__gte=month_start)
-            .aggregate(t=Sum("amount"))["t"] or _zero
-        )
-
-        ctx["outstanding"] = (
-            _inv.filter(
-                status__in=[
-                    SalesDocument.Status.CONFIRMED,
-                    SalesDocument.Status.SENT,
-                    SalesDocument.Status.OVERDUE,
-                ],
-            )
-            .aggregate(t=Sum("signed_total"))["t"] or _zero
-        )
-
-        ctx["overdue_total"] = (
-            _inv.filter(status=SalesDocument.Status.OVERDUE)
-            .aggregate(t=Sum("signed_total"))["t"] or _zero
-        )
-
-        # ── Counts ────────────────────────────────────────────────────────────
-
-        ctx["customer_count"] = Customer.objects.for_org(org).count()
-
-        ctx["pending_quotations"] = _quot.filter(
-            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT],
-        ).count()
-
-        ctx["pending_sale_orders"] = _so.filter(
-            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.DELIVERED],
-        ).count()
-
-        ctx["overdue_count"] = _inv.filter(status=SalesDocument.Status.OVERDUE).count()
-
-        # ── Tables ────────────────────────────────────────────────────────────
+        # ── Tables (always fresh — simple selects, limit 6-8) ─────────────────
 
         ctx["recent_invoices"] = (
             _inv.exclude(status=SalesDocument.Status.DRAFT)
@@ -227,7 +174,66 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .order_by("-date")[:6]
         )
 
-        # ── Charts ────────────────────────────────────────────────────────────
+        # ── KPIs + charts (cached 15 min, invalidated by save/delete signals) ──
+
+        _cache_key = f"dashboard:{org.pk}"
+        cached = cache.get(_cache_key)
+        if cached is not None:
+            ctx.update(cached)
+            return ctx
+
+        month_start = today.replace(day=1)
+        _quot = SalesDocument.quotations.filter(organization=org, deleted_at__isnull=True)
+        _so = SalesDocument.sale_orders.filter(organization=org, deleted_at__isnull=True)
+
+        month_invoiced = (
+            _inv.filter(
+                issue_date__gte=month_start,
+                status__in=[
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.PAID,
+                    SalesDocument.Status.OVERDUE,
+                ],
+            )
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
+        )
+
+        month_collected = (
+            Payment.objects.for_org(org)
+            .filter(date__gte=month_start)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
+
+        outstanding = (
+            _inv.filter(
+                status__in=[
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.OVERDUE,
+                ],
+            )
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
+        )
+
+        overdue_total = (
+            _inv.filter(status=SalesDocument.Status.OVERDUE)
+            .aggregate(t=Sum("signed_total"))["t"] or _zero
+        )
+
+        customer_count = Customer.objects.for_org(org).count()
+
+        pending_quotations = _quot.filter(
+            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.SENT],
+        ).count()
+
+        pending_sale_orders = _so.filter(
+            status__in=[SalesDocument.Status.CONFIRMED, SalesDocument.Status.DELIVERED],
+        ).count()
+
+        overdue_count = _inv.filter(status=SalesDocument.Status.OVERDUE).count()
+
+        # Charts
 
         from django.db.models.functions import TruncMonth
 
@@ -271,9 +277,9 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .annotate(total=Sum("amount"))
         }
 
-        ctx["chart_months"] = [f"{_MONTH_ES[m.month - 1]} {m.year}" for m in months_list]
-        ctx["chart_invoiced"] = [inv_by_month.get(m, 0.0) for m in months_list]
-        ctx["chart_collected"] = [pay_by_month.get(m, 0.0) for m in months_list]
+        chart_months = [f"{_MONTH_ES[m.month - 1]} {m.year}" for m in months_list]
+        chart_invoiced = [inv_by_month.get(m, 0.0) for m in months_list]
+        chart_collected = [pay_by_month.get(m, 0.0) for m in months_list]
 
         _STATUS_LABELS = {
             SalesDocument.Status.CONFIRMED: "Confirmada",
@@ -296,11 +302,9 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         }
         ordered_statuses = [s for s in _STATUS_LABELS if status_counts_qs.get(s, 0) > 0]
 
-        ctx["chart_status_labels"] = [_STATUS_LABELS[s] for s in ordered_statuses]
-        ctx["chart_status_counts"] = [status_counts_qs[s] for s in ordered_statuses]
-        ctx["chart_status_colors"] = [_STATUS_COLORS[s] for s in ordered_statuses]
-
-        # ── Customer chart: top 6 by invoiced amount, monthly breakdown ───────
+        chart_status_labels = [_STATUS_LABELS[s] for s in ordered_statuses]
+        chart_status_counts = [status_counts_qs[s] for s in ordered_statuses]
+        chart_status_colors = [_STATUS_COLORS[s] for s in ordered_statuses]
 
         _CUSTOMER_COLORS = [
             "rgba(13,110,253,0.8)",
@@ -343,7 +347,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             for row in cust_monthly:
                 cust_data[row["customer__id"]][row["month"]] = float(row["total"])
 
-            ctx["chart_customer_datasets"] = [
+            chart_customer_datasets = [
                 {
                     "label": c["customer__name"],
                     "data": [cust_data[c["customer__id"]].get(m, 0.0) for m in months_list],
@@ -353,8 +357,27 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
                 for i, c in enumerate(top_customers)
             ]
         else:
-            ctx["chart_customer_datasets"] = []
+            chart_customer_datasets = []
 
+        computed = {
+            "month_invoiced": month_invoiced,
+            "month_collected": month_collected,
+            "outstanding": outstanding,
+            "overdue_total": overdue_total,
+            "customer_count": customer_count,
+            "pending_quotations": pending_quotations,
+            "pending_sale_orders": pending_sale_orders,
+            "overdue_count": overdue_count,
+            "chart_months": chart_months,
+            "chart_invoiced": chart_invoiced,
+            "chart_collected": chart_collected,
+            "chart_status_labels": chart_status_labels,
+            "chart_status_counts": chart_status_counts,
+            "chart_status_colors": chart_status_colors,
+            "chart_customer_datasets": chart_customer_datasets,
+        }
+        cache.set(_cache_key, computed, timeout=900)
+        ctx.update(computed)
         return ctx
 
 

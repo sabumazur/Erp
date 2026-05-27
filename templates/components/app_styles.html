@@ -25,6 +25,20 @@
 .app-header-sub { font-size: .8rem; color: #6b7280; margin: 3px 0 0; }
 .app-header-actions { display: flex; gap: .5rem; flex-shrink: 0; }
 
+/* ── Filter offcanvas: size to content, cap at 50vh ─────── */
+#dt-filter-offcanvas {
+  height: auto;
+  max-height: 50vh;
+}
+#dt-filter-offcanvas .offcanvas-body {
+  overflow-y: auto;
+}
+#dt-filter-offcanvas .btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
 /* ── Filter panel ────────────────────────────────────────── */
 .app-filter-panel {
   background: #f9fafb;

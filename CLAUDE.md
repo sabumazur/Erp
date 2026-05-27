@@ -144,6 +144,8 @@ Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. Pa
 
 Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
 
+**Filter offcanvas (`#dt-filter-offcanvas`)** — Bootstrap default `offcanvas-end` sets `height: 100%`. Overridden in `templates/components/app_styles.html` to `height: auto; max-height: 50vh` so it sizes to content and caps at half viewport. Action buttons inside use `btn-outline-secondary` (not `btn-primary`) to match app-wide button style.
+
 **Command ribbon pattern** — each list view has a `_ribbon.html` partial (e.g. `sales/partials/invoice_ribbon.html`). Registered via `dt_ribbon_template`. Rendered inside `.dt-ribbon-right`. Ribbon buttons bind to Alpine.js row selection state:
 - `canAct` — `true` when a row is selected
 - `selectedStatus` — `data-status` value of selected `<tr>`
@@ -190,6 +192,21 @@ fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish")
 - GIN indexes for FTS + trigram per-model in migrations `invoices/0018` + `items/0006`.
 
 All customer, invoice, payment, quotation, sale order, item list views call `fts_search`.
+
+### Caching
+
+Dev uses `LocMemCache` (`config/settings/development.py`). Prod uses `DatabaseCache` with 5-min TTL (`config/settings/production.py`).
+
+**Dashboard cache** (`apps/accounts/views.py` `DashboardView`):
+- Key: `f"dashboard:{org.pk}"`, TTL 900s.
+- Cached: all KPI aggregations + chart data (primitive types only — Decimal, int, list, dict).
+- **Not cached:** table rows (`recent_invoices`, `overdue_invoices`, `recent_payments`) — model instances go stale.
+- Invalidated by signals in `apps/sales/signals.py` via `_bust_dashboard(org_id)` → `cache.delete(f"dashboard:{org_id}")` on `post_save`/`post_delete` of `SalesDocument` and `Payment`.
+
+**Report cache** (`apps/sales/views/reports.py`):
+- Key: `f"report_{name}:{org.pk}:{request.GET.urlencode()}"`, TTL 600s.
+- Applied to: `ReportAgingView`, `ReportStatementView`, `ReportSalesByPeriodView`, `ReportInvoicesByCustomerView`, `ReportCollectionsView`, `ReportITBISView`, `ReportSalesByNCFTypeView`.
+- **Not cached:** `Report607View` / `Report608View` (return file downloads with `Content-Disposition`), `customers` dropdown (always fresh), error and empty states.
 
 ### Reports (`apps/sales/views/reports.py`)
 
