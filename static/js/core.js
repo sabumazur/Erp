@@ -44,6 +44,21 @@
     if (el) el.textContent = text;
   }
 
+  // dt-kebab dropdowns: fixed strategy escapes overflow:hidden containers;
+  // auto placement picks best direction when table has few rows.
+  (function patchDtKebabDropdowns() {
+    if (typeof bootstrap === "undefined" || !bootstrap.Dropdown) return;
+    var orig = bootstrap.Dropdown.prototype._getPopperConfig;
+    bootstrap.Dropdown.prototype._getPopperConfig = function () {
+      var cfg = orig.call(this);
+      if (this._element && this._element.closest(".dt-kebab")) {
+        cfg.strategy = "fixed";
+        cfg.placement = "auto";
+      }
+      return cfg;
+    };
+  })();
+
   window.SabSysCore = { getConfig: getConfig, ready: ready, parseJsonScript: parseJsonScript, escapeHtml: escapeHtml, formatMoney: formatMoney, setText: setText };
   window.getConfig = getConfig;
   window.parseJsonScript = parseJsonScript;

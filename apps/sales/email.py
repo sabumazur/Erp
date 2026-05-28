@@ -53,28 +53,60 @@ def send_invoice_email(invoice: SalesDocument, request) -> bool:
     plain = f"Factura {doc_ref}\nTotal: {invoice.total}\n\nRevise este correo en un cliente compatible con HTML."
     msg = EmailMultiAlternatives(subject, plain, settings.DEFAULT_FROM_EMAIL, [to_email])
     msg.attach_alternative(html_body, "text/html")
+    pdf = _invoice_pdf_bytes(invoice, request)
+    if pdf:
+        msg.attach(f"factura_{doc_ref}.pdf", pdf, "application/pdf")
     msg.send(fail_silently=False)
     return True
 
 
-def _quotation_pdf_bytes(quotation: SalesDocument, request) -> bytes | None:
-    """Generate PDF from quotation_print.html via WeasyPrint. Returns None if unavailable."""
+def _pdf_bytes(template: str, context: dict, request) -> bytes | None:
+    """Render template to PDF via WeasyPrint. Returns None if WeasyPrint unavailable."""
     try:
         from weasyprint import HTML as WeasyprintHTML
     except ImportError:
         return None
-    org = quotation.organization
-    html_string = render_to_string(
+    html_string = render_to_string(template, context, request=request)
+    return WeasyprintHTML(string=html_string, base_url=request.build_absolute_uri("/")).write_pdf()
+
+
+def _quotation_pdf_bytes(quotation: SalesDocument, request) -> bytes | None:
+    return _pdf_bytes(
         "sales/quotation_print.html",
         {
             "quotation": quotation,
             "items": quotation.items.all(),
-            "org": org,
+            "org": quotation.organization,
             "sender_signature_url": _signature_url(request.user, request),
         },
-        request=request,
+        request,
     )
-    return WeasyprintHTML(string=html_string, base_url=request.build_absolute_uri("/")).write_pdf()
+
+
+def _invoice_pdf_bytes(invoice: SalesDocument, request) -> bytes | None:
+    return _pdf_bytes(
+        "sales/invoice_print.html",
+        {
+            "invoice": invoice,
+            "items": invoice.items.all(),
+            "org": invoice.organization,
+            "sender_signature_url": _signature_url(request.user, request),
+        },
+        request,
+    )
+
+
+def _sale_order_pdf_bytes(order: SalesDocument, request) -> bytes | None:
+    return _pdf_bytes(
+        "sales/sale_order_print.html",
+        {
+            "order": order,
+            "items": order.items.all(),
+            "org": order.organization,
+            "sender_signature_url": _signature_url(request.user, request),
+        },
+        request,
+    )
 
 
 def send_quotation_email(quotation: SalesDocument, request) -> bool:
@@ -120,5 +152,8 @@ def send_sale_order_email(order: SalesDocument, request) -> bool:
     plain = f"Orden de Venta {doc_ref}\nTotal: {order.total}\n\nRevise este correo en un cliente compatible con HTML."
     msg = EmailMultiAlternatives(subject, plain, settings.DEFAULT_FROM_EMAIL, [to_email])
     msg.attach_alternative(html_body, "text/html")
+    pdf = _sale_order_pdf_bytes(order, request)
+    if pdf:
+        msg.attach(f"orden_{doc_ref}.pdf", pdf, "application/pdf")
     msg.send(fail_silently=False)
     return True
