@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{% trans "Formato 606 — Compras" %}{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{% trans "Formato 606 — Compras" %}</h1>
+    <p class="text-muted mb-0" style="font-size:.875rem">
+      {% trans "Reporte mensual de compras para la DGII (Norma General 07-18)." %}
+    </p>
+  </div>
+  <form method="get" class="d-flex align-items-end gap-2">
+    <div>
+      <label class="form-label small mb-1">{% trans "Mes" %}</label>
+      <select name="month" class="form-select form-select-sm">
+        {% for num, name in months %}
+        <option value="{{ num }}"{% if num == month %} selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label small mb-1">{% trans "Año" %}</label>
+      <input type="number" name="year" value="{{ year }}" min="2020"
+             class="form-control form-control-sm" style="width:80px">
+    </div>
+    <button type="submit" class="btn btn-outline-secondary btn-sm">{% trans "Filtrar" %}</button>
+    <a href="?month={{ month }}&year={{ year }}&format=csv" class="btn btn-sm"
+       style="background:#D1E7DD;color:#0A6640;border:none;font-weight:500">
+      <i class="bi bi-download me-1"></i>{% trans "Descargar CSV" %}
+    </a>
+  </form>
+</div>
+
+{% if invoices %}
+<div class="app-table-wrap mb-3">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>{% trans "RNC Proveedor" %}</th>
+          <th>{% trans "NCF" %}</th>
+          <th>{% trans "Tipo" %}</th>
+          <th>{% trans "Fecha" %}</th>
+          <th class="text-end">{% trans "Subtotal" %}</th>
+          <th class="text-end">{% trans "ITBIS 18%" %}</th>
+          <th class="text-end">{% trans "ITBIS 16%" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr>
+          <td class="font-monospace small">{{ inv.supplier_rnc|default:"—" }}</td>
+          <td class="font-monospace small">{{ inv.supplier_ncf|default:"—" }}</td>
+          <td class="small">{{ inv.supplier_ncf_type|default:"—" }}</td>
+          <td class="small">{{ inv.issue_date|date:"d/m/Y" }}</td>
+          <td class="text-end font-monospace small">{{ inv.subtotal|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace small">{{ inv.itbis_18|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace small">{{ inv.itbis_16|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace small fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-end fw-bold">{% trans "Totales" %}</td>
+          <td class="text-end font-monospace fw-bold">{{ total_subtotal|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace fw-bold" colspan="2">{{ total_itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace fw-bold">{{ total_total|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-file-earmark-spreadsheet" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
+  {% trans "No hay facturas confirmadas para el período seleccionado." %}
+</div>
+{% endif %}
+
+<div class="d-flex align-items-start gap-2 p-3 rounded-3 mt-3"
+     style="background:#EFF6FF;border:1px solid #BFDBFE;font-size:.875rem">
+  <i class="bi bi-calendar-event-fill mt-1 flex-shrink-0" style="color:#1D4ED8"></i>
+  <span style="color:#1E3A8A">
+    <strong>{% trans "Próximo vencimiento DGII" %}: {{ dgii_deadline|date:"j \d\e F \d\e Y" }}.</strong>
+    {% trans "Los archivos generados deben cargarse en la Oficina Virtual (OFV) de la DGII. Verifique los datos antes de remitir." %}
+  </span>
+</div>
+
+{% endblock %}

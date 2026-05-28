@@ -1,0 +1,6 @@
+{% load i18n %}
+{% if supplier %}
+<option value="{{ supplier.pk }}" selected>{{ supplier.name }}{% if supplier.id_number %} ({{ supplier.id_number }}){% endif %}</option>
+{% else %}
+<option value="">{% trans "Error al crear el proveedor." %}</option>
+{% endif %}

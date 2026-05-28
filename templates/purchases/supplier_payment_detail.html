@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{% trans "Pago a proveedor" %} — {{ payment.date|date:"d/m/Y" }}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 38%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Comprobante de pago" %}</h4>
+    <p class="app-header-sub">{{ payment.supplier.name }} · {{ payment.date|date:"d/m/Y" }}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <form method="post" action="{% url 'purchases:supplier_payment_delete' payment.pk %}"
+          x-data
+          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar este pago? Las facturas cubiertas se reabrirán." %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  {# ── Left: Document ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
+
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a;font-size:2rem">
+        RD$&nbsp;{{ payment.amount|floatformat:2|intcomma }}
+      </div>
+      <div class="app-metric-label">
+        {% trans "Monto total" %} ·
+        {% if payment.method == 'TRANSFER' %}
+          <span class="badge-soft badge-sent">{{ payment.get_method_display }}</span>
+        {% elif payment.method == 'CHECK' %}
+          <span class="badge-soft badge-confirmed">{{ payment.get_method_display }}</span>
+        {% else %}
+          <span class="badge-soft badge-paid">{{ payment.get_method_display }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="app-table-wrap">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Proveedor" %}</th>
+            <td>
+              <a href="{% url 'purchases:supplier_detail' payment.supplier.pk %}"
+                 class="fw-semibold text-decoration-none" style="color:#1e2130">
+                {{ payment.supplier.name }}
+              </a>
+              {% if payment.supplier.id_number %}
+                <span class="text-muted small ms-1">· {{ payment.supplier.get_id_type_display }}: {{ payment.supplier.id_number }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha" %}</th>
+            <td class="font-monospace">{{ payment.date|date:"d/m/Y" }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Forma de pago" %}</th>
+            <td>{{ payment.get_method_display }}</td>
+          </tr>
+          {% if payment.reference %}
+          <tr>
+            <th class="detail-key">{% trans "Referencia" %}</th>
+            <td class="font-monospace">{{ payment.reference }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th class="detail-key">{% trans "Facturas cubiertas" %}</th>
+            <td>{{ payment.allocations.count }}</td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Registrado" %}</th>
+            <td class="font-monospace">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Facturas aplicadas" %}
+      </div>
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "NCF Proveedor" %}</th>
+            <th>{% trans "Emisión" %}</th>
+            <th>{% trans "Vence" %}</th>
+            <th class="text-end">{% trans "Total factura" %}</th>
+            <th class="text-end">{% trans "Monto aplicado" %}</th>
+            <th class="text-center">{% trans "Estado" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alloc in payment.allocations.all %}
+          <tr>
+            <td>
+              <a href="{% url 'purchases:supplier_invoice_detail' alloc.supplier_invoice.pk %}"
+                 class="text-decoration-none font-monospace small" style="color:#1e2130">
+                {{ alloc.supplier_invoice.supplier_ncf|default:"—" }}
+              </a>
+            </td>
+            <td class="small text-nowrap text-muted">{{ alloc.supplier_invoice.issue_date|date:"d/m/Y" }}</td>
+            <td class="small text-nowrap text-muted">{{ alloc.supplier_invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
+            <td class="text-end small font-monospace">{{ alloc.supplier_invoice.total|floatformat:2|intcomma }}</td>
+            <td class="text-end small fw-semibold font-monospace" style="color:#16a34a">
+              {{ alloc.amount|floatformat:2|intcomma }}
+            </td>
+            <td class="text-center">
+              <span class="badge-soft badge-{% if alloc.supplier_invoice.status == 'PAID' %}confirmed{% elif alloc.supplier_invoice.status == 'CONFIRMED' %}primary{% else %}default{% endif %}">
+                {{ alloc.supplier_invoice.get_status_display }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4 small">
+              {% trans "Sin aplicaciones registradas." %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="text-end">{% trans "Total pagado" %}</td>
+            <td class="text-end font-monospace" style="color:#16a34a">{{ payment.amount|floatformat:2|intcomma }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% if payment.notes %}
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Notas" %}
+      </div>
+      <div class="p-3 small text-muted">{{ payment.notes }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Sidebar ── #}
+  <div class="col-lg-4">
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Resumen" %}
+      </div>
+      <div class="p-3">
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Proveedor" %}</td>
+              <td class="text-end fw-semibold">{{ payment.supplier.name }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Facturas" %}</td>
+              <td class="text-end">{{ payment.allocations.count }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Método" %}</td>
+              <td class="text-end">{{ payment.get_method_display }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Organización" %}</td>
+              <td class="text-end small">{{ payment.organization.name }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

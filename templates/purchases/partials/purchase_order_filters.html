@@ -1,0 +1,6 @@
+{% load i18n %}
+<div class="mb-3">
+  <label class="form-label small fw-semibold">{% trans "Proveedor" %}</label>
+  <input type="text" name="supplier" class="form-control form-control-sm"
+         value="{{ request.GET.supplier }}" placeholder="{% trans "Nombre del proveedor…" %}">
+</div>

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Pagos a Proveedores" %}{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Pagos a Proveedores" %}</h4>
+    <p class="app-header-sub">{% trans "Compras" %}</p>
+  </div>
+</div>
+
+{% include "components/datatable/wrapper.html" %}
+
+{% endblock %}

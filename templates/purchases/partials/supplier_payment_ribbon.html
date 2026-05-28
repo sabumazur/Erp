@@ -1,0 +1,10 @@
+{% load i18n %}
+<a href="{% url 'purchases:supplier_payment_create' %}" class="btn btn-primary">
+  <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
+</a>
+<span class="dt-ribbon-sep"></span>
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct" :class="{'disabled': !canAct}"
+        @click="canAct && (window.location.href = document.querySelector('tr.dt-row-selected [data-action=view]')?.href || '#')">
+  <i class="bi bi-eye me-1"></i>{% trans "Ver" %}
+</button>

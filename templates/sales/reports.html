@@ -201,6 +201,27 @@
     </div>
   </div>
 
+  {% comment %}Formato 606{% endcomment %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">
+      <div class="card-body d-flex flex-column p-4">
+        <span class="badge mb-3 align-self-start" style="background:#FFF3CD;color:#856404;font-weight:500;font-size:.7rem">
+          DGII · Vence día 15
+        </span>
+        <div class="mb-3 report-icon-wrap" style="background:#D1ECF1">
+          <i class="bi bi-file-earmark-arrow-down" style="color:#0C5460"></i>
+        </div>
+        <p class="fw-semibold mb-1" style="font-size:.9rem">Formato 606 — Compras</p>
+        <p class="text-muted small flex-grow-1 mb-3">
+          Reporte mensual de facturas de proveedor para la DGII. Incluye RNC proveedor, NCF, tipo, fecha, subtotal, ITBIS y total.
+        </p>
+        <a href="{% url 'purchases:report_606' %}" class="btn btn-sm btn-outline-secondary align-self-start">
+          <i class="bi bi-arrow-right me-1"></i>Ver reporte
+        </a>
+      </div>
+    </div>
+  </div>
+
   {% comment %}Formato 608{% endcomment %}
   <div class="col-md-6 col-lg-4">
     <div class="card h-100 border shadow-none" style="border-radius:12px;border-color:rgba(0,0,0,.1)!important">

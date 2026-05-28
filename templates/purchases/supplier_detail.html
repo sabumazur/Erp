@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{{ supplier }}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 35%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{{ supplier.name }}</h4>
+    <p class="app-header-sub">
+      {% trans "Proveedores" %}
+      {% if supplier.id_number %}
+        · <span class="font-monospace">{{ supplier.get_id_type_display }}: {{ supplier.id_number }}</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:supplier_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <a href="{% url 'purchases:supplier_edit' supplier.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="app-table-wrap mb-3">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Información" %}
+      </div>
+      <table class="table mb-0">
+        <tbody>
+          <tr><th class="detail-key">{% trans "Nombre" %}</th><td>{{ supplier.name }}</td></tr>
+          {% if supplier.id_number %}
+          <tr><th class="detail-key">{% trans "RNC/Cédula" %}</th><td class="font-monospace">{{ supplier.id_number }}</td></tr>
+          {% endif %}
+          {% if supplier.email %}
+          <tr><th class="detail-key">{% trans "Correo" %}</th><td><a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a></td></tr>
+          {% endif %}
+          {% if supplier.phone %}
+          <tr><th class="detail-key">{% trans "Teléfono" %}</th><td>{{ supplier.phone }}</td></tr>
+          {% endif %}
+          {% if supplier.address %}
+          <tr><th class="detail-key">{% trans "Dirección" %}</th><td>{{ supplier.address }}</td></tr>
+          {% endif %}
+          {% if supplier.payment_term %}
+          <tr><th class="detail-key">{% trans "Plazo pago" %}</th><td>{{ supplier.payment_term }}</td></tr>
+          {% endif %}
+          {% if supplier.default_ncf_type %}
+          <tr><th class="detail-key">{% trans "Tipo NCF" %}</th><td>{{ supplier.default_ncf_type }}</td></tr>
+          {% endif %}
+          <tr>
+            <th class="detail-key">{% trans "Estado" %}</th>
+            <td>
+              {% if supplier.is_active %}
+                <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {# Departments #}
+    <div class="app-table-wrap">
+      <div class="d-flex align-items-center justify-content-between" style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb">
+        <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Departamentos" %}</span>
+        <button class="btn btn-link btn-sm p-0"
+                hx-get="{% url 'purchases:dept_create' supplier.pk %}"
+                hx-target="#dept-modal-body"
+                hx-on::after-request="bootstrap.Modal.getOrCreateInstance('#deptModal').show();">
+          <i class="bi bi-plus-circle"></i>
+        </button>
+      </div>
+      <div id="dept-table-container" style="padding:10px 14px">
+        {% include "purchases/partials/department_table.html" %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="app-table-wrap mb-3">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Facturas de proveedor" %}
+      </div>
+      {% if invoices %}
+      <table class="table table-sm mb-0">
+        <thead><tr>
+          <th>{% trans "NCF" %}</th>
+          <th>{% trans "Fecha" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
+          <th class="text-center">{% trans "Estado" %}</th>
+        </tr></thead>
+        <tbody>
+          {% for inv in invoices %}
+          <tr>
+            <td><a href="{% url 'purchases:supplier_invoice_detail' inv.pk %}">{{ inv.supplier_ncf|default:"—" }}</a></td>
+            <td>{{ inv.issue_date }}</td>
+            <td class="text-end font-monospace">{{ inv.total|intcomma }}</td>
+            <td class="text-center">
+              <span class="badge-soft badge-{% if inv.status == 'PAID' %}confirmed{% elif inv.status == 'CONFIRMED' %}primary{% elif inv.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
+                {{ inv.get_status_display }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted small p-3 mb-0">{% trans "No hay facturas registradas." %}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# Dept Modal #}
+<div class="modal fade" id="deptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <h5 class="modal-title fw-semibold" style="font-size:.95rem">{% trans "Departamento" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="dept-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

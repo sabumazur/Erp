@@ -1,0 +1,15 @@
+{% load i18n %}
+<div class="mb-3">
+  <label class="form-label small fw-semibold">{% trans "Proveedor" %}</label>
+  <input type="text" name="supplier" class="form-control form-control-sm"
+         value="{{ request.GET.supplier }}" placeholder="{% trans "Nombre del proveedor…" %}">
+</div>
+<div class="mb-3">
+  <label class="form-label small fw-semibold">{% trans "Método de pago" %}</label>
+  <select name="method" class="form-select form-select-sm">
+    <option value="">{% trans "Todos" %}</option>
+    <option value="CASH" {% if request.GET.method == 'CASH' %}selected{% endif %}>{% trans "Efectivo" %}</option>
+    <option value="CHECK" {% if request.GET.method == 'CHECK' %}selected{% endif %}>{% trans "Cheque" %}</option>
+    <option value="TRANSFER" {% if request.GET.method == 'TRANSFER' %}selected{% endif %}>{% trans "Transferencia" %}</option>
+  </select>
+</div>

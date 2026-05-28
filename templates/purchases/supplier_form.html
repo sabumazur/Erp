@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{% if supplier %}{% trans "Editar proveedor" %}{% else %}{% trans "Nuevo proveedor" %}{% endif %}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% if supplier %}{% trans "Editar proveedor" %}{% else %}{% trans "Nuevo proveedor" %}{% endif %}</h4>
+    <p class="app-header-sub">{% trans "Compras" %}</p>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% crispy form %}
+          <div class="d-flex gap-2 mt-3">
+            <a href="{% url 'purchases:supplier_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+            <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+              {% if supplier %}{% trans "Guardar cambios" %}{% else %}{% trans "Crear proveedor" %}{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+{% load i18n humanize %}
+{% for invoice in invoices %}
+<tr>
+  <td>
+    <span class="font-monospace small">{{ invoice.supplier_ncf|default:"—" }}</span>
+  </td>
+  <td class="small text-muted">{{ invoice.issue_date|date:"d/m/Y" }}</td>
+  <td class="small text-muted">{{ invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
+  <td class="text-end font-monospace small">{{ invoice.total|floatformat:2|intcomma }}</td>
+  <td class="text-end" style="width:130px">
+    <input type="number"
+           name="alloc_amounts"
+           class="form-control form-control-sm text-end font-monospace alloc-amount"
+           placeholder="0.00"
+           min="0"
+           step="0.01"
+           max="{{ invoice.line_balance|floatformat:2 }}"
+           value="{{ invoice.line_balance|floatformat:2 }}">
+    <input type="hidden" name="alloc_invoices" value="{{ invoice.pk }}">
+  </td>
+</tr>
+{% empty %}
+<tr id="allocation-empty-row">
+  <td colspan="5" class="text-center text-muted py-4 small">
+    {% trans "No hay facturas pendientes para este proveedor." %}
+  </td>
+</tr>
+{% endfor %}

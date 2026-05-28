@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n humanize %}
+
+{% block title %}{{ po.number|default:"Borrador" }}{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+<style>
+.detail-key {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+  width: 35%;
+  vertical-align: middle;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{{ po.number|default:"Borrador" }}</h4>
+    <p class="app-header-sub">{% trans "Orden de Compra" %} · {{ po.supplier.name }}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+
+    <form method="post" action="{% url 'purchases:po_clone' po.pk %}"
+          x-data
+          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
+      </button>
+    </form>
+
+    {% if po.status == "DRAFT" %}
+      <a href="{% url 'purchases:po_edit' po.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+      </a>
+      <form method="post" action="{% url 'purchases:po_confirm' po.pk %}"
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar orden de compra?" %}', {icon:'question', color:'#6366f1', ok:'Sí, confirmar'})">
+        {% csrf_token %}
+        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
+          <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'purchases:po_cancel' po.pk %}"
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'purchases:po_delete' po.pk %}"
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+      </form>
+
+    {% elif po.status == "CONFIRMED" %}
+      <form method="post" action="{% url 'purchases:po_receive' po.pk %}"
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Marcar como recibida y crear factura de proveedor?" %}', {icon:'question', color:'#10b981', ok:'Sí, recibir'})">
+        {% csrf_token %}
+        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
+          <i class="bi bi-box-seam me-1"></i>{% trans "Recibir" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'purchases:po_cancel' po.pk %}"
+            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+        </button>
+      </form>
+    {% endif %}
+
+    {% if po.status == "RECEIVED" and linked_invoice %}
+      <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+
+  {# ── Left: Document ── #}
+  <div class="col-lg-8">
+
+    <div class="app-table-wrap mb-3">
+      <table class="table mb-0">
+        <tbody>
+          <tr>
+            <th class="detail-key">{% trans "Proveedor" %}</th>
+            <td>
+              <a href="{% url 'purchases:supplier_detail' po.supplier.pk %}"
+                 class="fw-semibold text-decoration-none" style="color:#1e2130">
+                {{ po.supplier.name }}
+              </a>
+              {% if po.supplier.id_number %}
+                <span class="text-muted small ms-1">· {{ po.supplier.get_id_type_display }}: {{ po.supplier.id_number }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
+            <td class="font-monospace">{{ po.issue_date|date:"d/m/Y" }}</td>
+          </tr>
+          {% if po.expected_date %}
+          <tr>
+            <th class="detail-key">{% trans "Fecha esperada" %}</th>
+            <td class="font-monospace">{{ po.expected_date|date:"d/m/Y" }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th class="detail-key">{% trans "Moneda" %}</th>
+            <td>{{ po.currency }}{% if po.exchange_rate != 1 %} <span class="text-muted small">@ {{ po.exchange_rate }}</span>{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="app-table-wrap mb-3">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Descripción" %}</th>
+            <th class="text-end">{% trans "Cant." %}</th>
+            <th class="text-end">{% trans "P. Unit." %}</th>
+            <th class="text-center">{% trans "ITBIS" %}</th>
+            <th class="text-end">{% trans "Subtotal" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ item.description }}</td>
+            <td class="text-end font-monospace">{{ item.quantity|floatformat:"-4" }}</td>
+            <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
+            <td class="text-center">
+              {% if item.itbis_rate == 'RATE_18' %}
+                <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
+              {% elif item.itbis_rate == 'RATE_16' %}
+                <span class="badge-soft badge-confirmed">{{ item.get_itbis_rate_display }}</span>
+              {% else %}
+                <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "Subtotal" %}</td>
+            <td class="text-end font-monospace">{{ po.subtotal|floatformat:2|intcomma }}</td>
+          </tr>
+          {% if po.itbis_18 %}
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 18%" %}</td>
+            <td class="text-end font-monospace">{{ po.itbis_18|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endif %}
+          {% if po.itbis_16 %}
+          <tr>
+            <td colspan="5" class="text-end text-muted small">{% trans "ITBIS 16%" %}</td>
+            <td class="text-end font-monospace">{{ po.itbis_16|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
+            <td class="text-end font-monospace fw-bold">{{ po.total|floatformat:2|intcomma }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    {% if po.notes %}
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Notas" %}
+      </div>
+      <div class="p-3 small text-muted">{{ po.notes }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ── Right: Status sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <div class="app-metric-card">
+      <div class="app-metric-value" style="color:#16a34a">{{ po.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total" %} {{ po.currency }}</div>
+    </div>
+
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Estado del documento" %}
+      </div>
+      <div class="p-3" style="overflow-x:auto">
+        <div class="mb-3">
+          <span class="badge-soft badge-{% if po.status == 'CONFIRMED' %}primary{% elif po.status == 'RECEIVED' %}confirmed{% elif po.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
+            {{ po.get_status_display }}
+          </span>
+        </div>
+        <table class="table table-sm mb-0" style="font-size:.82rem;min-width:max-content">
+          <tbody>
+            <tr>
+              <td class="text-muted">{% trans "Número" %}</td>
+              <td class="text-end font-monospace fw-semibold" style="white-space:nowrap">{{ po.number|default:"—" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Moneda" %}</td>
+              <td class="text-end" style="white-space:nowrap">{{ po.currency }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Creada" %}</td>
+              <td class="text-end font-monospace" style="white-space:nowrap">{{ po.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">{% trans "Actualizada" %}</td>
+              <td class="text-end font-monospace" style="white-space:nowrap">{{ po.updated_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if linked_invoice %}
+    <div class="app-table-wrap">
+      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        {% trans "Factura vinculada" %}
+      </div>
+      <div class="p-3">
+        <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
+           class="font-monospace fw-semibold text-decoration-none" style="color:#1e2130">
+          {{ linked_invoice.supplier_ncf|default:"Borrador" }}
+        </a>
+        <p class="text-muted small mb-0 mt-1">{{ linked_invoice.issue_date|date:"d/m/Y" }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

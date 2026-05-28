@@ -1,0 +1,154 @@
+{% load i18n %}
+<div class="modal fade"
+     id="itemPickerModal"
+     tabindex="-1"
+     aria-labelledby="itemPickerModalLabel"
+     aria-hidden="true">
+
+  <div class="modal-dialog picker-dialog">
+    <div class="modal-content picker-content">
+
+      {# ── Search panel (default) ── #}
+      <div id="item-picker-search-panel">
+
+        <div class="picker-head d-flex align-items-center justify-content-between">
+          <h6 class="picker-title mb-0" id="itemPickerModalLabel">
+            {% trans "Catálogo de artículos" %}
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="{% trans 'Cerrar' %}"></button>
+        </div>
+
+        <div class="picker-search-area">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="bi bi-search" style="font-size:0.85rem"></i>
+            </span>
+            <input type="text"
+                   id="picker-search"
+                   class="form-control border-start-0 ps-1 picker-search-input"
+                   placeholder="{% trans 'Buscar por nombre o código…' %}"
+                   autocomplete="off"
+                   hx-get="{% url 'purchases:purchase_item_search' %}"
+                   hx-trigger="input changed delay:300ms, load"
+                   hx-target="#picker-tbody"
+                   hx-swap="innerHTML"
+                   name="q">
+          </div>
+        </div>
+
+        <div class="picker-list-wrap">
+          <table class="table table-sm picker-table table-hover mb-0" role="grid">
+            <thead class="table-light">
+              <tr>
+                <th class="picker-ch-code">{% trans "No." %}</th>
+                <th>{% trans "Descripción" %}</th>
+                <th class="picker-ch-unit">{% trans "Unidad" %}</th>
+                <th class="text-end picker-ch-price">{% trans "Costo" %}</th>
+              </tr>
+            </thead>
+            <tbody id="picker-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="picker-foot">
+          <div class="picker-foot-left">
+            <button type="button"
+                    class="btn btn-sm btn-link picker-new-btn"
+                    onclick="itemPickerShowCreate()">
+              <i class="bi bi-plus-lg"></i> {% trans "Nuevo artículo" %}
+            </button>
+          </div>
+          <div class="picker-foot-right">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-dismiss="modal">
+              {% trans "Cancelar" %}
+            </button>
+            <button type="button"
+                    class="btn btn-sm"
+                    id="picker-select-btn"
+                    onclick="itemPickerConfirm()"
+                    disabled>
+              <i class="bi bi-check-lg me-1"></i>{% trans "Seleccionar" %}
+            </button>
+          </div>
+        </div>
+
+      </div>{# end search panel #}
+
+      {# ── Quick-create panel ── #}
+      <div id="item-picker-create-panel" class="d-none">
+
+        <div class="picker-head d-flex align-items-center justify-content-between">
+          <h6 class="picker-title mb-0">{% trans "Nuevo artículo" %}</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="{% trans 'Cerrar' %}"></button>
+        </div>
+
+        <div class="p-3">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="iqc-name">{% trans "Nombre / Descripción" %} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="iqc-name"
+                   placeholder="{% trans 'Descripción...' %}">
+            <div class="invalid-feedback d-block" id="iqc-name-error"></div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold" for="iqc-unit">{% trans "Unidad" %}</label>
+              <select class="form-select form-select-sm" id="iqc-unit">
+                <option value="UNIT">{% trans "Unidad" %}</option>
+                <option value="SERVICE">{% trans "Servicio" %}</option>
+                <option value="HOUR">{% trans "Hora" %}</option>
+                <option value="LB">{% trans "Libra" %}</option>
+                <option value="KG">{% trans "Kilogramo" %}</option>
+                <option value="BOX">{% trans "Caja" %}</option>
+                <option value="METER">{% trans "Metro" %}</option>
+                <option value="LITER">{% trans "Litro" %}</option>
+                <option value="OTHER">{% trans "Otro" %}</option>
+              </select>
+              <div class="invalid-feedback d-block" id="iqc-unit-error"></div>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold" for="iqc-itbis-rate">{% trans "ITBIS" %}</label>
+              <select class="form-select form-select-sm" id="iqc-itbis-rate">
+                <option value="RATE_18">{% trans "18%" %}</option>
+                <option value="RATE_16">{% trans "16%" %}</option>
+                <option value="RATE_0">{% trans "0% (exportación)" %}</option>
+                <option value="EXEMPT">{% trans "Exento" %}</option>
+              </select>
+              <div class="invalid-feedback d-block" id="iqc-itbis-rate-error"></div>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold" for="iqc-unit-price">{% trans "Precio de costo" %} <span class="text-danger">*</span></label>
+            <input type="number" class="form-control form-control-sm" id="iqc-unit-price"
+                   placeholder="0.00" min="0" step="0.01">
+            <div class="invalid-feedback d-block" id="iqc-unit-price-error"></div>
+          </div>
+          <div class="text-danger small mb-2" id="iqc-non-field-errors"></div>
+        </div>
+
+        <div class="picker-foot">
+          <div class="picker-foot-left">
+            <button type="button" class="btn btn-sm btn-link"
+                    onclick="itemPickerShowSearch()">
+              <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+            </button>
+          </div>
+          <div class="picker-foot-right">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+            <button type="button" class="btn btn-sm"
+                    id="iqc-submit-btn"
+                    style="background:#1e2130;color:#fff"
+                    onclick="itemPickerQuickCreate('{% url "purchases:supplier_quick_create" %}')">
+              <i class="bi bi-check-lg me-1"></i>{% trans "Crear y seleccionar" %}
+            </button>
+          </div>
+        </div>
+
+      </div>{# end create panel #}
+
+    </div>
+  </div>
+</div>

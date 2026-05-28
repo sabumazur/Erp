@@ -17,6 +17,7 @@ urlpatterns = [
     path("items/", include("apps.items.urls", namespace="items")),
     path("core/",  include("apps.core.urls",  namespace="core")),
     path("", include("apps.sales.urls", namespace="sales")),
+    path("", include("apps.purchases.urls", namespace="purchases")),
 ]
 
 # Serve user-uploaded media files in all environments.

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block title %}{% trans "Registrar pago a proveedor" %}{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">{% trans "Registrar pago a proveedor" %}</h4>
+    <p class="app-header-sub">{% trans "Pagos a Proveedores" %}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
+</div>
+
+<form method="post" id="payment-form">
+  {% csrf_token %}
+
+  <div class="app-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      {% trans "Datos del pago" %}
+    </div>
+    <div class="p-3">
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2">
+          {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+        </div>
+      {% endif %}
+      {% crispy form %}
+    </div>
+  </div>
+
+  <div class="app-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas a cubrir" %}</span>
+      <span class="small text-muted">{% trans "Seleccione un proveedor para ver sus facturas pendientes." %}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "NCF" %}</th>
+            <th>{% trans "Emisión" %}</th>
+            <th>{% trans "Vence" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+            <th class="text-end" style="width:130px">{% trans "Aplicar" %}</th>
+          </tr>
+        </thead>
+        <tbody id="allocation-tbody"
+               hx-get="{% url 'purchases:outstanding_supplier_invoices' %}"
+               hx-trigger="supplierChanged from:body"
+               hx-target="#allocation-tbody"
+               hx-swap="innerHTML"
+               hx-include="[name=supplier]">
+          <tr id="allocation-empty-row">
+            <td colspan="5" class="text-center text-muted py-4 small">
+              <i class="bi bi-arrow-up me-1"></i>{% trans "Seleccione un proveedor para cargar sus facturas pendientes." %}
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="text-end">{% trans "Total del pago" %}</td>
+            <td class="text-end" style="width:130px">
+              <span id="payment-total" class="fw-bold fs-5 font-monospace" style="color:#16a34a">0.00</span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="form-sticky-bar">
+    <button type="submit" class="btn btn-sm" id="submit-btn" disabled
+            style="background:#1e2130;color:#fff">
+      <i class="bi bi-check-circle me-1"></i>{% trans "Registrar pago" %}
+    </button>
+    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">
+      {% trans "Cancelar" %}
+    </a>
+  </div>
+</form>
+
+<script>
+(function () {
+  const supplierField = document.querySelector('[name="supplier"]');
+  const tbody = document.getElementById('allocation-tbody');
+  const totalSpan = document.getElementById('payment-total');
+  const submitBtn = document.getElementById('submit-btn');
+
+  function recalcTotal() {
+    let total = 0;
+    document.querySelectorAll('.alloc-amount').forEach(inp => {
+      const val = parseFloat(inp.value) || 0;
+      if (val > 0) total += val;
+    });
+    totalSpan.textContent = total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    submitBtn.disabled = total <= 0;
+  }
+
+  document.addEventListener('htmx:afterSwap', function (e) {
+    if (e.target === tbody) {
+      document.querySelectorAll('.alloc-amount').forEach(inp => {
+        inp.addEventListener('input', recalcTotal);
+      });
+      recalcTotal();
+    }
+  });
+
+  if (supplierField) {
+    supplierField.addEventListener('change', function () {
+      htmx.trigger(document.body, 'supplierChanged');
+    });
+  }
+})();
+</script>
+
+{% endblock %}

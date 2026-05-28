@@ -1,0 +1,14 @@
+{% load crispy_forms_tags i18n %}
+<form method="post"
+      action="{{ action_url }}"
+      hx-post="{{ action_url }}"
+      hx-target="#dt-results"
+      hx-swap="innerHTML"
+      class="d-flex flex-column flex-grow-1 overflow-hidden">
+  {% csrf_token %}
+  <div class="modal-body">{% crispy form %}</div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">{{ submit_label }}</button>
+  </div>
+</form>

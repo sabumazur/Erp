@@ -1,0 +1,53 @@
+{% load i18n %}
+{% if departments %}
+<table class="table table-sm mb-0">
+  <thead>
+    <tr>
+      <th>{% trans "Nombre" %}</th>
+      <th class="text-center">{% trans "Estado" %}</th>
+      <th class="text-end">{% trans "Acciones" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for dept in departments %}
+    <tr>
+      <td>{{ dept.name }}</td>
+      <td class="text-center">
+        {% if dept.is_active %}
+          <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>
+        {% else %}
+          <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+        {% endif %}
+      </td>
+      <td class="text-end">
+        <button class="btn btn-link btn-sm p-0 me-2"
+                hx-post="{% url 'purchases:dept_toggle' supplier.pk dept.pk %}"
+                hx-target="#dept-table-container"
+                hx-swap="innerHTML">
+          {% if dept.is_active %}
+            <i class="bi bi-toggle-on text-success"></i>
+          {% else %}
+            <i class="bi bi-toggle-off text-muted"></i>
+          {% endif %}
+        </button>
+        <button class="btn btn-link btn-sm p-0 me-2"
+                hx-get="{% url 'purchases:dept_edit' supplier.pk dept.pk %}"
+                hx-target="#dept-modal-body"
+                hx-on::after-request="bootstrap.Modal.getOrCreateInstance('#deptModal').show();">
+          <i class="bi bi-pencil text-secondary"></i>
+        </button>
+        <button class="btn btn-link btn-sm p-0 text-danger"
+                hx-post="{% url 'purchases:dept_delete' supplier.pk dept.pk %}"
+                hx-target="#dept-table-container"
+                hx-swap="innerHTML"
+                hx-confirm="{% trans '¿Eliminar este departamento?' %}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted small mb-0">{% trans "No hay departamentos registrados." %}</p>
+{% endif %}

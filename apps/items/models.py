@@ -178,6 +178,14 @@ class Item(ERPBaseModel):
         default=True,
         verbose_name=_("activo"),
     )
+    default_supplier = models.ForeignKey(
+        "purchases.Supplier",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="default_items",
+        verbose_name=_("proveedor habitual"),
+    )
     notes = models.TextField(
         blank=True,
         verbose_name=_("notas internas"),
@@ -228,9 +236,14 @@ class Item(ERPBaseModel):
 
     def delete(self, *args, **kwargs):
         from apps.sales.models import SalesDocumentItem
+        from apps.purchases.models import PurchaseDocumentItem
         if SalesDocumentItem.objects.filter(item=self).exists():
             raise ValueError(
-                f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos."
+                f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos de venta."
+            )
+        if PurchaseDocumentItem.objects.filter(item=self).exists():
+            raise ValueError(
+                f"No se puede eliminar «{self.name}» porque está en uso en uno o más documentos de compra."
             )
         return super().delete(*args, **kwargs)
 

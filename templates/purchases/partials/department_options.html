@@ -1,0 +1,5 @@
+{% load i18n %}
+<option value="">{% trans "— Sin departamento —" %}</option>
+{% for dept in departments %}
+<option value="{{ dept.pk }}">{{ dept.name }}</option>
+{% endfor %}

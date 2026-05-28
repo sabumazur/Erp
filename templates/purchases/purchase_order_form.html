@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}
+  {% if po %}{% trans "Editar orden de compra" %}{% else %}{% trans "Nueva orden de compra" %}{% endif %}
+{% endblock %}
+
+{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h4 class="app-header-title">
+      {% if po %}{% trans "Editar orden de compra" %}{% else %}{% trans "Nueva orden de compra" %}{% endif %}
+    </h4>
+    <p class="app-header-sub">{% trans "Órdenes de Compra" %}</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+    </a>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="app-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      {% trans "Datos de la orden" %}
+    </div>
+    <div class="p-3">{% crispy form %}</div>
+  </div>
+
+  <div class="app-table-wrap mb-3">
+    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb">
+      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
+    </div>
+    <div>
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}
+        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
+          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width:44px"></th>
+              <th style="width:110px">{% trans "Cantidad" %}</th>
+              <th style="width:130px">{% trans "P. Unitario" %}</th>
+              <th style="width:130px">{% trans "ITBIS" %}</th>
+              <th class="text-end" style="width:130px">{% trans "Subtotal" %}</th>
+              <th class="text-end" style="width:110px">{% trans "ITBIS RD$" %}</th>
+              <th class="text-end" style="width:130px">{% trans "Total" %}</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="item-tbody">
+            {% for item_form in formset %}
+              {% include "purchases/partials/purchase_item_row.html" with form=item_form %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="border-top p-3" style="background:#f9fafb">
+        <div class="row justify-content-end">
+          <div class="col-md-4">
+            <table class="table table-sm mb-0" style="font-size:.85rem">
+              <tr><td class="text-muted">{% trans "Subtotal" %}</td><td class="text-end font-monospace"><span id="grand-subtotal">0.00</span></td></tr>
+              <tr><td class="text-muted">{% trans "ITBIS 18%" %}</td><td class="text-end font-monospace"><span id="grand-itbis18">0.00</span></td></tr>
+              <tr><td class="text-muted">{% trans "ITBIS 16%" %}</td><td class="text-end font-monospace"><span id="grand-itbis16">0.00</span></td></tr>
+              <tr style="border-top:2px solid #1e2130">
+                <td class="fw-bold">{% trans "Total" %}</td>
+                <td class="text-end font-monospace fw-bold fs-5"><span id="grand-total">0.00</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-sticky-bar">
+    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+  </div>
+</form>
+
+{% include "purchases/partials/item_picker_modal.html" %}
+
+{% include "sales/partials/item_js.html" %}
+
+{% endblock %}

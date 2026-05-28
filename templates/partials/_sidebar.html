@@ -96,6 +96,42 @@
     </ul>
     {% endif %}
 
+    {# ── Compras ─────────────────────────────────────────────── #}
+    {% can_access_module membership "purchasing" as has_purchasing %}
+    {% if has_purchasing %}
+    <div class="sidebar-section-label">{% trans "Compras" %}</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="{% url 'purchases:po_list' %}"
+           class="sidebar-nav-link {% nav_active 'purchases:po_list' 'purchases:po_create' 'purchases:po_detail' 'purchases:po_edit' %}">
+          <i class="bi bi-cart3"></i>
+          <span>{% trans "Órdenes de Compra" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'purchases:supplier_invoice_list' %}"
+           class="sidebar-nav-link {% nav_active 'purchases:supplier_invoice_list' 'purchases:supplier_invoice_create' 'purchases:supplier_invoice_detail' 'purchases:supplier_invoice_edit' %}">
+          <i class="bi bi-receipt"></i>
+          <span>{% trans "Facturas de Proveedor" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'purchases:supplier_payment_list' %}"
+           class="sidebar-nav-link {% nav_active 'purchases:supplier_payment_list' 'purchases:supplier_payment_create' 'purchases:supplier_payment_detail' %}">
+          <i class="bi bi-cash-stack"></i>
+          <span>{% trans "Pagos a Proveedores" %}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'purchases:supplier_list' %}"
+           class="sidebar-nav-link {% nav_active 'purchases:supplier_list' 'purchases:supplier_detail' 'purchases:supplier_edit' %}">
+          <i class="bi bi-building"></i>
+          <span>{% trans "Proveedores" %}</span>
+        </a>
+      </li>
+    </ul>
+    {% endif %}
+
     {# ── Coming soon modules (greyed out placeholders) ───────── #}
     <div class="sidebar-section-label">{% trans "Próximamente" %}</div>
     <ul class="sidebar-nav">
@@ -103,12 +139,6 @@
         <span class="sidebar-nav-link sidebar-nav-link--disabled">
           <i class="bi bi-boxes"></i>
           <span>{% trans "Inventario" %}</span>
-        </span>
-      </li>
-      <li>
-        <span class="sidebar-nav-link sidebar-nav-link--disabled">
-          <i class="bi bi-cart-fill"></i>
-          <span>{% trans "Compras" %}</span>
         </span>
       </li>
       <li>
