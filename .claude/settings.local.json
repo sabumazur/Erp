@@ -110,7 +110,9 @@
       "Bash(Select-Object -First 20)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\sabum\\\\sabsys\" -Directory | Where-Object { $_.Name -eq \"apps\" -or $_.Name -eq \"templates\" })",
       "Bash(xargs grep -l \"class.*Invoice\")",
-      "PowerShell(Select-String -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\invoices\\\\forms.py\" -Pattern \"\\\\bInvoice\\\\b|\\\\bInvoiceItem\\\\b\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line\\)\" })"
+      "PowerShell(Select-String -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\invoices\\\\forms.py\" -Pattern \"\\\\bInvoice\\\\b|\\\\bInvoiceItem\\\\b\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line\\)\" })",
+      "Bash(mkdir -p apps/purchases)",
+      "Bash(python manage.py startapp purchases apps/purchases)"
     ]
   }
 }
