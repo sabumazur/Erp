@@ -172,6 +172,7 @@ class CustomerCreateView(ERPBaseViewMixin, CreateView):
 
 
 class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
+    model = Customer
     form_class = CustomerForm
     template_name = "sales/customer_form.html"
     required_module = "sales"
