@@ -78,8 +78,6 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = CustomerFilter(self.request.GET, queryset=qs)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        ctx["form"] = CustomerForm(organization=org)
-
         if not self.request.htmx:
             today = date.today()
             active_dept = CustomerDepartment.objects.filter(
@@ -104,44 +102,6 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             {"label": _("Clientes")},
         ]
         return ctx
-
-    def post(self, request):
-        form = CustomerForm(request.POST, organization=request.organization)
-        if form.is_valid():
-            customer = form.save(commit=False)
-            customer.organization = request.organization
-            customer.save()
-            if request.htmx:
-                return self._refresh_table(request, str(_("Cliente creado correctamente.")))
-            messages.success(request, _("Cliente creado correctamente."))
-            return redirect("sales:customer_list")
-
-        if request.htmx:
-            resp = render(
-                request,
-                "sales/partials/customer_modal_form.html",
-                {
-                    "form": form,
-                    "action_url": reverse("sales:customer_list"),
-                    "submit_label": _("Crear"),
-                    "hx_target": "#dt-results",
-                },
-            )
-            resp["HX-Retarget"] = "#customer-modal-body"
-            resp["HX-Reswap"] = "innerHTML"
-            if hasattr(form, "_rnc_duplicate_msg"):
-                resp["HX-Trigger"] = json.dumps({
-                    "showSwal": {
-                        "icon": "error",
-                        "title": str(_("RNC / Cédula duplicado")),
-                        "text": form._rnc_duplicate_msg,
-                    }
-                })
-            return resp
-        ctx = self.get_context_data()
-        ctx["form"] = form
-        return self.render_to_response(ctx)
-
 
 class CustomerCreateView(ERPBaseViewMixin, CreateView):
     model = Customer

@@ -26,7 +26,7 @@
         class="d-flex flex-column flex-grow-1 overflow-hidden">
     {% csrf_token %}
     <input type="hidden" name="_hx_target" value="#dt-results">
-    <div class="modal-body">{% crispy form %}</div>
+    <div class="modal-body">{% if form %}{% crispy form %}{% endif %}</div>
     <div class="modal-footer">
       <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
       <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">{% trans "Crear" %}</button>

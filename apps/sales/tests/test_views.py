@@ -56,24 +56,13 @@ class TestCustomerViews:
         resp = client.get(reverse("sales:customer_list"))
         assert resp.status_code == 200
 
-    def test_create_customer_via_post(self, client):
+    def test_customer_list_does_not_accept_post(self, client):
+        """CustomerListView no longer handles POST — create moved to customer_create."""
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        resp = client.post(reverse("sales:customer_list"), {
-            "name": "Empresa Test S.R.L.",
-            "id_type": "RNC",
-            "rnc_cedula": "101234563",
-            "email": "test@empresa.com",
-            "phone": "",
-            "address": "", "city": "", "province": "",
-            "country": "República Dominicana",
-            "default_ncf_type": 31,
-            "notes": "",
-        })
-        assert resp.status_code == 302
-        from apps.sales.models import Customer
-        assert Customer.objects.filter(organization=org, name="Empresa Test S.R.L.").exists()
+        resp = client.post(reverse("sales:customer_list"), {"name": "X"})
+        assert resp.status_code == 405
 
     def test_customer_form_rnc_lookup_attrs(self):
         form = CustomerForm()
