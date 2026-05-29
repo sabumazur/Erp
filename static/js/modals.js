@@ -41,6 +41,19 @@
 
     initTemplateModal("customerModal", "customer-modal-body", "customer-blank-tpl", "customerModalTitle", "customerCreateTitle", false);
 
+    function normalizeTaxId(value) {
+      return String(value || "").replace(/\D/g, "");
+    }
+
+    function activeCustomerForm() {
+      var modal = document.querySelector("#customerModal.show");
+      if (modal) {
+        return modal.querySelector("form");
+      }
+      var rnc = document.querySelector("form [name=rnc_cedula]");
+      return rnc ? rnc.closest("form") : null;
+    }
+
     document.body.addEventListener("rncFound", function (evt) {
       if (!window.Swal) return;
       var d = evt.detail || {};
@@ -51,10 +64,16 @@
         showCancelButton: true,
         confirmButtonText: getConfig("acceptText", "Aceptar"),
         cancelButtonText: getConfig("cancelText", "Cancelar"),
+        allowOutsideClick: false,
       }).then(function (result) {
         if (result.isConfirmed) {
-          var f = (document.querySelector(".modal.show") || document).querySelector("[name=name]");
-          if (f) f.value = d.name;
+          var form = activeCustomerForm();
+          if (!form) return;
+          var rnc = form.querySelector("[name=rnc_cedula]");
+          var name = form.querySelector("[name=name]");
+          if (!rnc || !name) return;
+          if (d.normalized_value && normalizeTaxId(rnc.value) !== d.normalized_value) return;
+          name.value = d.name;
         }
       });
     });

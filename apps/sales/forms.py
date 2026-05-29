@@ -72,7 +72,7 @@ class CustomerForm(forms.ModelForm):
             {
                 "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
                 "hx-get": reverse_lazy("sales:rnc_lookup"),
-                "hx-trigger": "blur",
+                "hx-trigger": "blur changed",
                 "hx-target": "#rnc-lookup-result",
                 "hx-include": "closest form",
                 "hx-indicator": "#rnc-lookup-spinner",

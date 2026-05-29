@@ -69,7 +69,7 @@ class TestCustomerViews:
         attrs = form.fields["rnc_cedula"].widget.attrs
 
         assert attrs["hx-get"] == reverse("sales:rnc_lookup")
-        assert attrs["hx-trigger"] == "blur"
+        assert attrs["hx-trigger"] == "blur changed"
         assert attrs["hx-include"] == "closest form"
         assert attrs["hx-target"] == "#rnc-lookup-result"
 
