@@ -72,6 +72,7 @@ class TestCustomerViews:
         assert attrs["hx-trigger"] == "blur changed"
         assert attrs["hx-include"] == "closest form"
         assert attrs["hx-target"] == "#rnc-lookup-result"
+        assert attrs["hx-indicator"] == "#rnc-lookup-spinner"
 
     def test_edit_htmx_get_returns_full_page_not_partial(self, client):
         """After removing HTMX modal, an HTMX GET must return the full page (200)."""
@@ -196,6 +197,49 @@ class TestRNCLookupView:
 
         assert first.headers["HX-Trigger"] == second.headers["HX-Trigger"]
         assert calls == [("101234563", "RNC")]
+
+    def test_rnc_lookup_response_body_is_empty_on_found(self, client, monkeypatch):
+        """Response body must be empty so HTMX does not visually swap stale content."""
+        response, _ = self._request(client, monkeypatch, ("EMPRESA TEST SRL", "DGII"))
+        assert response.content == b""
+
+    def test_rnc_lookup_response_body_is_empty_on_not_found(self, client, monkeypatch):
+        """Not-found response body must also be empty."""
+        response, _ = self._request(client, monkeypatch, (None, ""))
+        assert response.content == b""
+
+    def test_rnc_lookup_always_returns_200(self, client, monkeypatch):
+        """HTMX only processes HX-Trigger headers on HTTP 200."""
+        found, _ = self._request(client, monkeypatch, ("EMPRESA TEST SRL", "DGII"))
+        not_found, _ = self._request(client, monkeypatch, (None, ""))
+        assert found.status_code == 200
+        assert not_found.status_code == 200
+
+    def test_rnc_lookup_cached_second_request_returns_identical_trigger(self, client, monkeypatch):
+        """A second request for the same RNC (simulating duplicate blur from Swal focus-steal)
+        returns the identical HX-Trigger — the Swal.isVisible() guard in JS is what prevents
+        the second event from replacing the open dialog."""
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        cache.clear()
+        calls = []
+
+        def fake_lookup(value, id_type):
+            calls.append((value, id_type))
+            return "EMPRESA TEST SRL", "DGII"
+
+        monkeypatch.setattr("apps.sales.validators.lookup_name", fake_lookup)
+        url = reverse("sales:rnc_lookup")
+        params = {"id_type": "RNC", "rnc_cedula": "101234563"}
+
+        resp1 = client.get(url, params)
+        resp2 = client.get(url, params)  # duplicate request — simulates second blur
+
+        assert resp1.content == b""
+        assert resp2.content == b""
+        assert json.loads(resp1.headers["HX-Trigger"]) == json.loads(resp2.headers["HX-Trigger"])
+        assert len(calls) == 1  # only one real DGII call; second served from cache
 
 
 # ── Invoice views ─────────────────────────────────────────────────────────────

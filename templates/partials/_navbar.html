@@ -109,8 +109,10 @@
 
 {% if user.is_authenticated and organization %}
 {% can_access_module membership "sales" as has_sales %}
-{% if has_sales %}
+{% can_access_module membership "purchasing" as has_purchasing %}
+{% if has_sales or has_purchasing %}
 <nav id="subnav">
+  {% if has_sales %}
   <a href="{% url 'sales:customer_list' %}"
      class="subnav-link {% if 'sales/customers' in request.path %}active{% endif %}">
     <i class="bi bi-person-lines-fill"></i>
@@ -121,7 +123,15 @@
     <i class="bi bi-box-seam-fill"></i>
     <span>{% trans "Artículos" %}</span>
   </a>
-  {% if membership.is_admin %}
+  {% endif %}
+  {% if has_purchasing %}
+  <a href="{% url 'purchases:supplier_list' %}"
+     class="subnav-link {% if 'purchases/suppliers' in request.path %}active{% endif %}">
+    <i class="bi bi-truck"></i>
+    <span>{% trans "Proveedores" %}</span>
+  </a>
+  {% endif %}
+  {% if has_sales and membership.is_admin %}
   <a href="{% url 'sales:payment_term_list' %}"
      class="subnav-link {% if 'sales/payment-terms' in request.path %}active{% endif %}">
     <i class="bi bi-calendar-check"></i>

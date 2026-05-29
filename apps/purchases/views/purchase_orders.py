@@ -74,6 +74,7 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 class PurchaseOrderCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "purchases/purchase_order_form.html"
     required_module = "purchasing"
+    admin_required = True
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -139,6 +140,7 @@ class PurchaseOrderDetailView(ERPBaseViewMixin, DetailView):
 class PurchaseOrderUpdateView(ERPBaseViewMixin, TemplateView):
     template_name = "purchases/purchase_order_form.html"
     required_module = "purchasing"
+    admin_required = True
 
     def _get_po(self, request, pk):
         o = get_object_or_404(PurchaseDocument.purchase_orders, pk=pk, organization=request.organization)
@@ -193,6 +195,7 @@ class PurchaseOrderUpdateView(ERPBaseViewMixin, TemplateView):
 
 class PurchaseOrderConfirmView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         po = get_object_or_404(PurchaseDocument.purchase_orders, pk=pk, organization=request.organization)
@@ -206,6 +209,7 @@ class PurchaseOrderConfirmView(ERPBaseViewMixin, View):
 
 class PurchaseOrderReceiveView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         po = get_object_or_404(PurchaseDocument.purchase_orders, pk=pk, organization=request.organization)
@@ -220,6 +224,7 @@ class PurchaseOrderReceiveView(ERPBaseViewMixin, View):
 
 class PurchaseOrderCancelView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         po = get_object_or_404(PurchaseDocument.purchase_orders, pk=pk, organization=request.organization)
@@ -247,6 +252,7 @@ class PurchaseOrderDeleteView(ERPBaseViewMixin, View):
 
 class PurchaseOrderCloneView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         source = get_object_or_404(

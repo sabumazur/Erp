@@ -105,8 +105,8 @@
                  class="fw-semibold text-decoration-none" style="color:#1e2130">
                 {{ po.supplier.name }}
               </a>
-              {% if po.supplier.id_number %}
-                <span class="text-muted small ms-1">· {{ po.supplier.get_id_type_display }}: {{ po.supplier.id_number }}</span>
+              {% if po.supplier.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ po.supplier.get_id_type_display }}: {{ po.supplier.rnc_cedula }}</span>
               {% endif %}
             </td>
           </tr>

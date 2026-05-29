@@ -2,6 +2,7 @@
 from decimal import Decimal
 
 import pytest
+from django.db import IntegrityError
 from django.utils import timezone
 
 from apps.purchases.models import (
@@ -134,7 +135,7 @@ class TestPurchaseOrderService:
 class TestSupplierInvoiceService:
 
     def test_confirm_sets_status_and_rnc(self):
-        supplier = SupplierFactory(id_number="131000123")
+        supplier = SupplierFactory(rnc_cedula="131000123")
         org = supplier.organization
         si = PurchaseDocumentFactory(
             organization=org, supplier=supplier,
@@ -148,7 +149,7 @@ class TestSupplierInvoiceService:
         SupplierInvoiceService.confirm(si)
         si.refresh_from_db()
         assert si.status == PurchaseDocument.Status.CONFIRMED
-        assert si.supplier_rnc == supplier.id_number
+        assert si.supplier_rnc == supplier.rnc_cedula
 
     def test_confirm_requires_ncf(self):
         supplier = SupplierFactory()
@@ -179,6 +180,32 @@ class TestSupplierInvoiceService:
         si2.recompute_totals()
         with pytest.raises(ValueError):
             SupplierInvoiceService.confirm(si2)
+
+    def test_confirm_converts_db_duplicate_ncf_to_value_error(self, monkeypatch):
+        supplier = SupplierFactory()
+        org = supplier.organization
+        si = PurchaseDocumentFactory(
+            organization=org,
+            supplier=supplier,
+            doc_type=PurchaseDocument.DocType.SUPPLIER_INVOICE,
+            status=PurchaseDocument.Status.DRAFT,
+            supplier_ncf="B0100000123",
+            supplier_ncf_type="B01",
+        )
+        PurchaseDocumentItemFactory(purchase_document=si)
+        si.recompute_totals()
+
+        original_save = PurchaseDocument.save
+
+        def raise_integrity_error(instance, *args, **kwargs):
+            if instance.pk == si.pk and instance.status == PurchaseDocument.Status.CONFIRMED:
+                raise IntegrityError("duplicate key value violates unique constraint")
+            return original_save(instance, *args, **kwargs)
+
+        monkeypatch.setattr(PurchaseDocument, "save", raise_integrity_error)
+
+        with pytest.raises(ValueError, match="ya est"):
+            SupplierInvoiceService.confirm(si)
 
     def test_confirm_updates_item_cost_price(self):
         from apps.items.models import Item
@@ -326,6 +353,34 @@ class TestSupplierPaymentService:
         assert si.status == PurchaseDocument.Status.CONFIRMED
         assert not SupplierPayment.objects.filter(pk=payment.pk).exists()
 
+    def test_create_payment_rolls_back_if_paid_status_update_fails(self, monkeypatch):
+        supplier = SupplierFactory()
+        org = supplier.organization
+        si = make_confirmed_si(org, supplier, supplier_ncf="B0100000040")
+
+        original_save = PurchaseDocument.save
+
+        def fail_paid_status_save(instance, *args, **kwargs):
+            if instance.pk == si.pk and instance.status == PurchaseDocument.Status.PAID:
+                raise RuntimeError("status update failed")
+            return original_save(instance, *args, **kwargs)
+
+        monkeypatch.setattr(PurchaseDocument, "save", fail_paid_status_save)
+
+        with pytest.raises(RuntimeError, match="status update failed"):
+            SupplierPaymentService.create_payment(
+                supplier=supplier,
+                org=org,
+                payment_date=timezone.now().date(),
+                method=SupplierPayment.Method.CASH,
+                reference="",
+                notes="",
+                allocations=[{"invoice": si, "amount": si.total}],
+            )
+
+        assert SupplierPayment.objects.filter(organization=org, supplier=supplier).count() == 0
+        assert SupplierPaymentAllocation.objects.count() == 0
+
 
 # ── Item Delete Guard ──────────────────────────────────────────────────────────
 
@@ -349,3 +404,18 @@ class TestItemDeleteGuard:
         PurchaseDocumentItemFactory(purchase_document=po, item=item)
         with pytest.raises(ValueError):
             item.delete()
+
+
+@pytest.mark.django_db
+class TestSupplierDeleteGuard:
+
+    def test_supplier_referenced_in_purchase_order_cannot_be_deleted(self):
+        supplier = SupplierFactory()
+        PurchaseDocumentFactory(
+            organization=supplier.organization,
+            supplier=supplier,
+            doc_type=PurchaseDocument.DocType.PURCHASE_ORDER,
+        )
+
+        with pytest.raises(ValueError):
+            supplier.delete()

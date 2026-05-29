@@ -66,6 +66,7 @@ class SupplierPaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class SupplierPaymentCreateView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def _ctx(self, request, form):
         return self.get_context(

@@ -6,11 +6,6 @@ from .views import (
     SupplierDetailView,
     SupplierUpdateView,
     SupplierDeleteView,
-    SupplierDepartmentCreateView,
-    SupplierDepartmentUpdateView,
-    SupplierDepartmentToggleView,
-    SupplierDepartmentDeleteView,
-    SupplierDepartmentsView,
     # Purchase Orders
     PurchaseOrderListView,
     PurchaseOrderCreateView,
@@ -38,6 +33,7 @@ from .views import (
     SupplierPaymentDeleteView,
     OutstandingSupplierInvoicesView,
     # HTMX
+    PurchaseItemQuickCreateView,
     SupplierSearchView,
     SupplierQuickCreateView,
     PurchaseItemSearchView,
@@ -54,18 +50,6 @@ urlpatterns = [
     path("purchases/suppliers/<uuid:pk>/",        SupplierDetailView.as_view(), name="supplier_detail"),
     path("purchases/suppliers/<uuid:pk>/edit/",   SupplierUpdateView.as_view(), name="supplier_edit"),
     path("purchases/suppliers/<uuid:pk>/delete/", SupplierDeleteView.as_view(), name="supplier_delete"),
-
-    # Supplier departments
-    path("purchases/suppliers/<uuid:supplier_pk>/departments/create/",
-         SupplierDepartmentCreateView.as_view(), name="dept_create"),
-    path("purchases/suppliers/<uuid:supplier_pk>/departments/<uuid:dept_pk>/edit/",
-         SupplierDepartmentUpdateView.as_view(), name="dept_edit"),
-    path("purchases/suppliers/<uuid:supplier_pk>/departments/<uuid:dept_pk>/toggle/",
-         SupplierDepartmentToggleView.as_view(), name="dept_toggle"),
-    path("purchases/suppliers/<uuid:supplier_pk>/departments/<uuid:dept_pk>/delete/",
-         SupplierDepartmentDeleteView.as_view(), name="dept_delete"),
-    path("purchases/suppliers/<uuid:supplier_pk>/departments/options/",
-         SupplierDepartmentsView.as_view(), name="departments_for_supplier"),
 
     # ── Purchase Orders ────────────────────────────────────────────────────────
     path("purchases/purchase-orders/",                   PurchaseOrderListView.as_view(),    name="po_list"),
@@ -100,6 +84,7 @@ urlpatterns = [
     path("purchases/htmx/suppliers/search/",      SupplierSearchView.as_view(),      name="supplier_search"),
     path("purchases/htmx/suppliers/create/",      SupplierQuickCreateView.as_view(), name="supplier_quick_create"),
     path("purchases/htmx/items/search/",          PurchaseItemSearchView.as_view(),  name="purchase_item_search"),
+    path("purchases/htmx/items/create/",          PurchaseItemQuickCreateView.as_view(), name="item_quick_create"),
 
     # ── Reports ────────────────────────────────────────────────────────────────
     path("purchases/reports/606/",                Report606View.as_view(),          name="report_606"),

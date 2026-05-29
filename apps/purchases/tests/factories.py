@@ -16,7 +16,7 @@ class SupplierFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     name = factory.Sequence(lambda n: f"Proveedor {n} S.R.L.")
     id_type = Supplier.IdType.RNC
-    id_number = factory.Sequence(lambda n: f"13112345{n:01d}")
+    rnc_cedula = factory.Sequence(lambda n: f"13112345{n:01d}")
     email = factory.Sequence(lambda n: f"proveedor{n}@empresa.com.do")
     phone = "809-555-0000"
     is_active = True

@@ -179,6 +179,10 @@ Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX
 ```
 `data-action="view"` / `data-action="edit"` on kebab items let ribbon buttons locate the correct link via `querySelector('[data-action=view]')`. Selection clears automatically on HTMX swap.
 
+**`.dt-kebab` dropdown positioning** — `static/js/core.js` patches `bootstrap.Dropdown.prototype._getPopperConfig` for any toggle inside `.dt-kebab` to use `strategy: 'fixed'` (escapes `app-table-wrap { overflow: hidden }`) and `placement: 'auto'` (Popper picks best direction, so dropdown is fully visible even when the table has only one row). Patch applies globally including HTMX-swapped content.
+
+**Detail page sidebar tables** — status/meta tables inside `app-table-wrap` on detail pages (e.g. "Estado del documento") use `overflow-x: auto` on their `p-3` wrapper and `min-width: max-content` on the `<table>` so values are never clipped by the parent `overflow: hidden`. Value `<td>` elements carry `white-space: nowrap`. Apply this pattern to any new sidebar info table.
+
 ### Full-text search (`apps/core/search.py`)
 
 ```python
@@ -263,11 +267,14 @@ Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required
 
 ### Document email (`apps/sales/email.py`)
 
-Sends HTML emails with inline org logo (base64 data URI, no external fetch).
+Sends HTML emails with inline org logo (base64 data URI, no external fetch). All three functions attach a PDF if WeasyPrint is installed; silently omit PDF if not.
 
-- `send_invoice_email(invoice, request)` — sends `sales/email/invoice_email.html` to customer email.
-- `send_quotation_email(quotation, request)` — sends `sales/email/quotation_email.html`; includes org logo + sender signature (also base64 if `user.signature` set).
+- `send_invoice_email(invoice, request)` — sends `sales/email/invoice_email.html` + attaches `factura_{doc_ref}.pdf` via `invoice_print.html`.
+- `send_quotation_email(quotation, request)` — sends `sales/email/quotation_email.html` + attaches `cotizacion_{doc_ref}.pdf` via `quotation_print.html`; includes sender signature.
+- `send_sale_order_email(order, request)` — sends `sales/email/sale_order_email.html` + attaches `orden_{doc_ref}.pdf` via `sale_order_print.html`.
 - `QuotationEmailView` (`sales:quotation_email`) — POST-only; triggers `send_quotation_email` and redirects with success/error message.
+
+Shared helper `_pdf_bytes(template, context, request)` renders any print template to PDF via WeasyPrint; returns `None` on `ImportError`. All three PDF helpers (`_invoice_pdf_bytes`, `_quotation_pdf_bytes`, `_sale_order_pdf_bytes`) delegate to it.
 
 Email templates embed logo as `data:image/...;base64,...` so email clients don't need to fetch external URLs.
 

@@ -33,3 +33,16 @@
 </div>
 
 {% endblock %}
+
+{% block extra_js %}
+<script>
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  rncFoundTitle: "{% trans 'RNC encontrado' %}",
+  rncNotFoundTitle: "{% trans 'No encontrado' %}",
+  rncNotFoundText: "{% trans 'Este RNC/Cédula no está registrado en el registro oficial.' %}",
+  acceptText: "{% trans 'Aceptar' %}",
+  cancelText: "{% trans 'Cancelar' %}",
+  closeText: "{% trans 'Cerrar' %}"
+});
+</script>
+{% endblock %}

@@ -4,16 +4,16 @@ from decimal import Decimal
 from django import forms
 from django.db.models import Q
 from django.forms import inlineformset_factory
+from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Column, HTML
+from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from apps.items.models import Item as _Item
 from apps.sales.models import PaymentTerm
 from .models import (
     Supplier,
-    SupplierDepartment,
     PurchaseDocument,
     PurchaseDocumentItem,
     SupplierPayment,
@@ -31,13 +31,12 @@ class SupplierForm(forms.ModelForm):
         fields = [
             "name",
             "id_type",
-            "id_number",
+            "rnc_cedula",
             "email",
             "phone",
             "contact_name",
             "address",
             "city",
-            "default_ncf_type",
             "payment_term",
             "credit_limit",
             "notes",
@@ -59,7 +58,16 @@ class SupplierForm(forms.ModelForm):
             self.fields["payment_term"].queryset = PaymentTerm.objects.filter(
                 Q(organization__isnull=True) | Q(organization=organization)
             ).order_by("days_due", "name")
-        self.fields["id_number"].widget.attrs.update({"placeholder": _("9 dígitos (RNC) · 11 (Cédula)")})
+        self.fields["rnc_cedula"].widget.attrs.update(
+            {
+                "placeholder": _("9 dígitos (RNC) · 11 (Cédula)"),
+                "hx-get": reverse_lazy("sales:rnc_lookup"),
+                "hx-trigger": "blur changed",
+                "hx-target": "#rnc-lookup-result",
+                "hx-include": "closest form",
+                "hx-indicator": "#rnc-lookup-spinner",
+            }
+        )
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
@@ -67,7 +75,18 @@ class SupplierForm(forms.ModelForm):
             "name",
             Row(
                 Column("id_type", css_class="col-md-5"),
-                Column("id_number", css_class="col-md-7"),
+                Column("rnc_cedula", css_class="col-md-7"),
+            ),
+            HTML(
+                '<div class="d-flex align-items-center gap-2 mb-2" style="min-height:1.6rem">'
+                '<span id="rnc-lookup-spinner" class="htmx-indicator spinner-border spinner-border-sm text-secondary" role="status"></span>'
+                '<div id="rnc-lookup-result"></div>'
+                "</div>"
+            ),
+            HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Dirección")}</p>'),
+            "address",
+            Row(
+                Column("city", css_class="col-md-6"),
             ),
             HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Contacto")}</p>'),
             Row(
@@ -75,15 +94,8 @@ class SupplierForm(forms.ModelForm):
                 Column("phone", css_class="col-md-6"),
             ),
             "contact_name",
-            "address",
-            Row(
-                Column("city", css_class="col-md-6"),
-            ),
             HTML(f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Compras")}</p>'),
-            Row(
-                Column("default_ncf_type", css_class="col-md-6"),
-                Column("payment_term", css_class="col-md-6"),
-            ),
+            "payment_term",
             "credit_limit",
             "notes",
             "change_reason",
@@ -92,41 +104,41 @@ class SupplierForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         id_type = cleaned_data.get("id_type")
-        id_number = (cleaned_data.get("id_number") or "").strip()
+        rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
 
-        if id_number:
+        if rnc_cedula:
             from apps.sales.validators import validate_rnc, validate_cedula
-            normalized = re.sub(r"[\s\-]", "", id_number)
+            normalized = re.sub(r"[\s\-]", "", rnc_cedula)
 
             if id_type == Supplier.IdType.RNC:
                 if not re.fullmatch(r"\d{9}", normalized):
-                    self.add_error("id_number", _("El RNC debe tener exactamente 9 dígitos numéricos."))
+                    self.add_error("rnc_cedula", _("El RNC debe tener exactamente 9 dígitos numéricos."))
                 else:
                     ok, msg = validate_rnc(normalized)
                     if not ok:
-                        self.add_error("id_number", msg)
+                        self.add_error("rnc_cedula", msg)
                     else:
-                        cleaned_data["id_number"] = normalized
+                        cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Supplier.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
-                    self.add_error("id_number", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
+                    self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
                 else:
                     ok, msg = validate_cedula(normalized)
                     if not ok:
-                        self.add_error("id_number", msg)
+                        self.add_error("rnc_cedula", msg)
                     else:
-                        cleaned_data["id_number"] = normalized
+                        cleaned_data["rnc_cedula"] = normalized
 
             elif id_type in (Supplier.IdType.PASAPORTE, Supplier.IdType.EXTERIOR):
-                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", id_number):
-                    self.add_error("id_number", _("Identificación inválida (4–20 caracteres alfanuméricos)."))
+                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
+                    self.add_error("rnc_cedula", _("Identificación inválida (4–20 caracteres alfanuméricos)."))
 
-            normalized = cleaned_data.get("id_number") or ""
-            if self._organization and normalized and "id_number" not in self.errors:
+            normalized = cleaned_data.get("rnc_cedula") or ""
+            if self._organization and normalized and "rnc_cedula" not in self.errors:
                 qs = Supplier.objects.filter(
                     organization=self._organization,
-                    id_number=normalized,
+                    rnc_cedula=normalized,
                     deleted_at__isnull=True,
                 )
                 if self.instance and self.instance.pk:
@@ -136,7 +148,7 @@ class SupplierForm(forms.ModelForm):
                     self._id_duplicate_msg = str(
                         _("Este RNC/cédula ya está asignado al proveedor «%(name)s».") % {"name": existing.name}
                     )
-                    self.add_error("id_number", self._id_duplicate_msg)
+                    self.add_error("rnc_cedula", self._id_duplicate_msg)
 
         return cleaned_data
 
@@ -153,59 +165,72 @@ class SupplierForm(forms.ModelForm):
 class SupplierQuickCreateForm(forms.ModelForm):
     class Meta:
         model = Supplier
-        fields = ["name", "id_type", "id_number"]
+        fields = ["name", "id_type", "rnc_cedula"]
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._organization = organization
         self.fields["name"].widget.attrs["autofocus"] = True
-        self.fields["id_number"].widget.attrs["placeholder"] = _("9 dígitos (RNC) · 11 (Cédula)")
+        self.fields["rnc_cedula"].widget.attrs["placeholder"] = _("9 dígitos (RNC) · 11 (Cédula)")
 
     def clean(self):
         cleaned_data = super().clean()
         id_type = cleaned_data.get("id_type")
-        id_number = (cleaned_data.get("id_number") or "").strip()
+        rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
 
-        if id_number:
+        if rnc_cedula:
             from apps.sales.validators import validate_rnc, validate_cedula
-            normalized = re.sub(r"[\s\-]", "", id_number)
+            normalized = re.sub(r"[\s\-]", "", rnc_cedula)
 
             if id_type == Supplier.IdType.RNC:
                 if not re.fullmatch(r"\d{9}", normalized):
-                    self.add_error("id_number", _("El RNC debe tener exactamente 9 dígitos."))
+                    self.add_error("rnc_cedula", _("El RNC debe tener exactamente 9 dígitos."))
                 else:
                     ok, msg = validate_rnc(normalized)
                     if not ok:
-                        self.add_error("id_number", msg)
+                        self.add_error("rnc_cedula", msg)
                     else:
-                        cleaned_data["id_number"] = normalized
+                        cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Supplier.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
-                    self.add_error("id_number", _("La Cédula debe tener exactamente 11 dígitos."))
+                    self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos."))
                 else:
                     ok, msg = validate_cedula(normalized)
                     if not ok:
-                        self.add_error("id_number", msg)
+                        self.add_error("rnc_cedula", msg)
                     else:
-                        cleaned_data["id_number"] = normalized
+                        cleaned_data["rnc_cedula"] = normalized
 
         return cleaned_data
 
 
-# ── SupplierDepartmentForm ────────────────────────────────────────────────────
+class PurchaseItemQuickCreateForm(forms.ModelForm):
+    """Minimal purchase item creation form used by the purchase document picker."""
 
+    unit_price = forms.IntegerField(
+        min_value=1,
+        label=_("precio de costo"),
+        widget=forms.NumberInput(attrs={"step": "1", "min": "1"}),
+    )
 
-class SupplierDepartmentForm(forms.ModelForm):
     class Meta:
-        model = SupplierDepartment
-        fields = ["name", "is_active"]
+        model = _Item
+        fields = ["name", "unit", "unit_price", "itbis_rate"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_tag = False
-        self.helper.layout = Layout("name", "is_active")
+        self._organization = organization
+        self.fields["unit_price"].widget.attrs["placeholder"] = "0.00"
+
+    def save(self, commit=True):
+        item = super().save(commit=False)
+        item.cost_price = self.cleaned_data["unit_price"]
+        item.unit_price = Decimal("0.00")
+        if commit:
+            item.save()
+            self.save_m2m()
+        return item
 
 
 # ── PurchaseOrderForm ─────────────────────────────────────────────────────────
@@ -218,8 +243,6 @@ class PurchaseOrderForm(forms.ModelForm):
             "supplier",
             "issue_date",
             "expected_date",
-            "currency",
-            "exchange_rate",
             "notes",
         ]
         widgets = {
@@ -235,8 +258,42 @@ class PurchaseOrderForm(forms.ModelForm):
             self.fields["supplier"].queryset = Supplier.objects.filter(
                 organization=organization, is_active=True
             ).order_by("name")
+        self.fields["supplier"].widget = forms.HiddenInput(attrs={"id": "id_supplier"})
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Proveedor"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control supplier-display-text" id="supplier-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openSupplierPicker()">'
+                        '{% if form.instance.supplier %}{{ form.instance.supplier.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin proveedor seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openSupplierPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.supplier.errors %}'
+                        '<div class="text-danger small">{{ form.supplier.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("supplier"),
+                    css_class="col-md-12",
+                ),
+            ),
+            Row(
+                Column("issue_date", css_class="col-md-6"),
+                Column("expected_date", css_class="col-md-6"),
+            ),
+            Row(Column("notes", css_class="col-md-12")),
+        )
 
 
 # ── SupplierInvoiceForm ───────────────────────────────────────────────────────
@@ -268,14 +325,79 @@ class SupplierInvoiceForm(forms.ModelForm):
             self.fields["supplier"].queryset = Supplier.objects.filter(
                 organization=organization, is_active=True
             ).order_by("name")
+        self.fields["supplier"].widget = forms.HiddenInput(attrs={"id": "id_supplier"})
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Proveedor"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control supplier-display-text" id="supplier-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openSupplierPicker()">'
+                        '{% if form.instance.supplier %}{{ form.instance.supplier.name }}{% else %}'
+                        '<span class=\\"text-muted fst-italic\\">Sin proveedor seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openSupplierPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.supplier.errors %}'
+                        '<div class="text-danger small">{{ form.supplier.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("supplier"),
+                    css_class="col-md-8",
+                ),
+                Column("supplier_ncf", css_class="col-md-4"),
+            ),
+            Row(
+                Column("supplier_ncf_type", css_class="col-md-4"),
+                Column("issue_date", css_class="col-md-4"),
+                Column("due_date", css_class="col-md-4"),
+            ),
+            Row(
+                Column("currency", css_class="col-md-4"),
+                Column("exchange_rate", css_class="col-md-4"),
+            ),
+            Row(Column("notes", css_class="col-md-12")),
+        )
 
 
 # ── PurchaseDocumentItem Formset ──────────────────────────────────────────────
 
 
 class PurchaseDocumentItemForm(forms.ModelForm):
+    quantity = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "step": "1",
+                "min": "1",
+                "class": "form-control form-control-sm text-end",
+                "x-model": "qty",
+                "x-on:input": "recalc()",
+            }
+        ),
+    )
+    unit_price = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "step": "1",
+                "min": "1",
+                "class": "form-control form-control-sm text-end",
+                "x-model": "price",
+                "x-on:input": "recalc()",
+            }
+        ),
+    )
+
     class Meta:
         model = PurchaseDocumentItem
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
@@ -295,7 +417,30 @@ class PurchaseDocumentItemForm(forms.ModelForm):
                 item_type__in=[_Item.ItemType.PURCHASE, _Item.ItemType.BOTH],
             ).order_by("name")
         self.fields["item"].required = False
-        self.fields["item"].widget.attrs.update({"class": "form-select"})
+        self.fields["item"].widget = forms.HiddenInput()
+        self.fields["description"].widget.attrs.update({
+            "class": "form-control form-control-sm",
+        })
+        self.fields["description"].widget.attrs.pop("placeholder", None)
+        self.fields["quantity"].widget.attrs.update({
+            "step": "1",
+            "min": "1",
+            "class": "form-control form-control-sm text-end",
+            "x-model": "qty",
+            "x-on:input": "recalc()",
+        })
+        self.fields["unit_price"].widget.attrs.update({
+            "step": "1",
+            "min": "1",
+            "class": "form-control form-control-sm text-end",
+            "x-model": "price",
+            "x-on:input": "recalc()",
+        })
+        self.fields["itbis_rate"].widget.attrs.update({
+            "class": "form-select form-select-sm",
+            "x-model": "rate",
+            "x-on:change": "recalc()",
+        })
 
 
 PurchaseDocumentItemFormSet = inlineformset_factory(

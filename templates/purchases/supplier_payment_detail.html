@@ -72,8 +72,8 @@
                  class="fw-semibold text-decoration-none" style="color:#1e2130">
                 {{ payment.supplier.name }}
               </a>
-              {% if payment.supplier.id_number %}
-                <span class="text-muted small ms-1">· {{ payment.supplier.get_id_type_display }}: {{ payment.supplier.id_number }}</span>
+              {% if payment.supplier.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ payment.supplier.get_id_type_display }}: {{ payment.supplier.rnc_cedula }}</span>
               {% endif %}
             </td>
           </tr>

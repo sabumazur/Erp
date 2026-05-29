@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,8 +12,8 @@ from django.views.generic import TemplateView
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
 from apps.core.search import fts_search
-from ..forms import SupplierForm, SupplierDepartmentForm
-from ..models import Supplier, SupplierDepartment, PurchaseDocument, SupplierPayment
+from ..forms import SupplierForm
+from ..models import Supplier, PurchaseDocument, SupplierPayment
 
 
 class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -21,7 +22,7 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     dt_columns = [
         DTColumn("name",      _("Nombre"),      sortable=True),
-        DTColumn("id_number", _("RNC/Cédula"),  sortable=True),
+        DTColumn("rnc_cedula", _("RNC/Cédula"),  sortable=True),
         DTColumn("email",     _("Correo"),      sortable=False, visible=False),
         DTColumn("phone",     _("Teléfono"),    sortable=False, visible=False),
         DTColumn("is_active", _("Estado"),      sortable=False, classes="text-center"),
@@ -39,7 +40,7 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = Supplier.objects.filter(organization=request.organization)
         q = request.GET.get("q", "").strip()
         if q:
-            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["id_number"])
+            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         ctx = build_datatable_context(
             request, qs, cls.dt_columns,
             default_sort=cls.dt_default_sort,
@@ -65,7 +66,7 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = Supplier.objects.filter(organization=org)
         q = self.request.GET.get("q", "").strip()
         if q:
-            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["id_number"])
+            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         ctx.update(self.apply_datatable(qs))
         ctx["form"] = SupplierForm(organization=org)
         ctx["module"] = "supplier"
@@ -76,6 +77,8 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         return ctx
 
     def post(self, request):
+        if not request.membership or not request.membership.is_admin:
+            raise PermissionDenied
         form = SupplierForm(request.POST, organization=request.organization)
         if form.is_valid():
             supplier = form.save(commit=False)
@@ -106,6 +109,7 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
 class SupplierCreateView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def get(self, request):
         form = SupplierForm(organization=request.organization)
@@ -150,7 +154,6 @@ class SupplierDetailView(ERPBaseViewMixin, View):
     def get(self, request, pk):
         from decimal import Decimal
         supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
-        departments = supplier.departments.filter(deleted_at__isnull=True).order_by("name")
         invoices = list(
             PurchaseDocument.supplier_invoices.filter(
                 organization=request.organization, supplier=supplier
@@ -169,8 +172,6 @@ class SupplierDetailView(ERPBaseViewMixin, View):
             self.get_context(
                 module="supplier",
                 supplier=supplier,
-                departments=departments,
-                dept_form=SupplierDepartmentForm(),
                 invoices=invoices,
                 total_invoiced=total_invoiced,
                 recent_payments=recent_payments,
@@ -185,9 +186,23 @@ class SupplierDetailView(ERPBaseViewMixin, View):
 
 class SupplierUpdateView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def _get_supplier(self, request, pk):
         return get_object_or_404(Supplier, pk=pk, organization=request.organization)
+
+    def _smart_buttons(self, request, supplier, pk):
+        invoice_count = PurchaseDocument.supplier_invoices.filter(
+            organization=request.organization, supplier=supplier
+        ).exclude(status=PurchaseDocument.Status.CANCELLED).count()
+        payment_count = SupplierPayment.objects.filter(
+            supplier=supplier, organization=request.organization
+        ).count()
+        return {
+            "invoice_count": invoice_count,
+            "payment_count": payment_count,
+            "detail_url": reverse("purchases:supplier_detail", args=[pk]),
+        }
 
     def get(self, request, pk):
         supplier = self._get_supplier(request, pk)
@@ -208,6 +223,7 @@ class SupplierUpdateView(ERPBaseViewMixin, View):
             self.get_context(
                 form=form,
                 supplier=supplier,
+                smart_buttons=self._smart_buttons(request, supplier, pk),
                 module="supplier",
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -247,6 +263,7 @@ class SupplierUpdateView(ERPBaseViewMixin, View):
             self.get_context(
                 form=form,
                 supplier=supplier,
+                smart_buttons=self._smart_buttons(request, supplier, pk),
                 module="supplier",
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -284,184 +301,3 @@ class SupplierDeleteView(ERPBaseViewMixin, View):
         messages.success(request, _(f"Proveedor «{name}» eliminado."))
         return redirect("purchases:supplier_list")
 
-
-# ── Supplier Department CRUD ──────────────────────────────────────────────────
-
-
-class SupplierDepartmentCreateView(ERPBaseViewMixin, View):
-    required_module = "purchasing"
-
-    def _supplier(self, request, supplier_pk):
-        return get_object_or_404(Supplier, pk=supplier_pk, organization=request.organization)
-
-    def _departments(self, supplier):
-        return supplier.departments.filter(deleted_at__isnull=True).order_by("name")
-
-    def get(self, request, supplier_pk):
-        supplier = self._supplier(request, supplier_pk)
-        form = SupplierDepartmentForm()
-        return render(
-            request,
-            "purchases/partials/department_modal_form.html",
-            {
-                "form": form,
-                "supplier": supplier,
-                "action_url": reverse("purchases:dept_create", args=[supplier_pk]),
-                "submit_label": _("Crear"),
-            },
-        )
-
-    def post(self, request, supplier_pk):
-        supplier = self._supplier(request, supplier_pk)
-        form = SupplierDepartmentForm(request.POST)
-        if form.is_valid():
-            dept = form.save(commit=False)
-            dept.organization = request.organization
-            dept.supplier = supplier
-            dept.save()
-            if request.htmx:
-                resp = render(
-                    request,
-                    "purchases/partials/department_table.html",
-                    {"departments": self._departments(supplier), "supplier": supplier},
-                )
-                resp["HX-Trigger"] = json.dumps(
-                    {"showToast": {"message": str(_("Departamento creado.")), "type": "success"}, "closeDeptModal": True}
-                )
-                return resp
-            messages.success(request, _("Departamento creado."))
-            return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-        if request.htmx:
-            resp = render(
-                request,
-                "purchases/partials/department_modal_form.html",
-                {
-                    "form": form,
-                    "supplier": supplier,
-                    "action_url": reverse("purchases:dept_create", args=[supplier_pk]),
-                    "submit_label": _("Crear"),
-                },
-            )
-            resp["HX-Retarget"] = "#dept-modal-body"
-            resp["HX-Reswap"] = "innerHTML"
-            return resp
-        messages.error(request, _("Por favor corrija los errores."))
-        return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-
-class SupplierDepartmentUpdateView(ERPBaseViewMixin, View):
-    required_module = "purchasing"
-
-    def _get_objects(self, request, supplier_pk, dept_pk):
-        supplier = get_object_or_404(Supplier, pk=supplier_pk, organization=request.organization)
-        dept = get_object_or_404(SupplierDepartment, pk=dept_pk, supplier=supplier)
-        return supplier, dept
-
-    def _departments(self, supplier):
-        return supplier.departments.filter(deleted_at__isnull=True).order_by("name")
-
-    def get(self, request, supplier_pk, dept_pk):
-        supplier, dept = self._get_objects(request, supplier_pk, dept_pk)
-        form = SupplierDepartmentForm(instance=dept)
-        return render(
-            request,
-            "purchases/partials/department_modal_form.html",
-            {
-                "form": form,
-                "supplier": supplier,
-                "action_url": reverse("purchases:dept_edit", args=[supplier_pk, dept_pk]),
-                "submit_label": _("Guardar"),
-            },
-        )
-
-    def post(self, request, supplier_pk, dept_pk):
-        supplier, dept = self._get_objects(request, supplier_pk, dept_pk)
-        form = SupplierDepartmentForm(request.POST, instance=dept)
-        if form.is_valid():
-            form.save()
-            if request.htmx:
-                resp = render(
-                    request,
-                    "purchases/partials/department_table.html",
-                    {"departments": self._departments(supplier), "supplier": supplier},
-                )
-                resp["HX-Trigger"] = json.dumps(
-                    {"showToast": {"message": str(_("Departamento actualizado.")), "type": "success"}, "closeDeptModal": True}
-                )
-                return resp
-            messages.success(request, _("Departamento actualizado."))
-            return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-        if request.htmx:
-            resp = render(
-                request,
-                "purchases/partials/department_modal_form.html",
-                {
-                    "form": form,
-                    "supplier": supplier,
-                    "action_url": reverse("purchases:dept_edit", args=[supplier_pk, dept_pk]),
-                    "submit_label": _("Guardar"),
-                },
-            )
-            resp["HX-Retarget"] = "#dept-modal-body"
-            resp["HX-Reswap"] = "innerHTML"
-            return resp
-        messages.error(request, _("Por favor corrija los errores."))
-        return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-
-class SupplierDepartmentToggleView(ERPBaseViewMixin, View):
-    required_module = "purchasing"
-
-    def post(self, request, supplier_pk, dept_pk):
-        supplier = get_object_or_404(Supplier, pk=supplier_pk, organization=request.organization)
-        dept = get_object_or_404(SupplierDepartment, pk=dept_pk, supplier=supplier)
-        dept.is_active = not dept.is_active
-        dept.save(update_fields=["is_active", "updated_at"])
-        if request.htmx:
-            departments = supplier.departments.filter(deleted_at__isnull=True).order_by("name")
-            return render(
-                request,
-                "purchases/partials/department_table.html",
-                {"departments": departments, "supplier": supplier},
-            )
-        return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-
-class SupplierDepartmentDeleteView(ERPBaseViewMixin, View):
-    required_module = "purchasing"
-    admin_required = True
-
-    def post(self, request, supplier_pk, dept_pk):
-        supplier = get_object_or_404(Supplier, pk=supplier_pk, organization=request.organization)
-        dept = get_object_or_404(SupplierDepartment, pk=dept_pk, supplier=supplier)
-        name = dept.name
-        dept.delete()
-
-        if request.htmx:
-            departments = supplier.departments.filter(deleted_at__isnull=True).order_by("name")
-            resp = render(
-                request,
-                "purchases/partials/department_table.html",
-                {"departments": departments, "supplier": supplier},
-            )
-            resp["HX-Trigger"] = json.dumps(
-                {"showToast": {"message": str(_(f"Departamento «{name}» eliminado.")), "type": "success"}}
-            )
-            return resp
-        messages.success(request, _(f"Departamento «{name}» eliminado."))
-        return redirect("purchases:supplier_detail", pk=supplier_pk)
-
-
-class SupplierDepartmentsView(ERPBaseViewMixin, View):
-    required_module = "purchasing"
-
-    def get(self, request, supplier_pk):
-        supplier = get_object_or_404(Supplier, pk=supplier_pk, organization=request.organization)
-        departments = supplier.departments.filter(deleted_at__isnull=True, is_active=True).order_by("name")
-        return render(
-            request,
-            "purchases/partials/department_options.html",
-            {"departments": departments},
-        )

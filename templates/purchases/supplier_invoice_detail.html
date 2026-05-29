@@ -108,8 +108,8 @@
                  class="fw-semibold text-decoration-none" style="color:#1e2130">
                 {{ invoice.supplier.name }}
               </a>
-              {% if invoice.supplier.id_number %}
-                <span class="text-muted small ms-1">· {{ invoice.supplier.get_id_type_display }}: {{ invoice.supplier.id_number }}</span>
+              {% if invoice.supplier.rnc_cedula %}
+                <span class="text-muted small ms-1">· {{ invoice.supplier.get_id_type_display }}: {{ invoice.supplier.rnc_cedula }}</span>
               {% endif %}
             </td>
           </tr>

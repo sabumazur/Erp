@@ -584,8 +584,9 @@ class RNCLookupView(ERPBaseViewMixin, View):
                 cache.set(cache_key, (name, source), timeout=86400)
 
         resp = HttpResponse("")
+        payload = {"value": value, "normalized_value": digits}
         if name:
-            resp["HX-Trigger"] = _json.dumps({"rncFound": {"name": name, "value": value}})
+            resp["HX-Trigger"] = _json.dumps({"rncFound": {"name": name, **payload}})
         else:
-            resp["HX-Trigger"] = _json.dumps({"rncNotFound": {"value": value}})
+            resp["HX-Trigger"] = _json.dumps({"rncNotFound": payload})
         return resp

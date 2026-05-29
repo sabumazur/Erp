@@ -122,7 +122,7 @@
           <div class="mb-2">
             <label class="form-label fw-semibold" for="iqc-unit-price">{% trans "Precio de costo" %} <span class="text-danger">*</span></label>
             <input type="number" class="form-control form-control-sm" id="iqc-unit-price"
-                   placeholder="0.00" min="0" step="0.01">
+                   min="1" step="1">
             <div class="invalid-feedback d-block" id="iqc-unit-price-error"></div>
           </div>
           <div class="text-danger small mb-2" id="iqc-non-field-errors"></div>
@@ -141,7 +141,7 @@
             <button type="button" class="btn btn-sm"
                     id="iqc-submit-btn"
                     style="background:#1e2130;color:#fff"
-                    onclick="itemPickerQuickCreate('{% url "purchases:supplier_quick_create" %}')">
+                    onclick="itemPickerQuickCreate()">
               <i class="bi bi-check-lg me-1"></i>{% trans "Crear y seleccionar" %}
             </button>
           </div>

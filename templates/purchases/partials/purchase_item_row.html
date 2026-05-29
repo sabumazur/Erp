@@ -1,15 +1,17 @@
 {% load i18n %}
 <tr x-data="itemRow()" class="align-middle item-row-main border-bottom-0">
   <td class="border-bottom-0" style="width:44px">
+    {{ form.item }}
     <button type="button"
             class="btn btn-outline-secondary btn-sm"
             title="{% trans 'Buscar en catálogo' %}"
             onclick="openItemPicker(this.closest('.item-row-main'))">
       <i class="bi bi-search"></i>
     </button>
-    {{ form.item }}
   </td>
-  <td class="border-bottom-0" style="width:110px">{{ form.quantity }}</td>
+  <td class="border-bottom-0" style="width:110px">
+    {{ form.quantity }}
+  </td>
   <td class="border-bottom-0" style="width:130px">{{ form.unit_price }}</td>
   <td class="border-bottom-0" style="width:130px">{{ form.itbis_rate }}</td>
   <td class="text-end fw-semibold border-bottom-0" style="width:130px">
@@ -30,5 +32,7 @@
   {{ form.id }}
 </tr>
 <tr class="item-row-desc">
-  <td colspan="8" class="pt-0 pb-2">{{ form.description }}</td>
+  <td colspan="8" class="pt-0 pb-2">
+    {{ form.description }}
+  </td>
 </tr>

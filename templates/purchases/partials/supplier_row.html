@@ -62,14 +62,14 @@
             </div>
           </span>
         </div>
-        {% if row.id_number %}
-          <span class="font-monospace text-muted" style="font-size:.68rem">{{ row.id_number }}</span>
+        {% if row.rnc_cedula %}
+          <span class="font-monospace text-muted" style="font-size:.68rem">{{ row.rnc_cedula }}</span>
         {% endif %}
       </div>
     </div>
   </td>
 
-  <td data-col="id_number" class="font-monospace small text-nowrap">{{ row.id_number|default:"—" }}</td>
+  <td data-col="rnc_cedula" class="font-monospace small text-nowrap">{{ row.rnc_cedula|default:"—" }}</td>
   <td data-col="email" class="small text-muted">{{ row.email|default:"—" }}</td>
   <td data-col="phone" class="small text-muted">{{ row.phone|default:"—" }}</td>
   <td data-col="is_active" class="text-center">

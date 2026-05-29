@@ -68,9 +68,11 @@
       }
       expiresAt = nextExpiresAt;
       config.expiryReason = nextReason;
-      warningOpen = false;
       publishDeadline();
-      if (window.Swal && Swal.isVisible()) Swal.close();
+      if (warningOpen && window.Swal && Swal.isVisible()) {
+        Swal.close();
+      }
+      warningOpen = false;
     }
 
     function keepalive() {

@@ -1,0 +1,27 @@
+{% load i18n %}
+{% if items %}
+  {% for item in items %}
+  {% with price=item.cost_price|default_if_none:"0" %}
+  <tr class="item-picker-row"
+      data-pk="{{ item.pk }}"
+      data-name="{{ item.name|escapejs }}"
+      data-code="{{ item.code|escapejs }}"
+      data-unit-price="{{ price|floatformat:0 }}"
+      data-itbis-rate="{{ item.itbis_rate }}"
+      onclick="itemPickerHighlight(this)"
+      ondblclick="itemPickerConfirm()"
+      style="cursor:pointer">
+    <td class="small font-monospace">{{ item.code|default:"-" }}</td>
+    <td>{{ item.name }}</td>
+    <td class="picker-unit-cell">{{ item.get_unit_display }}</td>
+    <td class="text-end">{{ price|floatformat:0 }}</td>
+  </tr>
+  {% endwith %}
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="4" class="text-center text-muted py-4">
+      <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron artículos." %}
+    </td>
+  </tr>
+{% endif %}

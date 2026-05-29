@@ -74,6 +74,7 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 class SupplierInvoiceCreateView(ERPBaseViewMixin, TemplateView):
     template_name = "purchases/supplier_invoice_form.html"
     required_module = "purchasing"
+    admin_required = True
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -139,6 +140,7 @@ class SupplierInvoiceDetailView(ERPBaseViewMixin, DetailView):
 class SupplierInvoiceUpdateView(ERPBaseViewMixin, TemplateView):
     template_name = "purchases/supplier_invoice_form.html"
     required_module = "purchasing"
+    admin_required = True
 
     def _get_invoice(self, request, pk):
         inv = get_object_or_404(PurchaseDocument.supplier_invoices, pk=pk, organization=request.organization)
@@ -193,6 +195,7 @@ class SupplierInvoiceUpdateView(ERPBaseViewMixin, TemplateView):
 
 class SupplierInvoiceConfirmView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         inv = get_object_or_404(PurchaseDocument.supplier_invoices, pk=pk, organization=request.organization)
@@ -206,6 +209,7 @@ class SupplierInvoiceConfirmView(ERPBaseViewMixin, View):
 
 class SupplierInvoiceCancelView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         inv = get_object_or_404(PurchaseDocument.supplier_invoices, pk=pk, organization=request.organization)
@@ -219,6 +223,7 @@ class SupplierInvoiceCancelView(ERPBaseViewMixin, View):
 
 class SupplierInvoiceReopenView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         inv = get_object_or_404(PurchaseDocument.supplier_invoices, pk=pk, organization=request.organization)
@@ -246,6 +251,7 @@ class SupplierInvoiceDeleteView(ERPBaseViewMixin, View):
 
 class SupplierInvoiceCloneView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         source = get_object_or_404(

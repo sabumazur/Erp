@@ -1,14 +1,20 @@
 {% load i18n %}
 {% for supplier in suppliers %}
-<div class="supplier-picker-item p-2 border-bottom" style="cursor:pointer"
-     data-supplier-id="{{ supplier.pk }}"
-     data-supplier-name="{{ supplier.name }}"
-     data-supplier-id-number="{{ supplier.id_number }}">
-  <div class="fw-semibold" style="font-size:.85rem">{{ supplier.name }}</div>
-  {% if supplier.id_number %}
-    <div class="text-muted font-monospace" style="font-size:.7rem">{{ supplier.id_number }}</div>
-  {% endif %}
-</div>
+<tr class="supplier-picker-row"
+    data-pk="{{ supplier.pk }}"
+    data-name="{{ supplier.name|escapejs }}"
+    data-rnc-cedula="{{ supplier.rnc_cedula|escapejs }}"
+    onclick="supplierPickerSelect('{{ supplier.pk }}', '{{ supplier.name|escapejs }}', '{{ supplier.rnc_cedula|escapejs }}')"
+    style="cursor:pointer">
+  <td>{{ supplier.name }}</td>
+  <td class="font-monospace small">{{ supplier.rnc_cedula|default:"-" }}</td>
+  <td class="d-none d-md-table-cell">{{ supplier.email|default:"-" }}</td>
+  <td class="d-none d-md-table-cell">{{ supplier.phone|default:"-" }}</td>
+</tr>
 {% empty %}
-<div class="text-muted small p-3">{% trans "No se encontraron proveedores." %}</div>
+<tr>
+  <td colspan="4" class="text-center text-muted py-4">
+    <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron proveedores." %}
+  </td>
+</tr>
 {% endfor %}

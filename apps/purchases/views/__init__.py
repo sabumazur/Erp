@@ -4,11 +4,6 @@ from .suppliers import (
     SupplierDetailView,
     SupplierUpdateView,
     SupplierDeleteView,
-    SupplierDepartmentCreateView,
-    SupplierDepartmentUpdateView,
-    SupplierDepartmentToggleView,
-    SupplierDepartmentDeleteView,
-    SupplierDepartmentsView,
 )
 from .purchase_orders import (
     PurchaseOrderListView,
@@ -40,6 +35,7 @@ from .payments import (
     OutstandingSupplierInvoicesView,
 )
 from .htmx import (
+    PurchaseItemQuickCreateView,
     SupplierSearchView,
     SupplierQuickCreateView,
     PurchaseItemSearchView,

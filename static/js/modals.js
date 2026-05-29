@@ -45,17 +45,31 @@
       return String(value || "").replace(/\D/g, "");
     }
 
-    function activeCustomerForm() {
+    function activeTaxIdForm() {
       var modal = document.querySelector("#customerModal.show");
       if (modal) {
         return modal.querySelector("form");
       }
-      var rnc = document.querySelector("form [name=rnc_cedula]");
-      return rnc ? rnc.closest("form") : null;
+      var supplierModal = document.querySelector("#supplierModal.show");
+      if (supplierModal) {
+        return supplierModal.querySelector("form");
+      }
+      var taxId = document.querySelector("form [name=rnc_cedula]");
+      return taxId ? taxId.closest("form") : null;
     }
 
+    function taxIdField(form) {
+      return form.querySelector("[name=rnc_cedula]");
+    }
+
+    // Flag set synchronously before Swal.fire() — guards against duplicate events
+    // that fire before SweetAlert2 has added .swal2-popup to the DOM (so
+    // Swal.isVisible() would still return false during the opening animation).
+    var _rncSwalPending = false;
+
     document.body.addEventListener("rncFound", function (evt) {
-      if (!window.Swal) return;
+      if (!window.Swal || _rncSwalPending) return;
+      _rncSwalPending = true;
       var d = evt.detail || {};
       Swal.fire({
         icon: "success",
@@ -65,11 +79,13 @@
         confirmButtonText: getConfig("acceptText", "Aceptar"),
         cancelButtonText: getConfig("cancelText", "Cancelar"),
         allowOutsideClick: false,
+        allowEscapeKey: false,
       }).then(function (result) {
+        _rncSwalPending = false;
         if (result.isConfirmed) {
-          var form = activeCustomerForm();
+          var form = activeTaxIdForm();
           if (!form) return;
-          var rnc = form.querySelector("[name=rnc_cedula]");
+          var rnc = taxIdField(form);
           var name = form.querySelector("[name=name]");
           if (!rnc || !name) return;
           if (d.normalized_value && normalizeTaxId(rnc.value) !== d.normalized_value) return;
@@ -79,12 +95,15 @@
     });
 
     document.body.addEventListener("rncNotFound", function () {
-      if (!window.Swal) return;
+      if (!window.Swal || _rncSwalPending) return;
+      _rncSwalPending = true;
       Swal.fire({
         icon: "warning",
         title: getConfig("rncNotFoundTitle", "No encontrado"),
         text: getConfig("rncNotFoundText", "Este RNC/Cedula no esta registrado en el registro oficial."),
         confirmButtonText: getConfig("closeText", "Cerrar"),
+      }).then(function () {
+        _rncSwalPending = false;
       });
     });
   }

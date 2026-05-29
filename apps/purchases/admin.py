@@ -2,7 +2,6 @@ from django.contrib import admin
 
 from .models import (
     Supplier,
-    SupplierDepartment,
     PurchaseSequence,
     PurchaseDocument,
     PurchaseDocumentItem,
@@ -13,15 +12,9 @@ from .models import (
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
-    list_display = ["name", "id_type", "id_number", "organization", "is_active"]
+    list_display = ["name", "id_type", "rnc_cedula", "organization", "is_active"]
     list_filter = ["is_active", "id_type", "organization"]
-    search_fields = ["name", "id_number"]
-
-
-@admin.register(SupplierDepartment)
-class SupplierDepartmentAdmin(admin.ModelAdmin):
-    list_display = ["name", "supplier", "is_active"]
-    list_filter = ["is_active"]
+    search_fields = ["name", "rnc_cedula"]
 
 
 @admin.register(PurchaseSequence)

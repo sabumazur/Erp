@@ -2,7 +2,7 @@ import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import DecimalField, Sum
 from django.db.models.functions import Coalesce
 from django.utils.translation import gettext_lazy as _
@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 _ZERO = Decimal("0.00")
 _DEC = DecimalField(max_digits=14, decimal_places=2)
+
+
+def _duplicate_ncf_error(ncf):
+    return _(f"El NCF Â«{ncf}Â» ya estÃ¡ registrado en esta organizaciÃ³n.")
 
 
 # ── PurchaseOrderService ──────────────────────────────────────────────────────
@@ -131,9 +135,12 @@ class SupplierInvoiceService:
                 _(f"El NCF «{invoice.supplier_ncf}» ya está registrado en esta organización.")
             )
 
-        invoice.supplier_rnc = invoice.supplier.id_number
+        invoice.supplier_rnc = invoice.supplier.rnc_cedula
         invoice.status = PurchaseDocument.Status.CONFIRMED
-        invoice.save(update_fields=["supplier_rnc", "status", "updated_at"])
+        try:
+            invoice.save(update_fields=["supplier_rnc", "status", "updated_at"])
+        except IntegrityError as exc:
+            raise ValueError(_duplicate_ncf_error(invoice.supplier_ncf)) from exc
 
         # Update item cost_price and default_supplier
         from apps.items.models import Item
@@ -269,11 +276,8 @@ class SupplierPaymentService:
             )
             remaining = alloc["_balance"] - amt
             if remaining <= _ZERO:
-                try:
-                    inv.status = PurchaseDocument.Status.PAID
-                    inv.save(update_fields=["status", "updated_at"])
-                except Exception as exc:
-                    logger.warning("Could not mark invoice %s PAID: %s", inv.pk, exc)
+                inv.status = PurchaseDocument.Status.PAID
+                inv.save(update_fields=["status", "updated_at"])
 
         return payment
 

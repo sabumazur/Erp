@@ -34,7 +34,7 @@ class Supplier(ERPBaseModel):
         default=IdType.RNC,
         verbose_name=_("tipo de identificación"),
     )
-    id_number = models.CharField(
+    rnc_cedula = models.CharField(
         max_length=20,
         blank=True,
         verbose_name=_("RNC / Cédula"),
@@ -61,12 +61,6 @@ class Supplier(ERPBaseModel):
         related_name="suppliers",
         verbose_name=_("término de pago"),
     )
-    default_ncf_type = models.CharField(
-        max_length=10,
-        blank=True,
-        verbose_name=_("tipo NCF proveedor"),
-        help_text=_("Tipo de NCF que emite el proveedor (ej. B01, B11)."),
-    )
     is_active = models.BooleanField(default=True, verbose_name=_("activo"))
 
     class Meta(ERPBaseModel.Meta):
@@ -76,13 +70,13 @@ class Supplier(ERPBaseModel):
         indexes = [
             GinIndex(SearchVector("name", config="spanish"), name="supplier_name_fts_idx"),
             GinIndex(fields=["name"], opclasses=["gin_trgm_ops"], name="supplier_name_trgm_idx"),
-            GinIndex(fields=["id_number"], opclasses=["gin_trgm_ops"], name="supplier_id_number_trgm_idx"),
+            GinIndex(fields=["rnc_cedula"], opclasses=["gin_trgm_ops"], name="supplier_rnc_cedula_trgm_idx"),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=["organization", "id_number"],
-                condition=models.Q(deleted_at__isnull=True) & ~models.Q(id_number=""),
-                name="unique_active_supplier_id_per_org",
+                fields=["organization", "rnc_cedula"],
+                condition=models.Q(deleted_at__isnull=True) & ~models.Q(rnc_cedula=""),
+                name="unique_active_supplier_rnc_cedula_per_org",
             )
         ]
 
@@ -92,65 +86,17 @@ class Supplier(ERPBaseModel):
     def clean(self):
         super().clean()
         from apps.sales.validators import validate_rnc_cedula
-        if self.id_number:
-            validate_rnc_cedula(self.id_number, id_type=self.id_type)
+        if self.rnc_cedula:
+            validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
 
     def delete(self, *args, **kwargs):
-        has_invoices = PurchaseDocument.supplier_invoices.filter(supplier=self).exists()
+        has_documents = PurchaseDocument.objects.filter(supplier=self).exists()
         has_payments = SupplierPayment.objects.filter(supplier=self).exists()
-        if has_invoices or has_payments:
+        if has_documents or has_payments:
             raise ValueError(
                 f"No se puede eliminar «{self.name}» porque tiene documentos o pagos asociados."
             )
         return super().delete(*args, **kwargs)
-
-
-# ── SupplierDepartment ────────────────────────────────────────────────────────
-
-
-class SupplierDepartment(ERPBaseModel):
-    organization = models.ForeignKey(
-        "accounts.Organization",
-        on_delete=models.CASCADE,
-        related_name="supplier_departments",
-        verbose_name=_("organización"),
-    )
-    supplier = models.ForeignKey(
-        Supplier,
-        on_delete=models.CASCADE,
-        related_name="departments",
-        verbose_name=_("proveedor"),
-    )
-    name = models.CharField(max_length=200, verbose_name=_("nombre del departamento"))
-    is_active = models.BooleanField(default=True, verbose_name=_("activo"))
-
-    class Meta(ERPBaseModel.Meta):
-        verbose_name = _("departamento de proveedor")
-        verbose_name_plural = _("departamentos de proveedor")
-        ordering = ["name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["supplier", "name"],
-                condition=models.Q(deleted_at__isnull=True),
-                name="unique_active_supplier_dept_name",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.supplier.name} — {self.name}"
-
-    def clean(self):
-        super().clean()
-        if (
-            self.supplier_id
-            and self.organization_id
-            and self.supplier.organization_id != self.organization_id
-        ):
-            raise ValidationError({"supplier": _("El proveedor no pertenece a esta organización.")})
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
 
 # ── PurchaseSequence ──────────────────────────────────────────────────────────

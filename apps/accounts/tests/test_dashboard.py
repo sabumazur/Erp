@@ -71,6 +71,14 @@ class TestDashboardKPIs:
         ctx = _dashboard(client, owner_membership).context
         assert ctx["month_invoiced"] == inv.total
 
+    def test_dashboard_subnav_includes_suppliers_link(self, client, owner_membership):
+        response = _dashboard(client, owner_membership)
+        content = response.content.decode()
+        subnav = content[content.index('<nav id="subnav"'):content.index("</nav>", content.index('<nav id="subnav"'))]
+
+        assert response.status_code == 200
+        assert reverse("purchases:supplier_list") in subnav
+
     def test_month_invoiced_includes_paid(self, client, owner_membership):
         org = owner_membership.organization
         inv = _make_invoice(org, SalesDocument.Status.PAID, Decimal("2000.00"))
