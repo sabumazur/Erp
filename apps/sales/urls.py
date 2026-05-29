@@ -3,6 +3,7 @@ from .views import (
     # Customers
     CustomerListView,
     CustomerDetailView,
+    CustomerCreateView,
     CustomerUpdateView,
     CustomerDeleteView,
     CustomerDepartmentCreateView,
@@ -89,6 +90,7 @@ app_name = "sales"
 urlpatterns = [
     # ── Customers ─────────────────────────────────────────────────────────────
     path("sales/customers/",                    CustomerListView.as_view(),   name="customer_list"),
+    path("sales/customers/create/",             CustomerCreateView.as_view(), name="customer_create"),
     path("sales/customers/<uuid:pk>/",          CustomerDetailView.as_view(), name="customer_detail"),
     path("sales/customers/<uuid:pk>/edit/",     CustomerUpdateView.as_view(), name="customer_edit"),
     path("sales/customers/<uuid:pk>/delete/",   CustomerDeleteView.as_view(), name="customer_delete"),

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import TemplateView, UpdateView
+from django.views.generic import TemplateView, UpdateView, CreateView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
@@ -141,6 +141,34 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx = self.get_context_data()
         ctx["form"] = form
         return self.render_to_response(ctx)
+
+
+class CustomerCreateView(ERPBaseViewMixin, CreateView):
+    model = Customer
+    form_class = CustomerForm
+    template_name = "sales/customer_form.html"
+    required_module = "sales"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.request.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["module"] = "customer"
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Clientes"), "url": reverse("sales:customer_list")},
+            {"label": _("Nuevo cliente")},
+        ]
+        return ctx
+
+    def form_valid(self, form):
+        form.instance.organization = self.request.organization
+        customer = form.save()
+        messages.success(self.request, _("Cliente creado correctamente."))
+        return redirect("sales:customer_detail", pk=customer.pk)
 
 
 class CustomerUpdateView(ERPBaseViewMixin, UpdateView):

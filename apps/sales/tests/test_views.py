@@ -1,16 +1,18 @@
 """
 Tests for invoice views — status transitions, permission guards, DGII rules.
 """
+import json
 from decimal import Decimal
 
 import pytest
+from django.core.cache import cache
 from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFactory, OrganizationFactory
 from apps.core.models import Module
 from apps.items.tests.factories import ItemFactory
-from apps.sales.forms import InvoiceItemForm, SaleOrderForm
+from apps.sales.forms import CustomerForm, InvoiceItemForm, SaleOrderForm
 from apps.sales.models import SalesDocument
 from apps.sales.services import NCFService
 from apps.sales.tests.factories import (
@@ -72,6 +74,88 @@ class TestCustomerViews:
         assert resp.status_code == 302
         from apps.sales.models import Customer
         assert Customer.objects.filter(organization=org, name="Empresa Test S.R.L.").exists()
+
+    def test_customer_form_rnc_lookup_attrs(self):
+        form = CustomerForm()
+        attrs = form.fields["rnc_cedula"].widget.attrs
+
+        assert attrs["hx-get"] == reverse("sales:rnc_lookup")
+        assert attrs["hx-trigger"] == "blur"
+        assert attrs["hx-include"] == "closest form"
+        assert attrs["hx-target"] == "#rnc-lookup-result"
+
+
+@pytest.mark.django_db
+class TestRNCLookupView:
+    def _request(self, client, monkeypatch, result, params=None):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        cache.clear()
+
+        calls = []
+
+        def fake_lookup(value, id_type):
+            calls.append((value, id_type))
+            return result
+
+        monkeypatch.setattr("apps.sales.validators.lookup_name", fake_lookup)
+        response = client.get(reverse("sales:rnc_lookup"), params or {
+            "id_type": "RNC",
+            "rnc_cedula": "1-01-23456-3",
+        })
+        return response, calls
+
+    def test_lookup_found_triggers_event_with_name_and_normalized_value(self, client, monkeypatch):
+        response, calls = self._request(client, monkeypatch, ("EMPRESA TEST SRL", "DGII"))
+
+        trigger = json.loads(response.headers["HX-Trigger"])
+
+        assert calls == [("1-01-23456-3", "RNC")]
+        assert trigger["rncFound"]["name"] == "EMPRESA TEST SRL"
+        assert trigger["rncFound"]["value"] == "1-01-23456-3"
+        assert trigger["rncFound"]["normalized_value"] == "101234563"
+
+    def test_lookup_missing_value_returns_no_trigger(self, client, monkeypatch):
+        response, calls = self._request(
+            client,
+            monkeypatch,
+            ("IGNORED", "DGII"),
+            {"id_type": "RNC", "rnc_cedula": ""},
+        )
+
+        assert response.content == b""
+        assert "HX-Trigger" not in response.headers
+        assert calls == []
+
+    def test_lookup_not_found_triggers_warning_event(self, client, monkeypatch):
+        response, calls = self._request(client, monkeypatch, (None, ""))
+
+        trigger = json.loads(response.headers["HX-Trigger"])
+
+        assert calls == [("1-01-23456-3", "RNC")]
+        assert trigger == {"rncNotFound": {"value": "1-01-23456-3", "normalized_value": "101234563"}}
+
+    def test_lookup_found_result_is_cached(self, client, monkeypatch):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        cache.clear()
+        calls = []
+
+        def fake_lookup(value, id_type):
+            calls.append((value, id_type))
+            return "EMPRESA TEST SRL", "DGII"
+
+        monkeypatch.setattr("apps.sales.validators.lookup_name", fake_lookup)
+        url = reverse("sales:rnc_lookup")
+        params = {"id_type": "RNC", "rnc_cedula": "101234563"}
+
+        first = client.get(url, params)
+        second = client.get(url, params)
+
+        assert first.headers["HX-Trigger"] == second.headers["HX-Trigger"]
+        assert calls == [("101234563", "RNC")]
 
 
 # ── Invoice views ─────────────────────────────────────────────────────────────
@@ -671,3 +755,71 @@ class TestItemSearchView:
             )
         resp = self._get(client, org)
         assert resp.content.decode().count("<tr") <= 50
+
+
+# ── CustomerCreateView ────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestCustomerCreateView:
+
+    def test_get_returns_200(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = client.get(reverse("sales:customer_create"))
+        assert resp.status_code == 200
+
+    def test_get_requires_login(self, client):
+        resp = client.get(reverse("sales:customer_create"))
+        assert resp.status_code in (302, 403)
+
+    def test_post_valid_creates_customer_and_redirects_to_detail(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = client.post(reverse("sales:customer_create"), {
+            "name": "Farmacia Nueva S.R.L.",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+            "email": "",
+            "phone": "",
+            "contact_name": "", "contact_number": "",
+            "address": "", "city": "", "province": "",
+            "country": "República Dominicana",
+            "default_ncf_type": 31,
+            "notes": "",
+            "change_reason": "",
+        })
+        from apps.sales.models import Customer
+        customer = Customer.objects.get(organization=org, name="Farmacia Nueva S.R.L.")
+        assert resp.status_code == 302
+        assert resp["Location"] == reverse("sales:customer_detail", args=[customer.pk])
+
+    def test_post_invalid_rnc_returns_form_errors(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        resp = client.post(reverse("sales:customer_create"), {
+            "name": "Test",
+            "id_type": "RNC",
+            "rnc_cedula": "123",  # too short
+            "country": "República Dominicana",
+            "default_ncf_type": 31,
+        })
+        assert resp.status_code == 200
+        assert resp.context["form"].errors
+
+    def test_post_duplicate_rnc_returns_form_error(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        CustomerFactory(organization=org, rnc_cedula="101234563")
+        resp = client.post(reverse("sales:customer_create"), {
+            "name": "Otro Cliente",
+            "id_type": "RNC",
+            "rnc_cedula": "101234563",
+            "country": "República Dominicana",
+            "default_ncf_type": 31,
+        })
+        assert resp.status_code == 200
+        assert "rnc_cedula" in resp.context["form"].errors

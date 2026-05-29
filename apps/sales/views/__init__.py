@@ -1,6 +1,7 @@
 from .customers import (
     CustomerListView,
     CustomerDetailView,
+    CustomerCreateView,
     CustomerUpdateView,
     CustomerDeleteView,
     CustomerDepartmentCreateView,
