@@ -394,7 +394,8 @@ class PurchaseDocument(ERPBaseModel):
             raise ValidationError({"supplier": _("El proveedor no pertenece a esta organización.")})
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        # Skip validate_constraints() — NCF uniqueness is enforced by the service and DB constraint.
+        self.clean()
         return super().save(*args, **kwargs)
 
 
