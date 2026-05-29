@@ -1253,6 +1253,7 @@ class Migration(migrations.Migration):
                 condition=models.Q(
                     ("deleted_at__isnull", True),
                     models.Q(("supplier_ncf", ""), _negated=True),
+                    models.Q(("status", "DRAFT"), _negated=True),
                 ),
                 fields=("organization", "supplier_ncf"),
                 name="unique_supplier_ncf_per_org",

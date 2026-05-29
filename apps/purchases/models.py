@@ -345,7 +345,11 @@ class PurchaseDocument(ERPBaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "supplier_ncf"],
-                condition=models.Q(deleted_at__isnull=True) & ~models.Q(supplier_ncf=""),
+                condition=(
+                    models.Q(deleted_at__isnull=True)
+                    & ~models.Q(supplier_ncf="")
+                    & ~models.Q(status="DRAFT")
+                ),
                 name="unique_supplier_ncf_per_org",
             ),
         ]
