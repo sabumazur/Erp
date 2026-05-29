@@ -1,10 +1,9 @@
 {% load i18n %}
 {# Ribbon actions for the customer list. Rendered inside .dt-ribbon-left inside #dt-wrapper (Alpine dtTable() scope). #}
 
-<button type="button" class="btn btn-primary"
-        data-bs-toggle="modal" data-bs-target="#customerModal">
+<a href="{% url 'sales:customer_create' %}" class="btn btn-primary">
   <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
-</button>
+</a>
 
 <span class="dt-ribbon-sep"></span>
 
@@ -18,7 +17,7 @@
 <button type="button" class="btn btn-outline-secondary"
         :disabled="!canAct"
         :class="{'disabled': !canAct}"
-        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=edit]')?.click()">
+        @click="canAct && (window.location.href = document.querySelector('tr.dt-row-selected [data-action=edit]')?.href || '#')">
   <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
 </button>
 

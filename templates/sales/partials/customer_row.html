@@ -37,13 +37,9 @@
                   </a>
                 </li>
                 <li>
-                  <button type="button" class="dropdown-item" data-action="edit"
-                          hx-get="{% url 'sales:customer_edit' row.pk %}?hx_target=%23dt-results"
-                          hx-target="#customer-modal-body"
-                          hx-on::after-request="document.getElementById('customerModalTitle').textContent = '{% trans "Editar cliente" %}';
-                                                bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
+                  <a class="dropdown-item" href="{% url 'sales:customer_edit' row.pk %}" data-action="edit">
                     <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
-                  </button>
+                  </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
