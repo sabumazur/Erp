@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags i18n %}
 
-{% block title %}{% trans "Editar cliente" %}{% endblock %}
+{% block title %}{% if object %}{{ object.name }}{% else %}{% trans "Nuevo cliente" %}{% endif %}{% endblock %}
 
 {% block extra_css %}
 {% include "components/app_styles.html" %}
@@ -11,33 +11,175 @@
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Editar cliente" %}</h4>
-    <p class="app-header-sub">{% trans "Clientes" %}</p>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1" style="font-size:.75rem">
+        <li class="breadcrumb-item">
+          <a href="{% url 'sales:customer_list' %}" class="text-decoration-none text-muted">{% trans "Clientes" %}</a>
+        </li>
+        <li class="breadcrumb-item active text-muted">
+          {% if object %}{{ object.name }}{% else %}{% trans "Nuevo cliente" %}{% endif %}
+        </li>
+      </ol>
+    </nav>
+    <h4 class="app-header-title">
+      {% if object %}{{ object.name }}{% else %}{% trans "Nuevo cliente" %}{% endif %}
+    </h4>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+      {% trans "Cancelar" %}
     </a>
   </div>
 </div>
 
+{% if smart_buttons %}
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <a href="{{ smart_buttons.detail_url }}" class="text-decoration-none">
+    <div class="app-table-wrap px-3 py-2 text-center" style="min-width:80px;cursor:pointer">
+      <div class="fw-bold lh-1 mb-1" style="font-size:1.25rem;color:#1e2130">{{ smart_buttons.invoice_count }}</div>
+      <div class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">{% trans "Facturas" %}</div>
+    </div>
+  </a>
+  <a href="{{ smart_buttons.detail_url }}" class="text-decoration-none">
+    <div class="app-table-wrap px-3 py-2 text-center" style="min-width:80px;cursor:pointer">
+      <div class="fw-bold lh-1 mb-1" style="font-size:1.25rem;color:#1e2130">{{ smart_buttons.payment_count }}</div>
+      <div class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">{% trans "Pagos" %}</div>
+    </div>
+  </a>
+  <a href="{{ smart_buttons.detail_url }}" class="text-decoration-none">
+    <div class="app-table-wrap px-3 py-2 text-center" style="min-width:80px;cursor:pointer">
+      <div class="fw-bold lh-1 mb-1" style="font-size:1.25rem;color:#1e2130">{{ smart_buttons.dept_count }}</div>
+      <div class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">{% trans "Deptos" %}</div>
+    </div>
+  </a>
+</div>
+{% endif %}
+
 <form method="post">
   {% csrf_token %}
-  <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
-      {% trans "Datos del cliente" %}
+
+  <div class="row g-3 align-items-start">
+
+    {# ── Left column ────────────────────────────────────────────────────── #}
+    <div class="col-md-8">
+
+      {# Datos generales #}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Datos generales" %}
+        </div>
+        <div class="p-3">
+          {{ form.name|as_crispy_field }}
+          <div class="row g-2">
+            <div class="col-md-4">{{ form.id_type|as_crispy_field }}</div>
+            <div class="col-md-8">{{ form.rnc_cedula|as_crispy_field }}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2 mt-1 mb-1" style="min-height:1.6rem">
+            <span id="rnc-lookup-spinner"
+                  class="htmx-indicator spinner-border spinner-border-sm text-secondary"
+                  role="status"></span>
+            <div id="rnc-lookup-result"></div>
+          </div>
+        </div>
+      </div>
+
+      {# Contacto #}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Contacto" %}
+        </div>
+        <div class="p-3">
+          <div class="row g-2">
+            <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
+            <div class="col-md-6">{{ form.phone|as_crispy_field }}</div>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">{{ form.contact_name|as_crispy_field }}</div>
+            <div class="col-md-6">{{ form.contact_number|as_crispy_field }}</div>
+          </div>
+        </div>
+      </div>
+
+      {# Dirección #}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Dirección" %}
+        </div>
+        <div class="p-3">
+          {{ form.address|as_crispy_field }}
+          <div class="row g-2">
+            <div class="col-md-4">{{ form.city|as_crispy_field }}</div>
+            <div class="col-md-4">{{ form.province|as_crispy_field }}</div>
+            <div class="col-md-4">{{ form.country|as_crispy_field }}</div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="p-3">
-      {% crispy form %}
+
+    {# ── Right column ───────────────────────────────────────────────────── #}
+    <div class="col-md-4">
+
+      {# Facturación #}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Facturación" %}
+        </div>
+        <div class="p-3">
+          {{ form.default_ncf_type|as_crispy_field }}
+          {{ form.payment_term|as_crispy_field }}
+          {{ form.credit_limit|as_crispy_field }}
+        </div>
+      </div>
+
+      {# Notas #}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Notas" %}
+        </div>
+        <div class="p-3">
+          {{ form.notes|as_crispy_field }}
+        </div>
+      </div>
+
+      {# Auditoría — edit only #}
+      {% if object %}
+      <div class="app-table-wrap mb-3">
+        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+          {% trans "Auditoría" %}
+        </div>
+        <div class="p-3">
+          {{ form.change_reason|as_crispy_field }}
+        </div>
+      </div>
+      {% endif %}
+
     </div>
+
   </div>
 
   <div class="form-sticky-bar">
     <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
     </button>
-    <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">
+      {% trans "Cancelar" %}
+    </a>
   </div>
+
 </form>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
+  rncFoundTitle: "{% trans 'RNC encontrado' %}",
+  rncNotFoundTitle: "{% trans 'No encontrado' %}",
+  rncNotFoundText: "{% trans 'Este RNC/Cédula no está registrado en el registro oficial.' %}",
+  acceptText: "{% trans 'Aceptar' %}",
+  cancelText: "{% trans 'Cancelar' %}",
+  closeText: "{% trans 'Cerrar' %}"
+});
+</script>
 {% endblock %}
