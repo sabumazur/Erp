@@ -175,100 +175,57 @@ class CustomerUpdateView(ERPBaseViewMixin, UpdateView):
     form_class = CustomerForm
     template_name = "sales/customer_form.html"
     required_module = "sales"
-    success_url = None  # set in form_valid
-
-    def get_success_url(self):
-        from django.urls import reverse_lazy
-        return reverse_lazy("sales:customer_list")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["module"] = "customer"
-        ctx["breadcrumbs"] = [
-            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Clientes"), "url": reverse("sales:customer_list")},
-            {"label": self.object.name},
-        ]
-        return ctx
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["organization"] = self.request.organization
-        return kwargs
 
     def get_object(self):
         return get_object_or_404(
             Customer, pk=self.kwargs["pk"], organization=self.request.organization
         )
 
-    def get(self, request, *args, **kwargs):
-        if request.htmx:
-            customer = self.get_object()
-            form = CustomerForm(instance=customer, organization=request.organization)
-            return render(
-                request,
-                "sales/partials/customer_modal_form.html",
-                {
-                    "form": form,
-                    "action_url": reverse("sales:customer_edit", args=[customer.pk]),
-                    "submit_label": _("Guardar"),
-                    "hx_target": request.GET.get("hx_target", "#customer-table"),
-                },
-            )
-        return super().get(request, *args, **kwargs)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.request.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        from ..models import SalesDocument, Payment
+
+        ctx = super().get_context_data(**kwargs)
+        customer = self.object
+        org = self.request.organization
+
+        invoice_count = SalesDocument.invoices.filter(
+            organization=org, customer=customer
+        ).exclude(
+            status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED]
+        ).count()
+
+        payment_count = Payment.objects.filter(
+            customer=customer, organization=org
+        ).count()
+
+        dept_count = customer.departments.filter(
+            deleted_at__isnull=True, is_active=True
+        ).count()
+
+        ctx["smart_buttons"] = {
+            "invoice_count": invoice_count,
+            "payment_count": payment_count,
+            "dept_count": dept_count,
+            "detail_url": reverse("sales:customer_detail", args=[customer.pk]),
+        }
+        ctx["module"] = "customer"
+        ctx["breadcrumbs"] = [
+            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
+            {"label": _("Clientes"), "url": reverse("sales:customer_list")},
+            {"label": customer.name},
+        ]
+        return ctx
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        self.object = form.save()
         record_change_reason(self.object, form.cleaned_data.get("change_reason", ""))
-        if self.request.htmx:
-            hx_target = self.request.POST.get("_hx_target", "#customer-table")
-            if hx_target == "#dt-results":
-                return CustomerListView._refresh_table(
-                    self.request, str(_("Cliente actualizado.")),
-                )
-            if hx_target != "#customer-table":
-                messages.success(self.request, _("Cliente actualizado."))
-                resp = HttpResponse()
-                resp["HX-Refresh"] = "true"
-                return resp
-            resp = render(
-                self.request,
-                "sales/partials/customer_table.html",
-                {"customers": _customers_with_depts(self.request.organization)},
-            )
-            resp["HX-Trigger"] = json.dumps(
-                {"showToast": {"message": str(_("Cliente actualizado.")), "type": "success"}}
-            )
-            return resp
         messages.success(self.request, _("Cliente actualizado."))
-        return response
-
-    def form_invalid(self, form):
-        if self.request.htmx:
-            customer = self.get_object()
-            hx_target = self.request.POST.get("_hx_target", "#customer-table")
-            resp = render(
-                self.request,
-                "sales/partials/customer_modal_form.html",
-                {
-                    "form": form,
-                    "action_url": reverse("sales:customer_edit", args=[customer.pk]),
-                    "submit_label": _("Guardar"),
-                    "hx_target": hx_target,
-                },
-            )
-            resp["HX-Retarget"] = "#customer-modal-body"
-            resp["HX-Reswap"] = "innerHTML"
-            if hasattr(form, "_rnc_duplicate_msg"):
-                resp["HX-Trigger"] = json.dumps({
-                    "showSwal": {
-                        "icon": "error",
-                        "title": str(_("RNC / Cédula duplicado")),
-                        "text": form._rnc_duplicate_msg,
-                    }
-                })
-            return resp
-        return super().form_invalid(form)
+        return redirect("sales:customer_detail", pk=self.object.pk)
 
 
 class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):

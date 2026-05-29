@@ -84,6 +84,57 @@ class TestCustomerViews:
         assert attrs["hx-include"] == "closest form"
         assert attrs["hx-target"] == "#rnc-lookup-result"
 
+    def test_edit_htmx_get_returns_full_page_not_partial(self, client):
+        """After removing HTMX modal, an HTMX GET must return the full page (200)."""
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        customer = CustomerFactory(organization=org)
+        resp = client.get(
+            reverse("sales:customer_edit", args=[customer.pk]),
+            HTTP_HX_REQUEST="true",
+        )
+        assert resp.status_code == 200
+        # Must NOT be a partial: full page has form in context
+        assert "form" in resp.context
+
+    def test_edit_post_redirects_to_customer_detail(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        # Use a fixed known-valid RNC to avoid factory sequence producing invalid checksums.
+        customer = CustomerFactory(organization=org, rnc_cedula="101234563", id_type="RNC")
+        resp = client.post(
+            reverse("sales:customer_edit", args=[customer.pk]),
+            {
+                "name": "Updated Name S.R.L.",
+                "id_type": "RNC",
+                "rnc_cedula": "101234563",
+                "email": "",
+                "phone": "",
+                "contact_name": "", "contact_number": "",
+                "address": "", "city": "", "province": "",
+                "country": "República Dominicana",
+                "default_ncf_type": 31,
+                "notes": "",
+                "change_reason": "",
+            },
+        )
+        assert resp.status_code == 302
+        assert resp["Location"] == reverse("sales:customer_detail", args=[customer.pk])
+
+    def test_edit_context_has_smart_buttons(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        customer = CustomerFactory(organization=org)
+        resp = client.get(reverse("sales:customer_edit", args=[customer.pk]))
+        assert resp.status_code == 200
+        assert "smart_buttons" in resp.context
+        assert "invoice_count" in resp.context["smart_buttons"]
+        assert "payment_count" in resp.context["smart_buttons"]
+        assert "dept_count" in resp.context["smart_buttons"]
+
 
 @pytest.mark.django_db
 class TestRNCLookupView:
