@@ -35,14 +35,9 @@
     <a href="{% url 'sales:customer_list' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <button type="button" class="btn btn-outline-secondary btn-sm"
-            hx-get="{% url 'sales:customer_edit' customer.pk %}?hx_target=refresh"
-            hx-target="#customer-modal-body"
-            data-modal-title="{% trans "Editar cliente" %}"
-            hx-on::after-request="document.getElementById('customerModalTitle').textContent = this.dataset.modalTitle;
-                                  bootstrap.Modal.getOrCreateInstance('#customerModal').show();">
+    <a href="{% url 'sales:customer_edit' customer.pk %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
-    </button>
+    </a>
   </div>
 </div>
 
@@ -349,21 +344,6 @@
 
   </div>
 
-</div>
-
-{# ── Customer edit modal ── #}
-<div class="modal fade" id="customerModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
-        <h5 class="modal-title fw-semibold" id="customerModalTitle" style="font-size:.95rem">
-          {% trans "Editar cliente" %}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div id="customer-modal-body" class="d-flex flex-column flex-grow-1 overflow-hidden"></div>
-    </div>
-  </div>
 </div>
 
 {# ── Department modal ── #}
