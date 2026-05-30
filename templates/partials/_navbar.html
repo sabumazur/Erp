@@ -30,13 +30,15 @@
 
   {# ── Quick-create dropdown ──────────────────────────────── #}
   {% can_access_module membership "sales" as has_sales %}
-  {% if has_sales %}
+  {% can_access_module membership "purchasing" as has_purchasing %}
+  {% if has_sales or has_purchasing %}
   <div class="dropdown">
     <button class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-no-caret d-flex align-items-center"
             type="button" data-bs-toggle="dropdown" aria-label="{% trans 'Crear nuevo' %}">
       <i class="bi bi-plus-lg"></i>
     </button>
     <ul class="dropdown-menu">
+      {% if has_sales %}
       <li><h6 class="dropdown-header">{% trans "Facturación" %}</h6></li>
       <li>
         <a class="dropdown-item" href="{% url 'sales:quotation_create' %}">
@@ -59,6 +61,28 @@
           <i class="bi bi-cash-stack me-2 text-muted"></i>{% trans "Pago" %}
         </a>
       </li>
+      {% endif %}
+      {% if has_sales and has_purchasing %}
+      <li><hr class="dropdown-divider"></li>
+      {% endif %}
+      {% if has_purchasing %}
+      <li><h6 class="dropdown-header">{% trans "Compras" %}</h6></li>
+      <li>
+        <a class="dropdown-item" href="{% url 'purchases:po_create' %}">
+          <i class="bi bi-cart3 me-2 text-muted"></i>{% trans "Órdenes de Compra" %}
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{% url 'purchases:supplier_invoice_create' %}">
+          <i class="bi bi-receipt me-2 text-muted"></i>{% trans "Facturas de Proveedor" %}
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{% url 'purchases:supplier_payment_create' %}">
+          <i class="bi bi-cash-stack me-2 text-muted"></i>{% trans "Pagos a Proveedores" %}
+        </a>
+      </li>
+      {% endif %}
     </ul>
   </div>
   {% endif %}
@@ -129,13 +153,6 @@
      class="subnav-link {% if 'purchases/suppliers' in request.path %}active{% endif %}">
     <i class="bi bi-truck"></i>
     <span>{% trans "Proveedores" %}</span>
-  </a>
-  {% endif %}
-  {% if has_sales and membership.is_admin %}
-  <a href="{% url 'sales:payment_term_list' %}"
-     class="subnav-link {% if 'sales/payment-terms' in request.path %}active{% endif %}">
-    <i class="bi bi-calendar-check"></i>
-    <span>{% trans "Términos de pago" %}</span>
   </a>
   {% endif %}
 </nav>

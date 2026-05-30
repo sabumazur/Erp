@@ -40,4 +40,13 @@ from .htmx import (
     SupplierQuickCreateView,
     PurchaseItemSearchView,
 )
-from .reports import Report606View
+from .reports import (
+    Report606View,
+    ReportPurchasesIndexView,
+    ReportAPAgingView,
+    ReportSupplierStatementView,
+    ReportSpendByPeriodView,
+    ReportPurchasesBySupplierView,
+    ReportSupplierPaymentsView,
+    ReportITBISCreditsView,
+)

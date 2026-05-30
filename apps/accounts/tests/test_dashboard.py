@@ -34,6 +34,18 @@ def _dashboard(client, membership):
     return client.get(reverse("accounts:dashboard"))
 
 
+def _topbar_quick_menu(content):
+    topbar = content[content.index('<header id="topbar"'):content.index("</header>")]
+    marker = 'aria-label="Crear nuevo"'
+    menu_start = topbar.index(marker)
+    menu_start = topbar.index('<ul class="dropdown-menu">', menu_start)
+    return topbar[menu_start:topbar.index("</ul>", menu_start)]
+
+
+def _href(url):
+    return f'href="{url}"'
+
+
 def _make_invoice(org, status, amount, issue_date=None, due_date=None, doc_type=SalesDocument.DocType.INVOICE):
     """Create a confirmed invoice with one line item totalling `amount` (pre-ITBIS)."""
     if issue_date is None:
@@ -78,6 +90,42 @@ class TestDashboardKPIs:
 
         assert response.status_code == 200
         assert reverse("purchases:supplier_list") in subnav
+
+    def test_dashboard_subnav_excludes_payment_terms_link(self, client, owner_membership):
+        response = _dashboard(client, owner_membership)
+        content = response.content.decode()
+        subnav = content[content.index('<nav id="subnav"'):content.index("</nav>", content.index('<nav id="subnav"'))]
+
+        assert response.status_code == 200
+        assert reverse("sales:payment_term_list") not in subnav
+
+    def test_topbar_quick_menu_includes_purchasing_create_links_except_suppliers(self, client, owner_membership):
+        response = _dashboard(client, owner_membership)
+        quick_menu = _topbar_quick_menu(response.content.decode())
+
+        assert response.status_code == 200
+        assert _href(reverse("purchases:po_create")) in quick_menu
+        assert _href(reverse("purchases:supplier_invoice_create")) in quick_menu
+        assert _href(reverse("purchases:supplier_payment_create")) in quick_menu
+        assert _href(reverse("purchases:po_list")) not in quick_menu
+        assert _href(reverse("purchases:supplier_invoice_list")) not in quick_menu
+        assert _href(reverse("purchases:supplier_payment_list")) not in quick_menu
+        assert _href(reverse("purchases:supplier_list")) not in quick_menu
+        assert _href(reverse("purchases:supplier_create")) not in quick_menu
+
+    def test_topbar_quick_menu_hides_purchasing_links_without_purchasing_access(self, client, member_membership):
+        team = TeamFactory(organization=member_membership.organization)
+        team.modules.add(Module.objects.create(name="Sales", slug="sales"))
+        member_membership.team = team
+        member_membership.save(update_fields=["team", "updated_at"])
+
+        response = _dashboard(client, member_membership)
+        quick_menu = _topbar_quick_menu(response.content.decode())
+
+        assert response.status_code == 200
+        assert _href(reverse("purchases:po_create")) not in quick_menu
+        assert _href(reverse("purchases:supplier_invoice_create")) not in quick_menu
+        assert _href(reverse("purchases:supplier_payment_create")) not in quick_menu
 
     def test_month_invoiced_includes_paid(self, client, owner_membership):
         org = owner_membership.organization

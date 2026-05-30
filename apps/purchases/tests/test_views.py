@@ -117,6 +117,26 @@ class TestPurchaseOrderForm:
         assert "currency" not in form.fields
         assert "exchange_rate" not in form.fields
 
+    def test_purchase_order_create_starts_with_one_item_row(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(reverse("purchases:po_create"))
+
+        assert response.status_code == 200
+        assert response.context["formset"].total_form_count() == 1
+
+    def test_supplier_invoice_create_starts_with_one_item_row(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(reverse("purchases:supplier_invoice_create"))
+
+        assert response.status_code == 200
+        assert response.context["formset"].total_form_count() == 1
+
     def test_purchase_line_quantity_and_price_are_positive_integers(self):
         form = PurchaseDocumentItemForm(organization=OrganizationFactory())
 
@@ -226,3 +246,28 @@ class TestPurchaseMutationPermissions:
         response = client.get(reverse("purchases:supplier_payment_create"))
 
         assert response.status_code == 403
+
+    def test_admin_can_open_supplier_payment_create(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(reverse("purchases:supplier_payment_create"))
+
+        assert response.status_code == 200
+
+    def test_supplier_payment_create_uses_supplier_picker(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(reverse("purchases:supplier_payment_create"))
+        content = response.content.decode()
+
+        assert response.status_code == 200
+        assert 'id="supplier-display-text"' in content
+        assert 'onclick="openSupplierPicker()"' in content
+        assert 'id="supplierPickerModal"' in content
+        assert "window.SUPPLIER_QUICK_CREATE_URL" in content
+        assert 'id="id_supplier"' in content
+        assert '<select name="supplier"' not in content

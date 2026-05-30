@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Estado de Cuenta de Proveedor{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="print-header mb-4">
+  <p style="font-size:.8rem;color:#6c757d;margin:0">{{ organization.name }}</p>
+  <h1 style="font-size:1.2rem;font-weight:600;margin:.25rem 0">Estado de Cuenta de Proveedor</h1>
+  {% if supplier %}
+  <p style="font-size:.8rem;color:#495057;margin:0">
+    {{ supplier.name }}{% if supplier.rnc_cedula %} · {{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}{% endif %}<br>
+    Período: {{ date_from }} — {{ date_to }}
+  </p>
+  {% endif %}
+</div>
+
+<div class="app-header no-print">
+  <div>
+    <h1 class="app-header-title">Estado de Cuenta de Proveedor</h1>
+    <p class="app-header-sub">Facturas recibidas, pagos realizados y saldo acumulado por proveedor.</p>
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:reports' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Reportes
+    </a>
+    {% if supplier and lines %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Imprimir
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{% include "purchases/partials/report_filter_panel.html" with show_supplier=True supplier_required=True show_dates=True %}
+
+{% if error %}
+<div class="alert alert-danger no-print">
+  <i class="bi bi-exclamation-circle-fill me-2"></i>{{ error }}
+</div>
+{% endif %}
+
+{% if supplier %}
+
+<div class="customer-block no-print">
+  <div class="customer-avatar">{{ supplier.name|slice:":2"|upper }}</div>
+  <div class="flex-grow-1">
+    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ supplier.name }}</p>
+    {% if supplier.rnc_cedula %}
+    <p class="text-muted mb-0" style="font-size:.8rem">{{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}</p>
+    {% endif %}
+  </div>
+  {% if date_from and date_to %}
+  <span class="badge-soft badge-confirmed ms-auto">
+    <i class="bi bi-calendar3 me-1"></i>{{ date_from }} — {{ date_to }}
+  </span>
+  {% endif %}
+</div>
+
+<div class="row g-2 mb-4 no-print">
+  <div class="col-6 col-sm-3">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
+        {{ opening_balance|floatformat:2|intcomma }}
+      </div>
+      <div class="app-metric-label">Saldo inicial</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ period_invoiced|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Facturado</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="app-metric-card">
+      <div class="app-metric-value text-success">{{ period_paid|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Pagado</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-3">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+        {{ closing_balance|floatformat:2|intcomma }}
+      </div>
+      <div class="app-metric-label">Saldo final</div>
+    </div>
+  </div>
+</div>
+
+{% if lines %}
+<div class="app-table-wrap">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
+      <thead>
+        <tr>
+          <th class="ps-4">Fecha</th>
+          <th>Tipo</th>
+          <th>Referencia</th>
+          <th class="text-end">Débito</th>
+          <th class="text-end">Crédito</th>
+          <th class="pe-4 text-end">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-light">
+          <td class="ps-4 text-muted" style="font-size:.8rem" colspan="5">Saldo anterior al período</td>
+          <td class="pe-4 text-end font-monospace fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}"
+              style="font-size:.8rem">
+            {{ opening_balance|floatformat:2|intcomma }}
+          </td>
+        </tr>
+        {% for line in lines %}
+        <tr>
+          <td class="ps-4 text-nowrap">{{ line.date|date:"d/m/Y" }}</td>
+          <td>
+            {% if line.type == 'invoice' %}
+              <span class="badge-soft badge-invoice">Factura</span>
+            {% else %}
+              <span class="badge-soft badge-payment">Pago</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ line.url }}" class="text-decoration-none font-monospace fw-semibold text-dark" style="font-size:.82rem">
+              {% if line.type == 'invoice' %}<i class="bi bi-receipt me-1 text-muted no-print" style="font-size:.75rem"></i>
+              {% else %}<i class="bi bi-cash me-1 text-muted no-print" style="font-size:.75rem"></i>{% endif %}
+              {{ line.ref }}
+            </a>
+          </td>
+          <td class="text-end font-monospace">
+            {% if line.debit %}{{ line.debit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end font-monospace text-success">
+            {% if line.credit %}{{ line.credit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="pe-4 text-end font-monospace fw-semibold
+            {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
+            {{ line.balance|floatformat:2|intcomma }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td class="ps-4" colspan="5">Saldo final</td>
+          <td class="pe-4 text-end font-monospace
+            {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ closing_balance|floatformat:2|intcomma }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info no-print">
+  <i class="bi bi-person-lines-fill me-2"></i>
+  No hay movimientos en el período seleccionado. Prueba con un rango de fechas diferente.
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

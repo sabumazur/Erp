@@ -40,7 +40,6 @@ class ModuleListView(ModuleStaffMixin, DataTableMixin, TemplateView):
         DTColumn("is_active", _("Estado"), sortable=True),
     ]
     dt_default_sort = "name"
-    dt_page_size = 25
     dt_url = "core:module_list"
     dt_row_template = "core/partials/module_row.html"
     dt_filter_template = "core/partials/module_filters.html"

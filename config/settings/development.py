@@ -11,6 +11,7 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD", default="password"),
         "HOST": config("DB_HOST", default="localhost"),
         "PORT": config("DB_PORT", default="5432"),
+        "DISABLE_SERVER_SIDE_CURSORS": True,
     }
 }
 

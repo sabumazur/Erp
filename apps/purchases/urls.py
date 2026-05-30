@@ -39,6 +39,13 @@ from .views import (
     PurchaseItemSearchView,
     # Reports
     Report606View,
+    ReportPurchasesIndexView,
+    ReportAPAgingView,
+    ReportSupplierStatementView,
+    ReportSpendByPeriodView,
+    ReportPurchasesBySupplierView,
+    ReportSupplierPaymentsView,
+    ReportITBISCreditsView,
 )
 
 app_name = "purchases"
@@ -87,5 +94,12 @@ urlpatterns = [
     path("purchases/htmx/items/create/",          PurchaseItemQuickCreateView.as_view(), name="item_quick_create"),
 
     # ── Reports ────────────────────────────────────────────────────────────────
-    path("purchases/reports/606/",                Report606View.as_view(),          name="report_606"),
+    path("purchases/reports/",                    ReportPurchasesIndexView.as_view(), name="reports"),
+    path("purchases/reports/606/",                Report606View.as_view(),             name="report_606"),
+    path("purchases/reports/aging/",              ReportAPAgingView.as_view(),         name="report_aging"),
+    path("purchases/reports/statement/",          ReportSupplierStatementView.as_view(), name="report_statement"),
+    path("purchases/reports/spend-period/",       ReportSpendByPeriodView.as_view(),   name="report_spend_period"),
+    path("purchases/reports/by-supplier/",        ReportPurchasesBySupplierView.as_view(), name="report_by_supplier"),
+    path("purchases/reports/payments/",           ReportSupplierPaymentsView.as_view(), name="report_payments"),
+    path("purchases/reports/itbis/",              ReportITBISCreditsView.as_view(),    name="report_itbis"),
 ]

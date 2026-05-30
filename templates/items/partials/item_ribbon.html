@@ -2,7 +2,7 @@
 {# Ribbon actions for the item list. Rendered inside .dt-ribbon-left inside #dt-wrapper (Alpine dtTable() scope). #}
 
 {% if membership.is_admin %}
-<button type="button" class="btn btn-primary"
+<button type="button" class="btn btn-sm" style="background:#1e2130;color:#fff"
         data-bs-toggle="modal" data-bs-target="#itemModal">
   <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
 </button>

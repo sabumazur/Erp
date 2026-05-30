@@ -163,6 +163,16 @@
     htmx.trigger(form, "submit");
   }
 
+  function dtPageSize(n) {
+    var form = document.getElementById("dt-form");
+    var sizeEl = document.getElementById("dt-page-size-input");
+    var pageEl = document.getElementById("dt-page-input");
+    if (!form || !sizeEl || !window.htmx) return;
+    sizeEl.value = n;
+    if (pageEl) pageEl.value = "1";
+    htmx.trigger(form, "submit");
+  }
+
   function initDatatableFilters() {
     document.addEventListener("htmx:configRequest", function (e) {
       if (!e.detail.elt || e.detail.elt.id !== "dt-form") return;
@@ -185,5 +195,6 @@
   window.dtTable = dtTable;
   window.dtSort = dtSort;
   window.dtPage = dtPage;
+  window.dtPageSize = dtPageSize;
   window.initDatatableFilters = initDatatableFilters;
 })();

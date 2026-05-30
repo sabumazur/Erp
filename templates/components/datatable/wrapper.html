@@ -41,6 +41,7 @@
     {# Hidden state — JS writes these before triggering form submit #}
     <input type="hidden" name="sort" id="dt-sort-input" value="{{ dt_sort }}">
     <input type="hidden" name="page" id="dt-page-input" value="{{ dt_page_obj.number }}">
+    <input type="hidden" name="page_size" id="dt-page-size-input" value="{{ dt_page_size }}">
 
     {# ── Command ribbon — search/filter LEFT, actions RIGHT ─────────────── #}
     <div class="dt-ribbon">
@@ -98,6 +99,7 @@
             {% endfor %}
           </ul>
         </div>
+
 
       </div>
       <div class="dt-ribbon-right">

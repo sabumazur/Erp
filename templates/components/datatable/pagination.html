@@ -3,51 +3,49 @@
   Compact pagination bar driven by dtPage(n) JS helper.
   Context: dt_page_obj (Page), dt_page_range (list of ints + None for "…")
 {% endcomment %}
-{% if dt_page_obj.paginator.num_pages > 1 %}
 <nav aria-label="{% trans 'Paginación' %}">
-  <ul class="pagination pagination-sm mb-0">
+  <div class="dt-pagination d-inline-flex align-items-center gap-1" role="group">
 
     {# Previous #}
-    <li class="page-item{% if not dt_page_obj.has_previous %} disabled{% endif %}">
-      <button type="button" class="page-link"
-              {% if dt_page_obj.has_previous %}
-              onclick="dtPage({{ dt_page_obj.previous_page_number }})"
-              {% endif %}
-              {% if not dt_page_obj.has_previous %}disabled{% endif %}
-              aria-label="{% trans 'Anterior' %}">
-        <i class="bi bi-chevron-left small"></i>
-      </button>
-    </li>
+    <button type="button"
+            class="btn btn-outline-secondary btn-sm dt-page-btn"
+            {% if dt_page_obj.has_previous %}
+            onclick="dtPage({{ dt_page_obj.previous_page_number }})"
+            {% else %}
+            disabled
+            {% endif %}
+            aria-label="{% trans 'Anterior' %}">
+      <i class="bi bi-chevron-left small"></i>
+    </button>
 
     {# Page numbers with ellipsis #}
     {% for n in dt_page_range %}
       {% if n is None %}
-      <li class="page-item disabled">
-        <span class="page-link">…</span>
-      </li>
+      <span class="dt-page-ellipsis px-2 text-muted small">…</span>
       {% else %}
-      <li class="page-item{% if n == dt_page_obj.number %} active{% endif %}">
-        <button type="button" class="page-link"
+        <button type="button"
+                class="btn btn-sm dt-page-btn{% if n == dt_page_obj.number %} dt-page-btn-active{% else %} btn-outline-secondary{% endif %}"
                 onclick="dtPage({{ n }})"
-                {% if n == dt_page_obj.number %}aria-current="page"{% endif %}>
+                {% if n == dt_page_obj.number %}
+                aria-current="page"
+                style="background:#1e2130;color:#fff;border-color:#1e2130"
+                {% endif %}>
           {{ n }}
         </button>
-      </li>
       {% endif %}
     {% endfor %}
 
     {# Next #}
-    <li class="page-item{% if not dt_page_obj.has_next %} disabled{% endif %}">
-      <button type="button" class="page-link"
-              {% if dt_page_obj.has_next %}
-              onclick="dtPage({{ dt_page_obj.next_page_number }})"
-              {% endif %}
-              {% if not dt_page_obj.has_next %}disabled{% endif %}
-              aria-label="{% trans 'Siguiente' %}">
-        <i class="bi bi-chevron-right small"></i>
-      </button>
-    </li>
+    <button type="button"
+            class="btn btn-outline-secondary btn-sm dt-page-btn"
+            {% if dt_page_obj.has_next %}
+            onclick="dtPage({{ dt_page_obj.next_page_number }})"
+            {% else %}
+            disabled
+            {% endif %}
+            aria-label="{% trans 'Siguiente' %}">
+      <i class="bi bi-chevron-right small"></i>
+    </button>
 
-  </ul>
+  </div>
 </nav>
-{% endif %}

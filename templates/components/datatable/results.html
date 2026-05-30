@@ -62,14 +62,31 @@
 </table>
 </div>
 
-{# ── Footer: row count + pagination ──────────────────────────────────────────── #}
+{# ── Footer: row count + per-page selector + pagination ──────────────────────── #}
 {% if dt_total %}
-<div class="d-flex align-items-center justify-content-between px-3 py-2 border-top small text-muted">
-  <span>
-    {% with start=dt_page_obj.start_index end=dt_page_obj.end_index %}
-      {% blocktrans %}{{ start }}–{{ end }} de {{ dt_total }}{% endblocktrans %}
-    {% endwith %}
-  </span>
+<div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 border-top flex-wrap"
+     style="background:#f9fafb">
+  <div class="d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2 small">
+      <span class="text-muted text-uppercase"
+            style="font-size:.68rem;font-weight:600;letter-spacing:.04em">
+        {% trans "Registros" %}
+      </span>
+      {% with start=dt_page_obj.start_index end=dt_page_obj.end_index %}
+        <span class="font-monospace fw-semibold text-dark">{{ start }}–{{ end }}</span>
+        <span class="text-muted">{% trans "de" %}</span>
+        <span class="font-monospace fw-semibold text-dark">{{ dt_total }}</span>
+      {% endwith %}
+    </div>
+    <select class="form-select form-select-sm"
+            style="width:4rem"
+            onchange="dtPageSize(this.value)"
+            title="{% trans 'Filas por página' %}">
+      {% for n in dt_page_size_options %}
+        <option value="{{ n }}"{% if n == dt_page_size %} selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+  </div>
   {% include "components/datatable/pagination.html" %}
 </div>
 {% endif %}

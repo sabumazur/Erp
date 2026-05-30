@@ -87,6 +87,12 @@
   </div>
 </form>
 
+{% include "purchases/partials/supplier_picker_modal.html" %}
+
+<script>
+window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}";
+</script>
+
 <script>
 (function () {
   const supplierField = document.querySelector('[name="supplier"]');

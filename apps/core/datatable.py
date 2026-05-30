@@ -68,13 +68,16 @@ def _page_range(page_obj):
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
+_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+
+
 def build_datatable_context(
     request,
     qs,
     columns,
     *,
     default_sort="",
-    page_size=25,
+    page_size=10,
     url="",
     row_template="",
     filter_template="",
@@ -98,10 +101,18 @@ def build_datatable_context(
     if sort and (explicit_sort or not q):
         qs = qs.order_by(sort)
 
+    # Allow user to override page size via GET; clamp to allowed values.
+    try:
+        requested_size = int(request.GET.get("page_size", 0))
+    except (ValueError, TypeError):
+        requested_size = 0
+    if requested_size in _PAGE_SIZE_OPTIONS:
+        page_size = requested_size
+
     paginator = Paginator(qs, page_size)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
-    skip = {"q", "page", "sort", "csrfmiddlewaretoken"}
+    skip = {"q", "page", "sort", "page_size", "csrfmiddlewaretoken"}
     active_filter_count = sum(
         1 for k, v in request.GET.items() if k not in skip and v.strip()
     )
@@ -122,6 +133,8 @@ def build_datatable_context(
         "active_filter_count": active_filter_count,
         "dt_status_pills": status_pills or [],
         "dt_active_status": request.GET.get("status", ""),
+        "dt_page_size": page_size,
+        "dt_page_size_options": _PAGE_SIZE_OPTIONS,
     }
 
 
@@ -152,7 +165,7 @@ class DataTableMixin:
 
     dt_columns: list = []
     dt_default_sort: str = ""
-    dt_page_size: int = 15
+    dt_page_size: int = 10
     dt_url: str = ""
     dt_row_template: str = ""
     dt_filter_template: str = ""

@@ -129,6 +129,15 @@
           <span>{% trans "Proveedores" %}</span>
         </a>
       </li>
+      {% if membership.is_admin %}
+      <li>
+        <a href="{% url 'purchases:reports' %}"
+           class="sidebar-nav-link {% nav_active 'purchases:reports' 'purchases:report_606' 'purchases:report_aging' 'purchases:report_statement' 'purchases:report_spend_period' 'purchases:report_by_supplier' 'purchases:report_payments' 'purchases:report_itbis' %}">
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span>{% trans "Reportes" %}</span>
+        </a>
+      </li>
+      {% endif %}
     </ul>
     {% endif %}
 

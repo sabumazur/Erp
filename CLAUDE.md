@@ -142,7 +142,7 @@ dt_status_pills: list          # list of (value, label) tuples for status filter
 
 Call `ctx.update(self.apply_datatable(filtered_qs))` in `get_context_data()`. Pass `status_pills=` kwarg to override `dt_status_pills` per-request. HTMX requests → return `components/datatable/results.html`. Use `build_datatable_context()` in action views needing table refresh after CRUD.
 
-Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis).
+Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX swap target), `pagination.html` (compact page range with ellipsis). **Pagination nav always renders** — prev/next disabled on single-page results; no conditional hide when `num_pages == 1`.
 
 **Filter offcanvas (`#dt-filter-offcanvas`)** — Bootstrap default `offcanvas-end` sets `height: 100%`. Overridden in `templates/components/app_styles.html` to `height: auto; max-height: 50vh` so it sizes to content and caps at half viewport. Action buttons inside use `btn-outline-secondary` (not `btn-primary`) to match app-wide button style.
 
@@ -253,9 +253,19 @@ Org-scoped CRUD for `PaymentTerm` (name, days_due, description). `admin_required
 | `PaymentTermUpdateView` | `sales:payment_term_edit` | HTMX modal edit |
 | `PaymentTermDeleteView` | `sales:payment_term_delete` | Delete (blocked if customers reference term) |
 
-### Customer departments (`apps/sales/views/customers.py`)
+### Customers (`apps/sales/views/customers.py`)
 
-`CustomerDepartment` — org-scoped sub-entity of `Customer` (name, is_active). Used to tag sale orders for departmental billing. Managed from the customer detail page via HTMX modals.
+Customer CRUD uses **full-page forms** (two-column layout, not HTMX modals). List "Nuevo" button navigates to create page; kebab "Editar" navigates to edit page.
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `CustomerListView` | `sales:customer_list` | Datatable list |
+| `CustomerCreateView` | `sales:customer_create` | Full-page create form |
+| `CustomerUpdateView` | `sales:customer_edit` | Full-page edit form |
+| `CustomerDetailView` | `sales:customer_detail` | Detail with smart buttons |
+| `CustomerDeleteView` | `sales:customer_delete` | Delete (blocked if has invoices/payments) |
+
+**`CustomerDepartment`** — org-scoped sub-entity of `Customer` (name, is_active). Used to tag sale orders for departmental billing. Managed from the customer detail page via HTMX modals.
 
 | View | URL name | Description |
 |------|----------|-------------|
@@ -320,7 +330,104 @@ HTMX-aware: `request.htmx` → partial response with `HX-Trigger` instead of red
 
 `Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for `SALE`/`BOTH` via `ItemCodeSequence.generate()` if blank — generation retries up to 5× on uniqueness race (checks `all_objects` including soft-deleted). `cost_price` nullable; `margin` valid only when set. `unit_price` and `cost_price` have `MinValueValidator(0.00)`. `InvoiceItem` FK to `Item` optional — line items can be free-text.
 
-Search: GIN trgm on `name`/`code` (migration `items/0006`); item list uses `fts_search` with `fts_fields=["name"]`, `trgm_fields=["code"]`.
+Search: GIN trgm on `name`/`code` (migration `items/0006`); item list uses `fts_search` with `fts_fields=["name"]`, `trgm_fields=["code"]`. `default_supplier` FK to `purchases.Supplier` (nullable, `SET_NULL`); auto-set on `SupplierInvoiceService.confirm()` if not already set.
+
+### Purchases app (`apps/purchases/`)
+
+Module slug `"purchasing"`. URL namespace `purchases`. Registered in `config/urls.py`.
+
+**Models:**
+
+- **`Supplier`** — `id_type` (RNC/CEDULA/PASAPORTE/EXTERIOR), `rnc_cedula` (validated via `validate_rnc_cedula`), `payment_term` FK to `sales.PaymentTerm`, `is_active`. Unique constraint: `(organization, rnc_cedula)` where rnc_cedula non-empty and not soft-deleted. `delete()` blocked if has `PurchaseDocument` or `SupplierPayment`. GIN trgm indexes on `name` and `rnc_cedula`.
+- **`PurchaseDocument`** — unified model for purchase orders and supplier invoices, mirroring `SalesDocument`:
+  - `doc_type`: `PURCHASE_ORDER` | `SUPPLIER_INVOICE`
+  - `status`: `DRAFT` → `CONFIRMED` → `RECEIVED`/`PAID`/`CANCELLED`
+  - Currency fields: `currency` (DOP/USD/EUR), `exchange_rate`
+  - ITBIS split: `itbis_18`, `itbis_16` (separate fields for DGII 606)
+  - DGII 606 fields: `supplier_ncf`, `supplier_ncf_type`, `supplier_rnc` (copied from supplier on confirm)
+  - `linked_purchase_order` self-FK (null) — SI created from a PO
+  - Scoped managers: `PurchaseDocument.purchase_orders`, `PurchaseDocument.supplier_invoices`, `PurchaseDocument.objects` (all), `PurchaseDocument.all_objects` (bypasses soft-delete)
+  - `recompute_totals()` sums `PurchaseDocumentItem` rows into `subtotal`, `itbis_18`, `itbis_16`, `total`
+- **`PurchaseDocumentItem`** — ITBIS rates: `EXEMPT`/`RATE_0`/`RATE_16`/`RATE_18`. `save()` calls `compute()` → `line_total`, `itbis_amount`, `line_total_with_itbis`. FK to `items.Item` optional (free-text lines allowed).
+- **`PurchaseSequence`** — auto-numbering for purchase orders, `SELECT FOR UPDATE`, prefix `"OC"`, default 5-digit padding. `generate(org)` returns `"OC-00001"` style.
+- **`SupplierPayment`** + **`SupplierPaymentAllocation`** — same pattern as sales `Payment`/`PaymentAllocation`. `SupplierPayment.delete()` raises `ValueError` — always use `SupplierPaymentService.delete_payment()`.
+
+**Service classes** (`apps/purchases/services.py`) — all status transitions go through services:
+
+- **`PurchaseOrderService`**:
+  - `confirm(po)` — assigns `PurchaseSequence` number, DRAFT → CONFIRMED
+  - `receive_and_invoice(po)` — CONFIRMED → RECEIVED; auto-creates draft `SUPPLIER_INVOICE` copying all lines + setting `linked_purchase_order`; due date from supplier's payment term
+  - `cancel(po)` — blocks if RECEIVED/already CANCELLED
+- **`SupplierInvoiceService`**:
+  - `confirm(invoice)` — requires `supplier_ncf`; checks NCF uniqueness in org; copies `supplier_rnc` from supplier; DRAFT → CONFIRMED; updates `item.cost_price` and `item.default_supplier` for all linked items
+  - `cancel(invoice)` — blocked if PAID or has payment allocations
+  - `reopen(invoice)` — CANCELLED → DRAFT; blocked if has allocations
+- **`SupplierPaymentService`**:
+  - `create_payment(supplier, org, date, method, reference, notes, allocations)` — atomic; `SELECT FOR UPDATE` on invoices; creates `SupplierPayment` + `SupplierPaymentAllocation` rows; marks invoices PAID when fully covered
+  - `delete_payment(payment)` — reverses PAID → CONFIRMED on affected invoices; uses `hard_delete()`
+
+**Views** (all `required_module = "purchasing"`):
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `SupplierListView` | `purchases:supplier_list` | Datatable list |
+| `SupplierCreateView` | `purchases:supplier_create` | Full-page form with DGII RNC lookup |
+| `SupplierDetailView` | `purchases:supplier_detail` | Detail with smart buttons |
+| `SupplierUpdateView` | `purchases:supplier_edit` | HTMX modal edit |
+| `SupplierDeleteView` | `purchases:supplier_delete` | Delete (blocked if has documents/payments) |
+| `PurchaseOrderListView` | `purchases:po_list` | Datatable list |
+| `PurchaseOrderCreateView` | `purchases:po_create` | Full-page form with item picker |
+| `PurchaseOrderDetailView` | `purchases:po_detail` | Detail view |
+| `PurchaseOrderUpdateView` | `purchases:po_edit` | Edit (DRAFT only) |
+| `PurchaseOrderConfirmView` | `purchases:po_confirm` | DRAFT → CONFIRMED |
+| `PurchaseOrderReceiveView` | `purchases:po_receive` | CONFIRMED → RECEIVED + creates SI |
+| `PurchaseOrderCancelView` | `purchases:po_cancel` | Cancel |
+| `PurchaseOrderCloneView` | `purchases:po_clone` | Clone to new DRAFT |
+| `PurchaseOrderDeleteView` | `purchases:po_delete` | Delete DRAFT only |
+| `SupplierInvoiceListView` | `purchases:supplier_invoice_list` | Datatable list |
+| `SupplierInvoiceCreateView` | `purchases:supplier_invoice_create` | Full-page form |
+| `SupplierInvoiceDetailView` | `purchases:supplier_invoice_detail` | Detail view |
+| `SupplierInvoiceUpdateView` | `purchases:supplier_invoice_edit` | Edit (DRAFT only) |
+| `SupplierInvoiceConfirmView` | `purchases:supplier_invoice_confirm` | DRAFT → CONFIRMED |
+| `SupplierInvoiceCancelView` | `purchases:supplier_invoice_cancel` | Cancel |
+| `SupplierInvoiceReopenView` | `purchases:supplier_invoice_reopen` | CANCELLED → DRAFT |
+| `SupplierInvoiceCloneView` | `purchases:supplier_invoice_clone` | Clone to new DRAFT |
+| `SupplierInvoiceDeleteView` | `purchases:supplier_invoice_delete` | Delete DRAFT only |
+| `SupplierPaymentListView` | `purchases:supplier_payment_list` | Datatable list |
+| `SupplierPaymentCreateView` | `purchases:supplier_payment_create` | Full-page form with invoice allocations |
+| `SupplierPaymentDetailView` | `purchases:supplier_payment_detail` | Detail view |
+| `SupplierPaymentDeleteView` | `purchases:supplier_payment_delete` | Reversal via service |
+| `OutstandingSupplierInvoicesView` | `purchases:outstanding_supplier_invoices` | HTMX partial — unpaid invoices for payment form |
+
+**HTMX views** (`apps/purchases/views/htmx.py`):
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `SupplierSearchView` | `purchases:supplier_search` | Supplier picker results (`purchases/partials/supplier_picker_results.html`) |
+| `SupplierQuickCreateView` | `purchases:supplier_quick_create` | Quick-create supplier inline; returns JSON `{pk, name, rnc_cedula}` |
+| `PurchaseItemSearchView` | `purchases:purchase_item_search` | Item picker — PURCHASE+BOTH items only |
+| `PurchaseItemQuickCreateView` | `purchases:item_quick_create` | Quick-create purchase item; sets `item_type=PURCHASE` |
+
+Supplier picker uses `static/js/supplier-picker.js` + `purchases/partials/supplier_picker_modal.html`. Pattern mirrors the sales customer picker.
+
+**Reports** (`apps/purchases/views/reports.py`, `admin_required = True`):
+
+| View | URL name | Description |
+|------|----------|-------------|
+| `ReportPurchasesIndexView` | `purchases:reports` | Report hub |
+| `Report606View` | `purchases:report_606` | DGII 606 CSV (supplier invoices by month/year) |
+| `ReportAPAgingView` | `purchases:report_aging` | AP aging buckets — confirmed SI with due_date |
+| `ReportSupplierStatementView` | `purchases:report_statement` | Supplier account statement |
+| `ReportSpendByPeriodView` | `purchases:report_spend_period` | Spend by day/month |
+| `ReportPurchasesBySupplierView` | `purchases:report_by_supplier` | Invoices grouped by supplier |
+| `ReportSupplierPaymentsView` | `purchases:report_payments` | Payments by date range |
+| `ReportITBISCreditsView` | `purchases:report_itbis` | ITBIS credits (16%/18%) by period |
+
+Report cache keys: `f"report_606:{org.pk}:..."`, `f"report_ap_aging:{org.pk}:..."`, etc. TTL 600s. `Report606View` with `format=csv` skips cache (file download).
+
+**Deletion pattern** additions:
+- `SupplierDeleteView` — blocked if has `PurchaseDocument` or `SupplierPayment`.
+- Purchase order/invoice delete — DRAFT only; raises `PermissionDenied` otherwise.
 
 ### CI / CD
 

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Compras por Período{% endblock %}
+
+{% block extra_css %}
+{% include "components/app_styles.html" %}
+{% endblock %}
+
+{% block content %}
+
+<div class="print-header">
+  <p class="print-org">{{ organization.name }}</p>
+  <h1 class="print-title">Compras por Período</h1>
+  {% if year %}
+  <p class="print-meta">
+    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}
+  </p>
+  {% endif %}
+</div>
+
+<div class="app-header no-print">
+  <div>
+    <h1 class="app-header-title">Compras por Período</h1>
+    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
+  </div>
+  <div class="app-header-actions">
+    <a href="{% url 'purchases:reports' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Reportes
+    </a>
+    {% if rows %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Imprimir
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{% include "purchases/partials/report_filter_panel.html" with show_year=True show_month=True %}
+
+{% if year %}
+
+{% if rows %}
+<div class="row g-2 mb-3 no-print">
+  <div class="col-6 col-sm-4">
+    <div class="app-metric-card">
+      <div class="app-metric-value">{{ totals.invoiced|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Total facturado</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4">
+    <div class="app-metric-card">
+      <div class="app-metric-value text-success">{{ totals.paid|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">Total pagado</div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4">
+    <div class="app-metric-card">
+      <div class="app-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+        {{ totals.net|floatformat:2|intcomma }}
+      </div>
+      <div class="app-metric-label">{% if by_day %}Neto del mes{% else %}Neto del año{% endif %}</div>
+    </div>
+  </div>
+</div>
+
+<div class="app-table-wrap">
+  <table class="table table-hover table-sm mb-0">
+    <thead>
+      <tr>
+        <th>{% if by_day %}Día{% else %}Mes{% endif %}</th>
+        <th class="text-end">Facturado</th>
+        <th class="text-end">Pagado</th>
+        <th class="text-end">Neto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="fw-semibold">
+          {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
+        </td>
+        <td class="text-end font-monospace">{{ row.invoiced|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace text-success">{{ row.paid|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-danger{% endif %}">
+          {{ row.net|floatformat:2|intcomma }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        <td class="text-end font-monospace">{{ totals.invoiced|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace text-success">{{ totals.paid|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+          {{ totals.net|floatformat:2|intcomma }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-1"></i>
+  {% if by_day %}
+    No hay actividad registrada para el mes {{ month }}/{{ year }}.
+  {% else %}
+    No hay actividad registrada para el año {{ year }}.
+  {% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

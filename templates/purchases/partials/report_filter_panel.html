@@ -1,0 +1,81 @@
+<div class="app-filter-panel no-print">
+  <p class="app-filter-label">Filtros</p>
+  <form method="get" class="row g-3 align-items-end">
+
+    {% if show_supplier %}
+    <div class="col-md-4">
+      <label class="form-label small fw-semibold">Proveedor</label>
+      <select name="supplier" class="form-select form-select-sm"
+        {% if supplier_required %}required
+        oninvalid="this.setCustomValidity('Debe seleccionar un proveedor.')"
+        onchange="this.setCustomValidity('')"{% endif %}>
+        <option value="">{% if supplier_required %}— Seleccionar —{% else %}— Todos los proveedores —{% endif %}</option>
+        {% for s in suppliers %}
+        <option value="{{ s.pk }}"{% if s.pk|stringformat:"s" == supplier_id %} selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    {% if show_dates %}
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Desde</label>
+      <input type="date" name="date_from" value="{{ date_from }}"
+             class="form-control form-control-sm" required
+             oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+             oninput="this.setCustomValidity('')">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Hasta</label>
+      <input type="date" name="date_to" value="{{ date_to }}"
+             class="form-control form-control-sm" required
+             oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+             oninput="this.setCustomValidity('')">
+    </div>
+    {% endif %}
+
+    {% if show_year %}
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Año</label>
+      <input type="number" name="year" value="{{ year_input|default:today.year }}"
+             min="2020" max="2099"
+             class="form-control form-control-sm" required
+             oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
+             oninput="this.setCustomValidity('')">
+    </div>
+    {% endif %}
+
+    {% if show_month %}
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">
+        Mes{% if not month_required %} <span class="text-muted fw-normal">(opcional)</span>{% endif %}
+      </label>
+      <select name="month" class="form-select form-select-sm"
+        {% if month_required %}required
+        oninvalid="this.setCustomValidity('Debe seleccionar un mes.')"
+        onchange="this.setCustomValidity('')"{% endif %}>
+        <option value="">{% if month_required %}— Seleccionar —{% else %}— Todos —{% endif %}</option>
+        <option value="1"  {% if month_input == "1"  %}selected{% endif %}>Enero</option>
+        <option value="2"  {% if month_input == "2"  %}selected{% endif %}>Febrero</option>
+        <option value="3"  {% if month_input == "3"  %}selected{% endif %}>Marzo</option>
+        <option value="4"  {% if month_input == "4"  %}selected{% endif %}>Abril</option>
+        <option value="5"  {% if month_input == "5"  %}selected{% endif %}>Mayo</option>
+        <option value="6"  {% if month_input == "6"  %}selected{% endif %}>Junio</option>
+        <option value="7"  {% if month_input == "7"  %}selected{% endif %}>Julio</option>
+        <option value="8"  {% if month_input == "8"  %}selected{% endif %}>Agosto</option>
+        <option value="9"  {% if month_input == "9"  %}selected{% endif %}>Septiembre</option>
+        <option value="10" {% if month_input == "10" %}selected{% endif %}>Octubre</option>
+        <option value="11" {% if month_input == "11" %}selected{% endif %}>Noviembre</option>
+        <option value="12" {% if month_input == "12" %}selected{% endif %}>Diciembre</option>
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-dark btn-sm w-100">
+        <i class="bi bi-search me-1"></i>Consultar
+      </button>
+    </div>
+
+  </form>
+</div>

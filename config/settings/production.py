@@ -14,6 +14,7 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 

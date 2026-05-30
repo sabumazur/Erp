@@ -28,7 +28,6 @@ class PaymentTermListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("description", _("Descripción"),      sortable=False),
     ]
     dt_default_sort = "days_due"
-    dt_page_size = 25
     dt_url = "sales:payment_term_list"
     dt_row_template = "sales/partials/payment_term_row.html"
     dt_ribbon_template = "sales/partials/payment_term_ribbon.html"
