@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -69,6 +69,21 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
              "count": org_qs.filter(status="EXPIRED").count()},
         ]
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
+
+        if not self.request.htmx:
+            ctx["stats"] = [
+                {"label": _("Total cotizaciones"), "value": org_qs.count(),
+                 "icon": "bi-file-earmark-text", "color": "primary"},
+                {"label": _("Aceptadas"), "value": org_qs.filter(status="ACCEPTED").count(),
+                 "icon": "bi-check2-circle", "color": "success"},
+                {"label": _("Pendientes"),
+                 "value": org_qs.filter(status__in=["SENT", "CONFIRMED"]).count(),
+                 "icon": "bi-hourglass-split", "color": "info"},
+                {"label": _("Valor aceptado"),
+                 "value": "{:,.2f}".format(
+                     org_qs.filter(status="ACCEPTED").aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-cash-stack", "color": "warning"},
+            ]
 
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [

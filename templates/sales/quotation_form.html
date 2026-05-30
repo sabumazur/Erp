@@ -5,17 +5,13 @@
   {% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}
 {% endblock %}
 
-{% block extra_css %}
-{% include "components/app_styles.html" %}
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">
+    <h1 class="app-header-title">
       {% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}
-    </h4>
+    </h1>
     <p class="app-header-sub">{% trans "Cotizaciones" %}</p>
   </div>
   <div class="app-header-actions">
@@ -30,7 +26,7 @@
 
   {# Header fields #}
   <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+    <div class="app-card-head">
       {% trans "Datos de la cotización" %}
     </div>
     <div class="p-3">
@@ -40,7 +36,7 @@
 
   {# Line items #}
   <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+    <div class="app-card-head app-card-head--row">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
       <button type="button" class="btn btn-outline-secondary btn-sm"
               hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
@@ -109,7 +105,7 @@
 
   {# Sticky action bar #}
   <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+    <button type="submit" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
     <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>

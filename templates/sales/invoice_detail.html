@@ -4,7 +4,6 @@
 {% block title %}{{ invoice }}{% endblock %}
 
 {% block extra_css %}
-{% include "components/app_styles.html" %}
 <style>
 .detail-key {
   background: #f9fafb;
@@ -23,7 +22,7 @@
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{{ invoice.encf|default:"Borrador" }}</h4>
+    <h1 class="app-header-title">{{ invoice.encf|default:"Borrador" }}</h1>
     <p class="app-header-sub">{% trans "Factura" %}{% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %} · {{ invoice.customer.name }}</p>
   </div>
   <div class="app-header-actions">
@@ -39,7 +38,7 @@
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}', {icon:'warning', color:'#10b981', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
+        <button class="btn btn-sm btn-brand">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
@@ -47,7 +46,7 @@
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
       </form>
 
     {% elif invoice.status == "CONFIRMED" %}
@@ -60,7 +59,7 @@
     {% endif %}
 
     {% if invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
-      <button class="btn btn-sm" style="background:#1e2130;color:#fff"
+      <button class="btn btn-sm btn-brand"
               data-bs-toggle="modal" data-bs-target="#payModal">
         <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
       </button>
@@ -130,7 +129,7 @@
             <th class="detail-key">{% trans "NCF afectado" %}</th>
             <td>
               <a href="{% url 'sales:invoice_detail' invoice.encf_modified.pk %}"
-                 class="font-monospace text-decoration-none" style="color:#1e2130">
+                 class="font-monospace text-decoration-none link-brand">
                 {{ invoice.encf_modified.encf }}
               </a>
             </td>
@@ -200,7 +199,7 @@
 
     {% if invoice.notes or invoice.terms %}
     <div class="app-table-wrap mb-3">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Notas y condiciones" %}
       </div>
       <div class="p-3 small text-muted">
@@ -232,7 +231,7 @@
           <tr>
             <td>
               <a href="{% url 'sales:sale_order_detail' o.pk %}"
-                 class="font-monospace text-decoration-none" style="color:#1e2130">
+                 class="font-monospace text-decoration-none link-brand">
                 {{ o.doc_number|default:"—" }}
               </a>
             </td>
@@ -249,7 +248,7 @@
     {# Payments applied #}
     {% if allocations %}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Pagos aplicados" %}
       </div>
       <table class="table table-sm mb-0">
@@ -267,7 +266,7 @@
             <td class="small text-muted">{{ alloc.payment.date|date:"d/m/Y" }}</td>
             <td>{{ alloc.payment.get_method_display }}</td>
             <td class="text-muted small">{{ alloc.payment.reference|default:"—" }}</td>
-            <td class="text-end fw-semibold font-monospace" style="color:#16a34a">
+            <td class="text-end fw-semibold font-monospace num-pos">
               {{ alloc.amount|floatformat:2|intcomma }}
             </td>
           </tr>
@@ -283,12 +282,12 @@
   <div class="col-lg-4 d-flex flex-column gap-3">
 
     <div class="app-metric-card">
-      <div class="app-metric-value" style="color:#16a34a">{{ invoice.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-value num-pos">{{ invoice.total|floatformat:2|intcomma }}</div>
       <div class="app-metric-label">{% trans "Total" %} {{ invoice.currency }}</div>
     </div>
 
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Estado del documento" %}
       </div>
       <div class="p-3">
@@ -319,7 +318,7 @@
     </div>
 
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Emisor" %}
       </div>
       <div class="p-3">
@@ -353,7 +352,7 @@
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
       <form method="post" action="{% url 'sales:invoice_pay' invoice.pk %}">
         {% csrf_token %}
-        <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <div class="modal-header">
           <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
             {% trans "Registrar pago" %}
           </h5>
@@ -364,7 +363,7 @@
         </div>
         <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+          <button type="submit" class="btn btn-sm btn-brand">
             <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
           </button>
         </div>

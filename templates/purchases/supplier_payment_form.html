@@ -3,13 +3,11 @@
 
 {% block title %}{% trans "Registrar pago a proveedor" %}{% endblock %}
 
-{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Registrar pago a proveedor" %}</h4>
+    <h1 class="app-header-title">{% trans "Registrar pago a proveedor" %}</h1>
     <p class="app-header-sub">{% trans "Pagos a Proveedores" %}</p>
   </div>
   <div class="app-header-actions">
@@ -23,7 +21,7 @@
   {% csrf_token %}
 
   <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+    <div class="app-card-head">
       {% trans "Datos del pago" %}
     </div>
     <div class="p-3">
@@ -37,7 +35,7 @@
   </div>
 
   <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+    <div class="app-card-head app-card-head--row">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas a cubrir" %}</span>
       <span class="small text-muted">{% trans "Seleccione un proveedor para ver sus facturas pendientes." %}</span>
     </div>
@@ -68,7 +66,7 @@
           <tr>
             <td colspan="4" class="text-end">{% trans "Total del pago" %}</td>
             <td class="text-end" style="width:130px">
-              <span id="payment-total" class="fw-bold fs-5 font-monospace" style="color:#16a34a">0.00</span>
+              <span id="payment-total" class="fw-bold fs-5 font-monospace num-pos">0.00</span>
             </td>
           </tr>
         </tfoot>
@@ -77,8 +75,8 @@
   </div>
 
   <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm" id="submit-btn" disabled
-            style="background:#1e2130;color:#fff">
+    <button type="submit" class="btn btn-sm btn-brand" id="submit-btn" disabled
+           >
       <i class="bi bi-check-circle me-1"></i>{% trans "Registrar pago" %}
     </button>
     <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">

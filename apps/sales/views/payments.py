@@ -60,6 +60,23 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
 
+        if not self.request.htmx:
+            today = date.today()
+            base = Payment.objects.filter(organization=org)
+            month_qs = base.filter(date__year=today.year, date__month=today.month)
+            ctx["stats"] = [
+                {"label": _("Total pagos"), "value": base.count(),
+                 "icon": "bi-cash-coin", "color": "primary"},
+                {"label": _("Cobrado este mes"),
+                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("amount"))["t"] or 0),
+                 "icon": "bi-cash-stack", "color": "success"},
+                {"label": _("Total cobrado"),
+                 "value": "{:,.2f}".format(base.aggregate(t=Sum("amount"))["t"] or 0),
+                 "icon": "bi-wallet2", "color": "info"},
+                {"label": _("Pagos este mes"), "value": month_qs.count(),
+                 "icon": "bi-calendar-check", "color": "secondary"},
+            ]
+
         ctx["module"] = "payment"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

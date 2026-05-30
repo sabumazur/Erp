@@ -3,12 +3,10 @@
 
 {% block title %}{% trans "Nueva organización" %} — SabSys{% endblock %}
 
-{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
-
 {% block content %}
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Nueva organización" %}</h4>
+    <h1 class="app-header-title">{% trans "Nueva organización" %}</h1>
     <p class="app-header-sub">{% trans "Crear espacio de trabajo para un cliente" %}</p>
   </div>
   <div class="app-header-actions">
@@ -35,7 +33,7 @@
             <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
               {% trans "Cancelar" %}
             </a>
-            <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+            <button type="submit" class="btn btn-sm btn-brand">
               <i class="bi bi-building-add me-1"></i>
               {% trans "Crear organización y enviar invitación" %}
             </button>

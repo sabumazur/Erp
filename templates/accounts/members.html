@@ -3,13 +3,11 @@
 
 {% block title %}{% trans "Miembros" %} — {{ organization.name }}{% endblock %}
 
-{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Miembros" %}</h4>
+    <h1 class="app-header-title">{% trans "Miembros" %}</h1>
     <p class="app-header-sub">{{ organization.name }}</p>
   </div>
   <div class="app-header-actions">
@@ -39,7 +37,7 @@
         {{ invite_form.role }}
       </div>
       <div class="col-md-3">
-        <button type="submit" class="btn btn-sm w-100" style="background:#1e2130;color:#fff">
+        <button type="submit" class="btn btn-sm w-100 btn-brand">
           <i class="bi bi-send me-1"></i>{% trans "Enviar invitación" %}
         </button>
       </div>

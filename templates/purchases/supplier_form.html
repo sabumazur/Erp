@@ -3,10 +3,6 @@
 
 {% block title %}{% if supplier %}{{ supplier.name }}{% else %}{% trans "Nuevo proveedor" %}{% endif %}{% endblock %}
 
-{% block extra_css %}
-{% include "components/app_styles.html" %}
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
@@ -21,9 +17,9 @@
         </li>
       </ol>
     </nav>
-    <h4 class="app-header-title">
+    <h1 class="app-header-title">
       {% if supplier %}{{ supplier.name }}{% else %}{% trans "Nuevo proveedor" %}{% endif %}
-    </h4>
+    </h1>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'purchases:supplier_list' %}" class="btn btn-outline-secondary btn-sm">
@@ -59,7 +55,7 @@
 
       {# Datos generales #}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Datos generales" %}
         </div>
         <div class="p-3">
@@ -79,7 +75,7 @@
 
       {# Dirección #}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Dirección" %}
         </div>
         <div class="p-3">
@@ -92,7 +88,7 @@
 
       {# Contacto #}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Contacto" %}
         </div>
         <div class="p-3">
@@ -111,7 +107,7 @@
 
       {# Compras #}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Compras" %}
         </div>
         <div class="p-3">
@@ -122,7 +118,7 @@
 
       {# Notas #}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Notas" %}
         </div>
         <div class="p-3">
@@ -133,7 +129,7 @@
       {# Auditoría — edit only #}
       {% if supplier %}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Auditoría" %}
         </div>
         <div class="p-3">
@@ -147,7 +143,7 @@
   </div>
 
   <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+    <button type="submit" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
     </button>
     <a href="{% url 'purchases:supplier_list' %}" class="btn btn-outline-secondary btn-sm">

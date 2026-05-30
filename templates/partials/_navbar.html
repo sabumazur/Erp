@@ -88,11 +88,11 @@
   {% endif %}
 
   {# ── Org info ───────────────────────────────────────────── #}
-  <div class="d-flex align-items-center gap-1 me-1 btn btn-sm btn-outline-secondary" style="pointer-events:none;cursor:default">
-    <i class="bi bi-building"></i>
+  <span class="org-pill me-1">
+    <i class="bi bi-building" aria-hidden="true"></i>
     <span class="d-none d-md-inline">{{ organization.name|default:"—"|truncatechars:22 }}</span>
     {% if membership %}<span class="badge bg-secondary small">{{ membership.get_role_display }}</span>{% endif %}
-  </div>
+  </span>
 
   {# ── User dropdown ──────────────────────────────────────── #}
   <div class="dropdown">

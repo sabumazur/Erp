@@ -4,7 +4,6 @@
 {% block title %}{{ item }}{% endblock %}
 
 {% block extra_css %}
-{% include "components/app_styles.html" %}
 <style>
 .detail-key {
   background: #f9fafb;
@@ -33,7 +32,7 @@
 {# ── Page header ── #}
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{{ item.name }}</h4>
+    <h1 class="app-header-title">{{ item.name }}</h1>
     <p class="app-header-sub">
       {% trans "Artículos" %}{% if item.code %} · <span class="font-monospace">{{ item.code }}</span>{% endif %}
     </p>
@@ -68,7 +67,7 @@
     <div class="row g-2 mb-3">
       <div class="col-sm-4">
         <div class="app-metric-card">
-          <div class="app-metric-value" style="color:#16a34a">{{ item.unit_price|floatformat:2|intcomma }}</div>
+          <div class="app-metric-value num-pos">{{ item.unit_price|floatformat:2|intcomma }}</div>
           <div class="app-metric-label">{% trans "Precio de venta" %}</div>
         </div>
       </div>

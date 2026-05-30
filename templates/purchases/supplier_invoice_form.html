@@ -5,15 +5,13 @@
   {% if invoice %}{% trans "Editar factura de proveedor" %}{% else %}{% trans "Nueva factura de proveedor" %}{% endif %}
 {% endblock %}
 
-{% block extra_css %}{% include "components/app_styles.html" %}{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">
+    <h1 class="app-header-title">
       {% if invoice %}{% trans "Editar factura de proveedor" %}{% else %}{% trans "Nueva factura de proveedor" %}{% endif %}
-    </h4>
+    </h1>
     <p class="app-header-sub">{% trans "Facturas de Proveedor" %}</p>
   </div>
   <div class="app-header-actions">
@@ -27,7 +25,7 @@
   {% csrf_token %}
 
   <div class="app-table-wrap mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+    <div class="app-card-head">
       {% trans "Datos de la factura" %}
     </div>
     <div class="p-3">{% crispy form %}</div>
@@ -84,7 +82,7 @@
   </div>
 
   <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+    <button type="submit" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
     <a href="{% url 'purchases:supplier_invoice_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>

@@ -3,15 +3,11 @@
 
 {% block title %}{% trans "Editar secuencia NCF" %}{% endblock %}
 
-{% block extra_css %}
-{% include "components/app_styles.html" %}
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Editar secuencia NCF" %}</h4>
+    <h1 class="app-header-title">{% trans "Editar secuencia NCF" %}</h1>
     <p class="app-header-sub">{% trans "Secuencias NCF" %}</p>
   </div>
   <div class="app-header-actions">
@@ -26,7 +22,7 @@
   {# ── Form ── #}
   <div class="col-lg-7">
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Parámetros" %}
       </div>
       <div class="p-3">
@@ -34,7 +30,7 @@
           {% csrf_token %}
           {% crispy form %}
           <div class="d-flex gap-2 pt-2 mt-1 border-top">
-            <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+            <button type="submit" class="btn btn-sm btn-brand">
               <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
             </button>
             <a href="{% url 'sales:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">

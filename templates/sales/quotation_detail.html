@@ -4,7 +4,6 @@
 {% block title %}{{ quotation }}{% endblock %}
 
 {% block extra_css %}
-{% include "components/app_styles.html" %}
 <style>
 .detail-key {
   background: #f9fafb;
@@ -23,7 +22,7 @@
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{{ quotation.doc_number|default:"Borrador" }}</h4>
+    <h1 class="app-header-title">{{ quotation.doc_number|default:"Borrador" }}</h1>
     <p class="app-header-sub">{% trans "Cotización" %} · {{ quotation.customer.name }}</p>
   </div>
   <div class="app-header-actions">
@@ -51,14 +50,14 @@
       <form method="post" action="{% url 'sales:quotation_confirm' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#f59e0b', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-sm" style="background:#1e2130;color:#fff">
+        <button class="btn btn-sm btn-brand">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
       <form method="post" action="{% url 'sales:quotation_delete' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
       </form>
 
     {% elif quotation.status == "CONFIRMED" %}
@@ -85,7 +84,7 @@
       </form>
 
     {% elif quotation.status == "ACCEPTED" %}
-      <button class="btn btn-sm" style="background:#1e2130;color:#fff"
+      <button class="btn btn-sm btn-brand"
               data-bs-toggle="modal" data-bs-target="#convertModal">
         <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir a factura" %}
       </button>
@@ -196,7 +195,7 @@
     {# Notes / Terms #}
     {% if quotation.notes or quotation.terms %}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Notas y condiciones" %}
       </div>
       <div class="p-3 small text-muted">
@@ -212,12 +211,12 @@
   <div class="col-lg-4 d-flex flex-column gap-3">
 
     <div class="app-metric-card">
-      <div class="app-metric-value" style="color:#16a34a">{{ quotation.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-value num-pos">{{ quotation.total|floatformat:2|intcomma }}</div>
       <div class="app-metric-label">{% trans "Total" %} {{ quotation.currency }}</div>
     </div>
 
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Estado del documento" %}
       </div>
       <div class="p-3">
@@ -264,7 +263,7 @@
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
       <form method="post" action="{% url 'sales:quotation_convert' quotation.pk %}">
         {% csrf_token %}
-        <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+        <div class="modal-header">
           <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
             {% trans "Convertir a factura" %}
           </h5>
@@ -286,7 +285,7 @@
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
             {% trans "Cancelar" %}
           </button>
-          <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+          <button type="submit" class="btn btn-sm btn-brand">
             <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir" %}
           </button>
         </div>

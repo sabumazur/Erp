@@ -4,7 +4,6 @@
 {% block title %}{% trans "Pago a proveedor" %} — {{ payment.date|date:"d/m/Y" }}{% endblock %}
 
 {% block extra_css %}
-{% include "components/app_styles.html" %}
 <style>
 .detail-key {
   background: #f9fafb;
@@ -23,7 +22,7 @@
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Comprobante de pago" %}</h4>
+    <h1 class="app-header-title">{% trans "Comprobante de pago" %}</h1>
     <p class="app-header-sub">{{ payment.supplier.name }} · {{ payment.date|date:"d/m/Y" }}</p>
   </div>
   <div class="app-header-actions">
@@ -69,7 +68,7 @@
             <th class="detail-key">{% trans "Proveedor" %}</th>
             <td>
               <a href="{% url 'purchases:supplier_detail' payment.supplier.pk %}"
-                 class="fw-semibold text-decoration-none" style="color:#1e2130">
+                 class="fw-semibold text-decoration-none link-brand">
                 {{ payment.supplier.name }}
               </a>
               {% if payment.supplier.rnc_cedula %}
@@ -104,7 +103,7 @@
     </div>
 
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Facturas aplicadas" %}
       </div>
       <table class="table table-sm mb-0">
@@ -123,14 +122,14 @@
           <tr>
             <td>
               <a href="{% url 'purchases:supplier_invoice_detail' alloc.supplier_invoice.pk %}"
-                 class="text-decoration-none font-monospace small" style="color:#1e2130">
+                 class="text-decoration-none font-monospace small link-brand">
                 {{ alloc.supplier_invoice.supplier_ncf|default:"—" }}
               </a>
             </td>
             <td class="small text-nowrap text-muted">{{ alloc.supplier_invoice.issue_date|date:"d/m/Y" }}</td>
             <td class="small text-nowrap text-muted">{{ alloc.supplier_invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
             <td class="text-end small font-monospace">{{ alloc.supplier_invoice.total|floatformat:2|intcomma }}</td>
-            <td class="text-end small fw-semibold font-monospace" style="color:#16a34a">
+            <td class="text-end small fw-semibold font-monospace num-pos">
               {{ alloc.amount|floatformat:2|intcomma }}
             </td>
             <td class="text-center">
@@ -150,7 +149,7 @@
         <tfoot>
           <tr>
             <td colspan="4" class="text-end">{% trans "Total pagado" %}</td>
-            <td class="text-end font-monospace" style="color:#16a34a">{{ payment.amount|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace num-pos">{{ payment.amount|floatformat:2|intcomma }}</td>
             <td></td>
           </tr>
         </tfoot>
@@ -159,7 +158,7 @@
 
     {% if payment.notes %}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Notas" %}
       </div>
       <div class="p-3 small text-muted">{{ payment.notes }}</div>
@@ -171,7 +170,7 @@
   {# ── Sidebar ── #}
   <div class="col-lg-4">
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Resumen" %}
       </div>
       <div class="p-3">

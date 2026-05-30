@@ -23,7 +23,7 @@
 
   <td data-col="amount" class="text-end fw-semibold font-monospace">
     <a href="{% url 'sales:payment_detail' row.pk %}"
-       class="text-decoration-none" style="color:#1e2130">
+       class="text-decoration-none link-brand">
       {{ row.amount|floatformat:2|intcomma }}
     </a>
     <span class="dt-hover-actions">
@@ -39,7 +39,7 @@
   <td data-col="allocations" class="small">
     {% for alloc in row.allocations.all %}
       <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
-         class="text-decoration-none font-monospace d-block" style="color:#1e2130">
+         class="text-decoration-none font-monospace d-block link-brand">
         {{ alloc.invoice.display_number }}
         <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
       </a>

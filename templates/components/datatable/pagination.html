@@ -24,11 +24,11 @@
       <span class="dt-page-ellipsis px-2 text-muted small">…</span>
       {% else %}
         <button type="button"
-                class="btn btn-sm dt-page-btn{% if n == dt_page_obj.number %} dt-page-btn-active{% else %} btn-outline-secondary{% endif %}"
+                class="btn btn-sm dt-page-btn{% if n == dt_page_obj.number %} dt-page-btn-active{% else %} btn-outline-secondary{% endif %} btn-brand"
                 onclick="dtPage({{ n }})"
                 {% if n == dt_page_obj.number %}
                 aria-current="page"
-                style="background:#1e2130;color:#fff;border-color:#1e2130"
+               
                 {% endif %}>
           {{ n }}
         </button>

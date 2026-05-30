@@ -77,6 +77,26 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ]
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
+        if not self.request.htmx:
+            today = date.today()
+            month_qs = org_qs.filter(
+                issue_date__year=today.year, issue_date__month=today.month,
+            )
+            ctx["stats"] = [
+                {"label": _("Total facturas"), "value": org_qs.count(),
+                 "icon": "bi-receipt", "color": "primary"},
+                {"label": _("Facturado este mes"),
+                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-cash-stack", "color": "success"},
+                {"label": _("Por cobrar"),
+                 "value": "{:,.2f}".format(
+                     org_qs.filter(status__in=["CONFIRMED", "SENT", "OVERDUE"])
+                     .aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-hourglass-split", "color": "warning"},
+                {"label": _("Vencidas"), "value": org_qs.filter(status="OVERDUE").count(),
+                 "icon": "bi-exclamation-circle", "color": "danger"},
+            ]
+
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

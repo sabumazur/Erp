@@ -3,18 +3,16 @@
 
 {% block title %}{% trans "Clientes" %}{% endblock %}
 
-{% block extra_css %}
-{% include "components/app_styles.html" %}
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Clientes" %}</h4>
+    <h1 class="app-header-title">{% trans "Clientes" %}</h1>
     <p class="app-header-sub">{% trans "CRM" %}</p>
   </div>
 </div>
+
+{% include "components/_kpi_cards.html" with stats=stats %}
 
 {% include "components/datatable/wrapper.html" %}
 

@@ -60,3 +60,383 @@
   background: #5b9af5;
   flex-shrink: 0;
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SabSys — Refined Slate consolidation                       (review step 1)
+   ────────────────────────────────────────────────────────────────────────
+   Everything below was previously inlined in templates or duplicated inside
+   components/app_styles.html (which was <style>-injected into 57 pages).
+   It now lives here, in the cached bundle base.html already loads.
+
+   Rules intentionally NOT redefined here because another loaded stylesheet
+   already owns them:
+     • .app-header*            → app.css
+     • .app-table-wrap overflow → documents.css (overflow-x:auto, min-width)
+     • .dt-pill / .dt-ribbon / .dt-kebab → documents.css
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Brand + semantic tokens (complements --module-accent in app.css) ───── */
+:root {
+  --brand-ink:    #1e2130;   /* app primary / neutral brand */
+  --brand-ink-2:  #2a3050;   /* hover */
+  --brand-accent: #3f6fd6;   /* link / focus accent */
+  --brand-soft:   #eef3fc;
+  --pos:   #16a34a;          /* money received / positive */
+  --neg:   #b42318;          /* overdue / negative */
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --hairline: #e5e7eb;
+  --hairline-soft: #eef0f6;
+}
+
+/* ── Brand button (F1: replaces style="background:#1e2130;color:#fff") ──── */
+.btn-brand {
+  background: var(--brand-ink);
+  border: 1px solid var(--brand-ink);
+  color: #fff;
+}
+.btn-brand:hover,
+.btn-brand:focus {
+  background: var(--brand-ink-2);
+  border-color: var(--brand-ink-2);
+  color: #fff;
+}
+.btn-brand:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(63, 111, 214, 0.3);
+}
+
+/* ── Brand link (F4: replaces style="color:#1e2130" on doc numbers) ─────── */
+.link-brand {
+  color: var(--brand-ink);
+  text-decoration: none;
+  font-weight: 600;
+}
+.link-brand:hover { color: var(--brand-accent); }
+
+/* ── Semantic numbers (F4: replaces inline #16a34a / #dc2626) ───────────── */
+.num-pos   { color: var(--pos) !important; }
+.num-neg   { color: var(--neg) !important; font-weight: 600; }
+.num-muted { color: var(--muted-2) !important; }
+
+/* ── Card section header (F3: replaces the ~65× inline style string) ─────── */
+.app-card-head {
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.app-card-head--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-transform: none;
+}
+.app-card-head--row .app-card-head-title {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+
+/* ════════ Migrated verbatim from components/app_styles.html ════════════ */
+
+/* ── Print ───────────────────────────────────────────────── */
+.print-header { display: none; }
+@media print {
+  @page { size: A4 landscape; }
+  .no-print { display: none !important; }
+  .print-header { display: block !important; }
+  .app-table-wrap { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  .app-metric-card { border: 1px solid #dee2e6 !important; }
+  .badge-soft { background: none !important; border: none !important; padding: 0 !important; color: inherit !important; font-weight: 600; }
+}
+
+/* ── Filter offcanvas: size to content, cap at 50vh ─────── */
+#dt-filter-offcanvas {
+  height: auto;
+  max-height: 50vh;
+}
+#dt-filter-offcanvas .offcanvas-body { overflow-y: auto; }
+#dt-filter-offcanvas .btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+/* ── Filter panel ────────────────────────────────────────── */
+.app-filter-panel {
+  background: #f9fafb;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 1rem;
+}
+.app-filter-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted-2);
+  margin-bottom: 10px;
+}
+
+/* ── Metric cards ────────────────────────────────────────── */
+.app-metric-card {
+  text-align: center;
+  padding: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: #fff;
+}
+.app-metric-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
+}
+.app-metric-label {
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 3px;
+}
+
+/* ── Table wrapper — VISUALS ONLY ─────────────────────────────────────────
+   overflow-x:auto + min-width live in documents.css; we deliberately do NOT
+   set overflow:hidden here (that was the bug cancelling mobile scroll). */
+.app-table-wrap {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: #fff;
+}
+.app-table-wrap .table { margin-bottom: 0; font-size: .875rem; }
+.app-table-wrap thead th {
+  background: #f9fafb;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--hairline);
+  padding-top: .65rem;
+  padding-bottom: .65rem;
+}
+.app-table-wrap tfoot td,
+.app-table-wrap tfoot th {
+  background: #f9fafb;
+  border-top: 2px solid var(--brand-ink);
+  font-weight: 700;
+}
+.app-table-wrap tbody tr:nth-child(even) { background: #fafafa; }
+/* clip striped corners without killing horizontal scroll */
+.app-table-wrap > .table:first-child { border-radius: 8px; overflow: hidden; }
+
+/* ── Status badges ───────────────────────────────────────── */
+.badge-soft {
+  font-size: .72rem;
+  font-weight: 500;
+  padding: .3em .65em;
+  border-radius: 6px;
+  display: inline-block;
+}
+/* optional leading dot: <span class="badge-soft badge-paid has-dot"> */
+.badge-soft.has-dot { display: inline-flex; align-items: center; gap: 5px; }
+.badge-soft.has-dot::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .8;
+}
+.badge-confirmed { background: #E6F1FB; color: #185FA5; }
+.badge-sent      { background: #D1ECF1; color: #0C5460; }
+.badge-paid      { background: #D1E7DD; color: #0A6640; }
+.badge-overdue   { background: #F8D7DA; color: #842029; }
+.badge-cancelled { background: #E9ECEF; color: #495057; }
+.badge-default   { background: #E9ECEF; color: #495057; }
+.badge-invoice   { background: #E9ECEF; color: #495057; }
+.badge-payment   { background: #D1E7DD; color: #0A6640; }
+.badge-active    { background: #D1E7DD; color: #0A6640; }
+.badge-inactive  { background: #E9ECEF; color: #495057; }
+
+/* ── Customer / entity block ─────────────────────────────── */
+.customer-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: .85rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: #fff;
+  margin-bottom: 1rem;
+}
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── List-cell helpers (optional polish for list rows) ──────────────────── */
+/* primary entity cell: avatar + name + sub-line (RNC) */
+.cell-entity { display: flex; align-items: center; gap: 11px; }
+.cell-entity .avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-soft); color: var(--brand-accent);
+  font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cell-entity .avatar.is-muted { background: #eef0f3; color: var(--muted); }
+.cell-entity .nm { font-weight: 600; color: #1f2937; line-height: 1.25; }
+.cell-entity .nm small { display: block; font-size: .72rem; color: var(--muted-2); font-weight: 500; margin-top: 1px; }
+
+/* contact cell */
+.cell-contact { font-size: .8rem; color: #374151; line-height: 1.35; }
+.cell-contact .muted { color: var(--muted-2); font-size: .75rem; }
+
+/* payment method cell */
+.cell-method { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: #374151; }
+.cell-method i { color: var(--muted-2); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   SabSys — Refined Slate consolidation                    (review steps 4–5)
+   ────────────────────────────────────────────────────────────────────────
+   The component-consolidation + polish layer. Pairs with MIGRATION-2.md.
+   Nothing here changes the look of a page that hasn't opted in.
+
+   NOTE on existing components: the repo already ships the canonical
+   `templates/components/_kpi_cards.html` (F5) and
+   `templates/sales/partials/status_badge.html` (F6). We consolidate ONTO those
+   — no competing copies are introduced here. The only KPI rule below is a small
+   shim so the legacy inline `.app-metric-card` tiles converge visually with the
+   `_kpi_cards.html` card until each page is migrated to it.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── F5 · KPI visual convergence (target component: components/_kpi_cards.html)
+   The repo has two metric-card systems: the inline `.app-metric-card`
+   (bordered / centered) and the nicer `_kpi_cards.html` (card shadow-sm + tinted
+   icon bubble + `.kpi-value`, defined in documents.css). Full consolidation =
+   feed a `stats` list to `_kpi_cards.html` from the view (see MIGRATION-2.md for
+   the dashboard worked example). Until then, this shim gives the legacy tiles
+   the same shadow/radius so the two systems stop looking different. */
+.app-metric-card {
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .05), 0 2px 12px rgba(16, 24, 40, .03);
+  border-radius: 10px;
+}
+
+/* ── F11 · Semantic detail rows (replaces <table> used for label→value) ─────
+   <dl class="detail-dl"> <div><dt>Label</dt><dd>Value</dd></div> … </dl>
+   Two-column on desktop, single column on mobile — no colspan gymnastics. */
+.detail-dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.detail-dl > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline-soft);
+}
+.detail-dl > div:nth-child(-n+2) { border-top: none; }
+.detail-dl dt {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted-2);
+}
+.detail-dl dd {
+  margin: 0;
+  font-size: .875rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+.detail-dl .span-2 { grid-column: 1 / -1; }
+@media (max-width: 575.98px) {
+  .detail-dl { grid-template-columns: 1fr; }
+  .detail-dl > div:nth-child(2) { border-top: 1px solid var(--hairline-soft); }
+}
+
+/* ── F12 · Muted surface (modal headers/footers + sticky form bars) ─────────
+   Replaces inline style="background:#f9fafb;border-bottom:1px solid #e5e7eb"
+   repeated on modal chrome and save bars. */
+.surface-muted { background: #f9fafb; }
+.erp-dialog .modal-header,
+.erp-dialog .modal-footer,
+.modal .modal-header,
+.modal .modal-footer {
+  background: #f9fafb;
+}
+.modal .modal-header { border-bottom: 1px solid var(--hairline); }
+.modal .modal-footer { border-top: 1px solid var(--hairline); }
+/* sticky save bar at the foot of long forms */
+.app-form-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-top: 1px solid var(--hairline);
+  border-radius: 0 0 8px 8px;
+}
+.app-form-bar .form-bar-info { margin-right: auto; font-size: .8rem; color: var(--muted); }
+
+/* ── F9 · Detail action ribbon — collapse secondaries on narrow screens ─────
+   Primary actions stay; wrap the rest in <div class="doc-action-overflow">…
+   and they fold into a "More" menu under ~720px. The .doc-action-row flex
+   layout already lives in documents.css; this only adds the responsive hide. */
+.doc-action-more { display: none; }
+@media (max-width: 720px) {
+  .doc-action-row .doc-action-overflow { display: none; }
+  .doc-action-row .doc-action-more { display: inline-flex; }
+}
+
+/* ── F8 · Icon-only button affordance ───────────────────────────────────────
+   Markup carries aria-label + title (see _icon_button.html). This just makes
+   bare icon buttons square + centered so they read as deliberate controls. */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  padding: 0;
+  line-height: 1;
+}
+.btn-icon i { font-size: .95rem; }
+
+/* non-interactive org pill in the navbar (was a <div class="btn"> w/ pointer-
+   events:none — should be a plain span, styled, never announced as a button) */
+.org-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  padding: 4px 12px;
+}

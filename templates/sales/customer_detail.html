@@ -4,7 +4,6 @@
 {% block title %}{{ customer }}{% endblock %}
 
 {% block extra_css %}
-{% include "components/app_styles.html" %}
 <style>
 .detail-key {
   background: #f9fafb;
@@ -23,7 +22,7 @@
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{{ customer.name }}</h4>
+    <h1 class="app-header-title">{{ customer.name }}</h1>
     <p class="app-header-sub">
       {% trans "Clientes" %}
       {% if customer.rnc_cedula %}
@@ -48,7 +47,7 @@
 
     {# Contact & fiscal info #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Información de contacto" %}
       </div>
       <table class="table mb-0">
@@ -101,7 +100,7 @@
 
     {# Account summary mini-kpis #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Resumen de cuenta" %}
       </div>
       <div class="row g-0">
@@ -126,7 +125,7 @@
 
     {# Departments #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <div class="app-card-head app-card-head--row">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Departamentos de entrega" %}</span>
         <button type="button" class="btn btn-outline-secondary btn-sm"
                 hx-get="{% url 'sales:department_create' customer.pk %}"
@@ -144,7 +143,7 @@
     {# Invoices #}
     {% if invoices %}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <div class="app-card-head app-card-head--row">
         <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas" %}</span>
         <a href="{% url 'sales:invoice_list' %}?customer={{ customer.pk }}" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-receipt me-1"></i>{% trans "Ver todas" %}
@@ -168,14 +167,14 @@
             <tr>
               <td>
                 <a href="{% url 'sales:invoice_detail' inv.pk %}"
-                   class="text-decoration-none font-monospace small" style="color:#1e2130">
+                   class="text-decoration-none font-monospace small link-brand">
                   {{ inv.display_number }}
                 </a>
               </td>
               <td class="small text-nowrap text-muted">{{ inv.issue_date|date:"d/m/Y" }}</td>
               <td class="small text-nowrap text-muted">{{ inv.due_date|date:"d/m/Y"|default:"—" }}</td>
               <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
-              <td class="text-end small font-monospace" style="color:#16a34a">{{ inv.paid_amount|floatformat:2|intcomma }}</td>
+              <td class="text-end small font-monospace num-pos">{{ inv.paid_amount|floatformat:2|intcomma }}</td>
               <td class="text-end small fw-semibold font-monospace"
                   style="color:{% if inv.status == 'OVERDUE' %}#dc2626{% elif inv.line_balance <= 0 %}#6b7280{% else %}#d97706{% endif %}">
                 {{ inv.line_balance|floatformat:2|intcomma }}
@@ -194,7 +193,7 @@
     {# Recent payments #}
     {% if recent_payments %}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Últimos pagos" %}
       </div>
       <div class="table-responsive">
@@ -215,7 +214,7 @@
               <td class="small">
                 {% for alloc in pmt.allocations.all %}
                   <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
-                     class="text-decoration-none font-monospace d-block small" style="color:#1e2130">
+                     class="text-decoration-none font-monospace d-block small link-brand">
                     {{ alloc.invoice.display_number }}
                     <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
                   </a>
@@ -223,7 +222,7 @@
               </td>
               <td class="small">{{ pmt.get_method_display }}</td>
               <td class="small text-muted font-monospace">{{ pmt.reference|default:"—" }}</td>
-              <td class="text-end small fw-semibold font-monospace" style="color:#16a34a">{{ pmt.amount|floatformat:2|intcomma }}</td>
+              <td class="text-end small fw-semibold font-monospace num-pos">{{ pmt.amount|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -239,7 +238,7 @@
 
     {# Credit #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Crédito" %}
       </div>
       <div class="p-3">
@@ -293,7 +292,7 @@
 
     {# Aging breakdown #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Antigüedad de saldos" %}
       </div>
       <div class="p-3">
@@ -323,7 +322,7 @@
 
     {# Audit #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+      <div class="app-card-head">
         {% trans "Auditoría" %}
       </div>
       <div class="p-3">
@@ -350,7 +349,7 @@
 <div class="modal fade" id="deptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <div class="modal-header" style="background:#f9fafb;border-bottom:1px solid #e5e7eb">
+      <div class="modal-header">
         <h5 class="modal-title fw-semibold" id="deptModalTitle" style="font-size:.95rem">
           {% trans "Departamento" %}
         </h5>

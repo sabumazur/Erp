@@ -7,15 +7,11 @@
 
 {% block title %}{% trans "Editar artículo" %}{% endblock %}
 
-{% block extra_css %}
-{% include "components/app_styles.html" %}
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
   <div>
-    <h4 class="app-header-title">{% trans "Editar artículo" %}</h4>
+    <h1 class="app-header-title">{% trans "Editar artículo" %}</h1>
     <p class="app-header-sub">{% trans "Artículos" %}</p>
   </div>
   <div class="app-header-actions">
@@ -32,7 +28,7 @@
           x-init="init()">
       {% csrf_token %}
       <div class="app-table-wrap mb-3">
-        <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">
+        <div class="app-card-head">
           {% trans "Datos del artículo" %}
         </div>
         <div class="p-3">
@@ -41,7 +37,7 @@
       </div>
 
       <div class="form-sticky-bar">
-        <button type="submit" class="btn btn-sm" style="background:#1e2130;color:#fff">
+        <button type="submit" class="btn btn-sm btn-brand">
           <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
         </button>
         <a href="{% url 'items:item_detail' item.pk %}" class="btn btn-outline-secondary btn-sm">

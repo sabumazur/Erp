@@ -6,13 +6,13 @@
 
   <td data-col="doc_number" class="font-monospace fw-semibold">
     <a href="{% url 'sales:sale_order_detail' row.pk %}"
-       class="text-decoration-none" style="color:#1e2130">
+       class="text-decoration-none link-brand">
       {{ row.display_number }}
     </a>
     <span class="dt-row-actions">
       <div class="dropdown dt-kebab">
         <button type="button"
-                class="btn btn-link btn-sm p-0 dt-kebab-btn"
+                class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
                 data-bs-toggle="dropdown"
                 data-bs-boundary="viewport"
                 aria-expanded="false"
