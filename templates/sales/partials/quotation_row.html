@@ -1,14 +1,22 @@
 {% load i18n humanize %}
-{% comment %}Per-row partial for the quotation datatable. Variable: row = Invoice (quotation).{% endcomment %}
+{% comment %}
+  Per-row partial for the quotation datatable — Refined Slate skin.
+  Variable: row = SalesDocument (quotation).
+  Opt-in: the list page wraps the datatable include in <div class="dt-slate">.
+  Cell classes (docnum / cust / rnc / dt / amt / cur) are scoped under .dt-slate
+  in static/css/slate-list.css, so this markup is inert elsewhere.
+{% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status="{{ row.status }}"
     data-detail-url="{% url 'sales:quotation_detail' row.pk %}">
 
-  <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'sales:quotation_detail' row.pk %}"
-       class="text-decoration-none link-brand">
-      {{ row.display_number }}
-    </a>
+  {# ── Número ─────────────────────────────────────────────── #}
+  <td data-col="doc_number">
+    {% if row.doc_number %}
+      <a href="{% url 'sales:quotation_detail' row.pk %}" class="docnum">{{ row.display_number }}</a>
+    {% else %}
+      <span class="docnum muted">{{ row.display_number|default:_("Borrador") }}</span>
+    {% endif %}
     <span class="dt-row-actions">
       <div class="dropdown dt-kebab">
         <button type="button"
@@ -37,22 +45,29 @@
     </span>
   </td>
 
-  <td data-col="customer__name">{{ row.customer.name }}</td>
+  {# ── Cliente ────────────────────────────────────────────── #}
+  <td data-col="customer__name">
+    <span class="cust">{{ row.customer.name }}{% if row.customer.rnc_cedula %}<span class="rnc">RNC {{ row.customer.rnc_cedula }}</span>{% endif %}</span>
+  </td>
 
-  <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
+  {# ── Emisión ────────────────────────────────────────────── #}
+  <td data-col="issue_date"><span class="dt">{{ row.issue_date|date:"d/m/Y" }}</span></td>
 
-  <td data-col="valid_until" class="small">
+  {# ── Válida hasta ───────────────────────────────────────── #}
+  <td data-col="valid_until">
     {% if row.valid_until %}
-      <span class="{% if row.status == 'EXPIRED' %}text-danger{% endif %}">
-        {{ row.valid_until|date:"d/m/Y" }}
-      </span>
+      <span class="dt{% if row.status == 'EXPIRED' %} over{% endif %}">{{ row.valid_until|date:"d/m/Y" }}</span>
     {% else %}
-      <span class="text-muted">—</span>
+      <span class="dt">—</span>
     {% endif %}
   </td>
 
-  <td data-col="total" class="text-end fw-semibold font-monospace">{{ row.total|floatformat:2|intcomma }}</td>
+  {# ── Total ──────────────────────────────────────────────── #}
+  <td data-col="total" class="text-end">
+    <span class="amt"><span class="cur">RD$</span>{{ row.total|floatformat:2|intcomma }}</span>
+  </td>
 
+  {# ── Estado ─────────────────────────────────────────────── #}
   <td data-col="status" class="text-center">
     {% include "sales/partials/status_badge.html" with status=row.status %}
   </td>

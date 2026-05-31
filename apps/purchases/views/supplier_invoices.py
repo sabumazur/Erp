@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db.models import Sum
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -63,6 +64,24 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
              "count": org_qs.filter(status="CANCELLED").count()},
         ]
         ctx.update(self.apply_datatable(qs, status_pills=status_pills))
+        if not self.request.htmx:
+            today = date.today()
+            month_qs = org_qs.filter(
+                issue_date__year=today.year, issue_date__month=today.month,
+            )
+            ctx["stats"] = [
+                {"label": _("Total facturas"), "value": org_qs.count(),
+                 "icon": "bi-receipt",          "color": "primary"},
+                {"label": _("Comprado este mes"),
+                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-cash-stack",       "color": "success"},
+                {"label": _("Por pagar"),
+                 "value": "{:,.2f}".format(
+                     org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-hourglass-split",  "color": "warning"},
+                {"label": _("Pagadas"), "value": org_qs.filter(status="PAID").count(),
+                 "icon": "bi-check2-circle",    "color": "info"},
+            ]
         ctx["module"] = "supplier-invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

@@ -1,16 +1,34 @@
 {% load i18n humanize %}
-{% comment %}Per-row partial for the payment datatable. Variable: row = Payment.{% endcomment %}
-<tr>
+{% comment %}
+  Per-row partial for the payment datatable — Refined Slate skin.
+  Variable: row = Payment. Opt-in via <div class="dt-slate"> on the list page.
+  Cell classes (dt / cust / amt / cur / ref / alloc) are scoped in slate-list.css.
+{% endcomment %}
+<tr data-pk="{{ row.pk }}"
+    data-status="PAID"
+    data-detail-url="{% url 'sales:payment_detail' row.pk %}">
 
-  <td data-col="date" class="small text-nowrap text-muted">{{ row.date|date:"d/m/Y" }}</td>
+  {# ── Fecha ──────────────────────────────────────────────── #}
+  <td data-col="date"><span class="dt">{{ row.date|date:"d/m/Y" }}</span></td>
 
+  {# ── Cliente ────────────────────────────────────────────── #}
   <td data-col="customer__name">
-    <a href="{% url 'sales:customer_detail' row.customer.pk %}"
-       class="text-decoration-none fw-semibold" style="font-size:0.85rem;color:#1e2130">
-      {{ row.customer.name }}
-    </a>
+    <span class="cust"><a href="{% url 'sales:customer_detail' row.customer.pk %}">{{ row.customer.name }}</a></span>
+    <span class="dt-row-actions">
+      <div class="dropdown dt-kebab">
+        <button type="button" class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
+                data-bs-toggle="dropdown" data-bs-boundary="viewport" tabindex="-1">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li><a class="dropdown-item" href="{% url 'sales:payment_detail' row.pk %}" data-action="view">
+            <i class="bi bi-eye me-2"></i>{% trans "Ver" %}</a></li>
+        </ul>
+      </div>
+    </span>
   </td>
 
+  {# ── Método ─────────────────────────────────────────────── #}
   <td data-col="method">
     {% if row.method == 'TRANSFER' %}
       <span class="badge-soft badge-sent">{{ row.get_method_display }}</span>
@@ -21,30 +39,20 @@
     {% endif %}
   </td>
 
-  <td data-col="amount" class="text-end fw-semibold font-monospace">
-    <a href="{% url 'sales:payment_detail' row.pk %}"
-       class="text-decoration-none link-brand">
-      {{ row.amount|floatformat:2|intcomma }}
-    </a>
-    <span class="dt-hover-actions">
-      <a href="{% url 'sales:payment_detail' row.pk %}"
-         class="btn btn-link btn-sm p-0 text-secondary" title="{% trans 'Ver' %}" style="font-size:0.85rem">
-        <i class="bi bi-eye"></i>
-      </a>
-    </span>
+  {# ── Monto ──────────────────────────────────────────────── #}
+  <td data-col="amount" class="text-end">
+    <span class="amt"><span class="cur">RD$</span>{{ row.amount|floatformat:2|intcomma }}</span>
   </td>
 
-  <td data-col="reference" class="small text-muted font-monospace">{{ row.reference|default:"—" }}</td>
+  {# ── Referencia ─────────────────────────────────────────── #}
+  <td data-col="reference"><span class="ref">{{ row.reference|default:"—" }}</span></td>
 
-  <td data-col="allocations" class="small">
+  {# ── Aplicado a ─────────────────────────────────────────── #}
+  <td data-col="allocations">
     {% for alloc in row.allocations.all %}
-      <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
-         class="text-decoration-none font-monospace d-block link-brand">
-        {{ alloc.invoice.display_number }}
-        <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
-      </a>
+      <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}" class="alloc">{{ alloc.invoice.display_number }} <span class="alloc-amt">({{ alloc.amount|floatformat:2|intcomma }})</span></a>
     {% empty %}
-      <span class="text-muted">—</span>
+      <span class="ref">—</span>
     {% endfor %}
   </td>
 

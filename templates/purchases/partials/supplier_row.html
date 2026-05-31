@@ -1,77 +1,77 @@
 {% load i18n %}
+{% comment %}
+  Per-row partial for the supplier (Proveedores) datatable — Refined Slate skin.
+  Variable: row = Supplier. Opt-in via <div class="dt-slate"> on the list page.
+  Entity cell vocabulary (cell-entity / avatar / nm / rnc) is scoped in slate-list.css.
+{% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status=""
     data-detail-url="{% url 'purchases:supplier_detail' row.pk %}">
 
+  {# ── Nombre (avatar + nombre + RNC) ─────────────────────── #}
   <td data-col="name">
-    <div class="d-flex align-items-center gap-2">
-      <div class="flex-shrink-0 d-flex align-items-center justify-content-center fw-bold text-uppercase"
-           style="width:30px;height:30px;border-radius:8px;font-size:.7rem;background:#e0e7ff;color:#3730a3">
-        {{ row.name|slice:":2" }}
-      </div>
-      <div class="lh-sm">
-        <div class="d-flex align-items-center">
-          <a href="{% url 'purchases:supplier_detail' row.pk %}"
-             class="text-decoration-none fw-semibold link-brand">
-            {{ row.name }}
-          </a>
-          <span class="dt-row-actions">
-            <div class="dropdown dt-kebab">
-              <button type="button"
-                      class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
-                      data-bs-toggle="dropdown"
-                      data-bs-boundary="viewport"
-                      aria-expanded="false"
-                      tabindex="-1">
-                <i class="bi bi-three-dots-vertical"></i>
+    <div class="cell-entity">
+      <span class="avatar">{{ row.name|slice:":2" }}</span>
+      <span class="nm"><a href="{% url 'purchases:supplier_detail' row.pk %}">{{ row.name }}</a>{% if row.rnc_cedula %}<span class="rnc">RNC {{ row.rnc_cedula }}</span>{% endif %}</span>
+      <span class="dt-row-actions">
+        <div class="dropdown dt-kebab">
+          <button type="button"
+                  class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
+                  data-bs-toggle="dropdown"
+                  data-bs-boundary="viewport"
+                  aria-expanded="false"
+                  tabindex="-1">
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li>
+              <a class="dropdown-item" href="{% url 'purchases:supplier_detail' row.pk %}" data-action="view">
+                <i class="bi bi-eye me-2"></i>{% trans "Ver" %}
+              </a>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item" data-action="edit"
+                      hx-get="{% url 'purchases:supplier_edit' row.pk %}"
+                      hx-target="#supplier-modal-body"
+                      hx-on::after-request="bootstrap.Modal.getOrCreateInstance('#supplierModal').show();">
+                <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                <li>
-                  <a class="dropdown-item" href="{% url 'purchases:supplier_detail' row.pk %}" data-action="view">
-                    <i class="bi bi-eye me-2"></i>{% trans "Ver" %}
-                  </a>
-                </li>
-                <li>
-                  <button type="button" class="dropdown-item" data-action="edit"
-                          hx-get="{% url 'purchases:supplier_edit' row.pk %}"
-                          hx-target="#supplier-modal-body"
-                          hx-on::after-request="bootstrap.Modal.getOrCreateInstance('#supplierModal').show();">
-                    <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
-                  </button>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                  <button type="button" class="dropdown-item text-danger" data-action="delete"
-                          onclick="Swal.fire({
-                            icon: 'warning',
-                            title: '{% trans "¿Eliminar proveedor?" %}',
-                            html: '<strong>{{ row.name|escapejs }}</strong>',
-                            showCancelButton: true,
-                            confirmButtonText: '{% trans "Eliminar" %}',
-                            cancelButtonText:  '{% trans "Cancelar" %}',
-                            confirmButtonColor: '#dc3545',
-                          }).then(function (r) {
-                            if (r.isConfirmed) htmx.ajax('POST', '{% url "purchases:supplier_delete" row.pk %}',
-                              { target: '#dt-results', swap: 'innerHTML',
-                                values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
-                          })">
-                    <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </span>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <button type="button" class="dropdown-item text-danger" data-action="delete"
+                      onclick="Swal.fire({
+                        icon: 'warning',
+                        title: '{% trans "¿Eliminar proveedor?" %}',
+                        html: '<strong>{{ row.name|escapejs }}</strong>',
+                        showCancelButton: true,
+                        confirmButtonText: '{% trans "Eliminar" %}',
+                        cancelButtonText:  '{% trans "Cancelar" %}',
+                        confirmButtonColor: '#dc3545',
+                      }).then(function (r) {
+                        if (r.isConfirmed) htmx.ajax('POST', '{% url "purchases:supplier_delete" row.pk %}',
+                          { target: '#dt-results', swap: 'innerHTML',
+                            values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
+                      })">
+                <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+              </button>
+            </li>
+          </ul>
         </div>
-        {% if row.rnc_cedula %}
-          <span class="font-monospace text-muted" style="font-size:.68rem">{{ row.rnc_cedula }}</span>
-        {% endif %}
-      </div>
+      </span>
     </div>
   </td>
 
-  <td data-col="rnc_cedula" class="font-monospace small text-nowrap">{{ row.rnc_cedula|default:"—" }}</td>
-  <td data-col="email" class="small text-muted">{{ row.email|default:"—" }}</td>
-  <td data-col="phone" class="small text-muted">{{ row.phone|default:"—" }}</td>
+  {# ── RNC / Cédula ───────────────────────────────────────── #}
+  <td data-col="rnc_cedula"><span class="ref">{{ row.rnc_cedula|default:"—" }}</span></td>
+
+  {# ── Email ──────────────────────────────────────────────── #}
+  <td data-col="email"><span class="cell-contact">{{ row.email|default:"—" }}</span></td>
+
+  {# ── Teléfono ───────────────────────────────────────────── #}
+  <td data-col="phone"><span class="cell-contact muted">{{ row.phone|default:"—" }}</span></td>
+
+  {# ── Estado ─────────────────────────────────────────────── #}
   <td data-col="is_active" class="text-center">
     {% if row.is_active %}
       <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>

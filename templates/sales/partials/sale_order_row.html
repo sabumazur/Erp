@@ -1,14 +1,23 @@
 {% load i18n humanize %}
-{% comment %}Per-row partial for the sale-order datatable. Variable: row = Invoice (sale_order).{% endcomment %}
+{% comment %}
+  Per-row partial for the sale-order datatable — Refined Slate skin.
+  Variable: row = SalesDocument (sale order).
+  The list page opts into the skin by wrapping the datatable include in
+  <div class="dt-slate"> (see sale_order_list.html). All visual classes used
+  here (docnum / cust / rnc / dt / amt / cur) are scoped under .dt-slate in
+  static/css/slate-list.css, so this markup is inert on any non-slate page.
+{% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status="{{ row.status }}"
     data-detail-url="{% url 'sales:sale_order_detail' row.pk %}">
 
-  <td data-col="doc_number" class="font-monospace fw-semibold">
-    <a href="{% url 'sales:sale_order_detail' row.pk %}"
-       class="text-decoration-none link-brand">
-      {{ row.display_number }}
-    </a>
+  {# ── Número ─────────────────────────────────────────────── #}
+  <td data-col="doc_number">
+    {% if row.doc_number %}
+      <a href="{% url 'sales:sale_order_detail' row.pk %}" class="docnum">{{ row.display_number }}</a>
+    {% else %}
+      <span class="docnum muted">{{ row.display_number|default:_("Borrador") }}</span>
+    {% endif %}
     <span class="dt-row-actions">
       <div class="dropdown dt-kebab">
         <button type="button"
@@ -37,8 +46,12 @@
     </span>
   </td>
 
-  <td data-col="customer__name">{{ row.customer.name }}</td>
+  {# ── Cliente ────────────────────────────────────────────── #}
+  <td data-col="customer__name">
+    <span class="cust">{{ row.customer.name }}{% if row.customer.rnc_cedula %}<span class="rnc">RNC {{ row.customer.rnc_cedula }}</span>{% endif %}</span>
+  </td>
 
+  {# ── Depto. (hidden by default) ─────────────────────────── #}
   <td data-col="department__name">
     {% if row.department %}
       <span class="badge-soft badge-sent">{{ row.department.name }}</span>
@@ -47,12 +60,18 @@
     {% endif %}
   </td>
 
-  <td data-col="issue_date" class="small text-muted">{{ row.issue_date|date:"d/m/Y" }}</td>
+  {# ── Emisión ────────────────────────────────────────────── #}
+  <td data-col="issue_date"><span class="dt">{{ row.issue_date|date:"d/m/Y" }}</span></td>
 
-  <td data-col="delivery_date" class="small">{{ row.delivery_date|date:"d/m/Y"|default:"—" }}</td>
+  {# ── Entrega ────────────────────────────────────────────── #}
+  <td data-col="delivery_date"><span class="dt">{{ row.delivery_date|date:"d/m/Y"|default:"—" }}</span></td>
 
-  <td data-col="total" class="text-end fw-semibold font-monospace">{{ row.total|floatformat:2|intcomma }}</td>
+  {# ── Total ──────────────────────────────────────────────── #}
+  <td data-col="total" class="text-end">
+    <span class="amt"><span class="cur">RD$</span>{{ row.total|floatformat:2|intcomma }}</span>
+  </td>
 
+  {# ── Estado ─────────────────────────────────────────────── #}
   <td data-col="status" class="text-center">
     {% include "sales/partials/status_badge.html" with status=row.status %}
   </td>

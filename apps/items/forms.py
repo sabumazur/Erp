@@ -36,14 +36,6 @@ class ItemForm(forms.ModelForm):
             "itbis_rate": {"required": _("La tasa ITBIS es obligatoria.")},
         }
 
-    change_reason = forms.CharField(
-        required=False,
-        label=_("Motivo del cambio"),
-        widget=forms.TextInput(attrs={
-            "placeholder": _("Ej. Corrección de precio, ajuste de inventario…")
-        }),
-    )
-
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
@@ -86,7 +78,6 @@ class ItemForm(forms.ModelForm):
             HTML('<hr class="my-3">'),
             Field("is_active"),
             "notes",
-            "change_reason",
         )
 
     def clean_code(self):

@@ -1,0 +1,25 @@
+{% comment %}
+  Card section header — completes F3 (the ~65× inline header string).
+
+  Renders the .app-card-head class added in step 1. Two shapes:
+    • title only            → uppercase eyebrow header
+    • title + action slot   → flex space-between (the --row variant)
+
+  Usage:
+    {% include "components/_card_head.html" with title=_("Datos generales") %}
+
+    {% include "components/_card_head.html" with title=_("Top clientes") action_url=clientes_url action_label=_("Ver todos") %}
+
+  Params:
+    title        — translated string
+    action_url   — optional; if set, renders the --row variant with a link
+    action_label — link text (defaults to the url)
+{% endcomment %}
+{% if action_url %}
+<div class="app-card-head app-card-head--row">
+  <span class="app-card-head-title">{{ title }}</span>
+  <a class="link-brand small" href="{{ action_url }}">{{ action_label|default:action_url }} →</a>
+</div>
+{% else %}
+<div class="app-card-head">{{ title }}</div>
+{% endif %}

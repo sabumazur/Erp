@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db.models import Sum
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -63,6 +64,19 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
              "count": org_qs.filter(status="CANCELLED").count()},
         ]
         ctx.update(self.apply_datatable(qs, status_pills=status_pills))
+        if not self.request.htmx:
+            ctx["stats"] = [
+                {"label": _("Total órdenes"), "value": org_qs.count(),
+                 "icon": "bi-cart",            "color": "primary"},
+                {"label": _("Por recibir"), "value": org_qs.filter(status="CONFIRMED").count(),
+                 "icon": "bi-hourglass-split", "color": "warning"},
+                {"label": _("Recibidas"), "value": org_qs.filter(status="RECEIVED").count(),
+                 "icon": "bi-check2-circle",   "color": "success"},
+                {"label": _("Valor pendiente"),
+                 "value": "{:,.2f}".format(
+                     org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
+                 "icon": "bi-cash-stack",      "color": "info"},
+            ]
         ctx["module"] = "purchase-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

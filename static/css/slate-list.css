@@ -1,0 +1,286 @@
+/* ============================================================
+   SabSys — Refined Slate · list skin (OPT-IN)
+   ------------------------------------------------------------
+   Activated only when a datatable include is wrapped in
+   <div class="dt-slate"> … </div>. Every rule below is scoped
+   under .dt-slate, so no list that hasn't opted in is touched.
+
+   Reuses tokens already defined in components.css
+   (--brand-ink, --brand-accent, --hairline, --muted, …) and the
+   Manrope / IBM Plex Mono families already loaded by base.html.
+
+   First adopter: sales/sale_order_list.html
+   ============================================================ */
+
+.dt-slate {
+  --slate-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ── Command ribbon ─────────────────────────────────────────────────────── */
+.dt-slate .dt-ribbon {
+  margin-bottom: 14px;
+}
+.dt-slate .dt-ribbon .input-group {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.dt-slate .dt-ribbon .input-group .input-group-text,
+.dt-slate .dt-ribbon .input-group .form-control {
+  border: none;
+  background: #fff;
+}
+.dt-slate .dt-ribbon .input-group .form-control:focus {
+  box-shadow: none;
+}
+.dt-slate .dt-ribbon .btn-outline-secondary {
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  background: #fff;
+  color: #374151;
+  font-weight: 600;
+}
+.dt-slate .dt-ribbon .btn-outline-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+.dt-slate .dt-ribbon .btn-brand {
+  border-radius: 7px;
+  font-weight: 600;
+}
+
+/* ── Status pills ───────────────────────────────────────────────────────── */
+.dt-slate .dt-status-pills {
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.dt-slate .dt-pill {
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 6px 13px;
+}
+.dt-slate .dt-pill:hover {
+  border-color: #cbd2da;
+  background: #fff;
+  color: var(--brand-ink);
+}
+.dt-slate .dt-pill.dt-pill-active {
+  background: var(--brand-ink);
+  border-color: var(--brand-ink);
+  color: #fff;
+}
+.dt-slate .dt-pill .dt-pill-count {
+  font-family: var(--slate-mono);
+  font-size: .72rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, .06);
+  color: inherit;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.dt-slate .dt-pill.dt-pill-active .dt-pill-count {
+  background: rgba(255, 255, 255, .18);
+}
+
+/* ── Table card ─────────────────────────────────────────────────────────── */
+.dt-slate .card.shadow-sm {
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04) !important;
+  overflow: hidden;
+}
+.dt-slate .card.shadow-sm .app-table-wrap {
+  border: none;
+  border-radius: 0;
+}
+
+/* ── Table head ─────────────────────────────────────────────────────────── */
+.dt-slate .app-table-wrap thead th {
+  background: #f9fafb !important;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--hairline);
+  padding: 11px 16px;
+  white-space: nowrap;
+}
+.dt-slate .app-table-wrap thead th .btn-link {
+  font-size: .68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+}
+
+/* ── Table body ─────────────────────────────────────────────────────────── */
+.dt-slate .app-table-wrap .table {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: #f8fafc;
+}
+.dt-slate .app-table-wrap tbody tr:nth-child(even) {
+  background: transparent;          /* override the migration's zebra shim */
+}
+.dt-slate .app-table-wrap tbody td {
+  padding: 13px 16px;
+  font-size: .86rem;
+  vertical-align: middle;
+  color: #374151;
+  border-top: none;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.dt-slate .app-table-wrap tbody tr:hover { background: #f8fafc; }
+.dt-slate .app-table-wrap tbody tr:last-child td { border-bottom: none; }
+
+/* ── Cell vocabulary (scoped — names mirror the Refined Slate spec) ──────── */
+/* document number / link */
+.dt-slate .docnum {
+  font-family: var(--slate-mono);
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--brand-ink);
+  text-decoration: none;
+}
+.dt-slate .docnum:hover { color: var(--brand-accent); }
+.dt-slate .docnum.muted { color: var(--muted-2); }
+
+/* primary entity (name + sub-line) */
+.dt-slate .cust { font-weight: 600; color: #1f2937; }
+.dt-slate .cust a { color: inherit; text-decoration: none; }
+.dt-slate .cust a:hover { color: var(--brand-accent); }
+.dt-slate .cust .rnc {
+  display: block;
+  font-family: var(--slate-mono);
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--muted-2);
+  margin-top: 2px;
+}
+
+/* dates */
+.dt-slate td .dt {
+  font-family: var(--slate-mono);
+  font-size: .8rem;
+  color: var(--muted);
+}
+.dt-slate td .dt.over { color: var(--neg); font-weight: 600; }
+
+/* amounts */
+.dt-slate .amt {
+  font-family: var(--slate-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+.dt-slate .amt .cur {
+  color: var(--muted-2);
+  font-weight: 500;
+  font-size: .74rem;
+  margin-right: 3px;
+}
+.dt-slate .amt.pos { color: var(--pos); }
+.dt-slate .amt.neg { color: var(--neg); }
+.dt-slate .amt.zero { color: var(--muted-2); }
+
+/* status badges → dotted slate pills (works on the shared status_badge.html) */
+.dt-slate td[data-col="status"] .badge-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+.dt-slate td[data-col="status"] .badge-soft::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .8;
+}
+
+/* ── Entity cell (avatar + name + sub-line) — Proveedores ───────────────── */
+.dt-slate .cell-entity { display: flex; align-items: center; gap: 10px; }
+.dt-slate .cell-entity .avatar {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 8px;                 /* slate uses rounded-rect, not circle */
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  background: #eef1f6; color: #52607a;
+}
+.dt-slate .cell-entity .nm { font-weight: 600; color: #1f2937; line-height: 1.25; }
+.dt-slate .cell-entity .nm a { color: inherit; text-decoration: none; }
+.dt-slate .cell-entity .nm a:hover { color: var(--brand-accent); }
+.dt-slate .ncf-type-link {
+  color: inherit;
+  text-decoration: none;
+}
+.dt-slate .ncf-type-link:hover .cell-contact {
+  color: var(--brand-accent);
+}
+.dt-slate .cell-entity .nm .rnc {
+  display: block;
+  font-family: var(--slate-mono);
+  font-size: .72rem; font-weight: 500;
+  color: var(--muted-2); margin-top: 2px;
+}
+
+/* contact + method cells */
+.dt-slate .cell-contact { font-size: .82rem; color: #374151; line-height: 1.3; }
+.dt-slate .cell-contact .muted { color: var(--muted-2); }
+.dt-slate .cell-method { display: inline-flex; align-items: center; gap: 6px; }
+.dt-slate .cell-method i { color: var(--muted-2); }
+
+/* allocation links (Pagos) */
+.dt-slate .alloc {
+  display: block;
+  font-family: var(--slate-mono);
+  font-size: .76rem; color: var(--brand-ink); text-decoration: none;
+}
+.dt-slate .alloc:hover { color: var(--brand-accent); }
+.dt-slate .alloc .alloc-amt { color: var(--muted-2); }
+
+/* reference cell (Pagos) */
+.dt-slate .ref { font-family: var(--slate-mono); font-size: .78rem; color: var(--muted); }
+
+/* ── Footer bar (record count + page-size + pagination) ─────────────────── */
+.dt-slate #dt-results > div:last-child {
+  background: #f9fafb !important;
+  border-top: 1px solid var(--hairline) !important;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+.dt-slate .dt-pagination .dt-page-btn {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  background: #fff;
+  color: #374151;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.dt-slate .dt-pagination .dt-page-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+.dt-slate .dt-pagination .dt-page-btn:disabled {
+  opacity: .45;
+}
+.dt-slate .dt-pagination .dt-page-btn.dt-page-btn-active {
+  background: var(--brand-ink) !important;
+  border-color: var(--brand-ink) !important;
+  color: #fff !important;
+}

@@ -12,7 +12,12 @@
   </div>
 </div>
 
-{% include "components/datatable/wrapper.html" %}
+{% include "components/_kpi_cards.html" with stats=stats %}
+
+{# Refined Slate list skin — scoped to this wrapper only (static/css/slate-list.css). #}
+<div class="dt-slate">
+  {% include "components/datatable/wrapper.html" %}
+</div>
 
 <div class="modal fade" id="supplierModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">

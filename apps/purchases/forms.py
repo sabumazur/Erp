@@ -76,7 +76,6 @@ class SupplierForm(forms.ModelForm):
             HTML(
                 f'<p class="text-muted small text-uppercase mb-2 mt-1">{_("General")}</p>'
             ),
-            "name",
             Row(
                 Column("id_type", css_class="col-md-5"),
                 Column("rnc_cedula", css_class="col-md-7"),
@@ -87,6 +86,7 @@ class SupplierForm(forms.ModelForm):
                 '<div id="rnc-lookup-result"></div>'
                 "</div>"
             ),
+            "name",
             HTML(
                 f'<hr class="my-3"><p class="text-muted small text-uppercase mb-2">{_("Dirección")}</p>'
             ),

@@ -1,30 +1,45 @@
 {% load i18n humanize %}
+{% comment %}
+  Per-row partial for the supplier-payment datatable — Refined Slate skin.
+  Variable: row = SupplierPayment. Opt-in via <div class="dt-slate"> on the list page.
+  Cell classes (cust / dt / amt / cur) are scoped in slate-list.css.
+{% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status="PAID"
     data-detail-url="{% url 'purchases:supplier_payment_detail' row.pk %}">
 
+  {# ── Proveedor ──────────────────────────────────────────── #}
   <td data-col="supplier__name">
-    <div class="d-flex align-items-center">
-      <a href="{% url 'purchases:supplier_payment_detail' row.pk %}"
-         class="text-decoration-none fw-semibold link-brand">
-        {{ row.supplier.name }}
-      </a>
-      <span class="dt-row-actions">
-        <div class="dropdown dt-kebab">
-          <button type="button" class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
-                  data-bs-toggle="dropdown" data-bs-boundary="viewport" tabindex="-1">
-            <i class="bi bi-three-dots-vertical"></i>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-            <li><a class="dropdown-item" href="{% url 'purchases:supplier_payment_detail' row.pk %}" data-action="view">
-              <i class="bi bi-eye me-2"></i>{% trans "Ver" %}</a></li>
-          </ul>
-        </div>
-      </span>
-    </div>
+    <span class="cust"><a href="{% url 'purchases:supplier_payment_detail' row.pk %}">{{ row.supplier.name }}</a></span>
+    <span class="dt-row-actions">
+      <div class="dropdown dt-kebab">
+        <button type="button" class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
+                data-bs-toggle="dropdown" data-bs-boundary="viewport" tabindex="-1">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li><a class="dropdown-item" href="{% url 'purchases:supplier_payment_detail' row.pk %}" data-action="view">
+            <i class="bi bi-eye me-2"></i>{% trans "Ver" %}</a></li>
+        </ul>
+      </div>
+    </span>
   </td>
-  <td data-col="date" class="font-monospace">{{ row.date }}</td>
-  <td data-col="method">{{ row.get_method_display }}</td>
-  <td data-col="amount" class="text-end font-monospace">{{ row.amount|intcomma }}</td>
+
+  {# ── Fecha ──────────────────────────────────────────────── #}
+  <td data-col="date"><span class="dt">{{ row.date|date:"d/m/Y" }}</span></td>
+
+  {# ── Método ─────────────────────────────────────────────── #}
+  <td data-col="method">
+    {% if row.method == 'TRANSFER' %}
+      <span class="badge-soft badge-sent">{{ row.get_method_display }}</span>
+    {% elif row.method == 'CHECK' %}
+      <span class="badge-soft badge-confirmed">{{ row.get_method_display }}</span>
+    {% else %}
+      <span class="badge-soft badge-paid">{{ row.get_method_display }}</span>
+    {% endif %}
+  </td>
+
+  {# ── Monto ──────────────────────────────────────────────── #}
+  <td data-col="amount" class="text-end"><span class="amt"><span class="cur">RD$</span>{{ row.amount|floatformat:2|intcomma }}</span></td>
 
 </tr>

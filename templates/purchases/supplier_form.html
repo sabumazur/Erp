@@ -59,7 +59,6 @@
           {% trans "Datos generales" %}
         </div>
         <div class="p-3">
-          {{ form.name|as_crispy_field }}
           <div class="row g-2">
             <div class="col-md-4">{{ form.id_type|as_crispy_field }}</div>
             <div class="col-md-8">{{ form.rnc_cedula|as_crispy_field }}</div>
@@ -70,6 +69,7 @@
                   role="status"></span>
             <div id="rnc-lookup-result"></div>
           </div>
+          {{ form.name|as_crispy_field }}
         </div>
       </div>
 

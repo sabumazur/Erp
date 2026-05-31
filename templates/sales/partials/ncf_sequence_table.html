@@ -1,7 +1,7 @@
 {% load i18n humanize %}
 <div class="app-table-wrap">
   <div class="table-responsive">
-    <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
+    <table class="table table-hover table-sm mb-0">
 
       <thead>
         <tr>
@@ -9,7 +9,6 @@
           <th>{% trans "Próximo NCF" %}</th>
           <th style="min-width:180px">{% trans "Capacidad" %}</th>
           <th class="text-center">{% trans "Estado" %}</th>
-          <th></th>
         </tr>
       </thead>
 
@@ -17,34 +16,34 @@
         {% for seq in sequences %}
         <tr>
 
-          <td class="py-3">
-            {% if seq.series == 'B' %}
-              <span class="badge-soft badge-confirmed me-1">B</span>
-            {% else %}
-              <span class="badge-soft badge-sent me-1">E</span>
-            {% endif %}
-            {{ seq.get_ncf_type_display }}
+          <td>
+            <a href="{% url 'sales:ncf_sequence_edit' seq.pk %}"
+               class="ncf-type-link">
+              {% if seq.series == 'B' %}
+                <span class="badge-soft badge-confirmed me-1">B</span>
+              {% else %}
+                <span class="badge-soft badge-sent me-1">E</span>
+              {% endif %}
+              <span class="cell-contact">{{ seq.get_ncf_type_display }}</span>
+            </a>
           </td>
 
-          <td class="py-3">
-            <code class="font-monospace fw-semibold px-2 py-1 rounded"
-                  style="font-size:.8rem;background:#f9fafb;border:1px solid #e5e7eb">
-              {{ seq.preview_next }}
-            </code>
+          <td>
+            <span class="docnum">{{ seq.preview_next }}</span>
           </td>
 
-          <td class="py-3">
+          <td>
             <div class="d-flex justify-content-between align-items-baseline mb-1">
               {% if seq.remaining == 0 %}
-                <span class="fw-semibold" style="font-size:.8rem;color:#dc2626">{% trans "Agotada" %}</span>
+                <span class="amt neg">{% trans "Agotada" %}</span>
               {% elif seq.remaining < 100 %}
-                <span class="fw-semibold" style="font-size:.8rem;color:#dc2626">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+                <span class="amt neg">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% elif seq.remaining < 500 %}
-                <span class="fw-semibold" style="font-size:.8rem;color:#856404">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+                <span class="amt" style="color:#856404">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% elif seq.current_seq == 0 %}
-                <span style="font-size:.8rem;color:#6b7280">{% trans "Sin usar" %}</span>
+                <span class="ref">{% trans "Sin usar" %}</span>
               {% else %}
-                <span class="fw-semibold" style="font-size:.8rem;color:#16a34a">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+                <span class="amt pos">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% endif %}
             </div>
             <div class="rounded" style="height:4px;background:rgba(0,0,0,.08);overflow:hidden">
@@ -56,12 +55,12 @@
                 <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#16a34a"></div>
               {% endif %}
             </div>
-            <div class="mt-1 text-muted" style="font-size:.72rem">
+            <div class="mt-1 ref">
               {{ seq.current_seq|intcomma }} {% trans "usados de" %} {{ seq.max_seq|intcomma }}
             </div>
           </td>
 
-          <td class="py-3 text-center">
+          <td data-col="status" class="text-center">
             {% if seq.is_active %}
               <span class="badge-soft badge-paid">{% trans "Activa" %}</span>
             {% else %}
@@ -69,30 +68,10 @@
             {% endif %}
           </td>
 
-          <td class="py-3 text-end" style="white-space:nowrap">
-            <a href="{% url 'sales:ncf_sequence_edit' seq.pk %}"
-               class="btn btn-outline-secondary btn-sm"
-               title="{% trans 'Editar' %}">
-              <i class="bi bi-pencil"></i>
-            </a>
-            {% if seq.current_seq == 0 %}
-            <form method="post" action="{% url 'sales:ncf_sequence_delete' seq.pk %}"
-                  class="d-inline ms-1">
-              {% csrf_token %}
-              <button type="button"
-                      class="btn btn-outline-danger btn-sm"
-                      title="{% trans 'Eliminar' %}"
-                      onclick="confirmDeleteNCF(this)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </form>
-            {% endif %}
-          </td>
-
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="py-5 text-center text-muted">
+          <td colspan="4" class="py-5 text-center text-muted">
             <i class="bi bi-upc-scan d-block mb-2" style="font-size:1.5rem;color:#d1d5db"></i>
             <div class="fw-semibold mb-1" style="font-size:.9rem;color:#374151">{% trans "Sin secuencias registradas" %}</div>
             <div style="font-size:.82rem">{% trans "Crea tu primera secuencia NCF con el botón de arriba." %}</div>

@@ -76,10 +76,8 @@
       </div>
 
       {# Grand total footer #}
-      <div class="border-top p-3" style="background:#f9fafb">
-        <div class="row justify-content-end">
-          <div class="col-md-4">
-            <table class="table table-sm mb-0" style="font-size:.85rem">
+      <div class="document-totals-footer">
+        <table class="table table-sm mb-0 document-totals-table">
               <tr>
                 <td class="text-muted">{% trans "Subtotal" %}</td>
                 <td class="text-end font-monospace"><span id="grand-subtotal">0.00</span></td>
@@ -96,9 +94,7 @@
                 <td class="fw-bold">{% trans "Total" %}</td>
                 <td class="text-end font-monospace fw-bold fs-5"><span id="grand-total">0.00</span></td>
               </tr>
-            </table>
-          </div>
-        </div>
+        </table>
       </div>
     </div>
   </div>

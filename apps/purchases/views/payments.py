@@ -56,6 +56,22 @@ class SupplierPaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if q:
             qs = fts_search(qs, q, fts_fields=["supplier__name"], trgm_fields=["reference"])
         ctx.update(self.apply_datatable(qs))
+        if not self.request.htmx:
+            today = date.today()
+            pbase = SupplierPayment.objects.filter(organization=org)
+            month_qs = pbase.filter(date__year=today.year, date__month=today.month)
+            ctx["stats"] = [
+                {"label": _("Total pagos"), "value": pbase.count(),
+                 "icon": "bi-cash-coin",       "color": "primary"},
+                {"label": _("Pagado este mes"),
+                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("amount"))["t"] or 0),
+                 "icon": "bi-cash-stack",      "color": "success"},
+                {"label": _("Total pagado"),
+                 "value": "{:,.2f}".format(pbase.aggregate(t=Sum("amount"))["t"] or 0),
+                 "icon": "bi-wallet2",         "color": "info"},
+                {"label": _("Pagos este mes"), "value": month_qs.count(),
+                 "icon": "bi-calendar-check",  "color": "secondary"},
+            ]
         ctx["module"] = "supplier-payment"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

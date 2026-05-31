@@ -11,8 +11,7 @@
     <p class="app-header-sub">{% trans "Cobros" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:payment_create' %}" class="btn btn-sm"
-       style="background:#1e2130;color:#fff">
+    <a href="{% url 'sales:payment_create' %}" class="btn btn-sm btn-brand">
       <i class="bi bi-plus-lg me-1"></i>{% trans "Registrar pago" %}
     </a>
   </div>
@@ -20,6 +19,9 @@
 
 {% include "components/_kpi_cards.html" with stats=stats %}
 
-{% include "components/datatable/wrapper.html" %}
+{# Refined Slate list skin — scoped to this wrapper only (static/css/slate-list.css). #}
+<div class="dt-slate">
+  {% include "components/datatable/wrapper.html" %}
+</div>
 
 {% endblock %}

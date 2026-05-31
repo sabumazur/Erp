@@ -14,7 +14,10 @@
 
 {% include "components/_kpi_cards.html" with stats=stats %}
 
-{% include "components/datatable/wrapper.html" %}
+{# Refined Slate list skin — scoped to this wrapper only (static/css/slate-list.css). #}
+<div class="dt-slate">
+  {% include "components/datatable/wrapper.html" %}
+</div>
 
 {% endblock %}
 
