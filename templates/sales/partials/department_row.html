@@ -1,24 +1,23 @@
 {% load i18n %}
 <tr data-pk="{{ row.pk }}"
-    data-status=""
+    data-status="{% if row.is_active %}active{% else %}inactive{% endif %}"
     data-detail-url="">
-
-  <td data-col="name" class="fw-semibold" style="font-size:.85rem;color:#1e2130">
+  <td data-col="name" class="fw-semibold">
     <button type="button"
             class="btn btn-link p-0 fw-semibold text-decoration-none link-brand"
             style="font-size:.85rem"
-            hx-get="{% url 'sales:payment_term_edit' row.pk %}"
-            hx-target="#payment-term-modal-body"
+            hx-get="{% url 'sales:department_edit' customer.pk row.pk %}"
+            hx-target="#dept-modal-body"
             onclick="event.stopPropagation()"
-            hx-on::after-request="
-              document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
-              bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+            hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
+                                  bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
       {{ row.name }}
     </button>
     <span class="dt-row-actions">
       <div class="dropdown dt-kebab">
         <button type="button"
-                class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
+                class="btn btn-link btn-sm p-0 dt-kebab-btn"
+                aria-label="{% trans 'Acciones' %}"
                 data-bs-toggle="dropdown"
                 data-bs-boundary="viewport"
                 aria-expanded="false"
@@ -28,20 +27,19 @@
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
           <li>
             <button type="button" class="dropdown-item" data-action="edit"
-                    hx-get="{% url 'sales:payment_term_edit' row.pk %}"
-                    hx-target="#payment-term-modal-body"
-                    hx-on::after-request="
-                      document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
-                      bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+                    hx-get="{% url 'sales:department_edit' customer.pk row.pk %}"
+                    hx-target="#dept-modal-body"
+                    hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
+                                          bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
               <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
             </button>
           </li>
-          <li><hr class="dropdown-divider my-1"></li>
+          <li><hr class="dropdown-divider"></li>
           <li>
             <button type="button" class="dropdown-item text-danger" data-action="delete"
                     onclick="Swal.fire({
                       icon: 'warning',
-                      title: '{% trans "¿Eliminar término?" %}',
+                      title: '{% trans "¿Eliminar departamento?" %}',
                       html: '<strong>{{ row.name|escapejs }}</strong>',
                       showCancelButton: true,
                       confirmButtonText: '{% trans "Eliminar" %}',
@@ -49,7 +47,7 @@
                       confirmButtonColor: '#dc3545',
                     }).then(r => {
                       if (r.isConfirmed)
-                        htmx.ajax('POST', '{% url 'sales:payment_term_delete' row.pk %}',
+                        htmx.ajax('POST', '{% url "sales:department_delete" customer.pk row.pk %}',
                           { target: '#dt-results', swap: 'innerHTML',
                             values: { csrfmiddlewaretoken: '{{ csrf_token }}' } });
                     })">
@@ -60,13 +58,12 @@
       </div>
     </span>
   </td>
-
-  <td data-col="days_due" class="text-center font-monospace" style="font-size:.83rem">
-    {{ row.days_due }}
+  <td data-col="contact_name">{{ row.contact_name|default:"—" }}</td>
+  <td data-col="phone" class="small">{{ row.phone|default:"—" }}</td>
+  <td data-col="address" class="small text-muted">{{ row.address|default:"—" }}</td>
+  <td data-col="is_active">
+    <span class="badge-soft {% if row.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+      {% if row.is_active %}{% trans "Activo" %}{% else %}{% trans "Inactivo" %}{% endif %}
+    </span>
   </td>
-
-  <td data-col="description" class="small text-muted">
-    {{ row.description|default:"—" }}
-  </td>
-
 </tr>

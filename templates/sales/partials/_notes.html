@@ -1,0 +1,23 @@
+{% comment %}
+  Notes + terms block. Renders nothing when both are empty.
+  Param: doc — document object exposing .notes and (optionally) .terms
+{% endcomment %}
+{% load i18n %}
+{% if doc.notes or doc.terms %}
+<tr>
+  <td style="padding: 16px 28px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="border-top:1px solid #e5e7eb;padding-top:12px;">
+        {% if doc.notes %}
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;margin-bottom:3px;">{% trans "Notas" %}</div>
+        <div style="font-size:11px;color:#4b5563;margin-bottom:10px;">{{ doc.notes }}</div>
+        {% endif %}
+        {% if doc.terms %}
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;margin-bottom:3px;">{% trans "Términos y condiciones" %}</div>
+        <div style="font-size:11px;color:#4b5563;">{{ doc.terms }}</div>
+        {% endif %}
+      </td></tr>
+    </table>
+  </td>
+</tr>
+{% endif %}

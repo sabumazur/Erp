@@ -2,7 +2,7 @@ import json
 from datetime import date
 
 from django.contrib import messages
-from django.db.models import Count, Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -19,6 +19,51 @@ from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
 from ..models import Customer, CustomerDepartment
 from ._helpers import _customers_with_depts
+
+
+DEPARTMENT_DT_COLUMNS = [
+    DTColumn("name", _("Nombre"), sortable=True),
+    DTColumn("contact_name", _("Contacto"), sortable=True),
+    DTColumn("phone", _("Teléfono"), sortable=True),
+    DTColumn("address", _("Dirección de entrega"), sortable=True),
+    DTColumn("is_active", _("Estado"), sortable=True),
+]
+
+
+def _department_qs(customer):
+    return customer.departments.filter(deleted_at__isnull=True)
+
+
+def _department_datatable_context(request, customer):
+    qs = _department_qs(customer)
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(
+            Q(name__icontains=q)
+            | Q(contact_name__icontains=q)
+            | Q(phone__icontains=q)
+            | Q(address__icontains=q)
+        )
+
+    ctx = build_datatable_context(
+        request,
+        qs,
+        DEPARTMENT_DT_COLUMNS,
+        default_sort="name",
+        page_size=10,
+        row_template="sales/partials/department_row.html",
+        ribbon_template="sales/partials/department_ribbon.html",
+        search_placeholder=_("Buscar departamentos…"),
+        dt_id=f"customer-departments-{customer.pk}",
+    )
+    ctx.update(
+        {
+            "customer": customer,
+            "dt_action_url": reverse("sales:department_table", args=[customer.pk]),
+            "dt_push_url": "false",
+        }
+    )
+    return ctx
 
 
 class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
@@ -199,8 +244,6 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
         from ..models import SalesDocument, Payment
 
         customer = get_object_or_404(Customer, pk=pk, organization=request.organization)
-        departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
-
         _zero = Decimal("0.00")
         _dec_field = DecimalField(max_digits=14, decimal_places=2)
 
@@ -248,7 +291,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
                 **self.get_context(
                     module="customer",
                     customer=customer,
-                    departments=departments,
+                    dept_table=_department_datatable_context(request, customer),
                     dept_form=_DeptForm(),
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
@@ -305,16 +348,30 @@ class CustomerDeleteView(ERPBaseViewMixin, View):
 # ── Customer Department CRUD ──────────────────────────────────────────────────
 
 
+class CustomerDepartmentTableView(ERPBaseViewMixin, View):
+    required_module = "sales"
+
+    def get(self, request, customer_pk):
+        customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
+        if request.htmx:
+            return render(
+                request,
+                "components/datatable/results.html",
+                _department_datatable_context(request, customer),
+            )
+        return redirect("sales:customer_detail", pk=customer_pk)
+
+
 class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
     required_module = "sales"
+    admin_required = True
 
     def _customer(self, request, customer_pk):
         return get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
 
-    def _departments(self, customer):
-        return customer.departments.filter(deleted_at__isnull=True).order_by("name")
-
     def get(self, request, customer_pk):
+        if not request.htmx:
+            return redirect("sales:customer_detail", pk=customer_pk)
         customer = self._customer(request, customer_pk)
         form = CustomerDepartmentForm()
         return render(
@@ -339,9 +396,10 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
             if request.htmx:
                 resp = render(
                     request,
-                    "sales/partials/department_table.html",
-                    {"departments": self._departments(customer), "customer": customer},
+                    "components/datatable/results.html",
+                    _department_datatable_context(request, customer),
                 )
+                resp["HX-Retarget"] = "#dt-results"
                 resp["HX-Trigger"] = json.dumps(
                     {
                         "showToast": {"message": str(_("Departamento creado.")), "type": "success"},
@@ -372,16 +430,16 @@ class CustomerDepartmentCreateView(ERPBaseViewMixin, View):
 
 class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
     required_module = "sales"
+    admin_required = True
 
     def _get_objects(self, request, customer_pk, pk):
         customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
         dept = get_object_or_404(CustomerDepartment, pk=pk, customer=customer)
         return customer, dept
 
-    def _departments(self, customer):
-        return customer.departments.filter(deleted_at__isnull=True).order_by("name")
-
     def get(self, request, customer_pk, pk):
+        if not request.htmx:
+            return redirect("sales:customer_detail", pk=customer_pk)
         customer, dept = self._get_objects(request, customer_pk, pk)
         form = CustomerDepartmentForm(instance=dept)
         return render(
@@ -403,9 +461,10 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
             if request.htmx:
                 resp = render(
                     request,
-                    "sales/partials/department_table.html",
-                    {"departments": self._departments(customer), "customer": customer},
+                    "components/datatable/results.html",
+                    _department_datatable_context(request, customer),
                 )
+                resp["HX-Retarget"] = "#dt-results"
                 resp["HX-Trigger"] = json.dumps(
                     {
                         "showToast": {"message": str(_("Departamento actualizado.")), "type": "success"},
@@ -436,6 +495,7 @@ class CustomerDepartmentUpdateView(ERPBaseViewMixin, View):
 
 class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
     required_module = "sales"
+    admin_required = True
 
     def post(self, request, customer_pk, pk):
         customer = get_object_or_404(Customer, pk=customer_pk, organization=request.organization)
@@ -443,11 +503,10 @@ class CustomerDepartmentToggleView(ERPBaseViewMixin, View):
         dept.is_active = not dept.is_active
         dept.save(update_fields=["is_active", "updated_at"])
         if request.htmx:
-            departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
             return render(
                 request,
-                "sales/partials/department_table.html",
-                {"departments": departments, "customer": customer},
+                "components/datatable/results.html",
+                _department_datatable_context(request, customer),
             )
         return redirect("sales:customer_detail", pk=customer_pk)
 
@@ -485,12 +544,12 @@ class CustomerDepartmentDeleteView(ERPBaseViewMixin, View):
         dept.delete()
 
         if request.htmx:
-            departments = customer.departments.filter(deleted_at__isnull=True).order_by("name")
             resp = render(
                 request,
-                "sales/partials/department_table.html",
-                {"departments": departments, "customer": customer},
+                "components/datatable/results.html",
+                _department_datatable_context(request, customer),
             )
+            resp["HX-Retarget"] = "#dt-results"
             resp["HX-Trigger"] = json.dumps(
                 {"showToast": {"message": str(_(f"Departamento «{name}» eliminado.")), "type": "success"}}
             )

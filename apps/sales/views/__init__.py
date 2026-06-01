@@ -4,6 +4,7 @@ from .customers import (
     CustomerCreateView,
     CustomerUpdateView,
     CustomerDeleteView,
+    CustomerDepartmentTableView,
     CustomerDepartmentCreateView,
     CustomerDepartmentUpdateView,
     CustomerDepartmentToggleView,

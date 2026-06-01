@@ -1,0 +1,13 @@
+{% comment %}
+  A single meta field cell (label + value).
+  Params:
+    label        — translated field label
+    value        — field value (already formatted)
+    value_color  — optional hex colour for the value (default #1a1a1a)
+    pr           — padding-right in px (pass explicitly, e.g. 24 or 0)
+    pl           — padding-left in px  (pass explicitly, e.g. 0 or 24)
+{% endcomment %}
+<td style="padding-right:{{ pr }}px;padding-left:{{ pl }}px;">
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;">{{ label }}</div>
+  <div style="font-weight:700;font-size:12px;color:{{ value_color|default:'#1a1a1a' }};margin-top:2px;">{{ value }}</div>
+</td>

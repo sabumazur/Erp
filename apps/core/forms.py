@@ -17,7 +17,7 @@ class ModuleForm(forms.ModelForm):
             "name":        _("Nombre"),
             "icon":        _("Ícono"),
             "description": _("Descripción"),
-            "is_active":   _("Activo"),
+            "is_active":   _("Módulo activo"),
         }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 2}),
@@ -25,6 +25,7 @@ class ModuleForm(forms.ModelForm):
         help_texts = {
             "slug": _("Identificador único del módulo (ej. sales, inventory)."),
             "icon": _("Clase Bootstrap Icons (ej. bi-grid, bi-bag-fill)."),
+            "is_active": _("Disponible para asignarse a equipos y mostrarse en navegación."),
         }
         error_messages = {
             "slug": {
@@ -47,5 +48,5 @@ class ModuleForm(forms.ModelForm):
                 Column("icon", css_class="col-md-4"),
             ),
             "description",
-            Field("is_active"),
+            Field("is_active", template="components/forms/boolean_status_card.html"),
         )

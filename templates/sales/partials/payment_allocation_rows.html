@@ -27,8 +27,7 @@
       {% endwith %}
     </td>
     <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
-    <td class="text-end small fw-semibold font-monospace"
-        style="color:{% if inv.aging_bucket == 'current' %}#16a34a{% elif inv.aging_bucket == '1_30' %}#856404{% else %}#dc2626{% endif %}">
+    <td class="text-end small fw-semibold font-monospace {{ inv.aging_class }}">
       {{ inv.line_balance|floatformat:2|intcomma }}
     </td>
     <td class="text-end">

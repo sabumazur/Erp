@@ -296,6 +296,12 @@ class CustomerDepartmentForm(forms.ModelForm):
     class Meta:
         model = CustomerDepartment
         fields = ["name", "contact_name", "phone", "address", "notes", "is_active"]
+        labels = {
+            "is_active": _("Departamento activo"),
+        }
+        help_texts = {
+            "is_active": _("Se mostrará en documentos y consolidación."),
+        }
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 1}),
         }
@@ -312,7 +318,7 @@ class CustomerDepartmentForm(forms.ModelForm):
             ),
             "address",
             "notes",
-            "is_active",
+            Field("is_active", template="components/forms/boolean_status_card.html"),
         )
 
     def clean_phone(self):
@@ -1007,6 +1013,12 @@ class NCFSequenceForm(forms.ModelForm):
     class Meta:
         model = NCFSequence
         fields = ["ncf_type", "series", "current_seq", "max_seq", "is_active"]
+        labels = {
+            "is_active": _("Secuencia activa"),
+        }
+        help_texts = {
+            "is_active": _("Disponible para asignar comprobantes al confirmar facturas."),
+        }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1022,7 +1034,10 @@ class NCFSequenceForm(forms.ModelForm):
             Row(
                 Column("current_seq", css_class="col-md-4"),
                 Column("max_seq", css_class="col-md-4"),
-                Column("is_active", css_class="col-md-4 pt-4"),
+                Column(
+                    Field("is_active", template="components/forms/boolean_status_card.html"),
+                    css_class="col-md-4",
+                ),
             ),
         )
 

@@ -24,11 +24,15 @@
   min-width: 200px;
   max-width: 260px;
   border: none;
-  box-shadow: 0 6px 20px rgba(0,0,0,.13);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .13);
   border-radius: 10px;
 }
+
 .dept-popover-bs .popover-arrow::before,
-.dept-popover-bs .popover-arrow::after { border-color: transparent; }
+.dept-popover-bs .popover-arrow::after {
+  border-color: transparent;
+}
+
 .dept-popover-bs .popover-header {
   background: #1e2130;
   color: #fff;
@@ -40,9 +44,11 @@
   padding: 8px 12px;
   border-bottom: none;
 }
+
 .dept-popover-bs .popover-body {
   padding: 8px 12px 10px;
 }
+
 .dept-chip {
   display: flex;
   align-items: center;
@@ -52,7 +58,11 @@
   padding: 5px 0;
   border-bottom: 1px solid #f3f4f6;
 }
-.dept-chip:last-child { border-bottom: none; }
+
+.dept-chip:last-child {
+  border-bottom: none;
+}
+
 .dept-chip-dot {
   width: 7px;
   height: 7px;
@@ -77,12 +87,19 @@
 
 /* ── Brand + semantic tokens (complements --module-accent in app.css) ───── */
 :root {
-  --brand-ink:    #1e2130;   /* app primary / neutral brand */
-  --brand-ink-2:  #2a3050;   /* hover */
-  --brand-accent: #3f6fd6;   /* link / focus accent */
-  --brand-soft:   #eef3fc;
-  --pos:   #16a34a;          /* money received / positive */
-  --neg:   #b42318;          /* overdue / negative */
+  --brand-ink: #1e2130;
+  /* app primary / neutral brand */
+  --brand-ink-2: #2a3050;
+  /* hover */
+  --brand-accent: #3f6fd6;
+  /* link / focus accent */
+  --brand-soft: #eef3fc;
+  --pos: #16a34a;
+  /* money received / positive */
+  --neg: #b42318;
+  /* overdue / negative */
+  --warn: #d97706;
+  /* outstanding balance / aging (was inlined, no token) */
   --muted: #6b7280;
   --muted-2: #9ca3af;
   --hairline: #e5e7eb;
@@ -95,14 +112,179 @@
   border: 1px solid var(--brand-ink);
   color: #fff;
 }
+
 .btn-brand:hover,
 .btn-brand:focus {
   background: var(--brand-ink-2);
   border-color: var(--brand-ink-2);
   color: #fff;
 }
+
 .btn-brand:focus-visible {
   box-shadow: 0 0 0 0.2rem rgba(63, 111, 214, 0.3);
+}
+
+/* ── Boolean status card (CRUD forms) ───────────────────────────────────── */
+.boolean-status-toggle {
+  position: relative;
+}
+
+.boolean-status-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+.boolean-status-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+}
+
+.boolean-status-card:hover {
+  border-color: #d1d5db;
+  background: #fff;
+}
+
+.boolean-status-input:focus-visible+.boolean-status-card {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 .2rem rgba(63, 111, 214, .18);
+}
+
+.boolean-status-input:checked+.boolean-status-card {
+  border-color: rgba(30, 33, 48, .28);
+  background: #fff;
+}
+
+.boolean-status-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.boolean-status-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: #eef0f6;
+  color: var(--muted);
+  font-size: .95rem;
+}
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-icon {
+  background: rgba(22, 163, 74, .12);
+  color: var(--pos);
+}
+
+.boolean-status-title,
+.boolean-status-help {
+  display: block;
+}
+
+.boolean-status-title {
+  font-size: .86rem;
+  font-weight: 700;
+  color: var(--brand-ink);
+  line-height: 1.2;
+}
+
+.boolean-status-help {
+  margin-top: 2px;
+  font-size: .75rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.boolean-status-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.boolean-status-badge {
+  min-width: 58px;
+  text-align: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.boolean-status-badge-on {
+  display: none;
+  background: #D1E7DD;
+  color: #0A6640;
+}
+
+.boolean-status-badge-off {
+  display: inline-block;
+  background: #E9ECEF;
+  color: #495057;
+}
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-badge-on {
+  display: inline-block;
+}
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-badge-off {
+  display: none;
+}
+
+.boolean-status-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  padding: 2px;
+  background: #d1d5db;
+  transition: background-color .14s ease;
+}
+
+.boolean-status-switch span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .28);
+  transition: transform .14s ease;
+}
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-switch {
+  background: var(--brand-ink);
+}
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-switch span {
+  transform: translateX(16px);
+}
+
+@media (max-width: 575.98px) {
+  .boolean-status-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 /* ── Brand link (F4: replaces style="color:#1e2130" on doc numbers) ─────── */
@@ -111,12 +293,28 @@
   text-decoration: none;
   font-weight: 600;
 }
-.link-brand:hover { color: var(--brand-accent); }
+
+.link-brand:hover {
+  color: var(--brand-accent);
+}
 
 /* ── Semantic numbers (F4: replaces inline #16a34a / #dc2626) ───────────── */
-.num-pos   { color: var(--pos) !important; }
-.num-neg   { color: var(--neg) !important; font-weight: 600; }
-.num-muted { color: var(--muted-2) !important; }
+.num-pos {
+  color: var(--pos) !important;
+}
+
+.num-neg {
+  color: var(--neg) !important;
+  font-weight: 600;
+}
+
+.num-warn {
+  color: var(--warn) !important;
+}
+
+.num-muted {
+  color: var(--muted-2) !important;
+}
 
 /* ── Card section header (F3: replaces the ~65× inline style string) ─────── */
 .app-card-head {
@@ -128,6 +326,7 @@
   letter-spacing: .04em;
   color: var(--muted);
 }
+
 .app-card-head--row {
   display: flex;
   align-items: center;
@@ -135,6 +334,7 @@
   gap: 8px;
   text-transform: none;
 }
+
 .app-card-head--row .app-card-head-title {
   font-size: .7rem;
   font-weight: 600;
@@ -143,17 +343,84 @@
   color: var(--muted);
 }
 
+/* ── In-card stat strip (account summary & similar) ──────────────────────────
+   Replaces the per-cell inline label/value style strings on detail pages.
+   Keeps the existing divided-strip look; pair values with .num-* for color. */
+.app-stat-strip>[class*="col-"] {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--hairline);
+}
+
+.app-stat-strip>[class*="col-"]:last-child {
+  border-right: none;
+}
+
+.app-stat-label {
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.app-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brand-ink);
+}
+
+/* ── Compact detail table (credit / aging / audit side panels) ───────────────
+   Replaces the repeated style="font-size:.82rem" on sidebar key/value tables. */
+.table-detail {
+  font-size: .82rem;
+}
+
+/* Exempt these narrow side-panel tables from documents.css's
+   `.app-table-wrap .table { min-width:580px }` (which is meant for wide list
+   tables and otherwise overflows a col-lg-4 sidebar). documents.css loads after
+   this file, so the override needs the extra `.table` specificity (0,3,0). */
+.app-table-wrap .table.table-detail {
+  min-width: 0;
+}
+
 /* ════════ Migrated verbatim from components/app_styles.html ════════════ */
 
 /* ── Print ───────────────────────────────────────────────── */
-.print-header { display: none; }
+.print-header {
+  display: none;
+}
+
 @media print {
-  @page { size: A4 landscape; }
-  .no-print { display: none !important; }
-  .print-header { display: block !important; }
-  .app-table-wrap { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
-  .app-metric-card { border: 1px solid #dee2e6 !important; }
-  .badge-soft { background: none !important; border: none !important; padding: 0 !important; color: inherit !important; font-weight: 600; }
+  @page {
+    size: A4 landscape;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-header {
+    display: block !important;
+  }
+
+  .app-table-wrap {
+    border: 1px solid #dee2e6 !important;
+    box-shadow: none !important;
+  }
+
+  .app-metric-card {
+    border: 1px solid #dee2e6 !important;
+  }
+
+  .badge-soft {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    color: inherit !important;
+    font-weight: 600;
+  }
 }
 
 /* ── Filter offcanvas: size to content, cap at 50vh ─────── */
@@ -161,7 +428,11 @@
   height: auto;
   max-height: 50vh;
 }
-#dt-filter-offcanvas .offcanvas-body { overflow-y: auto; }
+
+#dt-filter-offcanvas .offcanvas-body {
+  overflow-y: auto;
+}
+
 #dt-filter-offcanvas .btn {
   font-size: 0.8rem;
   padding: 4px 10px;
@@ -176,6 +447,7 @@
   padding: 14px 16px;
   margin-bottom: 1rem;
 }
+
 .app-filter-label {
   font-size: 9px;
   font-weight: 700;
@@ -193,12 +465,14 @@
   border-radius: 6px;
   background: #fff;
 }
+
 .app-metric-value {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.2;
   color: #111827;
 }
+
 .app-metric-label {
   font-size: 9px;
   color: var(--muted);
@@ -215,7 +489,12 @@
   border-radius: 8px;
   background: #fff;
 }
-.app-table-wrap .table { margin-bottom: 0; font-size: .875rem; }
+
+.app-table-wrap .table {
+  margin-bottom: 0;
+  font-size: .875rem;
+}
+
 .app-table-wrap thead th {
   background: #f9fafb;
   font-size: .7rem;
@@ -227,15 +506,23 @@
   padding-top: .65rem;
   padding-bottom: .65rem;
 }
+
 .app-table-wrap tfoot td,
 .app-table-wrap tfoot th {
   background: #f9fafb;
   border-top: 2px solid var(--brand-ink);
   font-weight: 700;
 }
-.app-table-wrap tbody tr:nth-child(even) { background: #fafafa; }
+
+.app-table-wrap tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
 /* clip striped corners without killing horizontal scroll */
-.app-table-wrap > .table:first-child { border-radius: 8px; overflow: hidden; }
+.app-table-wrap>.table:first-child {
+  border-radius: 8px;
+  overflow: hidden;
+}
 
 /* ── Status badges ───────────────────────────────────────── */
 .badge-soft {
@@ -245,25 +532,72 @@
   border-radius: 6px;
   display: inline-block;
 }
+
 /* optional leading dot: <span class="badge-soft badge-paid has-dot"> */
-.badge-soft.has-dot { display: inline-flex; align-items: center; gap: 5px; }
+.badge-soft.has-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .badge-soft.has-dot::before {
   content: "";
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
   opacity: .8;
 }
-.badge-confirmed { background: #E6F1FB; color: #185FA5; }
-.badge-sent      { background: #D1ECF1; color: #0C5460; }
-.badge-paid      { background: #D1E7DD; color: #0A6640; }
-.badge-overdue   { background: #F8D7DA; color: #842029; }
-.badge-cancelled { background: #E9ECEF; color: #495057; }
-.badge-default   { background: #E9ECEF; color: #495057; }
-.badge-invoice   { background: #E9ECEF; color: #495057; }
-.badge-payment   { background: #D1E7DD; color: #0A6640; }
-.badge-active    { background: #D1E7DD; color: #0A6640; }
-.badge-inactive  { background: #E9ECEF; color: #495057; }
+
+.badge-confirmed {
+  background: #E6F1FB;
+  color: #185FA5;
+}
+
+.badge-sent {
+  background: #D1ECF1;
+  color: #0C5460;
+}
+
+.badge-paid {
+  background: #D1E7DD;
+  color: #0A6640;
+}
+
+.badge-overdue {
+  background: #F8D7DA;
+  color: #842029;
+}
+
+.badge-cancelled {
+  background: #E9ECEF;
+  color: #495057;
+}
+
+.badge-default {
+  background: #E9ECEF;
+  color: #495057;
+}
+
+.badge-invoice {
+  background: #E9ECEF;
+  color: #495057;
+}
+
+.badge-payment {
+  background: #D1E7DD;
+  color: #0A6640;
+}
+
+.badge-active {
+  background: #D1E7DD;
+  color: #0A6640;
+}
+
+.badge-inactive {
+  background: #E9ECEF;
+  color: #495057;
+}
 
 /* ── Customer / entity block ─────────────────────────────── */
 .customer-block {
@@ -276,6 +610,7 @@
   background: #fff;
   margin-bottom: 1rem;
 }
+
 .customer-avatar {
   width: 40px;
   height: 40px;
@@ -292,24 +627,70 @@
 
 /* ── List-cell helpers (optional polish for list rows) ──────────────────── */
 /* primary entity cell: avatar + name + sub-line (RNC) */
-.cell-entity { display: flex; align-items: center; gap: 11px; }
-.cell-entity .avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--brand-soft); color: var(--brand-accent);
-  font-size: .78rem; font-weight: 700; text-transform: uppercase;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+.cell-entity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
 }
-.cell-entity .avatar.is-muted { background: #eef0f3; color: var(--muted); }
-.cell-entity .nm { font-weight: 600; color: #1f2937; line-height: 1.25; }
-.cell-entity .nm small { display: block; font-size: .72rem; color: var(--muted-2); font-weight: 500; margin-top: 1px; }
+
+.cell-entity .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand-accent);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cell-entity .avatar.is-muted {
+  background: #eef0f3;
+  color: var(--muted);
+}
+
+.cell-entity .nm {
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.25;
+}
+
+.cell-entity .nm small {
+  display: block;
+  font-size: .72rem;
+  color: var(--muted-2);
+  font-weight: 500;
+  margin-top: 1px;
+}
 
 /* contact cell */
-.cell-contact { font-size: .8rem; color: #374151; line-height: 1.35; }
-.cell-contact .muted { color: var(--muted-2); font-size: .75rem; }
+.cell-contact {
+  font-size: .8rem;
+  color: #374151;
+  line-height: 1.35;
+}
+
+.cell-contact .muted {
+  color: var(--muted-2);
+  font-size: .75rem;
+}
 
 /* payment method cell */
-.cell-method { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: #374151; }
-.cell-method i { color: var(--muted-2); }
+.cell-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  color: #374151;
+}
+
+.cell-method i {
+  color: var(--muted-2);
+}
 
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -347,14 +728,19 @@
   grid-template-columns: 1fr 1fr;
   gap: 0;
 }
-.detail-dl > div {
+
+.detail-dl>div {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 10px 0;
   border-top: 1px solid var(--hairline-soft);
 }
-.detail-dl > div:nth-child(-n+2) { border-top: none; }
+
+.detail-dl>div:nth-child(-n+2) {
+  border-top: none;
+}
+
 .detail-dl dt {
   font-size: .62rem;
   font-weight: 700;
@@ -362,6 +748,7 @@
   letter-spacing: .1em;
   color: var(--muted-2);
 }
+
 .detail-dl dd {
   margin: 0;
   font-size: .875rem;
@@ -369,24 +756,43 @@
   color: #1e293b;
   line-height: 1.3;
 }
-.detail-dl .span-2 { grid-column: 1 / -1; }
+
+.detail-dl .span-2 {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 575.98px) {
-  .detail-dl { grid-template-columns: 1fr; }
-  .detail-dl > div:nth-child(2) { border-top: 1px solid var(--hairline-soft); }
+  .detail-dl {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-dl>div:nth-child(2) {
+    border-top: 1px solid var(--hairline-soft);
+  }
 }
 
 /* ── F12 · Muted surface (modal headers/footers + sticky form bars) ─────────
    Replaces inline style="background:#f9fafb;border-bottom:1px solid #e5e7eb"
    repeated on modal chrome and save bars. */
-.surface-muted { background: #f9fafb; }
+.surface-muted {
+  background: #f9fafb;
+}
+
 .erp-dialog .modal-header,
 .erp-dialog .modal-footer,
 .modal .modal-header,
 .modal .modal-footer {
   background: #f9fafb;
 }
-.modal .modal-header { border-bottom: 1px solid var(--hairline); }
-.modal .modal-footer { border-top: 1px solid var(--hairline); }
+
+.modal .modal-header {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.modal .modal-footer {
+  border-top: 1px solid var(--hairline);
+}
+
 /* sticky save bar at the foot of long forms */
 .app-form-bar {
   position: sticky;
@@ -401,16 +807,29 @@
   border-top: 1px solid var(--hairline);
   border-radius: 0 0 8px 8px;
 }
-.app-form-bar .form-bar-info { margin-right: auto; font-size: .8rem; color: var(--muted); }
+
+.app-form-bar .form-bar-info {
+  margin-right: auto;
+  font-size: .8rem;
+  color: var(--muted);
+}
 
 /* ── F9 · Detail action ribbon — collapse secondaries on narrow screens ─────
    Primary actions stay; wrap the rest in <div class="doc-action-overflow">…
    and they fold into a "More" menu under ~720px. The .doc-action-row flex
    layout already lives in documents.css; this only adds the responsive hide. */
-.doc-action-more { display: none; }
+.doc-action-more {
+  display: none;
+}
+
 @media (max-width: 720px) {
-  .doc-action-row .doc-action-overflow { display: none; }
-  .doc-action-row .doc-action-more { display: inline-flex; }
+  .doc-action-row .doc-action-overflow {
+    display: none;
+  }
+
+  .doc-action-row .doc-action-more {
+    display: inline-flex;
+  }
 }
 
 /* ── F8 · Icon-only button affordance ───────────────────────────────────────
@@ -420,11 +839,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px; height: 32px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   line-height: 1;
 }
-.btn-icon i { font-size: .95rem; }
+
+.btn-icon i {
+  font-size: .95rem;
+}
 
 /* non-interactive org pill in the navbar (was a <div class="btn"> w/ pointer-
    events:none — should be a plain span, styled, never announced as a button) */
@@ -439,4 +862,271 @@
   border: 1px solid var(--hairline);
   border-radius: 20px;
   padding: 4px 12px;
+}
+
+/* ============================================================
+   SabSys · KV-Card  ("Policy-Card" detail component)
+   ------------------------------------------------------------
+   Append this block to static/css/components.css.
+   A flat, icon-headed key→value card: bold uppercase title over
+   a heavy slate rule, label-left / value-right rows, and
+   meaning-driven value colors (status / type / link / money).
+
+   Relies on tokens already defined in components.css:
+     --hairline  --hairline-soft  --muted  --muted-2
+     --pos  --neg  --brand-accent  --brand-ink
+   and adds the few it needs below.
+   ============================================================ */
+
+:root {
+  /* completes the semantic set the AR colors silently depend on */
+  --warn: #b45309;
+  /* outstanding / aging mid-buckets (amber) */
+
+  /* policy-card vocabulary */
+  --kv-title: #2b3a44;
+  /* dark slate-teal heading + head rule */
+  --kv-label: #5f7d8c;
+  /* steel-teal row label                */
+  --kv-value: #111827;
+  /* default value (near-black)          */
+  --v-status: #7c3aed;
+  /* enum / state value  → violet        */
+  --v-type: #d9701a;
+  /* category / type value → orange      */
+  --v-link: #2f7da3;
+  /* address / linked-entity value → teal */
+}
+
+/* completes the .num-* family (matches the warn token above) */
+.num-warn {
+  color: var(--warn) !important;
+  font-weight: 600;
+}
+
+/* ── card shell ──────────────────────────────────────────── */
+.kv-card {
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 18px 22px 8px;
+}
+
+.kv-card.kv-card--flush {
+  padding-bottom: 0;
+}
+
+/* for tables that draw their own bottom edge */
+
+/* ── header: icon + uppercase title over a heavy rule ────── */
+.kv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 13px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid var(--kv-title);
+}
+
+.kv-card-head>i {
+  font-size: 1.12rem;
+  line-height: 1;
+  color: var(--kv-title);
+}
+
+.kv-card-head .kv-card-title {
+  flex: 1;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+  color: var(--kv-title);
+}
+
+.kv-card-head .kv-card-act {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--brand-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.kv-card-head .kv-card-act:hover {
+  text-decoration: underline;
+}
+
+/* ── key → value rows ────────────────────────────────────── */
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 11px 0;
+}
+
+.kv-row+.kv-row {
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.kv-row .kv-k {
+  flex-shrink: 0;
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--kv-label);
+}
+
+.kv-row .kv-v {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--kv-value);
+  text-align: right;
+  text-wrap: pretty;
+}
+
+.kv-row .kv-v small {
+  display: block;
+  margin-top: 1px;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--muted-2);
+}
+
+/* a totals row that re-uses the heavy rule */
+.kv-row--total {
+  border-top: 2px solid var(--kv-title) !important;
+  margin-top: 2px;
+}
+
+.kv-row--total .kv-k {
+  color: var(--kv-title);
+  font-weight: 700;
+}
+
+/* ── meaning-driven value colors ─────────────────────────── */
+.v-status {
+  color: var(--v-status) !important;
+}
+
+/* ACTIVO, IN_FORCE … */
+.v-type {
+  color: var(--v-type) !important;
+}
+
+/* CRÉDITO_FISCAL … */
+.v-link {
+  color: var(--v-link) !important;
+}
+
+/* email, address, doc */
+.v-muted {
+  color: var(--muted-2) !important;
+  font-weight: 500;
+}
+
+/* ── inline note / alert inside a card ───────────────────── */
+.kv-note {
+  margin: 6px 0 14px;
+  padding: 10px 13px;
+  background: #f8fafc;
+  border: 1px solid var(--hairline-soft);
+  border-left: 3px solid var(--brand-accent);
+  border-radius: 8px;
+  font-size: .82rem;
+  color: #475569;
+}
+
+.kv-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 14px;
+  padding: 9px 13px;
+  background: #fdf0ee;
+  border: 1px solid #f4cfc8;
+  border-radius: 8px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--neg);
+}
+
+/* ── KPI stat strip (Resumen de cuenta) ──────────────────── */
+.kv-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 14px 0 16px;
+  background: var(--hairline-soft);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kv-stat {
+  background: #fff;
+  padding: 13px 16px;
+}
+
+.kv-stat .kv-stat-l {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--kv-label);
+}
+
+.kv-stat .kv-stat-n {
+  margin-top: 5px;
+  font-size: 1.32rem;
+  font-weight: 600;
+  color: var(--kv-value);
+}
+
+/* ── tables hosted inside a kv-card ──────────────────────── */
+.kv-card .kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+
+.kv-card .kv-table thead th {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--kv-label);
+  text-align: left;
+  white-space: nowrap;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.kv-card .kv-table th.text-end {
+  text-align: right;
+}
+
+.kv-card .kv-table th.text-center {
+  text-align: center;
+}
+
+.kv-card .kv-table tbody td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--hairline-soft);
+  font-size: .85rem;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.kv-card .kv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.kv-card .kv-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 575.98px) {
+  .kv-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

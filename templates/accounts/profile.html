@@ -3,6 +3,88 @@
 
 {% block title %}{% trans "Perfil" %} — SabSys{% endblock %}
 
+{% block extra_css %}
+<style>
+.profile-layout {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1.15rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+.profile-avatar-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+.profile-avatar {
+  width: 76px;
+  height: 76px;
+}
+.profile-avatar-action {
+  width: 26px;
+  height: 26px;
+}
+.profile-avatar-action i {
+  font-size: .7rem;
+}
+.profile-upload-note {
+  color: #6b7280;
+  font-size: .75rem;
+  margin: .2rem 0 0;
+}
+.profile-signature-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: .85rem;
+}
+.profile-signature-preview {
+  width: 168px;
+  height: 72px;
+}
+.profile-side-list {
+  display: grid;
+  gap: .75rem;
+  margin: 0;
+}
+.profile-side-list div {
+  min-width: 0;
+}
+.profile-side-list dt {
+  color: #6b7280;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  margin-bottom: .1rem;
+  text-transform: uppercase;
+}
+.profile-side-list dd {
+  color: #111827;
+  font-size: .84rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767.98px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+  .profile-identity {
+    align-items: flex-start;
+  }
+  .profile-signature-preview {
+    width: 100%;
+    max-width: 220px;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="app-header">
@@ -12,139 +94,145 @@
   </div>
 </div>
 
-<div class="row justify-content-center">
-  <div class="col-md-6">
-
-    <div class="card border-0 shadow-sm mb-3">
-      <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">{% trans "Cuenta" %}</h6>
-        <dl class="row small mb-0">
-          <dt class="col-4 text-muted">{% trans "Correo" %}</dt>
-          <dd class="col-8">{{ user.email }}</dd>
-          <dt class="col-4 text-muted">{% trans "Miembro desde" %}</dt>
-          <dd class="col-8">{{ user.created_at|date:"d/m/Y" }}</dd>
-        </dl>
+<div class="settings-layout profile-layout">
+  <section class="settings-panel">
+    <div class="settings-panel-header">
+      <span class="settings-panel-icon">
+        <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+      </span>
+      <div>
+        <h2 class="settings-panel-title">{% trans "Información personal" %}</h2>
+        <p class="settings-panel-sub">{% trans "Actualiza tu nombre, foto de perfil y firma para documentos." %}</p>
       </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">{% trans "Información personal" %}</h6>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
 
-        <form method="post" enctype="multipart/form-data">
-          {% csrf_token %}
+      {% with placeholder="https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&size=96&background=6c757d&color=fff&rounded=true" %}
+      <div class="profile-identity"
+           x-data="avatarHandler('{% if user.avatar %}{{ user.avatar.url }}{% endif %}', '{{ placeholder }}')">
+        <div class="profile-avatar-wrap">
+          <img :src="previewSrc"
+               alt="Avatar"
+               width="76" height="76"
+               class="profile-avatar rounded-circle object-fit-cover border shadow-sm">
 
-          {% with placeholder="https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&size=96&background=6c757d&color=fff&rounded=true" %}
-          <div class="d-flex flex-column align-items-center mb-4"
-               x-data="avatarHandler('{% if user.avatar %}{{ user.avatar.url }}{% endif %}', '{{ placeholder }}')">
+          <button type="button"
+                  class="profile-avatar-action btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 d-flex align-items-center justify-content-center p-0"
+                  title="{% trans 'Cambiar foto' %}"
+                  @click="$refs.fileInput.click()">
+            <i class="bi bi-pencil" aria-hidden="true"></i>
+          </button>
 
-            <div class="position-relative mb-2">
-              <img :src="previewSrc"
-                   alt="Avatar"
-                   width="96" height="96"
-                   class="rounded-circle object-fit-cover border shadow-sm">
+          <button type="button"
+                  class="profile-avatar-action btn btn-light btn-sm rounded-circle shadow-sm position-absolute bottom-0 end-0 d-flex align-items-center justify-content-center p-0"
+                  title="{% trans 'Eliminar foto' %}"
+                  x-show="hasAvatar"
+                  @click="clear()">
+            <i class="bi bi-x" aria-hidden="true"></i>
+          </button>
+        </div>
 
-              <button type="button"
-                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
-                      style="width:28px;height:28px;top:0;right:0;"
-                      title="{% trans 'Cambiar foto' %}"
-                      @click="$refs.fileInput.click()">
-                <i class="bi bi-pencil" style="font-size:.7rem;"></i>
-              </button>
+        <div class="min-w-0">
+          <div class="fw-semibold text-truncate">{{ user.full_name }}</div>
+          <div class="text-muted small text-truncate">{{ user.email }}</div>
+          <p class="profile-upload-note">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
+        </div>
 
-              <button type="button"
-                      class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center p-0"
-                      style="width:28px;height:28px;bottom:0;right:0;"
-                      title="{% trans 'Eliminar foto' %}"
-                      x-show="hasAvatar"
-                      @click="clear()">
-                <i class="bi bi-x" style="font-size:.85rem;"></i>
-              </button>
+        <input type="file" name="avatar" id="id_avatar" accept=".png,.jpg,.jpeg"
+               class="d-none" x-ref="fileInput" @change="change($event)">
+        <input type="checkbox" name="avatar-clear" id="avatar-clear_id"
+               class="d-none" x-ref="clearInput">
+      </div>
+      {% endwith %}
+
+      {% crispy form %}
+
+      <div class="mb-0"
+           x-data="signatureHandler('{% if user.signature %}{{ user.signature.url|escapejs }}{% endif %}')">
+        <label class="form-label small text-muted mb-2">{% trans "Firma" %}</label>
+
+        <div class="profile-signature-box">
+          <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+            <div class="profile-signature-preview bg-white border rounded-2 d-flex align-items-center justify-content-center flex-shrink-0">
+              <img x-show="hasSignature"
+                   :src="previewSrc"
+                   alt="{% trans 'Firma' %}"
+                   style="max-width:152px;max-height:58px;">
+              <i x-show="!hasSignature"
+                 class="bi bi-vector-pen text-muted"
+                 style="font-size:1.5rem;"
+                 aria-hidden="true"></i>
             </div>
 
-            <p class="text-muted mb-0" style="font-size:.75rem;">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
+            <div class="flex-grow-1 min-w-0">
+              <p class="small fw-semibold mb-1 text-truncate">
+                <span x-show="fileName" x-text="fileName"></span>
+                <span x-show="!fileName && hasSignature">{% trans "Firma cargada" %}</span>
+                <span x-show="!fileName && !hasSignature">{% trans "Sin firma cargada" %}</span>
+              </p>
+              <p class="profile-upload-note mb-2">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
 
-            <input type="file" name="avatar" id="id_avatar" accept=".png,.jpg,.jpeg"
-                   class="d-none" x-ref="fileInput" @change="change($event)">
-            <input type="checkbox" name="avatar-clear" id="avatar-clear_id"
-                   class="d-none" x-ref="clearInput">
-          </div>
-          {% endwith %}
-
-          {% crispy form %}
-
-          <div class="mb-3"
-               x-data="signatureHandler('{% if user.signature %}{{ user.signature.url|escapejs }}{% endif %}')">
-            <label class="form-label small text-muted mb-2">{% trans "Firma" %}</label>
-
-            <div class="border rounded-2 bg-light p-3">
-              <div class="d-flex flex-column flex-sm-row align-items-center gap-3">
-                <div class="bg-white border rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width:160px;height:72px;">
-                  <img x-show="hasSignature"
-                       :src="previewSrc"
-                       alt="{% trans 'Firma' %}"
-                       style="max-width:148px;max-height:60px;">
-                  <i x-show="!hasSignature"
-                     class="bi bi-vector-pen text-muted"
-                     style="font-size:1.5rem;"></i>
-                </div>
-
-                <div class="flex-grow-1 min-w-0">
-                  <p class="small fw-semibold mb-1">
-                    <span x-show="fileName" x-text="fileName"></span>
-                    <span x-show="!fileName && hasSignature">{% trans "Firma cargada" %}</span>
-                    <span x-show="!fileName && !hasSignature">{% trans "Sin firma cargada" %}</span>
-                  </p>
-                  <p class="text-muted mb-2" style="font-size:.75rem;">{% trans "Tipos permitidos: png, jpg, jpeg." %}</p>
-
-                  <div class="d-flex flex-wrap gap-2">
-                    <button type="button"
-                            class="btn btn-outline-secondary btn-sm"
-                            @click="$refs.fileInput.click()">
-                      <i class="bi bi-upload me-1"></i>{% trans "Subir archivo" %}
-                    </button>
-                    <button type="button"
-                            class="btn btn-outline-danger btn-sm"
-                            x-show="hasSignature"
-                            @click="clear()">
-                      <i class="bi bi-x-circle me-1"></i>{% trans "Quitar" %}
-                    </button>
-                  </div>
-                </div>
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        @click="$refs.fileInput.click()">
+                  <i class="bi bi-upload me-1" aria-hidden="true"></i>{% trans "Subir archivo" %}
+                </button>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        x-show="hasSignature"
+                        @click="clear()">
+                  <i class="bi bi-x-circle me-1" aria-hidden="true"></i>{% trans "Quitar" %}
+                </button>
               </div>
             </div>
-
-            <input type="file" name="signature" id="id_signature" accept=".png,.jpg,.jpeg"
-                   class="d-none" x-ref="fileInput" @change="change($event)">
-            <input type="checkbox" name="signature-clear" id="signature-clear_id"
-                   class="d-none" x-ref="clearInput">
-
-            {% if form.signature.errors %}
-            <div class="invalid-feedback d-block">
-              {% for error in form.signature.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
-            </div>
-            {% endif %}
           </div>
+        </div>
 
-          <div class="d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-sm btn-brand">
-              {% trans "Guardar cambios" %}
-            </button>
-          </div>
-        </form>
+        <input type="file" name="signature" id="id_signature" accept=".png,.jpg,.jpeg"
+               class="d-none" x-ref="fileInput" @change="change($event)">
+        <input type="checkbox" name="signature-clear" id="signature-clear_id"
+               class="d-none" x-ref="clearInput">
+
+        {% if form.signature.errors %}
+        <div class="invalid-feedback d-block">
+          {% for error in form.signature.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+        </div>
+        {% endif %}
       </div>
-    </div>
 
-    <div class="card border-0 shadow-sm mt-3">
-      <div class="card-body">
-        <h6 class="text-muted small text-uppercase mb-3">{% trans "Cambiar contraseña" %}</h6>
-        <a href="{% url 'account_change_password' %}" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-key me-1"></i>{% trans "Cambiar contraseña" %}
-        </a>
+      <div class="settings-form-actions justify-content-end">
+        <button type="submit" class="btn btn-sm btn-brand">
+          {% trans "Guardar cambios" %}
+        </button>
       </div>
-    </div>
+    </form>
+  </section>
 
-  </div>
+  <aside class="d-flex flex-column gap-3">
+    <section class="settings-aside">
+      <h2 class="settings-aside-title">{% trans "Cuenta" %}</h2>
+      <dl class="profile-side-list">
+        <div>
+          <dt>{% trans "Correo" %}</dt>
+          <dd>{{ user.email }}</dd>
+        </div>
+        <div>
+          <dt>{% trans "Miembro desde" %}</dt>
+          <dd>{{ user.created_at|date:"d/m/Y" }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="settings-aside">
+      <h2 class="settings-aside-title">{% trans "Seguridad" %}</h2>
+      <p class="settings-panel-sub mb-3">{% trans "Administra la contraseña usada para acceder a SabSys." %}</p>
+      <a href="{% url 'account_change_password' %}" class="btn btn-outline-secondary btn-sm w-100">
+        <i class="bi bi-key me-1" aria-hidden="true"></i>{% trans "Cambiar contraseña" %}
+      </a>
+    </section>
+  </aside>
 </div>
 {% endblock %}

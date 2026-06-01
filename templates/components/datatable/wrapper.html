@@ -16,6 +16,8 @@
     dt_search_placeholder str
 
   Optional context:
+    dt_action_url        str              resolved URL for scoped/nested datatables
+    dt_push_url          str              "false" for embedded datatables that should not push URLs
     dt_ribbon_template   str              path to ribbon actions partial (inside dt-ribbon)
     dt_filter_template   str              path to filter-fields partial (offcanvas body)
     filter               FilterSet        needed if dt_filter_template is set
@@ -33,9 +35,9 @@
 
   {# ── Filter form — wraps ribbon, search, hidden inputs, and offcanvas ───── #}
   <form id="dt-form" method="get"
-        hx-get="{% url dt_url %}"
+        {% if dt_action_url %}hx-get="{{ dt_action_url }}"{% else %}hx-get="{% url dt_url %}"{% endif %}
         hx-target="#dt-results"
-        hx-push-url="true"
+        hx-push-url="{{ dt_push_url|default:'true' }}"
         hx-trigger="submit, input delay:350ms from:[name='q']">
 
     {# Hidden state — JS writes these before triggering form submit #}
@@ -72,10 +74,22 @@
 
         {# Clear search + filters #}
         {% if active_filter_count or dt_q %}
-        <a href="{% url dt_url %}" class="btn btn-outline-secondary"
+        {% if dt_action_url %}
+        <button type="button" class="btn btn-outline-secondary"
+                onclick="var form=this.closest('form');
+                         form.querySelector('[name=q]').value='';
+                         form.querySelector('#dt-sort-input').value='{{ dt_sort }}';
+                         form.querySelector('#dt-page-input').value='1';
+                         htmx.trigger(form, 'submit');"
+                title="{% trans 'Limpiar búsqueda y filtros' %}">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        {% else %}
+        <a href="{% if dt_action_url %}{{ dt_action_url }}{% else %}{% url dt_url %}{% endif %}" class="btn btn-outline-secondary"
            title="{% trans 'Limpiar búsqueda y filtros' %}">
           <i class="bi bi-x-lg"></i>
         </a>
+        {% endif %}
         {% endif %}
 
         {# Column-visibility dropdown #}

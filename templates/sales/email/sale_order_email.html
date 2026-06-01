@@ -1,85 +1,43 @@
 {% load i18n humanize %}<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "sales/partials/_email_head.html" %}
   <title>{% trans "Orden de Venta" %} {{ order.doc_number|default:"Borrador" }} – {{ org.name }}</title>
-  <style>
-    body, table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table { border-spacing: 0; }
-    td { padding: 0; }
-    img { border: 0; display: block; }
-    body { margin: 0; padding: 0; background: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; }
-  </style>
 </head>
 <body bgcolor="#f4f4f4">
 
+<!-- Preheader (hidden inbox preview text) -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f4f4f4;">{% trans "Orden de Venta" %} {{ order.doc_number|default:"Borrador" }} · {% trans "Total" %}: {{ order.total|floatformat:2|intcomma }}</div>
+
 <!-- Wrapper -->
-<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f4">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f4">
   <tr>
     <td align="center" style="padding: 24px 16px;">
 
       <!-- Card -->
-      <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
-        <!-- ── TOP BAR ── -->
-        <tr>
-          <td bgcolor="#c0392b" height="6" style="height:6px;font-size:0;line-height:0;">&nbsp;</td>
-        </tr>
+        {% include "sales/partials/_topbar.html" %}
 
-        <!-- ── HEADER (org + doc title + status | logo) ── -->
-        <tr>
-          <td style="padding: 18px 28px 14px; border-bottom: 2px solid #c0392b;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td valign="top">
-                  <div style="font-size:16px;font-weight:800;color:#1a1a1a;">{{ org.name }}</div>
-                  <div style="font-size:11px;color:#555;margin-top:3px;">
-                    {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}{% if org.address %} &nbsp;·&nbsp; {{ org.address }}{% endif %}
-                  </div>
-                  <div style="margin-top:10px;">
-                    <div style="font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#c0392b;">{% trans "Orden de Venta" %}</div>
-                    <div style="margin-top:4px;">
-                      <span style="font-size:13px;font-family:monospace;font-weight:700;color:#374151;">{{ order.doc_number|default:"Borrador" }}</span>
-                    </div>
-                  </div>
-                </td>
-                {% if logo_url %}
-                <td valign="top" align="right" width="130" style="padding-left:12px;">
-                  <img src="{{ logo_url }}" alt="{{ org.name }}" width="120"
-                       style="max-width:120px;max-height:80px;object-fit:contain;display:block;margin-left:auto;">
-                </td>
-                {% endif %}
-              </tr>
-            </table>
-          </td>
-        </tr>
+        {% trans "Orden de Venta" as doc_title %}
+        {% include "sales/partials/_org_header.html" with doc_title=doc_title doc_number=order.doc_number|default:"Borrador" %}
 
-        <!-- ── PARTIES ── -->
+        <!-- ── PARTIES (Cliente | [Departamento] | Emisor) ── -->
         <tr>
           <td style="padding: 18px 28px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <!-- Customer -->
                 <td valign="top" style="padding-right:8px;{% if order.department %}width:33%;{% else %}width:50%;{% endif %}">
-                  <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td style="background:#f8f9fa;border-left:3px solid #c0392b;border-radius:0 4px 4px 0;padding:10px 12px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:700;margin-bottom:4px;">{% trans "Cliente" %}</div>
-                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ order.customer.name }}</div>
-                        {% if order.customer.rnc_cedula %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}</div>{% endif %}
-                        {% if order.customer.address %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ order.customer.address }}</div>{% endif %}
-                      </td>
-                    </tr>
-                  </table>
+                  {% include "sales/partials/_box_customer.html" with doc=order %}
                 </td>
                 <!-- Delivery dept (blue-tinted bg, red left border) -->
                 {% if order.department %}
                 <td valign="top" style="width:33%;padding-right:8px;padding-left:0;">
-                  <table width="100%" cellpadding="0" cellspacing="0">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td bgcolor="#eff6ff" style="background:#eff6ff;border-left:3px solid #c0392b;border-radius:0 4px 4px 0;padding:10px 12px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:700;margin-bottom:4px;">{% trans "Departamento de entrega" %}</div>
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;font-weight:700;margin-bottom:4px;">{% trans "Departamento de entrega" %}</div>
                         <div style="font-weight:700;font-size:13px;color:#1d4ed8;">{{ order.department.name }}</div>
                         {% if order.department.contact_name %}<div style="font-size:11px;color:#1e40af;margin-top:2px;">{{ order.department.contact_name }}</div>{% endif %}
                         {% if order.department.phone %}<div style="font-size:11px;color:#1e40af;margin-top:2px;">Tel: {{ order.department.phone }}</div>{% endif %}
@@ -91,15 +49,7 @@
                 {% endif %}
                 <!-- Emisor -->
                 <td valign="top" style="padding-left:{% if order.department %}0{% else %}8px{% endif %};{% if order.department %}width:33%;{% else %}width:50%;{% endif %}">
-                  <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td style="background:#f8f9fa;border-left:3px solid #c0392b;border-radius:0 4px 4px 0;padding:10px 12px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;font-weight:700;margin-bottom:4px;">{% trans "Emisor" %}</div>
-                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ org.name }}</div>
-                        {% if org.tax_id %}<div style="font-size:11px;color:#555;margin-top:2px;">RNC: {{ org.tax_id }}</div>{% endif %}
-                      </td>
-                    </tr>
-                  </table>
+                  {% include "sales/partials/_box_emisor.html" %}
                 </td>
               </tr>
             </table>
@@ -109,28 +59,22 @@
         <!-- ── META ── -->
         <tr>
           <td style="padding: 14px 28px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="border-bottom:1px solid #e5e7eb;padding-bottom:12px;">
-                  <table cellpadding="0" cellspacing="0">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
                     <tr>
-                      <td style="padding-right:24px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Fecha emisión" %}</div>
-                        <div style="font-weight:700;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.issue_date|date:"d/m/Y" }}</div>
-                      </td>
+                      {% trans "Fecha emisión" as l %}
+                      {% include "sales/partials/_meta_item.html" with label=l value=order.issue_date|date:"d/m/Y" pr=24 pl=0 %}
                       {% if order.delivery_date %}
-                      <td style="padding-right:24px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Fecha de entrega" %}</div>
-                        <div style="font-weight:700;font-size:12px;color:#c0392b;margin-top:2px;">{{ order.delivery_date|date:"d/m/Y" }}</div>
-                      </td>
+                      {% trans "Fecha de entrega" as l %}
+                      {% include "sales/partials/_meta_item.html" with label=l value=order.delivery_date|date:"d/m/Y" value_color="#c0392b" pr=24 pl=0 %}
                       {% endif %}
-                      <td style="padding-right:24px;">
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Condición pago" %}</div>
-                        <div style="font-weight:700;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.get_payment_condition_display }}</div>
-                      </td>
+                      {% trans "Condición pago" as l %}
+                      {% include "sales/partials/_meta_item.html" with label=l value=order.get_payment_condition_display pr=24 pl=0 %}
                       {% if order.currency != "DOP" %}
                       <td>
-                        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Moneda" %}</div>
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;">{% trans "Moneda" %}</div>
                         <div style="font-weight:700;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ order.currency }} @ {{ order.exchange_rate }}</div>
                       </td>
                       {% endif %}
@@ -142,88 +86,22 @@
           </td>
         </tr>
 
-        <!-- ── ITEMS TABLE ── -->
-        <tr>
-          <td style="padding: 16px 28px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-              <thead>
-                <tr bgcolor="#3d2314">
-                  <th align="left"   style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;">{% trans "Descripción" %}</th>
-                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:60px;">{% trans "Cant." %}</th>
-                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:90px;">{% trans "P. Unit." %}</th>
-                  <th align="center" style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:60px;">{% trans "ITBIS" %}</th>
-                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:90px;">{% trans "Subtotal" %}</th>
-                  <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:100px;">{% trans "Total" %}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in items %}
-                <tr bgcolor="{% cycle '#ffffff' '#fdf8f6' %}">
-                  <td style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.description }}</td>
-                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.quantity|floatformat:"-4" }}</td>
-                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.unit_price|floatformat:2|intcomma }}</td>
-                  <td align="center" style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.get_itbis_rate_display }}</td>
-                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.line_total|floatformat:2|intcomma }}</td>
-                  <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </td>
-        </tr>
+        {% include "sales/partials/_items_table.html" %}
 
-        <!-- ── TOTALS ── -->
-        <tr>
-          <td style="padding: 10px 28px 0;" align="right">
-            <table cellpadding="0" cellspacing="0" width="260">
-              <tr>
-                <td style="padding:4px 9px;font-size:12px;color:#374151;">{% trans "Subtotal" %}</td>
-                <td align="right" style="padding:4px 9px;font-size:12px;font-weight:600;color:#374151;">{{ order.subtotal|floatformat:2|intcomma }}</td>
-              </tr>
-              {% if order.itbis_18 %}
-              <tr>
-                <td style="padding:4px 9px;font-size:11px;color:#6b7280;">{% trans "ITBIS 18%" %}</td>
-                <td align="right" style="padding:4px 9px;font-size:11px;font-weight:600;color:#6b7280;">{{ order.itbis_18|floatformat:2|intcomma }}</td>
-              </tr>
-              {% endif %}
-              {% if order.itbis_16 %}
-              <tr>
-                <td style="padding:4px 9px;font-size:11px;color:#6b7280;">{% trans "ITBIS 16%" %}</td>
-                <td align="right" style="padding:4px 9px;font-size:11px;font-weight:600;color:#6b7280;">{{ order.itbis_16|floatformat:2|intcomma }}</td>
-              </tr>
-              {% endif %}
-              <tr>
-                <td style="padding:8px 9px 4px;font-size:15px;font-weight:800;color:#c0392b;border-top:2.5px solid #c0392b;">{% trans "TOTAL" %}</td>
-                <td align="right" style="padding:8px 9px 4px;font-size:15px;font-weight:800;color:#c0392b;border-top:2.5px solid #c0392b;">{{ order.total|floatformat:2|intcomma }}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+        {% include "sales/partials/_totals.html" with doc=order %}
 
-        <!-- ── NOTES ── -->
-        {% if order.notes %}
-        <tr>
-          <td style="padding: 16px 28px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="border-top:1px solid #e5e7eb;padding-top:12px;">
-                <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;margin-bottom:3px;">{% trans "Notas" %}</div>
-                <div style="font-size:11px;color:#4b5563;">{{ order.notes }}</div>
-              </td></tr>
-            </table>
-          </td>
-        </tr>
-        {% endif %}
+        {% include "sales/partials/_notes.html" with doc=order %}
 
         <!-- ── SIGNATURE ── -->
         <tr>
           <td style="padding: 20px 28px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="50%" style="border-top:1px solid #374151;padding-top:6px;padding-right:24px;">
-                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Autorizado por" %}</div>
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;">{% trans "Autorizado por" %}</div>
                 </td>
                 <td width="50%" style="border-top:1px solid #374151;padding-top:6px;padding-left:24px;">
-                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.6px;color:#9ca3af;font-weight:700;">{% trans "Recibido / Firmado por" %}</div>
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;">{% trans "Recibido / Firmado por" %}</div>
                   {% if order.signed_by %}<div style="font-size:12px;font-weight:600;color:#1a1a1a;margin-top:3px;">{{ order.signed_by }}</div>{% endif %}
                 </td>
               </tr>
@@ -231,15 +109,10 @@
           </td>
         </tr>
 
-        <!-- ── FOOTER ── -->
-        <tr>
-          <td bgcolor="#f8f9fa" style="padding:14px 28px;margin-top:24px;border-top:1px solid #e5e7eb;border-radius:0 0 8px 8px;">
-            <div style="font-size:10px;color:#9ca3af;text-align:center;">
-              {{ org.name }}{% if org.tax_id %} · RNC {{ org.tax_id }}{% endif %}
-              &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}
-            </div>
-          </td>
-        </tr>
+        {% trans "Ver orden" as cta_label %}
+        {% include "sales/partials/_cta.html" with label=cta_label %}
+
+        {% include "sales/partials/_footer.html" %}
 
       </table>
       <!-- /Card -->

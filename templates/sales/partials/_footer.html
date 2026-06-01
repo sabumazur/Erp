@@ -1,0 +1,12 @@
+{% comment %}
+  Card footer. Context used: org
+{% endcomment %}
+{% load i18n %}
+<tr>
+  <td bgcolor="#f8f9fa" style="padding:14px 28px;border-top:1px solid #e5e7eb;border-radius:0 0 8px 8px;">
+    <div style="font-size:10px;color:#6b7280;text-align:center;">
+      {{ org.name }}{% if org.tax_id %} · RNC {{ org.tax_id }}{% endif %}
+      &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}
+    </div>
+  </td>
+</tr>

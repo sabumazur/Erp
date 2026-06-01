@@ -6,6 +6,35 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 from .models import Item
 
 
+_ITBIS_RATE_BADGES = {
+    "EXEMPT":  "0%",
+    "RATE_0":  "0%",
+    "RATE_16": "16%",
+    "RATE_18": "18%",
+}
+
+
+class TomSelect(forms.Select):
+    def __init__(self, *args, placeholder="Seleccione…", **kwargs):
+        attrs = kwargs.pop("attrs", None) or {}
+        attrs.setdefault("class", "form-select")
+        attrs.setdefault("data-tom", "")
+        attrs.setdefault("data-placeholder", placeholder)
+        super().__init__(*args, attrs=attrs, **kwargs)
+
+
+class ItbisSelect(TomSelect):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, placeholder="Tasa ITBIS…", **kwargs)
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        badge = _ITBIS_RATE_BADGES.get(str(value))
+        if badge:
+            option["attrs"]["data-rate"] = badge
+        return option
+
+
 class ItemForm(forms.ModelForm):
     use_required_attribute = False
 
@@ -22,7 +51,10 @@ class ItemForm(forms.ModelForm):
             "unit_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "cost_price":  forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             # item_type drives Alpine reactive state; x-model keeps them in sync
-            "item_type":   forms.Select(attrs={"x-model": "itemType"}),
+            # data-tom opts in to Tom Select; x-model still fires on the native select
+            "item_type":   TomSelect(attrs={"x-model": "itemType"}, placeholder="Tipo…"),
+            "unit":        TomSelect(placeholder="Unidad…"),
+            "itbis_rate":  ItbisSelect(),
             # code input gets a dynamic placeholder driven by Alpine
             "code":        forms.TextInput(attrs={
                 ":placeholder": "codePlaceholder",
@@ -34,6 +66,12 @@ class ItemForm(forms.ModelForm):
             "unit":       {"required": _("La unidad de medida es obligatoria.")},
             "unit_price": {"required": _("El precio de venta es obligatorio.")},
             "itbis_rate": {"required": _("La tasa ITBIS es obligatoria.")},
+        }
+        labels = {
+            "is_active": _("Artículo activo"),
+        }
+        help_texts = {
+            "is_active": _("Disponible para seleccionarse en documentos de venta y compra."),
         }
 
     def __init__(self, *args, **kwargs):
@@ -76,7 +114,7 @@ class ItemForm(forms.ModelForm):
             ),
             # ── Status & Notes ────────────────────────────────────────────────
             HTML('<hr class="my-3">'),
-            Field("is_active"),
+            Field("is_active", template="components/forms/boolean_status_card.html"),
             "notes",
         )
 
