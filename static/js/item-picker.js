@@ -119,6 +119,8 @@
             if (priceEl) priceEl.value = d.unit_price;
             if (qtyEl)   qtyEl.value   = "1";
             if (rateEl)  rateEl.value  = d.itbis_rate;
+            var codeEl = formRow.querySelector('.doc-line-code');
+            if (codeEl) codeEl.textContent = d.code || "";
             if (typeof Alpine !== "undefined") {
               try {
                 Alpine.evaluate(formRow, "price = " + (parseFloat(d.unit_price) || 0) +
@@ -223,6 +225,9 @@
     if (priceEl) priceEl.value = price;
     if (qtyEl)   qtyEl.value   = "1";
     if (rateEl)  rateEl.value  = rate;
+
+    var codeEl = formRow.querySelector('.doc-line-code');
+    if (codeEl) codeEl.textContent = btn.dataset.code || "";
 
     if (typeof Alpine !== "undefined") {
       try {
