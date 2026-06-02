@@ -54,11 +54,7 @@ class FlatpickrTimeInput(forms.TimeInput):
 
 # ── TomSelect / ItbisSelect ───────────────────────────────────────────────────
 
-_ITBIS_RATE_BADGES = {
-    "EXEMPT": "0%",
-    "RATE_16": "16%",
-    "RATE_18": "18%",
-}
+_ITBIS_RATE_BADGES: dict = {}
 
 
 class TomSelect(forms.Select):
