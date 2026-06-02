@@ -117,10 +117,9 @@ class Item(ERPBaseModel):
         OTHER = "OTHER", _("Otro")
 
     class ITBISRate(models.TextChoices):
-        EXEMPT = "EXEMPT", _("Exento (0%)")
-        RATE_0 = "RATE_0", _("Tasa 0% (exportación)")
-        RATE_16 = "RATE_16", _("ITBIS 16%")
-        RATE_18 = "RATE_18", _("ITBIS 18%")
+        EXEMPT = "EXEMPT", _("0%")
+        RATE_16 = "RATE_16", _("16%")
+        RATE_18 = "RATE_18", _("18%")
 
     organization = models.ForeignKey(
         "accounts.Organization",

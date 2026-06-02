@@ -56,7 +56,6 @@ class FlatpickrTimeInput(forms.TimeInput):
 
 _ITBIS_RATE_BADGES = {
     "EXEMPT": "0%",
-    "RATE_0": "0%",
     "RATE_16": "16%",
     "RATE_18": "18%",
 }

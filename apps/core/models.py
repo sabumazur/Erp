@@ -213,14 +213,12 @@ class AbstractDocumentLineItem(models.Model):
     """
 
     class ITBISRate(models.TextChoices):
-        EXEMPT = "EXEMPT", _("Exento (0%)")
-        RATE_0 = "RATE_0", _("Tasa 0% (exportación)")
-        RATE_16 = "RATE_16", _("ITBIS 16%")
-        RATE_18 = "RATE_18", _("ITBIS 18%")
+        EXEMPT = "EXEMPT", _("0%")
+        RATE_16 = "RATE_16", _("16%")
+        RATE_18 = "RATE_18", _("18%")
 
     RATE_VALUES = {
         ITBISRate.EXEMPT: Decimal("0.00"),
-        ITBISRate.RATE_0: Decimal("0.00"),
         ITBISRate.RATE_16: Decimal("0.16"),
         ITBISRate.RATE_18: Decimal("0.18"),
     }

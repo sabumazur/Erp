@@ -686,7 +686,7 @@ class ReportITBISView(ERPBaseViewMixin, View):
                                              "base_16": _zero, "itbis_16": _zero,
                                              "base_18": _zero, "itbis_18": _zero}
                         rate = r["itbis_rate"]
-                        if rate in (SalesDocumentItem.ITBISRate.EXEMPT, SalesDocumentItem.ITBISRate.RATE_0):
+                        if rate == SalesDocumentItem.ITBISRate.EXEMPT:
                             period_map[p]["exempt"] += r["base"]
                         elif rate == SalesDocumentItem.ITBISRate.RATE_16:
                             period_map[p]["base_16"]  += r["base"]
