@@ -11,6 +11,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
+from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from apps.sales.models import PaymentTerm
 from .models import (
@@ -268,7 +269,7 @@ class PurchaseOrderForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "expected_date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1}),
+            "notes": forms.Textarea(attrs={"rows": 2, "class": "form-control form-control-sm"}),
         }
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -305,14 +306,11 @@ class PurchaseOrderForm(forms.ModelForm):
                         "{% endif %}"
                     ),
                     Field("supplier"),
-                    css_class="col-md-12",
+                    css_class="col-md-6",
                 ),
+                Column("issue_date", css_class="col-md-3"),
+                Column("expected_date", css_class="col-md-3"),
             ),
-            Row(
-                Column("issue_date", css_class="col-md-6"),
-                Column("expected_date", css_class="col-md-6"),
-            ),
-            Row(Column("notes", css_class="col-md-12")),
         )
 
 
@@ -387,29 +385,11 @@ class SupplierInvoiceForm(forms.ModelForm):
 # ── PurchaseDocumentItem Formset ──────────────────────────────────────────────
 
 
-class PurchaseDocumentItemForm(forms.ModelForm):
-    quantity = forms.IntegerField(
-        min_value=1,
-        widget=forms.NumberInput(
-            attrs={
-                "step": "1",
-                "min": "1",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "qty",
-                "x-on:input": "recalc()",
-            }
-        ),
-    )
+class PurchaseDocumentItemForm(DocumentLineItemFormMixin):
     unit_price = forms.IntegerField(
         min_value=1,
         widget=forms.NumberInput(
-            attrs={
-                "step": "1",
-                "min": "1",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "price",
-                "x-on:input": "recalc()",
-            }
+            attrs={"step": "1", "min": "1"}
         ),
     )
 
@@ -417,56 +397,11 @@ class PurchaseDocumentItemForm(forms.ModelForm):
         model = PurchaseDocumentItem
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
         widgets = {
-            "description": forms.TextInput(
-                attrs={"placeholder": _("Descripción del artículo")}
-            ),
-            "quantity": forms.NumberInput(attrs={"step": "0.0001", "min": "0.0001"}),
-            "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "itbis_rate": ItbisSelect(),
         }
 
-    def __init__(self, *args, organization=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._organization = organization
-        if organization:
-            self.fields["item"].queryset = _Item.objects.filter(
-                organization=organization,
-                is_active=True,
-                item_type__in=[_Item.ItemType.PURCHASE, _Item.ItemType.BOTH],
-            ).order_by("name")
-        self.fields["item"].required = False
-        self.fields["item"].widget = forms.HiddenInput()
-        self.fields["description"].widget.attrs.update(
-            {
-                "class": "form-control form-control-sm",
-            }
-        )
-        self.fields["description"].widget.attrs.pop("placeholder", None)
-        self.fields["quantity"].widget.attrs.update(
-            {
-                "step": "1",
-                "min": "1",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "qty",
-                "x-on:input": "recalc()",
-            }
-        )
-        self.fields["unit_price"].widget.attrs.update(
-            {
-                "step": "1",
-                "min": "1",
-                "class": "form-control form-control-sm text-end",
-                "x-model": "price",
-                "x-on:input": "recalc()",
-            }
-        )
-        self.fields["itbis_rate"].widget.attrs.update(
-            {
-                "class": "form-select form-select-sm",
-                "x-model": "rate",
-                "x-on:change": "recalc()",
-            }
-        )
+    def get_item_types(self):
+        return [_Item.ItemType.PURCHASE, _Item.ItemType.BOTH]
 
 
 PurchaseDocumentItemFormSet = inlineformset_factory(

@@ -11,6 +11,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 from django.urls import reverse_lazy
 
 from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
+from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from .models import (
     Customer,
@@ -569,13 +570,10 @@ class SaleOrderForm(forms.ModelForm):
         else:
             self.fields["department"].queryset = CustomerDepartment.objects.none()
 
-        # HTMX: when customer changes, swap the department <option> tags in place.
+        # The customer picker sets this hidden value. The sale order page reloads
+        # department options explicitly because the picker changes the value in JS.
         self.fields["customer"].widget = forms.HiddenInput(attrs={
             "id": "id_customer",
-            "hx-get": reverse_lazy("sales:departments_for_customer"),
-            "hx-trigger": "change",
-            "hx-target": "#id_department",
-            "hx-swap": "innerHTML",
         })
 
         self.helper = FormHelper()
@@ -778,69 +776,19 @@ class PaymentTermForm(forms.ModelForm):
 # ── InvoiceItem formset ───────────────────────────────────────────────────────
 
 
-class InvoiceItemForm(forms.ModelForm):
+class InvoiceItemForm(DocumentLineItemFormMixin):
     class Meta:
         model = SalesDocumentItem
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
         widgets = {
-            "item": forms.HiddenInput(),
-            "description": forms.TextInput(
-                attrs={
-                    "class": "form-control form-control-sm",
-                }
-            ),
             "unit_price": forms.NumberInput(
-                attrs={
-                    "step": "0.01",
-                    "min": "0",
-                    "class": "form-control form-control-sm text-end",
-                    "x-model": "price",
-                    "x-on:input": "recalc()",
-                }
+                attrs={"step": "0.01", "min": "0"}
             ),
-            "itbis_rate": ItbisSelect(
-                attrs={
-                    "class": "form-select form-select-sm",
-                    "x-model": "rate",
-                    "x-on:change": "recalc()",
-                }
-            ),
+            "itbis_rate": ItbisSelect(),
         }
 
-    def __init__(self, *args, **kwargs):
-        organization = kwargs.pop("organization", None)
-        super().__init__(*args, **kwargs)
-        self.fields["item"].required = False
-        if organization is not None:
-            item_filter = Q(
-                is_active=True,
-                item_type__in=[_Item.ItemType.SALE, _Item.ItemType.BOTH],
-            )
-            if self.instance.pk and self.instance.item_id:
-                item_filter |= Q(pk=self.instance.item_id)
-            self.fields["item"].queryset = _Item.objects.filter(
-                item_filter,
-                organization=organization,
-            )
-        else:
-            self.fields["item"].queryset = _Item.objects.none()
-        self.fields["quantity"] = forms.IntegerField(
-            min_value=1,
-            widget=forms.NumberInput(
-                attrs={
-                    "step": "1",
-                    "min": "1",
-                    "class": "form-control form-control-sm text-end",
-                    "x-model": "qty",
-                    "x-on:input": "recalc()",
-                }
-            ),
-        )
-        # Match the Alpine.js defaults so an untouched extra row is treated
-        # as unchanged by has_changed() and silently skipped by the formset.
-        self.initial.setdefault("quantity", 1)
-        self.initial.setdefault("unit_price", 0)
-        self.initial.setdefault("itbis_rate", "RATE_18")
+    def get_item_types(self):
+        return [_Item.ItemType.SALE, _Item.ItemType.BOTH]
 
     def clean_quantity(self):
         qty = self.cleaned_data.get("quantity")
