@@ -2,7 +2,7 @@
 {% comment %}
   Renders one <tr> for an Item — Refined Slate skin.
   Opt-in via <div class="dt-slate"> on items/item_list.html.
-  Cell classes (docnum / cust / ref / amt / cur) are scoped in slate-list.css.
+  Cell classes (docnum / cust / ref / amt) are scoped in slate-list.css.
   Inactive rows keep the .text-muted class on <tr> (greyed by the skin).
 {% endcomment %}
 <tr class="{% if not row.is_active %}text-muted{% endif %}"
@@ -105,13 +105,13 @@
 
   {# ── Precio ─────────────────────────────────────────────── #}
   <td data-col="unit_price" class="text-end">
-    <span class="amt"><span class="cur">RD$</span>{{ row.unit_price|floatformat:2|intcomma }}</span>
+    <span class="amt">{{ row.unit_price|floatformat:2|intcomma }}</span>
   </td>
 
   {# ── Costo (admin) ──────────────────────────────────────── #}
   {% if membership.is_admin %}
   <td data-col="cost_price" class="text-end">
-    <span class="amt zero"><span class="cur">RD$</span>{{ row.cost_price|floatformat:2|intcomma|default:"—" }}</span>
+    <span class="amt zero">{{ row.cost_price|floatformat:2|intcomma|default:"—" }}</span>
   </td>
   {% endif %}
 

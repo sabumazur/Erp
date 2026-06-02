@@ -15,13 +15,14 @@
     <p class="app-header-sub">{% trans "Cotizaciones" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-    </a>
+    <button type="submit" form="quotation-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 
-<form method="post">
+<form method="post" id="quotation-form">
   {% csrf_token %}
 
   {# Header fields #}
@@ -99,13 +100,7 @@
     </div>
   </div>
 
-  {# Sticky action bar #}
-  <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm btn-brand">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
-    </button>
-    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
-  </div>
+
 </form>
 
 {% include "sales/partials/item_picker_modal.html" %}

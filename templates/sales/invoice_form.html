@@ -13,9 +13,10 @@
     <p class="app-header-sub">{% trans "Facturas" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-    </a>
+    <button type="submit" form="invoice-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 
@@ -93,12 +94,6 @@
     </div>
   </div>
 
-  <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm btn-brand">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
-    </button>
-    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
-  </div>
 </form>
 
 {% include "sales/partials/item_picker_modal.html" %}

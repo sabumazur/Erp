@@ -1,6 +1,6 @@
 """
 Tests for invoices models, NCFService, signals, DGII validation rules
-and RNC/Cédula checksum validators.
+and RNC/Cédula format validators.
 """
 from decimal import Decimal
 import threading
@@ -285,9 +285,9 @@ class TestRNCValidator:
         ok, msg = validate_rnc("130461554")  # Café Tropical Mazur SRL
         assert ok, msg
 
-    def test_invalid_rnc_wrong_check_digit(self):
-        ok, _ = validate_rnc("130461550")  # last digit changed
-        assert not ok
+    def test_rnc_does_not_validate_check_digit(self):
+        ok, msg = validate_rnc("130461550")  # last digit changed
+        assert ok, msg
 
     def test_rnc_wrong_length(self):
         ok, msg = validate_rnc("12345678")  # 8 digits
@@ -298,9 +298,8 @@ class TestRNCValidator:
         ok, msg = validate_rnc("1-30-46155-4")  # 130461554 with dashes
         assert ok, msg
 
-    def test_rnc_field_validator_raises_on_invalid(self):
-        with pytest.raises(ValidationError):
-            validate_rnc_cedula("000000000", id_type="RNC")
+    def test_rnc_field_validator_allows_repeated_digits(self):
+        validate_rnc_cedula("000000000", id_type="RNC")
 
     def test_rnc_field_validator_passes_on_valid(self):
         validate_rnc_cedula("130461554", id_type="RNC")  # must not raise
@@ -312,9 +311,9 @@ class TestCedulaValidator:
         ok, msg = validate_cedula("00113918205")
         assert ok, msg
 
-    def test_invalid_cedula_wrong_check_digit(self):
-        ok, _ = validate_cedula("00113918200")
-        assert not ok
+    def test_cedula_does_not_validate_check_digit(self):
+        ok, msg = validate_cedula("00113918200")  # last digit changed
+        assert ok, msg
 
     def test_cedula_wrong_length(self):
         ok, msg = validate_cedula("0011391820")  # 10 digits
@@ -325,15 +324,14 @@ class TestCedulaValidator:
         ok, msg = validate_cedula("001-1391820-5")
         assert ok, msg
 
-    def test_cedula_field_validator_raises_on_invalid(self):
-        with pytest.raises(ValidationError):
-            validate_rnc_cedula("00000000000", id_type="CED")
+    def test_cedula_field_validator_allows_repeated_digits(self):
+        validate_rnc_cedula("00000000000", id_type="CED")
 
     def test_cedula_field_validator_passes_on_valid(self):
         validate_rnc_cedula("00113918205", id_type="CED")  # must not raise
 
-    def test_passport_skips_checksum(self):
-        # Passport/foreign IDs bypass the checksum — should never raise
+    def test_passport_skips_digit_only_format_validation(self):
+        # Passport/foreign IDs bypass RNC/Cédula digit-only format checks.
         validate_rnc_cedula("AB123456", id_type="PAS")
 
     def test_auto_detect_rnc_by_length(self):

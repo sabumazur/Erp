@@ -3,30 +3,6 @@
 
 {% block title %}{{ module.name }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 38%;
-  vertical-align: middle;
-}
-.app-panel-hd {
-  padding: 10px 14px 9px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
@@ -60,7 +36,6 @@
   </div>
 </div>
 
-{# Module modal (reused from list page) #}
 <div class="modal fade" id="moduleModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
@@ -76,48 +51,49 @@
 </div>
 
 <div class="row g-3">
-  <div class="col-lg-8">
-
-    <div class="app-table-wrap mb-3">
-      <div class="d-flex align-items-center justify-content-center py-4" style="font-size:2.5rem">
-        <i class="bi {{ module.icon|default:'bi-grid' }}"></i>
+  <div class="col-lg-8 d-flex flex-column gap-3">
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <div class="kv-card-title">
+          <i class="bi bi-grid"></i>
+          {% trans "Módulo" %}
+        </div>
       </div>
-    </div>
-
-    <div class="app-table-wrap">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Slug" %}</th>
-            <td class="font-monospace">{{ module.slug }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Nombre" %}</th>
-            <td>{{ module.name }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Ícono" %}</th>
-            <td class="font-monospace small">{{ module.icon|default:"—" }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Estado" %}</th>
-            <td>
-              {% if module.is_active %}
-                <span class="badge-soft badge-paid">{% trans "Activo" %}</span>
-              {% else %}
-                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% if module.description %}
-          <tr>
-            <th class="detail-key">{% trans "Descripción" %}</th>
-            <td class="small text-muted">{{ module.description }}</td>
-          </tr>
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="d-inline-flex align-items-center justify-content-center rounded border bg-light" style="width:56px;height:56px;font-size:1.8rem">
+          <i class="bi {{ module.icon|default:'bi-grid' }}"></i>
+        </div>
+        <div>
+          <div class="fw-semibold">{{ module.name }}</div>
+          <div class="v-muted font-monospace">{{ module.slug }}</div>
+        </div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">{% trans "Slug" %}</div>
+        <div class="kv-v font-monospace">{{ module.slug }}</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">{% trans "Nombre" %}</div>
+        <div class="kv-v">{{ module.name }}</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">{% trans "Ícono" %}</div>
+        <div class="kv-v font-monospace small">{{ module.icon|default:"—" }}</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">{% trans "Estado" %}</div>
+        <div class="kv-v">
+          {% if module.is_active %}
+            <span class="badge-soft badge-paid">{% trans "Activo" %}</span>
+          {% else %}
+            <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
           {% endif %}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
+      {% if module.description %}
+      <div class="kv-note mt-3">{{ module.description }}</div>
+      {% endif %}
+    </section>
   </div>
 </div>
 

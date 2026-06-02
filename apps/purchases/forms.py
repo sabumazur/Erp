@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
+from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
 from apps.items.models import Item as _Item
 from apps.sales.models import PaymentTerm
 from .models import (
@@ -43,6 +44,8 @@ class SupplierForm(forms.ModelForm):
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 2}),
+            "id_type": TomSelect(placeholder="Tipo de ID…"),
+            "payment_term": TomSelect(placeholder="Condición de pago…"),
         }
 
     change_reason = forms.CharField(
@@ -117,8 +120,6 @@ class SupplierForm(forms.ModelForm):
         rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
 
         if rnc_cedula:
-            from apps.sales.validators import validate_rnc, validate_cedula
-
             normalized = re.sub(r"[\s\-]", "", rnc_cedula)
 
             if id_type == Supplier.IdType.RNC:
@@ -128,11 +129,7 @@ class SupplierForm(forms.ModelForm):
                         _("El RNC debe tener exactamente 9 dígitos numéricos."),
                     )
                 else:
-                    ok, msg = validate_rnc(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Supplier.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
@@ -141,11 +138,7 @@ class SupplierForm(forms.ModelForm):
                         _("La Cédula debe tener exactamente 11 dígitos numéricos."),
                     )
                 else:
-                    ok, msg = validate_cedula(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type in (Supplier.IdType.PASAPORTE, Supplier.IdType.EXTERIOR):
                 if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
@@ -189,6 +182,9 @@ class SupplierQuickCreateForm(forms.ModelForm):
     class Meta:
         model = Supplier
         fields = ["name", "id_type", "rnc_cedula"]
+        widgets = {
+            "id_type": TomSelect(placeholder="Tipo de ID…"),
+        }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -204,8 +200,6 @@ class SupplierQuickCreateForm(forms.ModelForm):
         rnc_cedula = (cleaned_data.get("rnc_cedula") or "").strip()
 
         if rnc_cedula:
-            from apps.sales.validators import validate_rnc, validate_cedula
-
             normalized = re.sub(r"[\s\-]", "", rnc_cedula)
 
             if id_type == Supplier.IdType.RNC:
@@ -214,11 +208,7 @@ class SupplierQuickCreateForm(forms.ModelForm):
                         "rnc_cedula", _("El RNC debe tener exactamente 9 dígitos.")
                     )
                 else:
-                    ok, msg = validate_rnc(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Supplier.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
@@ -226,11 +216,7 @@ class SupplierQuickCreateForm(forms.ModelForm):
                         "rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos.")
                     )
                 else:
-                    ok, msg = validate_cedula(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
         return cleaned_data
 
@@ -247,6 +233,10 @@ class PurchaseItemQuickCreateForm(forms.ModelForm):
     class Meta:
         model = _Item
         fields = ["name", "unit", "unit_price", "itbis_rate"]
+        widgets = {
+            "unit": TomSelect(placeholder="Unidad…"),
+            "itbis_rate": ItbisSelect(),
+        }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -276,8 +266,8 @@ class PurchaseOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "expected_date": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": FlatpickrDateInput(),
+            "expected_date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
         }
 
@@ -342,9 +332,10 @@ class SupplierInvoiceForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": FlatpickrDateInput(),
+            "due_date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
+            "currency": TomSelect(placeholder="Moneda…"),
         }
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -431,6 +422,7 @@ class PurchaseDocumentItemForm(forms.ModelForm):
             ),
             "quantity": forms.NumberInput(attrs={"step": "0.0001", "min": "0.0001"}),
             "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "itbis_rate": ItbisSelect(),
         }
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -506,8 +498,9 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
         model = SupplierPayment
         fields = ["supplier", "date", "method", "reference", "notes"]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date"}),
+            "date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
+            "method": TomSelect(placeholder="Método…"),
         }
 
     def __init__(self, *args, organization=None, **kwargs):

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from apps.accounts.models import Membership
@@ -215,6 +216,47 @@ class TestSupplierForm:
         assert response.status_code == 200
         assert "default_ncf_type" not in content
         assert content.index("Dirección") < content.index("Contacto")
+
+
+    def test_supplier_form_accepts_rnc_without_check_digit_validation(self):
+        org = OrganizationFactory()
+
+        form = SupplierForm(
+            data={
+                "name": "Proveedor Sin Validar Digito",
+                "id_type": "RNC",
+                "rnc_cedula": "130461550",
+                "email": "",
+                "phone": "",
+                "contact_name": "",
+                "address": "",
+                "city": "",
+                "payment_term": "",
+                "credit_limit": "",
+                "notes": "",
+            },
+            organization=org,
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["rnc_cedula"] == "130461550"
+
+    def test_supplier_model_accepts_rnc_without_check_digit_validation(self):
+        supplier = SupplierFactory.build(
+            organization=OrganizationFactory(),
+            rnc_cedula="130461550",
+        )
+
+        supplier.full_clean()
+
+    def test_supplier_model_rejects_rnc_with_wrong_length(self):
+        supplier = SupplierFactory.build(
+            organization=OrganizationFactory(),
+            rnc_cedula="12345678",
+        )
+
+        with pytest.raises(ValidationError):
+            supplier.full_clean()
 
 
 @pytest.mark.django_db

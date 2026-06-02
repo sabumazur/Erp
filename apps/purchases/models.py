@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 from django.contrib.postgres.indexes import GinIndex
@@ -85,9 +86,28 @@ class Supplier(ERPBaseModel):
 
     def clean(self):
         super().clean()
-        from apps.sales.validators import validate_rnc_cedula
-        if self.rnc_cedula:
-            validate_rnc_cedula(self.rnc_cedula, id_type=self.id_type)
+        if not self.rnc_cedula:
+            return
+
+        normalized = re.sub(r"[\s\-]", "", self.rnc_cedula.strip())
+
+        if self.id_type == self.IdType.RNC:
+            if not re.fullmatch(r"\d{9}", normalized):
+                raise ValidationError({
+                    "rnc_cedula": _("El RNC debe tener exactamente 9 dígitos numéricos.")
+                })
+            self.rnc_cedula = normalized
+        elif self.id_type == self.IdType.CEDULA:
+            if not re.fullmatch(r"\d{11}", normalized):
+                raise ValidationError({
+                    "rnc_cedula": _("La Cédula debe tener exactamente 11 dígitos numéricos.")
+                })
+            self.rnc_cedula = normalized
+        elif self.id_type in (self.IdType.PASAPORTE, self.IdType.EXTERIOR):
+            if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", self.rnc_cedula):
+                raise ValidationError({
+                    "rnc_cedula": _("Identificación inválida (4–20 caracteres alfanuméricos).")
+                })
 
     def delete(self, *args, **kwargs):
         has_documents = PurchaseDocument.objects.filter(supplier=self).exists()

@@ -15,13 +15,14 @@
     <p class="app-header-sub">{% trans "Órdenes de Compra" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-    </a>
+    <button type="submit" form="po-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 
-<form method="post">
+<form method="post" id="po-form">
   {% csrf_token %}
 
   <div class="app-table-wrap mb-3">
@@ -77,12 +78,6 @@
     </div>
   </div>
 
-  <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm btn-brand">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
-    </button>
-    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
-  </div>
 </form>
 
 {% include "purchases/partials/item_picker_modal.html" %}

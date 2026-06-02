@@ -180,12 +180,6 @@
   color: #111827;
   white-space: nowrap;
 }
-.dt-slate .amt .cur {
-  color: var(--muted-2);
-  font-weight: 500;
-  font-size: .74rem;
-  margin-right: 3px;
-}
 .dt-slate .amt.pos { color: var(--pos); }
 .dt-slate .amt.neg { color: var(--neg); }
 .dt-slate .amt.zero { color: var(--muted-2); }

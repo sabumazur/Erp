@@ -2,7 +2,7 @@
 {% comment %}
   Per-row partial for the supplier-invoice datatable — Refined Slate skin.
   Variable: row = SupplierInvoice. Opt-in via <div class="dt-slate"> on the list page.
-  Cell classes (docnum / cust / dt / amt / cur) are scoped in slate-list.css.
+  Cell classes (docnum / cust / dt / amt) are scoped in slate-list.css.
 {% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status="{{ row.status }}"
@@ -24,10 +24,17 @@
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
           <li><a class="dropdown-item" href="{% url 'purchases:supplier_invoice_detail' row.pk %}" data-action="view">
             <i class="bi bi-eye me-2"></i>{% trans "Ver" %}</a></li>
-          {% if row.status == 'DRAFT' %}
-          <li><a class="dropdown-item" href="{% url 'purchases:supplier_invoice_edit' row.pk %}" data-action="edit">
-            <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}</a></li>
-          {% endif %}
+          <li>
+            {% if row.status == 'DRAFT' %}
+              <a class="dropdown-item" href="{% url 'purchases:supplier_invoice_edit' row.pk %}" data-action="edit">
+                <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+              </a>
+            {% else %}
+              <span class="dropdown-item disabled" data-action="edit-disabled" aria-disabled="true">
+                <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+              </span>
+            {% endif %}
+          </li>
           {% if row.status == 'CANCELLED' %}
           <li>
             <form method="post" action="{% url 'purchases:supplier_invoice_reopen' row.pk %}">
@@ -53,7 +60,7 @@
   <td data-col="due_date"><span class="dt{% if row.status == 'OVERDUE' %} over{% endif %}">{{ row.due_date|date:"d/m/Y"|default:"—" }}</span></td>
 
   {# ── Total ──────────────────────────────────────────────── #}
-  <td data-col="total" class="text-end"><span class="amt"><span class="cur">RD$</span>{{ row.total|floatformat:2|intcomma }}</span></td>
+  <td data-col="total" class="text-end"><span class="amt">{{ row.total|floatformat:2|intcomma }}</span></td>
 
   {# ── Estado ─────────────────────────────────────────────── #}
   <td data-col="status" class="text-center">

@@ -10,6 +10,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
+from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
 from apps.items.models import Item as _Item
 from .models import (
     Customer,
@@ -20,7 +21,6 @@ from .models import (
     NCFSequence,
     PaymentTerm,
 )
-from .validators import validate_rnc, validate_cedula
 
 _PHONE_RE = re.compile(r"^\+?[\d\s.\-()+]{7,20}$")
 
@@ -50,6 +50,9 @@ class CustomerForm(forms.ModelForm):
         ]
         widgets = {
             "notes": forms.Textarea(attrs={"rows": 1}),
+            "id_type": TomSelect(placeholder="Tipo de ID…"),
+            "default_ncf_type": TomSelect(placeholder="NCF predeterminado…"),
+            "payment_term": TomSelect(placeholder="Condición de pago…"),
         }
 
     change_reason = forms.CharField(
@@ -147,11 +150,7 @@ class CustomerForm(forms.ModelForm):
                         _("El RNC debe tener exactamente 9 dígitos numéricos."),
                     )
                 else:
-                    ok, msg = validate_rnc(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Customer.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
@@ -160,11 +159,7 @@ class CustomerForm(forms.ModelForm):
                         _("La Cédula debe tener exactamente 11 dígitos numéricos."),
                     )
                 else:
-                    ok, msg = validate_cedula(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
                 if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
@@ -222,6 +217,9 @@ class CustomerQuickCreateForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ["name", "id_type", "rnc_cedula"]
+        widgets = {
+            "id_type": TomSelect(placeholder="Tipo de ID…"),
+        }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -241,21 +239,13 @@ class CustomerQuickCreateForm(forms.ModelForm):
                 if not re.fullmatch(r"\d{9}", normalized):
                     self.add_error("rnc_cedula", _("El RNC debe tener exactamente 9 dígitos numéricos."))
                 else:
-                    ok, msg = validate_rnc(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type == Customer.IdType.CEDULA:
                 if not re.fullmatch(r"\d{11}", normalized):
                     self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
                 else:
-                    ok, msg = validate_cedula(normalized)
-                    if not ok:
-                        self.add_error("rnc_cedula", msg)
-                    else:
-                        cleaned_data["rnc_cedula"] = normalized
+                    cleaned_data["rnc_cedula"] = normalized
 
             elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
                 if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
@@ -282,6 +272,10 @@ class ItemQuickCreateForm(forms.ModelForm):
     class Meta:
         model = _Item
         fields = ["name", "unit", "unit_price", "itbis_rate"]
+        widgets = {
+            "unit": TomSelect(placeholder="Unidad…"),
+            "itbis_rate": ItbisSelect(),
+        }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -350,10 +344,12 @@ class InvoiceForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "due_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "issue_date": FlatpickrDateInput(),
+            "due_date": FlatpickrDateInput(),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
+            "ncf_type": TomSelect(placeholder="Tipo NCF…"),
+            "payment_condition": TomSelect(placeholder="Condición…"),
         }
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
@@ -440,10 +436,11 @@ class QuotationForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "valid_until": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "issue_date": FlatpickrDateInput(),
+            "valid_until": FlatpickrDateInput(),
             "notes": forms.TextInput(),
             "terms": forms.TextInput(),
+            "payment_condition": TomSelect(placeholder="Condición…"),
         }
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
@@ -528,9 +525,11 @@ class SaleOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date", "id": "id_issue_date"}, format="%Y-%m-%d"),
-            "delivery_date": forms.DateInput(attrs={"type": "date", "id": "id_delivery_date"}, format="%Y-%m-%d"),
+            "issue_date": FlatpickrDateInput(),
+            "delivery_date": FlatpickrDateInput(),
             "notes": forms.TextInput(),
+            "department": TomSelect(placeholder="Departamento…"),
+            "payment_condition": TomSelect(placeholder="Condición…"),
         }
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
@@ -656,6 +655,7 @@ class ConsolidateForm(forms.Form):
     customer = forms.ModelChoiceField(
         queryset=Customer.objects.none(),
         label=_("Cliente"),
+        widget=TomSelect(placeholder="Cliente…"),
     )
     department = forms.ModelChoiceField(
         queryset=CustomerDepartment.objects.none(),
@@ -665,18 +665,20 @@ class ConsolidateForm(forms.Form):
         help_text=_(
             "Opcional — deje vacío para consolidar todas las órdenes del cliente."
         ),
+        widget=TomSelect(placeholder="Departamento…"),
     )
     period_start = forms.DateField(
         label=_("Desde"),
-        widget=forms.DateInput(attrs={"type": "date"}),
+        widget=FlatpickrDateInput(),
     )
     period_end = forms.DateField(
         label=_("Hasta"),
-        widget=forms.DateInput(attrs={"type": "date"}),
+        widget=FlatpickrDateInput(),
     )
     ncf_type = forms.ChoiceField(
         label=_("Tipo de comprobante"),
         choices=[(k, v) for k, v in SalesDocument._meta.get_field("ncf_type").choices],
+        widget=TomSelect(placeholder="Tipo NCF…"),
     )
 
     def __init__(self, organization=None, *args, **kwargs):
@@ -796,7 +798,7 @@ class InvoiceItemForm(forms.ModelForm):
                     "x-on:input": "recalc()",
                 }
             ),
-            "itbis_rate": forms.Select(
+            "itbis_rate": ItbisSelect(
                 attrs={
                     "class": "form-select form-select-sm",
                     "x-model": "rate",
@@ -890,8 +892,10 @@ class PaymentHeaderForm(forms.ModelForm):
         model = Payment
         fields = ["customer", "date", "method", "reference", "notes"]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1, "class": "form-control"}),
+            "customer": TomSelect(placeholder="Cliente…"),
+            "method": TomSelect(placeholder="Método…"),
         }
         error_messages = {
             "customer": {"required": _("El cliente es obligatorio.")},
@@ -908,7 +912,6 @@ class PaymentHeaderForm(forms.ModelForm):
         self.fields["customer"].empty_label = _("— Seleccione un cliente —")
         self.fields["customer"].widget.attrs.update(
             {
-                "class": "form-select",
                 "hx-get": reverse_lazy("sales:payment_outstanding_invoices"),
                 "hx-trigger": "change",
                 "hx-target": "#allocation-tbody",
@@ -916,7 +919,6 @@ class PaymentHeaderForm(forms.ModelForm):
                 "hx-include": "this",
             }
         )
-        self.fields["method"].widget.attrs["class"] = "form-select"
         self.fields["reference"].widget.attrs["class"] = "form-control"
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -944,8 +946,9 @@ class PaymentForm(forms.ModelForm):
         model = Payment
         fields = ["amount", "date", "method", "reference", "notes"]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date"}),
+            "date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
+            "method": TomSelect(placeholder="Método…"),
         }
         error_messages = {
             "amount": {"required": _("El monto es obligatorio.")},
@@ -983,10 +986,11 @@ class CreditNoteForm(forms.ModelForm):
         model = SalesDocument
         fields = ["ncf_type", "issue_date", "due_date", "notes", "terms"]
         widgets = {
-            "issue_date": forms.DateInput(attrs={"type": "date"}),
-            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "issue_date": FlatpickrDateInput(),
+            "due_date": FlatpickrDateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
             "terms": forms.Textarea(attrs={"rows": 1}),
+            "ncf_type": TomSelect(placeholder="Tipo NCF…"),
         }
         error_messages = {
             "ncf_type": {"required": _("El tipo de comprobante es obligatorio.")},
@@ -1018,6 +1022,10 @@ class NCFSequenceForm(forms.ModelForm):
         }
         help_texts = {
             "is_active": _("Disponible para asignar comprobantes al confirmar facturas."),
+        }
+        widgets = {
+            "ncf_type": TomSelect(placeholder="Tipo NCF…"),
+            "series": TomSelect(placeholder="Serie…"),
         }
 
     def __init__(self, *args, organization=None, **kwargs):

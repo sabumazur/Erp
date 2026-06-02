@@ -92,7 +92,7 @@ class TestCustomerViews:
         user, org, _ = make_member()
         login(client, user)
         set_active_org(client, org)
-        # Use a fixed known-valid RNC to avoid factory sequence producing invalid checksums.
+        # Use a fixed known-valid RNC to avoid factory sequence producing repeated digits.
         customer = CustomerFactory(organization=org, rnc_cedula="101234563", id_type="RNC")
         resp = client.post(
             reverse("sales:customer_edit", args=[customer.pk]),
@@ -587,15 +587,20 @@ class TestCustomerQuickCreateForm:
         form = self._form({"name": "Empresa X", "id_type": "RNC", "rnc_cedula": "101234563"})
         assert form.is_valid(), form.errors
 
+    def test_rnc_does_not_validate_check_digit(self):
+        form = self._form({"name": "Empresa X", "id_type": "RNC", "rnc_cedula": "130461550"})
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["rnc_cedula"] == "130461550"
+
     def test_missing_name(self):
         form = self._form({"id_type": "RNC", "rnc_cedula": "101234563"})
         assert not form.is_valid()
         assert "name" in form.errors
 
-    def test_invalid_rnc_checksum(self):
+    def test_repeated_rnc_is_valid_when_length_matches(self):
         form = self._form({"name": "X", "id_type": "RNC", "rnc_cedula": "000000000"})
-        assert not form.is_valid()
-        assert "rnc_cedula" in form.errors
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["rnc_cedula"] == "000000000"
 
     def test_duplicate_rnc_same_org(self):
         from apps.sales.tests.factories import CustomerFactory

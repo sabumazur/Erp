@@ -30,7 +30,7 @@
         maxOptions: null,
         allowEmptyOption: true,
         plugins: ["dropdown_input"],
-        dropdownParent: el.closest(".modal, dialog") ? "body" : null,
+        dropdownParent: el.closest(".modal, dialog, .app-table-wrap") ? "body" : null,
         placeholder: el.dataset.placeholder || "Seleccione…",
         render: makeRenderers(),
       });
@@ -45,6 +45,16 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () { initTom(document); });
+
+  // Bootstrap 5 modal focus-trap steals focus from Tom Select dropdowns appended to <body>
+  // (dropdownParent:"body"), causing the dropdown to close immediately on click.
+  // Our listener is registered before Bootstrap's (added on each modal show), so it
+  // fires first and stops Bootstrap from re-focusing the modal.
+  document.addEventListener("focusin", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".ts-dropdown")) {
+      e.stopImmediatePropagation();
+    }
+  });
 
   document.addEventListener("shown.bs.modal", function (e) { initTom(e.target); });
   document.addEventListener("hidden.bs.modal", function (e) { destroyIn(e.target); });

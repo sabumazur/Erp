@@ -2,7 +2,7 @@
 {% comment %}
   Per-row partial for the payment datatable — Refined Slate skin.
   Variable: row = Payment. Opt-in via <div class="dt-slate"> on the list page.
-  Cell classes (dt / cust / amt / cur / ref / alloc) are scoped in slate-list.css.
+  Cell classes (dt / cust / amt / ref / alloc) are scoped in slate-list.css.
 {% endcomment %}
 <tr data-pk="{{ row.pk }}"
     data-status="PAID"
@@ -41,7 +41,7 @@
 
   {# ── Monto ──────────────────────────────────────────────── #}
   <td data-col="amount" class="text-end">
-    <span class="amt"><span class="cur">RD$</span>{{ row.amount|floatformat:2|intcomma }}</span>
+    <span class="amt">{{ row.amount|floatformat:2|intcomma }}</span>
   </td>
 
   {# ── Referencia ─────────────────────────────────────────── #}

@@ -3,7 +3,7 @@
   Per-row partial for the quotation datatable — Refined Slate skin.
   Variable: row = SalesDocument (quotation).
   Opt-in: the list page wraps the datatable include in <div class="dt-slate">.
-  Cell classes (docnum / cust / rnc / dt / amt / cur) are scoped under .dt-slate
+  Cell classes (docnum / cust / rnc / dt / amt) are scoped under .dt-slate
   in static/css/slate-list.css, so this markup is inert elsewhere.
 {% endcomment %}
 <tr data-pk="{{ row.pk }}"
@@ -33,13 +33,17 @@
               <i class="bi bi-eye me-2"></i>{% trans "Ver" %}
             </a>
           </li>
-          {% if row.status == 'DRAFT' %}
           <li>
-            <a class="dropdown-item" href="{% url 'sales:quotation_edit' row.pk %}" data-action="edit">
-              <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
-            </a>
+            {% if row.status == 'DRAFT' %}
+              <a class="dropdown-item" href="{% url 'sales:quotation_edit' row.pk %}" data-action="edit">
+                <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+              </a>
+            {% else %}
+              <span class="dropdown-item disabled" data-action="edit-disabled" aria-disabled="true">
+                <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+              </span>
+            {% endif %}
           </li>
-          {% endif %}
         </ul>
       </div>
     </span>
@@ -64,7 +68,7 @@
 
   {# ── Total ──────────────────────────────────────────────── #}
   <td data-col="total" class="text-end">
-    <span class="amt"><span class="cur">RD$</span>{{ row.total|floatformat:2|intcomma }}</span>
+    <span class="amt">{{ row.total|floatformat:2|intcomma }}</span>
   </td>
 
   {# ── Estado ─────────────────────────────────────────────── #}

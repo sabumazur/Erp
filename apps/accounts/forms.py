@@ -1,5 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from apps.core.widgets import TomSelect
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, HTML, Row, Column
 from allauth.account.forms import SignupForm, ChangePasswordForm
@@ -37,6 +38,7 @@ class InvitationForm(forms.Form):
         label=_("Rol"),
         choices=Membership.Role.choices,
         initial=Membership.Role.MEMBER,
+        widget=TomSelect(placeholder="Rol…"),
     )
 
     def clean_email(self):

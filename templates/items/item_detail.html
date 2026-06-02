@@ -3,30 +3,6 @@
 
 {% block title %}{{ item }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 38%;
-  vertical-align: middle;
-}
-.app-panel-hd {
-  padding: 10px 14px 9px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 {# ── Page header ── #}
@@ -61,103 +37,77 @@
 <div class="row g-3">
 
   {# ── Main info ── #}
-  <div class="col-lg-8">
+  <div class="col-lg-8 d-flex flex-column gap-3">
 
-    {# Pricing metric cards #}
-    <div class="row g-2 mb-3">
-      <div class="col-sm-4">
-        <div class="app-metric-card">
-          <div class="app-metric-value num-pos">{{ item.unit_price|floatformat:2|intcomma }}</div>
-          <div class="app-metric-label">{% trans "Precio de venta" %}</div>
-        </div>
+    {# Pricing and taxes #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-tags" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Precios e impuestos" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Precio de venta" %}</span>
+        <span class="kv-v font-monospace num-pos">{{ item.unit_price|floatformat:2|intcomma }}</span>
       </div>
       {% if membership.is_admin %}
-      <div class="col-sm-4">
-        <div class="app-metric-card">
-          <div class="app-metric-value">{{ item.cost_price|floatformat:2|intcomma|default:"—" }}</div>
-          <div class="app-metric-label">{% trans "Precio de costo" %}</div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Precio de costo" %}</span>
+        <span class="kv-v font-monospace">
+          {{ item.cost_price|floatformat:2|intcomma|default:"—" }}
           {% if item.margin is not None %}
-            <div class="mt-1">
-              <span class="badge-soft badge-paid" style="font-size:.65rem">{% trans "Margen" %} {{ item.margin }}%</span>
-            </div>
+            <small>{% trans "Margen" %} {{ item.margin }}%</small>
           {% endif %}
-        </div>
+        </span>
       </div>
       {% endif %}
-      <div class="col-sm-4">
-        <div class="app-metric-card">
-          <div class="app-metric-value" style="line-height:1.6">
-            {% if item.itbis_rate == 'RATE_18' %}
-              <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
-            {% elif item.itbis_rate == 'RATE_16' %}
-              <span class="badge-soft badge-confirmed">{{ item.get_itbis_rate_display }}</span>
-            {% else %}
-              <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
-            {% endif %}
-          </div>
-          <div class="app-metric-label">{% trans "ITBIS" %}</div>
-        </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "ITBIS" %}</span>
+        <span class="kv-v v-type">{{ item.get_itbis_rate_display }}</span>
       </div>
-    </div>
+    </section>
 
-    {# Attributes table #}
-    <div class="app-table-wrap">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Unidad de medida" %}</th>
-            <td>{{ item.get_unit_display }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Tipo" %}</th>
-            <td>
-              {% if item.item_type == 'SALE' %}
-                <span class="badge-soft badge-paid">{{ item.get_item_type_display }}</span>
-              {% elif item.item_type == 'PURCHASE' %}
-                <span class="badge-soft badge-confirmed">{{ item.get_item_type_display }}</span>
-              {% else %}
-                <span class="badge-soft badge-sent">{{ item.get_item_type_display }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Estado" %}</th>
-            <td>
-              {% if item.is_active %}
-                <span class="badge-soft badge-paid">{% trans "Activo" %}</span>
-              {% else %}
-                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% if item.notes %}
-          <tr>
-            <th class="detail-key">{% trans "Notas internas" %}</th>
-            <td class="small text-muted">{{ item.notes }}</td>
-          </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+    {# Attributes #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-box-seam" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Atributos" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Unidad de medida" %}</span>
+        <span class="kv-v">{{ item.get_unit_display }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Tipo" %}</span>
+        <span class="kv-v v-type">{{ item.get_item_type_display }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Estado" %}</span>
+        <span class="kv-v {% if item.is_active %}num-pos{% else %}v-muted{% endif %}">
+          {% if item.is_active %}{% trans "Activo" %}{% else %}{% trans "Inactivo" %}{% endif %}
+        </span>
+      </div>
+      {% if item.notes %}
+      <div class="kv-note">{{ item.notes }}</div>
+      {% endif %}
+    </section>
   </div>
 
   {# ── Audit sidebar ── #}
-  <div class="col-lg-4">
-    <div class="app-table-wrap">
-      <div class="app-panel-hd">{% trans "Auditoría" %}</div>
-      <table class="table table-sm mb-0 table-detail">
-        <tbody>
-          <tr>
-            <td class="text-muted">{% trans "Creado" %}</td>
-            <td class="text-end font-monospace">{{ item.created_at|date:"d/m/Y H:i" }}</td>
-          </tr>
-          <tr>
-            <td class="text-muted">{% trans "Actualizado" %}</td>
-            <td class="text-end font-monospace">{{ item.updated_at|date:"d/m/Y H:i" }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="col-lg-4 d-flex flex-column gap-3">
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ item.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ item.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
   </div>
 
 </div>
