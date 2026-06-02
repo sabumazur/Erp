@@ -414,7 +414,6 @@ class InvoiceForm(forms.ModelForm):
             ),
             HTML('<hr class="my-3">'),
             Row(
-                Column("notes", css_class="col-md-6"),
                 Column("terms", css_class="col-md-6"),
             ),
         )
@@ -503,7 +502,6 @@ class QuotationForm(forms.ModelForm):
             ),
             HTML('<hr class="my-3">'),
             Row(
-                Column("notes", css_class="col-md-6"),
                 Column("terms", css_class="col-md-6"),
             ),
         )
@@ -616,8 +614,6 @@ class SaleOrderForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("delivery_date", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            "notes",
         )
 
 

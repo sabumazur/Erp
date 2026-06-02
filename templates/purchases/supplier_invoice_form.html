@@ -25,16 +25,27 @@
 <form method="post" id="si-form">
   {% csrf_token %}
 
-  <div class="app-table-wrap mb-3">
-    <div class="app-card-head">
-      {% trans "Datos de la factura" %}
+  {# ── Card 1 · Datos de la factura ─────────────────────────────────────── #}
+  <div class="app-table-wrap po-order-card mb-3">
+    <div class="app-card-head po-order-card-head">
+      <span class="po-order-card-title">
+        <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+        {% trans "Datos de la factura" %}
+      </span>
     </div>
-    <div class="p-3">{% crispy form %}</div>
+    <div class="po-order-card-body">{% crispy form %}</div>
   </div>
 
-  <div class="app-table-wrap doc-lines-card mb-3">
-    <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb">
-      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
+  {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
+  <div class="app-table-wrap po-lines-card mb-3">
+    <div class="app-card-head po-lines-head">
+      <span class="po-lines-title">{% trans "Líneas" %}</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="po-lines-count" id="po-line-count"></span>
+        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
+        </button>
+      </div>
     </div>
     <div>
       {{ formset.management_form }}
@@ -68,23 +79,60 @@
           </template>
         </table>
       </div>
-      <div class="po-lines-foot px-3 pb-3">
-        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
-          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
-        </button>
-      </div>
-      <div class="document-totals-footer">
-        <table class="table table-sm mb-0 document-totals-table">
-              <tr><td class="text-muted">{% trans "Subtotal" %}</td><td class="text-end font-monospace"><span id="grand-subtotal">0.00</span></td></tr>
-              <tr><td class="text-muted">{% trans "ITBIS 18%" %}</td><td class="text-end font-monospace"><span id="grand-itbis18">0.00</span></td></tr>
-              <tr><td class="text-muted">{% trans "ITBIS 16%" %}</td><td class="text-end font-monospace"><span id="grand-itbis16">0.00</span></td></tr>
-              <tr style="border-top:2px solid #1e2130">
-                <td class="fw-bold">{% trans "Total" %}</td>
-                <td class="text-end font-monospace fw-bold fs-5"><span id="grand-total">0.00</span></td>
-              </tr>
-        </table>
+    </div>
+  </div>
+
+  {# ── Bottom · Notas (accordion) + Resumen (totals card) ──────────────── #}
+  <div class="po-bottom-grid mb-3">
+
+    <div class="po-notes-acc"
+         x-data="{ open: {% if form.notes.value %}true{% else %}false{% endif %},
+                   has: {% if form.notes.value %}true{% else %}false{% endif %} }"
+         :class="{ open }">
+      <button type="button" class="po-notes-trigger" @click="open = !open"
+              :aria-expanded="open.toString()">
+        <span class="po-notes-ico"><i class="bi bi-sticky" aria-hidden="true"></i></span>
+        <span class="po-notes-txt">
+          <span class="po-notes-title">{% trans "Notas" %}</span>
+          <span class="po-notes-hint">{% trans "Instrucciones o referencias internas" %}</span>
+        </span>
+        <span class="po-notes-badge" x-show="has" x-cloak>{% trans "Nota agregada" %}</span>
+        <i class="bi bi-chevron-down po-notes-chev" aria-hidden="true"></i>
+      </button>
+      <div class="po-notes-panel">
+        <div class="po-notes-panel-inner"
+             @input="has = ($event.target.value || '').trim().length > 0">
+          {{ form.notes }}
+          {% if form.notes.errors %}
+            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+          {% endif %}
+        </div>
       </div>
     </div>
+
+    <div class="po-totals-card">
+      <div class="po-totals-head">
+        <i class="bi bi-calculator" aria-hidden="true"></i>
+        <span>{% trans "Resumen" %}</span>
+      </div>
+      <div class="po-tot-row">
+        <span class="po-tot-k">{% trans "Subtotal" %}</span>
+        <span class="po-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
+      </div>
+      <div class="po-tot-row">
+        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">18%</span></span>
+        <span class="po-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
+      </div>
+      <div class="po-tot-row">
+        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">16%</span></span>
+        <span class="po-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
+      </div>
+      <div class="po-tot-row po-tot-row--grand">
+        <span class="po-tot-k">{% trans "Total" %}</span>
+        <span class="po-tot-v font-monospace"><span id="grand-total">0.00</span></span>
+      </div>
+    </div>
+
   </div>
 
 </form>
@@ -96,6 +144,27 @@
 <script>
 window.ITEM_QUICK_CREATE_URL     = "{% url 'purchases:item_quick_create' %}";
 window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}";
+
+(function () {
+  function syncCount() {
+    var el = document.getElementById("po-line-count");
+    if (!el) return;
+    var rows = document.querySelectorAll('#item-tbody tr.item-row-main');
+    var n = 0;
+    rows.forEach(function (r) {
+      var del = r.querySelector('[name$="-DELETE"]');
+      if (!(del && del.checked) && r.style.display !== "none") n++;
+    });
+    el.textContent = n + (n === 1 ? " línea" : " líneas");
+  }
+  document.addEventListener("DOMContentLoaded", syncCount);
+  document.body.addEventListener("htmx:afterSwap", syncCount);
+  document.addEventListener("click", function (e) {
+    if (e.target.closest('[onclick*="deleteRow"]') || e.target.closest('[data-add-line]')) {
+      setTimeout(syncCount, 50);
+    }
+  });
+})();
 </script>
 {% include "sales/partials/item_js.html" %}
 

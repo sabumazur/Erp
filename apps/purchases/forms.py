@@ -378,7 +378,6 @@ class SupplierInvoiceForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("due_date", css_class="col-md-4"),
             ),
-            Row(Column("notes", css_class="col-md-12")),
         )
 
 
