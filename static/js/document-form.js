@@ -44,6 +44,29 @@
     recalcGrandTotal();
   }
 
+  function addDocumentLine() {
+    var tmpl  = document.getElementById("empty-item-row");
+    var tbody = document.getElementById("item-tbody");
+    var mgmt  = document.querySelector('[name$="-TOTAL_FORMS"]');
+    if (!tmpl || !tbody || !mgmt) return;
+
+    var idx  = parseInt(mgmt.value, 10);
+    var html = tmpl.innerHTML.replace(/__prefix__/g, String(idx));
+
+    var temp = document.createElement("tbody");
+    temp.innerHTML = html;
+    var row = temp.firstElementChild;
+    if (!row) return;
+
+    tbody.appendChild(row);
+    mgmt.value = String(idx + 1);
+
+    if (typeof Alpine !== "undefined") {
+      Alpine.initTree(row);
+    }
+    recalcGrandTotal();
+  }
+
   function recalcGrandTotal() {
     var rateMap = { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 };
     var subtotal = 0;
@@ -138,9 +161,8 @@
   function initInvoiceItemHtmx() {
     document.body.addEventListener("htmx:afterSwap", function (e) {
       if (e.detail.target && e.detail.target.id === "item-tbody") {
-        var descRow = e.detail.target.lastElementChild;
-        var mainRow = descRow && descRow.previousElementSibling;
-        if (mainRow && typeof Alpine !== "undefined") Alpine.initTree(mainRow);
+        var newRow = e.detail.target.lastElementChild;
+        if (newRow && typeof Alpine !== "undefined") Alpine.initTree(newRow);
       }
       recalcGrandTotal();
     });
@@ -174,4 +196,9 @@
   window.initInvoiceItemHtmx = initInvoiceItemHtmx;
   window.initCustomerDefaults = initCustomerDefaults;
   window.initIssueDateDeliverySync = initIssueDateDeliverySync;
+  window.addDocumentLine = addDocumentLine;
+
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-add-line]")) addDocumentLine();
+  });
 })();
