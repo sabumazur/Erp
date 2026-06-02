@@ -1,4 +1,10 @@
 {% load i18n %}
+{% comment %} 
+   Item picker rows — Option A (catalog variant)
+   replaces sales/partials/item_picker_results.html
+   Single click highlights (itemPickerHighlight); double click / Seleccionar
+   confirms (itemPickerConfirm). All data-* hooks preserved.
+{% endcomment %}
 {% if items %}
   {% for item in items %}
   <tr class="item-picker-row"
@@ -8,18 +14,19 @@
       data-unit-price="{{ item.unit_price }}"
       data-itbis-rate="{{ item.itbis_rate }}"
       onclick="itemPickerHighlight(this)"
-      ondblclick="itemPickerConfirm()"
-      style="cursor:pointer">
-    <td class="small font-monospace">{{ item.code|default:"-" }}</td>
-    <td>{{ item.name }}</td>
-    <td class="picker-unit-cell">{{ item.get_unit_display }}</td>
-    <td class="text-end">{{ item.unit_price }}</td>
+      ondblclick="itemPickerConfirm()">
+    <td class="picker-code">{{ item.code|default:"—" }}</td>
+    <td><span class="picker-name">{{ item.name }}</span></td>
+    <td class="picker-unit-cell"><span class="picker-unit">{{ item.get_unit_display }}</span></td>
+    <td><span class="picker-price">{{ item.unit_price }}</span></td>
   </tr>
   {% endfor %}
 {% else %}
   <tr>
-    <td colspan="4" class="text-center text-muted py-4">
-      <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron artículos." %}
+    <td colspan="4">
+      <div class="picker-empty">
+        <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron artículos." %}
+      </div>
     </td>
   </tr>
 {% endif %}

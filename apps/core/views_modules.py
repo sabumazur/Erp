@@ -34,10 +34,10 @@ class ModuleListView(ModuleStaffMixin, DataTableMixin, TemplateView):
     template_name = "core/module_list.html"
 
     dt_columns = [
-        DTColumn("slug",      _("Slug"),   sortable=True),
-        DTColumn("name",      _("Nombre"), sortable=True),
-        DTColumn("icon",      _("Ícono"),  sortable=False),
-        DTColumn("is_active", _("Estado"), sortable=True),
+        DTColumn("slug",      _("SLUG"),   sortable=True),
+        DTColumn("name",      _("NOMBRE"), sortable=True),
+        DTColumn("icon",      _("ÍCONO"),  sortable=False),
+        DTColumn("is_active", _("ESTADO"), sortable=True),
     ]
     dt_default_sort = "name"
     dt_url = "core:module_list"

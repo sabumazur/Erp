@@ -13,7 +13,7 @@ from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFa
 from apps.core.models import Module
 from apps.items.tests.factories import ItemFactory
 from apps.sales.forms import CustomerForm, InvoiceItemForm, SaleOrderForm
-from apps.sales.models import SalesDocument
+from apps.sales.models import CustomerDepartment, SalesDocument
 from apps.sales.services import NCFService
 from apps.sales.tests.factories import (
     CustomerFactory, SalesDocumentFactory, SalesDocumentItemFactory, NCFSequenceFactory,
@@ -477,6 +477,51 @@ class TestSaleOrderFormView:
         form = SaleOrderForm(organization=OrganizationFactory())
 
         assert form.initial["delivery_date"] == date.today()
+
+    def test_customer_field_is_plain_hidden_input(self):
+        form = SaleOrderForm(organization=OrganizationFactory())
+        attrs = form.fields["customer"].widget.attrs
+
+        assert attrs["id"] == "id_customer"
+        assert "hx-get" not in attrs
+        assert "hx-target" not in attrs
+
+    def test_department_options_are_scoped_to_selected_customer(self, client):
+        user, org, _ = make_member()
+        login(client, user)
+        set_active_org(client, org)
+        customer = CustomerFactory(organization=org)
+        other_customer = CustomerFactory(organization=org)
+        dept = CustomerDepartment.objects.create(
+            organization=org,
+            customer=customer,
+            name="Sucursal Norte",
+            is_active=True,
+        )
+        CustomerDepartment.objects.create(
+            organization=org,
+            customer=other_customer,
+            name="Sucursal Sur",
+            is_active=True,
+        )
+        CustomerDepartment.objects.create(
+            organization=org,
+            customer=customer,
+            name="Sucursal Inactiva",
+            is_active=False,
+        )
+
+        resp = client.get(
+            reverse("sales:departments_for_customer"),
+            {"customer": customer.pk},
+        )
+
+        assert resp.status_code == 200
+        content = resp.content.decode()
+        assert f'value="{dept.pk}"' in content
+        assert "Sucursal Norte" in content
+        assert "Sucursal Sur" not in content
+        assert "Sucursal Inactiva" not in content
 
     @pytest.mark.parametrize("view_name", ["sale_order_create", "sale_order_edit"])
     def test_issue_date_change_updates_delivery_date_on_create_and_edit(self, client, view_name):

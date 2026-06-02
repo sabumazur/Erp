@@ -122,13 +122,6 @@
       <div class="kv-card-head">
         <i class="bi bi-diagram-3" aria-hidden="true"></i>
         <span class="kv-card-title">{% trans "Departamentos de entrega" %}</span>
-        <button type="button" class="kv-card-act"
-                hx-get="{% url 'sales:department_create' customer.pk %}"
-                hx-target="#dept-modal-body"
-                hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Nuevo departamento" %}';
-                                      bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
-          <i class="bi bi-plus-lg" aria-hidden="true"></i> {% trans "Nuevo" %}
-        </button>
       </div>
       <div id="dept-table-wrapper">
         {% include "sales/partials/department_table.html" with departments=departments customer=customer %}

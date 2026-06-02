@@ -1,20 +1,26 @@
 {% load i18n %}
+{% comment %} 
+   Supplier picker rows — Option A  ·  replaces
+   purchases/partials/supplier_picker_results.html
+   Adds avatar (single initial; colour rotates via CSS :nth-child).
+ {% endcomment %}
 {% for supplier in suppliers %}
 <tr class="supplier-picker-row"
     data-pk="{{ supplier.pk }}"
     data-name="{{ supplier.name|escapejs }}"
     data-rnc-cedula="{{ supplier.rnc_cedula|escapejs }}"
-    onclick="supplierPickerSelect('{{ supplier.pk }}', '{{ supplier.name|escapejs }}', '{{ supplier.rnc_cedula|escapejs }}')"
-    style="cursor:pointer">
-  <td>{{ supplier.name }}</td>
-  <td class="font-monospace small">{{ supplier.rnc_cedula|default:"-" }}</td>
-  <td class="d-none d-md-table-cell">{{ supplier.email|default:"-" }}</td>
-  <td class="d-none d-md-table-cell">{{ supplier.phone|default:"-" }}</td>
+    onclick="supplierPickerSelect('{{ supplier.pk }}', '{{ supplier.name|escapejs }}', '{{ supplier.rnc_cedula|escapejs }}')">
+  <td><span class="picker-name">{{ supplier.name }}</span></td>
+  <td class="picker-mono">{{ supplier.rnc_cedula|default:"—" }}</td>
+  <td class="t-email d-none d-md-table-cell">{{ supplier.email|default:"—" }}</td>
+  <td class="t-tel d-none d-md-table-cell picker-mono">{{ supplier.phone|default:"—" }}</td>
 </tr>
 {% empty %}
 <tr>
-  <td colspan="4" class="text-center text-muted py-4">
-    <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron proveedores." %}
+  <td colspan="4">
+    <div class="picker-empty">
+      <i class="bi bi-inbox me-1"></i>{% trans "No se encontraron proveedores." %}
+    </div>
   </td>
 </tr>
 {% endfor %}

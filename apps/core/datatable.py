@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 
 from django.core.paginator import Paginator
@@ -119,6 +120,8 @@ def build_datatable_context(
 
     return {
         "dt_columns": columns,
+        "dt_column_keys_json": json.dumps([c.key for c in columns]),
+        "dt_default_visible_json": json.dumps([c.key for c in columns if c.visible]),
         "dt_sort": sort if (explicit_sort or not q) else "",
         "dt_page_obj": page_obj,
         "dt_total": paginator.count,

@@ -19,7 +19,9 @@
   </div>
 </div>
 
-{% include "components/datatable/wrapper.html" %}
+<div class="dt-slate">
+  {% include "components/datatable/wrapper.html" %}
+</div>
 
 <template id="module-blank-tpl">
   {% include "core/partials/module_modal_form.html" with form=form action_url=create_url submit_label=submit_label %}

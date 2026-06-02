@@ -1,275 +1,201 @@
-/* ── Item Picker Modal ──────────────────────────────────────── */
+/* ============================================================================
+   picker.css — Customer / supplier picker modal  ·  Option A (refined table)
+   Drop-in replacement for the existing .picker-* rules.
+   Depends on: Manrope + IBM Plex Mono (already loaded in base.html),
+   Bootstrap 5 (.modal scaffolding) and .btn-brand (defined in app.css).
+   ========================================================================== */
 
-#itemPickerModal.fade .picker-dialog {
-  transform: translateY(-14px) scale(0.98);
-  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+:root{
+  --pk-ink:#1e2130;
+  --pk-ink-soft:#374151;
+  --pk-muted:#6b7280;
+  --pk-faint:#9ca3af;
+  --pk-line:#e8eaee;
+  --pk-line-soft:#f0f1f4;
+  --pk-bg-soft:#f9fafb;
+  --pk-blue:#185FA5;
+  --pk-blue-bg:#E6F1FB;
+  --pk-blue-line:#cfe1f1;
 }
 
-#itemPickerModal.show .picker-dialog {
-  transform: none !important;
+/* ── shell ─────────────────────────────────────────────────────────────── */
+.picker-dialog{ max-width:600px; }
+
+.picker-content{
+  border:0;
+  border-radius:18px;                 /* ← rounded modal */
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 24px 60px -12px rgba(16,18,28,.35),
+             0 8px 20px -8px rgba(16,18,28,.22);
+  font-family:'Manrope',system-ui,sans-serif;
+  color:var(--pk-ink);
 }
 
-#itemPickerModal .picker-dialog {
-  max-width: 650px;
-  margin-top: 6vh;
+/* ── header ────────────────────────────────────────────────────────────── */
+.picker-head{ padding:20px 22px 16px; gap:12px; }
+.picker-title{
+  font-size:1.04rem; font-weight:700; letter-spacing:-.01em; line-height:1.1;
+}
+.picker-sub{ margin:3px 0 0; font-size:.76rem; color:var(--pk-muted); }
+
+.picker-count{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.66rem; font-weight:600; color:var(--pk-muted);
+  padding:3px 9px; border-radius:999px;
+  background:var(--pk-bg-soft); border:1px solid var(--pk-line);
 }
 
-#itemPickerModal .picker-content {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+.picker-content .btn-close{
+  width:34px; height:34px; border-radius:9px; margin:0;
+  opacity:.55; transition:.15s; background-size:.7rem;
+}
+.picker-content .btn-close:hover{ opacity:1; background-color:var(--pk-line-soft); }
+
+/* ── search field ──────────────────────────────────────────────────────── */
+.picker-search-area{ padding:0 22px 14px; }
+.picker-field{
+  display:flex; align-items:center; gap:10px;
+  height:44px; padding:0 14px;
+  border:1.5px solid var(--pk-line); border-radius:11px;
+  background:var(--pk-bg-soft); transition:.15s;
+}
+.picker-field:focus-within{
+  border-color:var(--pk-blue); background:#fff;
+  box-shadow:0 0 0 3.5px rgba(24,95,165,.12);
+}
+.picker-field i{ color:var(--pk-faint); font-size:.95rem; }
+.picker-search-input,
+.picker-field input{
+  flex:1; border:0; background:transparent; outline:0; box-shadow:none !important;
+  font-family:'Manrope',sans-serif; font-size:.86rem; color:var(--pk-ink); padding:0;
+}
+.picker-field input::placeholder{ color:var(--pk-faint); }
+.picker-kbd{
+  font-family:'IBM Plex Mono',monospace; font-size:.66rem; color:var(--pk-muted);
+  background:#fff; border:1px solid var(--pk-line); border-bottom-width:2px;
+  border-radius:5px; padding:1px 6px;
 }
 
-.picker-head {
-  background: #f3f2f1;
-  border-bottom: 1px solid #edebe9;
-  padding: 10px 16px;
+/* ── table ─────────────────────────────────────────────────────────────── */
+.picker-list-wrap{ padding:0 10px; }
+.picker-table{ margin:0; }
+.picker-table thead th{
+  font-size:.6rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--pk-faint); border:0; border-bottom:1px solid var(--pk-line);
+  padding:7px 12px; background:transparent;
+}
+.picker-table thead th:last-child{ text-align:right; }
+
+.picker-list-wrap > .picker-scroll{ max-height:250px; overflow:auto; }
+
+.picker-table tbody{ }
+.picker-table tbody tr{
+  cursor:pointer; transition:background .12s, box-shadow .12s;
+}
+.picker-table tbody td{
+  border:0; padding:9px 12px; font-size:.78rem; color:var(--pk-muted);
+  vertical-align:middle; background:transparent;
+}
+/* round the row corners by rounding the first/last cell */
+.picker-table tbody tr td:first-child{ border-top-left-radius:10px; border-bottom-left-radius:10px; }
+.picker-table tbody tr td:last-child{ border-top-right-radius:10px; border-bottom-right-radius:10px; text-align:right; }
+
+.picker-table tbody tr:hover td{ background:var(--pk-bg-soft); }
+
+/* keyboard / pointer highlight — the picker JS sets aria-selected="true" */
+.picker-table tbody tr[aria-selected="true"] td{ background:var(--pk-blue-bg); }
+.picker-table tbody tr[aria-selected="true"] td{ box-shadow:inset 0 1.5px 0 var(--pk-blue-line),inset 0 -1.5px 0 var(--pk-blue-line); }
+.picker-table tbody tr[aria-selected="true"] td:first-child{ box-shadow:inset 1.5px 0 0 var(--pk-blue-line),inset 0 1.5px 0 var(--pk-blue-line),inset 0 -1.5px 0 var(--pk-blue-line); }
+.picker-table tbody tr[aria-selected="true"] td:last-child{ box-shadow:inset -1.5px 0 0 var(--pk-blue-line),inset 0 1.5px 0 var(--pk-blue-line),inset 0 -1.5px 0 var(--pk-blue-line); }
+
+/* name cell */
+.picker-name{ font-size:.82rem; font-weight:600; color:var(--pk-ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.picker-mono{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; }
+.picker-table tbody td.t-email{ max-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.picker-check{ color:var(--pk-blue); font-size:.9rem; margin-left:6px; }
+
+/* empty state */
+.picker-empty{ text-align:center; color:var(--pk-muted); padding:28px 12px; font-size:.82rem; }
+
+/* ── footer ────────────────────────────────────────────────────────────── */
+.picker-foot{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 22px; border-top:1px solid var(--pk-line); background:#fcfcfd;
+}
+.picker-foot-left{ display:flex; align-items:center; gap:7px;
+  font-size:.7rem; color:var(--pk-faint); }
+.picker-foot-right{ display:flex; align-items:center; gap:8px; }
+
+.picker-btn-ghost{
+  background:transparent; border:0; color:var(--pk-muted);
+  font-weight:600; font-size:.78rem; padding:8px 14px; border-radius:9px; transition:.15s;
+}
+.picker-btn-ghost:hover{ background:var(--pk-line-soft); color:var(--pk-ink); }
+
+/* keep brand button consistent inside the picker */
+.picker-foot .btn-brand{ border-radius:9px; font-size:.78rem; padding:8px 14px; }
+
+/* ── quick-create panel reuses header/footer; tidy the body ────────────── */
+#customer-picker-create-panel .picker-body,
+#supplier-picker-create-panel .picker-body,
+#item-picker-create-panel .picker-body{ padding:6px 24px 14px; }
+
+.picker-create-fields{
+  padding:16px;
+  border:1px solid var(--pk-line);
+  border-radius:12px;
+  background:var(--pk-bg-soft);
 }
 
-.picker-title {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #201f1e;
-  letter-spacing: 0.01em;
+.picker-create-fields .form-label{
+  margin-bottom:6px;
+  font-size:.74rem;
+  color:var(--pk-ink-soft);
 }
 
-.picker-search-area {
-  border-bottom: 1px solid #edebe9;
-  padding: 8px 12px;
+.picker-create-fields .form-control,
+.picker-create-fields .form-select{
+  min-height:36px;
+  border-color:var(--pk-line);
+  border-radius:9px;
+  background:#fff;
+  font-size:.82rem;
 }
 
-.picker-search-area .input-group-text {
-  background: transparent;
-  border-right: 0;
-  color: #605e5c;
+.picker-create-fields .form-control:focus,
+.picker-create-fields .form-select:focus{
+  border-color:var(--pk-blue);
+  box-shadow:0 0 0 3px rgba(24,95,165,.12);
 }
 
-.picker-search-input {
-  border-left: 0;
-  padding-left: 4px;
-  font-size: 0.8125rem;
+@media (max-width:575.98px){
+  .picker-table thead th.t-email,.picker-table tbody td.t-email,
+  .picker-table thead th.t-tel,.picker-table tbody td.t-tel{ display:none; }
 }
 
-.picker-search-input:focus {
-  border-color: #0078d4;
-  box-shadow: 0 0 0 1px #0078d4;
+/* ===========================================================================
+   ITEM PICKER additions — catalog rows (no avatar; code + unit badge + price)
+   Same shell, search, footer and rounded modal as the entity pickers.
+   ========================================================================== */
+.picker-ch-code{ width:108px; }
+.picker-ch-unit{ width:104px; }
+.picker-ch-price{ width:112px; }
+
+.picker-code{ font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--pk-muted); white-space:nowrap; }
+
+.picker-unit{
+  display:inline-block; font-size:.68rem; font-weight:600; color:var(--pk-ink-soft);
+  background:var(--pk-bg-soft); border:1px solid var(--pk-line);
+  border-radius:6px; padding:2px 9px; white-space:nowrap;
 }
 
-.picker-search-area .input-group:focus-within .input-group-text {
-  border-color: #0078d4;
-}
+.picker-price{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--pk-ink);
+  font-feature-settings:"tnum"; white-space:nowrap; }
 
-.picker-list-wrap {
-  max-height: 340px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #d2d0ce transparent;
-}
+/* item highlight is handled by the shared tr[aria-selected="true"] rule above */
 
-.picker-list-wrap::-webkit-scrollbar {
-  width: 4px;
-}
-
-.picker-list-wrap::-webkit-scrollbar-thumb {
-  background: #d2d0ce;
-  border-radius: 0;
-}
-
-#itemPickerModal .picker-table {
-  border-collapse: collapse;
-}
-
-#itemPickerModal .picker-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #f3f2f1;
-  border-bottom: 1px solid #edebe9 !important;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #605e5c;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  padding: 6px 8px;
-}
-
-#itemPickerModal .picker-table thead th:hover {
-  color: #0078d4;
-}
-
-#itemPickerModal .picker-table thead th .picker-sort-icon {
-  font-size: 0.58rem;
-  margin-left: 3px;
-  opacity: 0.35;
-}
-
-#itemPickerModal .picker-table thead th.picker-sort-active .picker-sort-icon {
-  opacity: 1;
-  color: #0078d4;
-}
-
-.picker-ch-code {
-  width: 130px;
-  white-space: nowrap;
-}
-
-.picker-ch-unit {
-  width: 76px;
-}
-
-.picker-ch-price {
-  width: 88px;
-}
-
-/* Row base */
-#itemPickerModal .picker-table tbody tr {
-  transition: background-color 0.08s;
-  cursor: pointer;
-}
-
-#itemPickerModal .picker-table tbody td {
-  padding: 5px 8px;
-  font-size: 0.8rem;
-  border-bottom: 1px solid #f3f2f1;
-  vertical-align: middle;
-}
-
-#itemPickerModal .picker-table tbody tr:hover {
-  background-color: #f3f2f1;
-}
-
-/* Code (No.) column — same typography, distinct color */
-#itemPickerModal .picker-table td:first-child {
-  color: #0078d4;
-  position: relative;
-  padding-left: 20px;
-  white-space: nowrap;
-}
-
-/* Arrow indicator space on all rows so text aligns */
-#itemPickerModal .picker-table thead th:first-child {
-  padding-left: 20px;
-}
-
-/* Selected row */
-#itemPickerModal .picker-table tbody tr[aria-selected="true"] td {
-  font-weight: 600;
-  background-color: #dbeafe;
-}
-
-
-#itemPickerModal .picker-table td[colspan] {
-  text-align: center;
-  padding: 48px 20px;
-  color: #94a3b8 !important;
-}
-
-#customerPickerModal .picker-table tbody tr[aria-selected="true"] td {
-  font-weight: 600;
-  background-color: #dbeafe;
-}
-
-/* Footer */
-.picker-foot {
-  background: #faf9f8;
-  border-top: 1px solid #edebe9;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.picker-foot-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.picker-foot-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-/* Inline pagination (inside footer) */
-.picker-pagination {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.picker-pagination .page-btn {
-  min-width: 26px;
-  height: 26px;
-  padding: 0 5px;
-  font-size: 0.75rem;
-  border: 1px solid #d2d0ce;
-  background: #fff;
-  color: #323130;
-  border-radius: 2px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.08s, border-color 0.08s;
-}
-
-.picker-pagination .page-btn:hover:not(:disabled) {
-  background: #f3f2f1;
-  border-color: #8a8886;
-}
-
-.picker-pagination .page-btn.active {
-  background: #0078d4;
-  border-color: #0078d4;
-  color: #fff;
-  font-weight: 600;
-}
-
-.picker-pagination .page-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.picker-count {
-  font-size: 0.68rem;
-  color: #8a8886;
-  white-space: nowrap;
-}
-
-/* New item link */
-.picker-new-btn {
-  font-size: 0.78rem;
-  color: #0078d4 !important;
-  padding: 3px 6px;
-  text-decoration: none !important;
-  border-radius: 2px;
-}
-
-.picker-new-btn:hover {
-  background: #f3f2f1;
-  color: #106ebe !important;
-}
-
-#picker-select-btn {
-  background-color: #0078d4 !important;
-  border-color: #0078d4 !important;
-  color: #fff !important;
-  border-radius: 2px;
-}
-
-#picker-select-btn:hover:not(:disabled) {
-  background-color: #106ebe !important;
-  border-color: #106ebe !important;
-}
-
-#picker-select-btn:disabled {
-  opacity: 0.4;
-}
+/* disabled primary button in the item footer */
+.picker-foot .btn-brand:disabled{ background:#c8cbd4; color:#fff; cursor:not-allowed; box-shadow:none; }

@@ -961,7 +961,6 @@ tr.dt-row-selected:hover > td {
 /* catalog (search) button — softer, accent on hover */
 .po-lines-card .item-row-main .btn-outline-secondary,
 .doc-lines-card .item-row-main .btn-outline-secondary {
-  width: 38px;
   border-color: #d7dde6;
   color: #475569;
   background: #f8fafc;

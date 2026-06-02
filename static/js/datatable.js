@@ -20,12 +20,27 @@
       init: function () {
         var self = this;
         var saved = localStorage.getItem("dt-visible-" + tableId);
-        this.visible = saved ? JSON.parse(saved) : defaultVisible.slice();
+        try {
+          this.visible = saved ? JSON.parse(saved) : defaultVisible.slice();
+          if (!Array.isArray(this.visible)) {
+            this.visible = [];
+          }
+          this.visible = this.visible.filter(function (key) {
+            return self.allCols.includes(key);
+          });
+          if (this.visible.length === 0) {
+            this.visible = defaultVisible.slice();
+            localStorage.removeItem("dt-visible-" + tableId);
+          }
+        } catch (e) {
+          this.visible = defaultVisible.slice();
+          localStorage.removeItem("dt-visible-" + tableId);
+        }
         this.$nextTick(function () { self.applyColVisibility(); });
 
         this._swapHandler = function (e) {
           if (e.detail.target && e.detail.target.id === "dt-results") {
-            self.applyColVisibility();
+            self.$nextTick(function () { self.applyColVisibility(); });
             self.clearSelection();
           }
         };
@@ -37,10 +52,14 @@
       },
 
       // ── Column visibility ────────────────────────────────────────────────
-      toggleCol: function (key) {
-        if (this.visible.includes(key)) {
+      toggleCol: function (key, checked) {
+        if (checked === true && !this.visible.includes(key)) {
+          this.visible.push(key);
+        } else if (checked === false) {
           this.visible = this.visible.filter(function (k) { return k !== key; });
-        } else {
+        } else if (checked === undefined && this.visible.includes(key)) {
+          this.visible = this.visible.filter(function (k) { return k !== key; });
+        } else if (checked === undefined) {
           this.visible.push(key);
         }
         localStorage.setItem("dt-visible-" + this.tableId, JSON.stringify(this.visible));
@@ -48,6 +67,7 @@
       },
       applyColVisibility: function () {
         var $el = this.$el;
+        if (!$el) return;
         this.allCols.forEach(function (col) {
           var show = this.visible.includes(col);
           $el.querySelectorAll('[data-col="' + col + '"]').forEach(function (el) {

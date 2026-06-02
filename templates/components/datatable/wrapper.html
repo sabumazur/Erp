@@ -24,11 +24,10 @@
     active_filter_count  int              badge count on the Filtros button
  {% endcomment %}
 <div id="dt-wrapper"
-     x-data="dtTable(
-       '{{ dt_id }}',
-       [{% for col in dt_columns %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-       [{% for col in dt_columns %}{% if col.visible %}'{{ col.key }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}]
-     )"
+     data-dt-id="{{ dt_id }}"
+     data-dt-columns="{{ dt_column_keys_json }}"
+     data-dt-default-visible="{{ dt_default_visible_json }}"
+     x-data="dtTable($el.dataset.dtId, JSON.parse($el.dataset.dtColumns), JSON.parse($el.dataset.dtDefaultVisible))"
      x-init="init()"
      tabindex="0"
      @keydown="handleKey($event)">
@@ -106,7 +105,7 @@
                      style="cursor:pointer">
                 <input type="checkbox" class="form-check-input mt-0 flex-shrink-0"
                        :checked="visible.includes('{{ col.key }}')"
-                       @change="toggleCol('{{ col.key }}')">
+                       @change="toggleCol('{{ col.key }}', $event.target.checked)">
                 <span class="small">{{ col.label }}</span>
               </label>
             </li>

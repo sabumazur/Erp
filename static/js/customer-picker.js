@@ -53,8 +53,7 @@
     var sel = document.getElementById("id_customer");
     if (sel) {
       sel.value = pk;
-      // Trigger HTMX change for SaleOrder department reload
-      htmx.trigger(sel, "change");
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
     }
     var display = document.getElementById("customer-display-text");
     if (display) {

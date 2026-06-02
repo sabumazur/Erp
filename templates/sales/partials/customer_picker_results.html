@@ -1,22 +1,27 @@
 {% load i18n %}
+{% comment %} 
+   Customer picker rows — Option A  ·  replaces sales/partials/customer_picker_results.html
+   Adds avatar (single initial; colour rotates via CSS :nth-child).
+ {% endcomment %}
 {% if customers %}
   {% for c in customers %}
-  <tr style="cursor:pointer"
-      data-pk="{{ c.pk }}"
+  <tr data-pk="{{ c.pk }}"
       onclick="customerPickerSelect('{{ c.pk }}', '{{ c.name|escapejs }}', '{{ c.rnc_cedula|escapejs }}', {{ c.default_ncf_type }})">
-    <td>{{ c.name }}</td>
-    <td class="text-muted small">{{ c.rnc_cedula }}</td>
-    <td class="text-muted small">{{ c.email|default:"—" }}</td>
-    <td class="text-muted small">{{ c.phone|default:"—" }}</td>
+    <td><span class="picker-name">{{ c.name }}</span></td>
+    <td class="picker-mono">{{ c.rnc_cedula|default:"—" }}</td>
+    <td class="t-email d-none d-md-table-cell">{{ c.email|default:"—" }}</td>
+    <td class="t-tel d-none d-md-table-cell picker-mono">{{ c.phone|default:"—" }}</td>
   </tr>
   {% endfor %}
 {% else %}
   <tr>
-    <td colspan="4" class="text-center text-muted py-3">
-      {% trans "No se encontraron clientes." %}
-      <a href="#" onclick="customerPickerShowCreate(); return false;" class="ms-1">
-        {% trans "¿Crear uno nuevo?" %}
-      </a>
+    <td colspan="4">
+      <div class="picker-empty">
+        {% trans "No se encontraron clientes." %}
+        <a href="#" onclick="customerPickerShowCreate(); return false;" class="ms-1">
+          {% trans "¿Crear uno nuevo?" %}
+        </a>
+      </div>
     </td>
   </tr>
 {% endif %}

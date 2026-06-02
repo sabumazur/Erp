@@ -1,117 +1,142 @@
 {% load i18n %}
+{% comment %}
+   Supplier picker modal — Option A (refined, rounded)
+   Drop-in replacement for purchases/partials/supplier_picker_modal.html
+   JS hooks preserved: supplierPickerShowCreate / supplierPickerShowSearch /
+   supplierPickerSelect / supplierPickerQuickCreate · #supplier-picker-search ·
+   #supplier-picker-tbody · htmx supplier_search endpoint.
+ {% endcomment %}
 <div class="modal fade"
      id="supplierPickerModal"
      tabindex="-1"
      aria-labelledby="supplierPickerModalLabel"
      aria-hidden="true">
 
-  <div class="modal-dialog picker-dialog">
+  <div class="modal-dialog modal-dialog-centered picker-dialog">
     <div class="modal-content picker-content">
 
       <div id="supplier-picker-search-panel">
-        <div class="picker-head d-flex align-items-center justify-content-between">
-          <h6 class="picker-title mb-0" id="supplierPickerModalLabel">
-            {% trans "Seleccionar proveedor" %}
-          </h6>
+
+        <div class="picker-head d-flex align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="picker-title mb-0" id="supplierPickerModalLabel">
+              {% trans "Seleccionar proveedor" %}
+            </h6>
+            <p class="picker-sub">{% trans "Elige un proveedor existente o crea uno nuevo." %}</p>
+          </div>
+          {% if supplier_count %}
+          <span class="picker-count me-2">
+            <i class="bi bi-building" style="font-size:.72rem"></i>{{ supplier_count }}
+          </span>
+          {% endif %}
           <button type="button" class="btn-close" data-bs-dismiss="modal"
                   aria-label="{% trans 'Cerrar' %}"></button>
         </div>
 
         <div class="picker-search-area">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-transparent border-end-0">
-              <i class="bi bi-search" style="font-size:0.85rem"></i>
-            </span>
+          <div class="picker-field">
+            <i class="bi bi-search"></i>
             <input type="text"
                    id="supplier-picker-search"
-                   class="form-control border-start-0 ps-1 picker-search-input"
-                   placeholder="{% trans 'Nombre o RNC...' %}"
+                   class="picker-search-input"
+                   placeholder="{% trans 'Nombre, RNC o cédula…' %}"
                    autocomplete="off"
                    hx-get="{% url 'purchases:supplier_search' %}"
                    hx-trigger="input changed delay:300ms, load"
                    hx-target="#supplier-picker-tbody"
                    name="q">
+            <span class="picker-kbd">↑↓</span>
+            <span class="picker-kbd">↵</span>
           </div>
         </div>
 
         <div class="picker-list-wrap">
-          <table class="table table-sm picker-table table-hover mb-0" role="grid">
-            <thead class="table-light">
-              <tr>
-                <th>{% trans "Nombre" %}</th>
-                <th>{% trans "RNC / Cédula" %}</th>
-                <th class="d-none d-md-table-cell">{% trans "Correo" %}</th>
-                <th class="d-none d-md-table-cell">{% trans "Teléfono" %}</th>
-              </tr>
-            </thead>
-            <tbody id="supplier-picker-tbody"></tbody>
-          </table>
+          <div class="picker-scroll">
+            <table class="table picker-table mb-0" role="grid">
+              <thead>
+                <tr>
+                  <th>{% trans "Nombre" %}</th>
+                  <th>{% trans "RNC / Cédula" %}</th>
+                  <th class="t-email d-none d-md-table-cell">{% trans "Correo" %}</th>
+                  <th class="t-tel d-none d-md-table-cell">{% trans "Teléfono" %}</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-picker-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="picker-foot">
-          <div class="picker-foot-left"></div>
+          <div class="picker-foot-left">
+            <span class="picker-kbd">↵</span> {% trans "seleccionar" %}
+            <span class="mx-1">·</span>
+            <span class="picker-kbd">esc</span> {% trans "cerrar" %}
+          </div>
           <div class="picker-foot-right">
-            <button type="button"
-                    class="btn btn-sm btn-link picker-new-btn"
-                    onclick="supplierPickerShowCreate()">
-              <i class="bi bi-plus-lg"></i> {% trans "Nuevo proveedor" %}
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                    data-bs-dismiss="modal">
+            <button type="button" class="picker-btn-ghost" data-bs-dismiss="modal">
               {% trans "Cancelar" %}
+            </button>
+            <button type="button" class="btn btn-sm btn-brand"
+                    onclick="supplierPickerShowCreate()">
+              <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo proveedor" %}
             </button>
           </div>
         </div>
       </div>
 
       <div id="supplier-picker-create-panel" class="d-none">
-        <div class="picker-head d-flex align-items-center justify-content-between">
-          <h6 class="picker-title mb-0">{% trans "Nuevo proveedor" %}</h6>
+
+        <div class="picker-head d-flex align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="picker-title mb-0">{% trans "Nuevo proveedor" %}</h6>
+            <p class="picker-sub">{% trans "Registra los datos mínimos del proveedor." %}</p>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
                   aria-label="{% trans 'Cerrar' %}"></button>
         </div>
 
-        <div class="p-3">
-          <div class="mb-3">
-            <label class="form-label fw-semibold" for="qs-name">{% trans "Nombre / Razón social" %} <span class="text-danger">*</span></label>
-            <input type="text" class="form-control form-control-sm" id="qs-name"
-                   placeholder="{% trans 'Empresa S.R.L.' %}">
-            <div class="invalid-feedback d-block" id="qs-name-error"></div>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-5">
-              <label class="form-label fw-semibold" for="qs-id-type">{% trans "Tipo ID" %}</label>
-              <select class="form-select form-select-sm" id="qs-id-type">
-                <option value="RNC">RNC</option>
-                <option value="CED">{% trans "Cédula" %}</option>
-                <option value="PAS">{% trans "Pasaporte" %}</option>
-                <option value="EXT">{% trans "Ext." %}</option>
-              </select>
-              <div class="invalid-feedback d-block" id="qs-id-type-error"></div>
+        <div class="picker-body">
+          <div class="picker-create-fields">
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="qs-name">{% trans "Nombre / Razón social" %} <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="qs-name"
+                     placeholder="{% trans 'Empresa S.R.L.' %}">
+              <div class="invalid-feedback d-block" id="qs-name-error"></div>
             </div>
-            <div class="col-7">
-              <label class="form-label fw-semibold" for="qs-rnc-cedula">{% trans "RNC / Cédula" %}</label>
-              <input type="text" class="form-control form-control-sm" id="qs-rnc-cedula"
-                     placeholder="{% trans '9 dígitos (RNC)...' %}">
-              <div class="invalid-feedback d-block" id="qs-rnc-cedula-error"></div>
+            <div class="row g-3">
+              <div class="col-12 col-sm-5">
+                <label class="form-label fw-semibold" for="qs-id-type">{% trans "Tipo ID" %}</label>
+                <select class="form-select form-select-sm" id="qs-id-type">
+                  <option value="RNC">RNC</option>
+                  <option value="CED">{% trans "Cédula" %}</option>
+                  <option value="PAS">{% trans "Pasaporte" %}</option>
+                  <option value="EXT">{% trans "Ext." %}</option>
+                </select>
+                <div class="invalid-feedback d-block" id="qs-id-type-error"></div>
+              </div>
+              <div class="col-12 col-sm-7">
+                <label class="form-label fw-semibold" for="qs-rnc-cedula">{% trans "RNC / Cédula" %}</label>
+                <input type="text" class="form-control form-control-sm" id="qs-rnc-cedula"
+                       placeholder="{% trans '9 dígitos (RNC)…' %}">
+                <div class="invalid-feedback d-block" id="qs-rnc-cedula-error"></div>
+              </div>
             </div>
+            <div class="text-danger small mt-2" id="qs-non-field-errors"></div>
           </div>
-          <div class="text-danger small mb-2" id="qs-non-field-errors"></div>
         </div>
 
         <div class="picker-foot">
           <div class="picker-foot-left">
-            <button type="button" class="btn btn-sm btn-link"
+            <button type="button" class="picker-btn-ghost"
                     onclick="supplierPickerShowSearch()">
               <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
             </button>
           </div>
           <div class="picker-foot-right">
-            <button type="button" class="btn btn-sm btn-outline-secondary"
+            <button type="button" class="picker-btn-ghost"
                     data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
             <button type="button" class="btn btn-sm btn-brand"
                     id="qs-submit-btn"
-                   
                     onclick="supplierPickerQuickCreate()">
               <i class="bi bi-check-lg me-1"></i>{% trans "Crear y seleccionar" %}
             </button>
