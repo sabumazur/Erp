@@ -114,8 +114,8 @@ class DocumentLineItemFormMixin(forms.ModelForm):
                 "x-on:input": "recalc()",
             }
         )
-        self.fields["itbis_rate"].widget = ItbisSelect(
-            attrs={
+        self.fields["itbis_rate"].widget.attrs.update(
+            {
                 "class": "form-select form-select-sm",
                 "x-model": "rate",
                 "x-on:change": "recalc()",

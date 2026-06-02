@@ -64,6 +64,9 @@
     if (typeof Alpine !== "undefined") {
       Alpine.initTree(row);
     }
+    if (window.SabSysTom) {
+      window.SabSysTom.init(row);
+    }
     recalcGrandTotal();
   }
 
@@ -111,7 +114,13 @@
     if (!defaults) return;
 
     var condSel = document.querySelector('[name="payment_condition"]');
-    if (condSel && defaults.payment_condition) condSel.value = defaults.payment_condition;
+    if (condSel && defaults.payment_condition) {
+      if (condSel.tomselect) {
+        condSel.tomselect.setValue(defaults.payment_condition, true);
+      } else {
+        condSel.value = defaults.payment_condition;
+      }
+    }
 
     var daysDue = defaults.days_due || 0;
     if (daysDue > 0) {

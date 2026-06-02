@@ -40,7 +40,12 @@
   <div class="app-table-wrap po-lines-card mb-3">
     <div class="app-card-head po-lines-head">
       <span class="po-lines-title">{% trans "Líneas" %}</span>
-      <span class="po-lines-count" id="po-line-count"></span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="po-lines-count" id="po-line-count"></span>
+        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
+        </button>
+      </div>
     </div>
     <div>
       {{ formset.management_form }}
@@ -73,11 +78,6 @@
             {% include "components/_line_item_row.html" with form=formset.empty_form %}
           </template>
         </table>
-      </div>
-      <div class="po-lines-foot px-3 pb-3">
-        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
-          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
-        </button>
       </div>
     </div>
   </div>

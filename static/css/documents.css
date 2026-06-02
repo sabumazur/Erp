@@ -786,6 +786,7 @@ tr.dt-row-selected:hover > td {
 .po-lines-head.app-card-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 .po-lines-title {
@@ -907,7 +908,7 @@ tr.dt-row-selected:hover > td {
 .doc-lines-card .item-row-main > td {
   padding-top: 10px;
   padding-bottom: 6px;
-  vertical-align: middle;
+  vertical-align: top;
   border-bottom: 0;
 }
 
@@ -1159,6 +1160,9 @@ tr.dt-row-selected:hover > td {
 
 .doc-col-desc {
   min-width: 200px;
+}
+.doc-col-desc .form-control {
+  width: 100%;
 }
 
 .doc-line-code {
