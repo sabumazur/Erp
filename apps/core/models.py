@@ -1,6 +1,9 @@
 import uuid
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -194,3 +197,89 @@ class Notification(ERPBaseModel):
     @property
     def is_read(self):
         return self.read_at is not None
+
+
+# ── AbstractDocumentLineItem ──────────────────────────────────────────────────
+
+
+class AbstractDocumentLineItem(models.Model):
+    """Shared base for SalesDocumentItem and PurchaseDocumentItem.
+
+    Concrete subclasses must add:
+      - A FK to the parent document (e.g. ``document`` or ``purchase_document``)
+      - An optional FK to ``items.Item`` (with a subclass-specific related_name)
+      - A ``clean()`` that validates item.organization == parent.organization
+      - A ``Meta`` with verbose_name, ordering and app-specific constraint names
+    """
+
+    class ITBISRate(models.TextChoices):
+        EXEMPT = "EXEMPT", _("Exento (0%)")
+        RATE_0 = "RATE_0", _("Tasa 0% (exportación)")
+        RATE_16 = "RATE_16", _("ITBIS 16%")
+        RATE_18 = "RATE_18", _("ITBIS 18%")
+
+    RATE_VALUES = {
+        ITBISRate.EXEMPT: Decimal("0.00"),
+        ITBISRate.RATE_0: Decimal("0.00"),
+        ITBISRate.RATE_16: Decimal("0.16"),
+        ITBISRate.RATE_18: Decimal("0.18"),
+    }
+
+    description = models.CharField(max_length=500, verbose_name=_("descripción"))
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("1.0000"),
+        validators=[MinValueValidator(Decimal("0.0001"))],
+        verbose_name=_("cantidad"),
+    )
+    unit_price = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        verbose_name=_("precio unitario (sin ITBIS)"),
+    )
+    itbis_rate = models.CharField(
+        max_length=8,
+        choices=ITBISRate.choices,
+        default=ITBISRate.RATE_18,
+        verbose_name=_("tasa ITBIS"),
+    )
+
+    # Computed fields — stored for report generation
+    line_total = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("total línea (sin ITBIS)"),
+    )
+    itbis_amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("monto ITBIS"),
+    )
+    line_total_with_itbis = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name=_("total línea con ITBIS"),
+    )
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.description} × {self.quantity}"
+
+    def compute(self):
+        """Recompute line totals from quantity, unit_price and itbis_rate."""
+        rate = self.RATE_VALUES.get(self.itbis_rate, Decimal("0.00"))
+        self.line_total = (self.quantity * self.unit_price).quantize(Decimal("0.01"))
+        self.itbis_amount = (self.line_total * rate).quantize(Decimal("0.01"))
+        self.line_total_with_itbis = self.line_total + self.itbis_amount
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self.compute()
+        super().save(*args, **kwargs)
