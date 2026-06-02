@@ -37,11 +37,7 @@
   <div class="app-table-wrap mb-3">
     <div class="app-card-head app-card-head--row">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas" %}</span>
-      <button type="button" class="btn btn-outline-secondary btn-sm"
-              hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
-              hx-target="#item-tbody"
-              hx-swap="beforeend"
-              hx-on::after-request="recalcGrandTotal()">
+      <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
         <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
       </button>
     </div>
@@ -57,6 +53,7 @@
           <thead>
             <tr>
               <th style="width:44px"></th>
+              <th>{% trans "Descripción" %}</th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
               <th style="width:130px">{% trans "P. Unitario" %}</th>
               <th style="width:130px">{% trans "ITBIS" %}</th>
@@ -68,9 +65,12 @@
           </thead>
           <tbody id="item-tbody">
             {% for item_form in formset %}
-              {% include "sales/partials/item_row.html" with form=item_form index=forloop.counter0 %}
+              {% include "components/_line_item_row.html" with form=item_form %}
             {% endfor %}
           </tbody>
+          <template id="empty-item-row">
+            {% include "components/_line_item_row.html" with form=formset.empty_form %}
+          </template>
         </table>
       </div>
 
@@ -99,13 +99,48 @@
 
 </form>
 
-{% include "sales/partials/item_picker_modal.html" %}
+{% url 'sales:item_search' as item_search_url %}
+{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
 {% include "sales/partials/customer_picker_modal.html" %}
 
 <script>
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'sales:customer_quick_create' %}";
 window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
+
+(function () {
+  var url = "{% url 'sales:departments_for_customer' %}";
+
+  function refreshDepartmentOptions(customerId) {
+    var deptSel = document.getElementById('id_department');
+    if (!deptSel) return;
+
+    if (deptSel.tomselect) { deptSel.tomselect.destroy(); }
+    deptSel.value = '';
+
+    if (!customerId) {
+      deptSel.innerHTML = '<option value="">— {% trans "Sin departamento" %} —</option>';
+      if (window.SabSysTom) { window.SabSysTom.init(deptSel.parentElement); }
+      return;
+    }
+
+    fetch(url + '?customer=' + encodeURIComponent(customerId), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(function (response) { return response.text(); })
+    .then(function (html) {
+      deptSel.innerHTML = html;
+      if (window.SabSysTom) { window.SabSysTom.init(deptSel.parentElement); }
+    });
+  }
+
+  var customerInput = document.getElementById('id_customer');
+  if (customerInput) {
+    customerInput.addEventListener('change', function () {
+      refreshDepartmentOptions(this.value);
+    });
+  }
+})();
 
 (function () {
   var issueInput    = document.getElementById('id_issue_date');

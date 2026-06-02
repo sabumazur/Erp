@@ -35,10 +35,7 @@
   <div class="app-table-wrap mb-3">
     <div class="app-card-head app-card-head--row">
       <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Líneas de factura" %}</span>
-      <button type="button" class="btn btn-outline-secondary btn-sm"
-              hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
-              hx-target="#item-tbody"
-              hx-swap="beforeend">
+      <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
         <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
       </button>
     </div>
@@ -54,6 +51,7 @@
           <thead>
             <tr>
               <th style="width:44px"></th>
+              <th>{% trans "Descripción" %}</th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
               <th style="width:130px">{% trans "P. Unitario" %}</th>
               <th style="width:130px">{% trans "ITBIS" %}</th>
@@ -65,9 +63,12 @@
           </thead>
           <tbody id="item-tbody">
             {% for item_form in formset %}
-              {% include "sales/partials/item_row.html" with form=item_form index=forloop.counter0 %}
+              {% include "components/_line_item_row.html" with form=item_form %}
             {% endfor %}
           </tbody>
+          <template id="empty-item-row">
+            {% include "components/_line_item_row.html" with form=formset.empty_form %}
+          </template>
         </table>
       </div>
 
@@ -96,7 +97,8 @@
 
 </form>
 
-{% include "sales/partials/item_picker_modal.html" %}
+{% url 'sales:item_search' as item_search_url %}
+{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
 {% include "sales/partials/customer_picker_modal.html" %}
 
 <script>

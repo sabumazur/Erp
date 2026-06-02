@@ -571,7 +571,7 @@ class InvoiceItemRowView(ERPBaseViewMixin, View):
     def get(self, request):
         index = int(request.GET.get("form_index", 0))
         form = InvoiceItemForm(prefix=f"items-{index}", organization=request.organization)
-        return render(request, "sales/partials/item_row.html", {"form": form, "index": index})
+        return render(request, "components/_line_item_row.html", {"form": form})
 
 
 class RNCLookupView(ERPBaseViewMixin, View):

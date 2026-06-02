@@ -48,6 +48,7 @@
           <thead>
             <tr>
               <th style="width:44px"></th>
+              <th>{% trans "Descripción" %}</th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
               <th style="width:130px">{% trans "P. Unitario" %}</th>
               <th style="width:130px">{% trans "ITBIS" %}</th>
@@ -59,10 +60,18 @@
           </thead>
           <tbody id="item-tbody">
             {% for item_form in formset %}
-              {% include "purchases/partials/purchase_item_row.html" with form=item_form %}
+              {% include "components/_line_item_row.html" with form=item_form %}
             {% endfor %}
           </tbody>
+          <template id="empty-item-row">
+            {% include "components/_line_item_row.html" with form=formset.empty_form %}
+          </template>
         </table>
+      </div>
+      <div class="po-lines-foot px-3 pb-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
+        </button>
       </div>
       <div class="document-totals-footer">
         <table class="table table-sm mb-0 document-totals-table">
@@ -80,7 +89,8 @@
 
 </form>
 
-{% include "purchases/partials/item_picker_modal.html" %}
+{% url 'purchases:purchase_item_search' as item_search_url %}
+{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
 {% include "purchases/partials/supplier_picker_modal.html" %}
 
 <script>

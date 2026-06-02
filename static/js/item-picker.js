@@ -196,6 +196,8 @@
           ", qty = 1, rate = '" + (rate || "RATE_18") + "'");
       } catch (err) {}
     }
+    var codeEl = formRow.querySelector('.doc-line-code');
+    if (codeEl) codeEl.textContent = catalogTr.dataset.code || "";
     window.recalcGrandTotal();
   }
 
