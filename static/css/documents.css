@@ -962,6 +962,10 @@ tr.dt-row-selected:hover > td {
 .po-lines-card .item-row-main .btn-outline-secondary,
 .doc-lines-card .item-row-main .btn-outline-secondary {
   width: 38px;
+  height: calc(1.5em + .5rem + 2px);
+  font-size: .875rem;
+  padding-top: 0;
+  padding-bottom: 0;
   border-color: #d7dde6;
   color: #475569;
   background: #f8fafc;
