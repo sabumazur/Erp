@@ -10,7 +10,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
-from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
+from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from .models import (
@@ -438,8 +438,8 @@ class QuotationForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "valid_until": FlatpickrDateInput(),
-            "notes": forms.TextInput(),
-            "terms": forms.TextInput(),
+            "notes": AutosizeTextarea(attrs={"placeholder": "Instrucciones o referencias internas…"}),
+            "terms": AutosizeTextarea(attrs={"placeholder": "Términos y condiciones de la cotización…"}),
             "payment_condition": TomSelect(placeholder="Condición…"),
         }
         error_messages = {
@@ -503,6 +503,7 @@ class QuotationForm(forms.ModelForm):
             HTML('<hr class="my-3">'),
             Row(
                 Column("terms", css_class="col-md-6"),
+                Column("notes", css_class="col-md-6"),
             ),
         )
 

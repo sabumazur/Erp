@@ -82,35 +82,9 @@
     </div>
   </div>
 
-  {# ── Bottom · Notas (accordion) + Resumen (totals card) ──────────────── #}
-  <div class="po-bottom-grid mb-3">
-
-    <div class="po-notes-acc"
-         x-data="{ open: {% if form.notes.value %}true{% else %}false{% endif %},
-                   has: {% if form.notes.value %}true{% else %}false{% endif %} }"
-         :class="{ open }">
-      <button type="button" class="po-notes-trigger" @click="open = !open"
-              :aria-expanded="open.toString()">
-        <span class="po-notes-ico"><i class="bi bi-sticky" aria-hidden="true"></i></span>
-        <span class="po-notes-txt">
-          <span class="po-notes-title">{% trans "Notas" %}</span>
-          <span class="po-notes-hint">{% trans "Instrucciones o referencias internas" %}</span>
-        </span>
-        <span class="po-notes-badge" x-show="has" x-cloak>{% trans "Nota agregada" %}</span>
-        <i class="bi bi-chevron-down po-notes-chev" aria-hidden="true"></i>
-      </button>
-      <div class="po-notes-panel">
-        <div class="po-notes-panel-inner"
-             @input="has = ($event.target.value || '').trim().length > 0">
-          {{ form.notes }}
-          {% if form.notes.errors %}
-            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="po-totals-card">
+  {# ── Bottom · Resumen (totals card) ──────────────────────────────────── #}
+  <div class="d-flex justify-content-end mb-3">
+    <div class="po-totals-card" style="width:360px">
       <div class="po-totals-head">
         <i class="bi bi-calculator" aria-hidden="true"></i>
         <span>{% trans "Resumen" %}</span>
@@ -132,7 +106,6 @@
         <span class="po-tot-v font-monospace"><span id="grand-total">0.00</span></span>
       </div>
     </div>
-
   </div>
 
 </form>

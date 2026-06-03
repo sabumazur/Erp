@@ -59,6 +59,19 @@
     };
   })();
 
+  // Auto-grow textareas marked with .autosize-ta
+  ready(function () {
+    function initAutosize(el) {
+      function resize() { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
+      el.addEventListener("input", resize);
+      resize();
+    }
+    document.querySelectorAll(".autosize-ta").forEach(initAutosize);
+    document.addEventListener("htmx:afterSettle", function () {
+      document.querySelectorAll(".autosize-ta").forEach(initAutosize);
+    });
+  });
+
   window.SabSysCore = { getConfig: getConfig, ready: ready, parseJsonScript: parseJsonScript, escapeHtml: escapeHtml, formatMoney: formatMoney, setText: setText };
   window.getConfig = getConfig;
   window.parseJsonScript = parseJsonScript;
