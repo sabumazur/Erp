@@ -19,7 +19,7 @@
     dt_action_url        str              resolved URL for scoped/nested datatables
     dt_push_url          str              "false" for embedded datatables that should not push URLs
     dt_ribbon_template   str              path to ribbon actions partial (inside dt-ribbon)
-    dt_filter_template   str              path to filter-fields partial (offcanvas body)
+    dt_filter_template   str              path to filter-fields partial (dropdown body)
     filter               FilterSet        needed if dt_filter_template is set
     active_filter_count  int              badge count on the Filtros button
  {% endcomment %}
@@ -32,7 +32,7 @@
      tabindex="0"
      @keydown="handleKey($event)">
 
-  {# ── Filter form — wraps ribbon, search, hidden inputs, and offcanvas ───── #}
+  {# ── Filter form — wraps ribbon, search, hidden inputs, and filter dropdown ─ #}
   <form id="dt-form" method="get"
         {% if dt_action_url %}hx-get="{{ dt_action_url }}"{% else %}hx-get="{% url dt_url %}"{% endif %}
         hx-target="#dt-results"
@@ -59,16 +59,33 @@
                  placeholder="{{ dt_search_placeholder }}">
         </div>
 
-        {# Filter offcanvas trigger #}
+        {# Filter dropdown #}
         {% if dt_filter_template %}
-        <button type="button" class="btn btn-outline-secondary"
-                data-bs-toggle="offcanvas" data-bs-target="#dt-filter-offcanvas">
-          <i class="bi bi-funnel{% if active_filter_count %}-fill{% endif %} me-1"></i>
-          {% trans "Filtros" %}
-          {% if active_filter_count %}
-            <span class="badge bg-primary rounded-pill ms-1">{{ active_filter_count }}</span>
-          {% endif %}
-        </button>
+        <div class="dropdown">
+          <button type="button" class="btn btn-outline-secondary dt-filter-toggle"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                  title="{% trans 'Filtros' %}">
+            <i class="bi bi-funnel{% if active_filter_count %}-fill{% endif %} me-1"></i>
+            {% trans "Filtros" %}
+            {% if active_filter_count %}
+              <span class="badge bg-primary rounded-pill ms-1">{{ active_filter_count }}</span>
+            {% endif %}
+          </button>
+          <div class="dropdown-menu dropdown-menu-end dt-filter-menu p-3" @click.stop>
+            <div class="dt-filter-fields">
+              {% include dt_filter_template %}
+            </div>
+            <div class="dt-filter-actions border-top pt-2 mt-2">
+              <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-check-circle me-1"></i>{% trans "Aplicar filtros" %}
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm"
+                      onclick="dtClearFilters(this.closest('form'))">
+                <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
+              </button>
+            </div>
+          </div>
+        </div>
         {% endif %}
 
         {# Clear search + filters #}
@@ -146,32 +163,6 @@
         {% if pill.count is not None %}<span class="dt-pill-count">{{ pill.count }}</span>{% endif %}
       </a>
       {% endfor %}
-    </div>
-    {% endif %}
-
-    {# ── Filter offcanvas (populated by dt_filter_template) ────────────────── #}
-    {% if dt_filter_template %}
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="dt-filter-offcanvas"
-         aria-labelledby="dt-filter-offcanvas-label">
-      <div class="offcanvas-header border-bottom">
-        <h5 class="offcanvas-title" id="dt-filter-offcanvas-label">
-          <i class="bi bi-funnel me-2"></i>{% trans "Filtros" %}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-      </div>
-      <div class="offcanvas-body">
-        {% include dt_filter_template %}
-      </div>
-      <div class="p-3 border-top">
-        <div class="d-grid gap-2">
-          <button type="submit" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-check-circle me-1"></i>{% trans "Aplicar filtros" %}
-          </button>
-          <a href="{% url dt_url %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
-          </a>
-        </div>
-      </div>
     </div>
     {% endif %}
 

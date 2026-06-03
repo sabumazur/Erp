@@ -215,6 +215,49 @@
     htmx.trigger(form, "submit");
   }
 
+  function closeFilterDropdown(form) {
+    if (!window.bootstrap || !form) return;
+    var toggle = form.querySelector(".dt-filter-toggle[aria-expanded='true']");
+    if (!toggle) return;
+    var dropdown = bootstrap.Dropdown.getInstance(toggle) || new bootstrap.Dropdown(toggle);
+    dropdown.hide();
+  }
+
+  function dtClearFilters(form) {
+    if (!form || !window.htmx) return;
+
+    var search = form.querySelector('[name="q"]');
+    if (search) search.value = "";
+
+    var menu = form.querySelector(".dt-filter-menu");
+    if (menu) {
+      menu.querySelectorAll("input, select, textarea").forEach(function (field) {
+        if (!field.name || field.type === "hidden" || field.disabled) return;
+
+        if (field.tomselect) {
+          field.tomselect.clear(true);
+          field.tomselect.refreshItems();
+          return;
+        }
+
+        if (field._flatpickr) {
+          field._flatpickr.clear();
+          return;
+        }
+
+        if (field.type === "checkbox" || field.type === "radio") {
+          field.checked = false;
+        } else {
+          field.value = "";
+        }
+      });
+    }
+
+    var pageEl = form.querySelector("#dt-page-input");
+    if (pageEl) pageEl.value = "1";
+    htmx.trigger(form, "submit");
+  }
+
   function initDatatableFilters() {
     document.addEventListener("htmx:configRequest", function (e) {
       if (!e.detail.elt || e.detail.elt.id !== "dt-form") return;
@@ -226,11 +269,8 @@
     });
 
     document.addEventListener("htmx:afterRequest", function (e) {
-      if (!window.bootstrap || !e.detail.elt || e.detail.elt.id !== "dt-form") return;
-      var canvas = document.getElementById("dt-filter-offcanvas");
-      if (!canvas) return;
-      var oc = bootstrap.Offcanvas.getInstance(canvas);
-      if (oc) oc.hide();
+      if (!e.detail.elt || e.detail.elt.id !== "dt-form") return;
+      closeFilterDropdown(e.detail.elt);
     });
   }
 
@@ -238,5 +278,6 @@
   window.dtSort = dtSort;
   window.dtPage = dtPage;
   window.dtPageSize = dtPageSize;
+  window.dtClearFilters = dtClearFilters;
   window.initDatatableFilters = initDatatableFilters;
 })();

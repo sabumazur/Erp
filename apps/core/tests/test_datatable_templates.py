@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
 from django.core.paginator import Paginator
@@ -137,6 +138,60 @@ def test_column_visibility_dropdown_renders_bulk_controls_and_model_bound_checkb
     # checkboxes are pure x-model with no per-element @change handler.
     assert "commitVisible" not in html
     assert "toggleCol" not in html
+
+
+def test_filter_dropdown_replaces_offcanvas_and_renders_filter_partial():
+    page_obj = Paginator([], 10).page(1)
+
+    html = render_to_string(
+        "components/datatable/wrapper.html",
+        {
+            "dt_columns": [
+                DTColumn("name", "Nombre"),
+                DTColumn("status", "Estado"),
+            ],
+            "dt_column_keys_json": '["name", "status"]',
+            "dt_default_visible_json": '["name"]',
+            "dt_sort": "name",
+            "dt_page_obj": page_obj,
+            "dt_total": 0,
+            "dt_page_range": [1],
+            "dt_url": "items:item_list",
+            "dt_action_url": "/items/",
+            "dt_push_url": "false",
+            "dt_row_template": "items/partials/item_row.html",
+            "dt_filter_template": "items/partials/item_filters.html",
+            "dt_ribbon_template": "",
+            "dt_search_placeholder": "Buscar",
+            "dt_id": "test-items",
+            "dt_q": "",
+            "active_filter_count": 0,
+            "dt_status_pills": [],
+            "dt_active_status": "",
+            "dt_page_size": 10,
+            "dt_page_size_options": [10, 25],
+        },
+    )
+
+    assert 'class="dropdown-menu dropdown-menu-end dt-filter-menu p-3"' in html
+    assert "@click.stop" in html
+    assert "Aplicar filtros" in html
+    assert "Limpiar filtros" in html
+    assert "Tipo" in html
+    assert 'id="dt-filter-offcanvas"' not in html
+    assert 'data-bs-toggle="offcanvas"' not in html
+
+
+def test_filter_dropdown_height_stays_flexible_for_open_select_menus():
+    css = Path("static/css/components.css").read_text(encoding="utf-8")
+    tomselect_js = Path("static/js/init-tomselect.js").read_text(encoding="utf-8")
+
+    filter_fields_block = css.split(".dt-filter-fields {", 1)[1].split("}", 1)[0]
+
+    assert "overflow: visible;" in filter_fields_block
+    assert "max-height" not in filter_fields_block
+    assert ".dt-filter-menu .ts-dropdown" in css
+    assert ".dropdown-menu" not in tomselect_js
 
 
 def test_sales_datatable_money_cells_omit_currency_prefix():

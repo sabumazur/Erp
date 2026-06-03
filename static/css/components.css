@@ -423,16 +423,33 @@
   }
 }
 
-/* ── Filter offcanvas: size to content ───────────────────── */
-#dt-filter-offcanvas {
-  height: auto;
+/* ── Datatable filter dropdown ───────────────────────────── */
+.dt-filter-menu {
+  min-width: 320px;
+  max-width: min(420px, calc(100vw - 2rem));
 }
 
-#dt-filter-offcanvas .offcanvas-body {
+.dt-filter-fields {
+  overflow: visible;
+  padding-right: 2px;
+}
+
+.dt-filter-menu .ts-dropdown {
+  max-height: min(48vh, 360px);
   overflow-y: auto;
 }
 
-#dt-filter-offcanvas .btn {
+.dt-filter-menu .mb-3:last-child {
+  margin-bottom: 0 !important;
+}
+
+.dt-filter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dt-filter-actions .btn {
+  flex: 1 1 0;
   font-size: 0.8rem;
   padding: 4px 10px;
   border-radius: 4px;
