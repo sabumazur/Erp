@@ -5,6 +5,8 @@ from types import SimpleNamespace
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 
+from apps.core.datatable import DTColumn
+
 
 ROW_PK = "00000000-0000-0000-0000-000000000001"
 
@@ -93,6 +95,48 @@ def test_pagination_renders_on_single_page():
     assert 'class="dt-pagination d-inline-flex align-items-center gap-1"' in html
     assert "dt-page-btn-active" in html
     assert html.count("disabled") == 2
+
+
+def test_column_visibility_dropdown_renders_bulk_controls_and_model_bound_checkboxes():
+    page_obj = Paginator([], 10).page(1)
+
+    html = render_to_string(
+        "components/datatable/wrapper.html",
+        {
+            "dt_columns": [
+                DTColumn("name", "Nombre"),
+                DTColumn("status", "Estado"),
+            ],
+            "dt_column_keys_json": '["name", "status"]',
+            "dt_default_visible_json": '["name"]',
+            "dt_sort": "name",
+            "dt_page_obj": page_obj,
+            "dt_total": 0,
+            "dt_page_range": [1],
+            "dt_url": "items:item_list",
+            "dt_action_url": "/items/",
+            "dt_push_url": "false",
+            "dt_row_template": "items/partials/item_row.html",
+            "dt_filter_template": "",
+            "dt_ribbon_template": "",
+            "dt_search_placeholder": "Buscar",
+            "dt_id": "test-items",
+            "dt_q": "",
+            "active_filter_count": 0,
+            "dt_status_pills": [],
+            "dt_active_status": "",
+            "dt_page_size": 10,
+            "dt_page_size_options": [10, 25],
+        },
+    )
+
+    assert "Seleccionar todo" in html
+    assert "Anular selección" in html
+    assert 'x-model="visible"' in html
+    # Column visibility is driven reactively by a $watch on `visible`;
+    # checkboxes are pure x-model with no per-element @change handler.
+    assert "commitVisible" not in html
+    assert "toggleCol" not in html
 
 
 def test_sales_datatable_money_cells_omit_currency_prefix():

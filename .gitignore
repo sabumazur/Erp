@@ -35,6 +35,10 @@ Thumbs.db
 # Accidental pip install artifacts
 =*
 
+# Local prototypes / scratch artifacts
+tmp/
+static/previews/
+
 # Skills
 sabsys-feature.skill
 sabsys-feature/

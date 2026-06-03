@@ -6,7 +6,7 @@
 </div>
 <div class="mb-3">
   <label class="form-label small fw-semibold">{% trans "Método de pago" %}</label>
-  <select name="method" class="form-select form-select-sm">
+  <select name="method" class="form-select form-select-sm" data-tom="" data-placeholder="Todos…">
     <option value="">{% trans "Todos" %}</option>
     <option value="CASH" {% if request.GET.method == 'CASH' %}selected{% endif %}>{% trans "Efectivo" %}</option>
     <option value="CHECK" {% if request.GET.method == 'CHECK' %}selected{% endif %}>{% trans "Cheque" %}</option>

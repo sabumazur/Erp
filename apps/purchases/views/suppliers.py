@@ -178,7 +178,12 @@ class SupplierDetailView(ERPBaseViewMixin, View):
             ).exclude(status=PurchaseDocument.Status.CANCELLED)
             .order_by("-issue_date")
         )
+        from django.db.models import Sum
         total_invoiced = sum((inv.total for inv in invoices), Decimal("0.00"))
+        total_paid = SupplierPayment.objects.filter(
+            supplier=supplier, organization=request.organization
+        ).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
+        balance = total_invoiced - total_paid
         recent_payments = list(
             SupplierPayment.objects.filter(supplier=supplier, organization=request.organization)
             .prefetch_related("allocations__supplier_invoice")
@@ -192,6 +197,8 @@ class SupplierDetailView(ERPBaseViewMixin, View):
                 supplier=supplier,
                 invoices=invoices,
                 total_invoiced=total_invoiced,
+                total_paid=total_paid,
+                balance=balance,
                 recent_payments=recent_payments,
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

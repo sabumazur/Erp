@@ -3,32 +3,21 @@
 
 {% block title %}{{ invoice }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 35%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{{ invoice.encf|default:"Borrador" }}</h1>
-    <p class="app-header-sub">{% trans "Factura" %}{% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %} · {{ invoice.customer.name }}</p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'sales:invoice_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{{ invoice.encf|default:"Borrador" }}</h1>
+      <p class="app-header-sub">{% trans "Factura" %}{% if invoice.get_ncf_type_display %} · {{ invoice.get_ncf_type_display }}{% endif %} · {{ invoice.customer.name }}</p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
 
     {% if invoice.status == "DRAFT" %}
       <a href="{% url 'sales:invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
@@ -46,7 +35,9 @@
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
       </form>
 
     {% elif invoice.status == "CONFIRMED" %}
@@ -89,59 +80,117 @@
         </button>
       </form>
     {% endif %}
+
   </div>
 </div>
 
 <div class="row g-3">
 
-  {# ── Left: Document ── #}
-  <div class="col-lg-8">
+  {# ── Left column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
 
-    {# Meta info #}
-    <div class="app-table-wrap mb-3">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Cliente" %}</th>
-            <td>
-              {{ invoice.customer.name }}
-              {% if invoice.customer.rnc_cedula %}
-                <span class="text-muted small ms-1">· {{ invoice.customer.get_id_type_display }}: {{ invoice.customer.rnc_cedula }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
-            <td class="font-monospace">{{ invoice.issue_date|date:"d/m/Y" }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Vencimiento" %}</th>
-            <td class="font-monospace {% if invoice.status == 'OVERDUE' %}text-danger fw-semibold{% endif %}">
-              {{ invoice.due_date|date:"d/m/Y"|default:"—" }}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Condición de pago" %}</th>
-            <td>{{ invoice.get_payment_condition_display }}</td>
-          </tr>
-          {% if invoice.encf_modified %}
-          <tr>
-            <th class="detail-key">{% trans "NCF afectado" %}</th>
-            <td>
-              <a href="{% url 'sales:invoice_detail' invoice.encf_modified.pk %}"
-                 class="font-monospace text-decoration-none link-brand">
-                {{ invoice.encf_modified.encf }}
-              </a>
-            </td>
-          </tr>
+    {# Document & customer info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Cliente" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:customer_detail' invoice.customer.pk %}" class="v-link fw-semibold">
+            {{ invoice.customer.name }}
+          </a>
+          {% if invoice.customer.rnc_cedula %}
+            <small class="text-muted ms-1 font-monospace">· {{ invoice.customer.get_id_type_display }}: {{ invoice.customer.rnc_cedula }}</small>
           {% endif %}
-        </tbody>
-      </table>
-    </div>
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha de emisión" %}</span>
+        <span class="kv-v font-monospace">{{ invoice.issue_date|date:"d/m/Y" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Vencimiento" %}</span>
+        <span class="kv-v font-monospace {% if invoice.status == 'OVERDUE' %}num-neg{% endif %}">
+          {{ invoice.due_date|date:"d/m/Y"|default:"—" }}
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Condición de pago" %}</span>
+        <span class="kv-v">{{ invoice.get_payment_condition_display }}</span>
+      </div>
+      {% if invoice.encf_modified %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "NCF afectado" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:invoice_detail' invoice.encf_modified.pk %}"
+             class="v-link font-monospace fw-semibold">
+            {{ invoice.encf_modified.encf }}
+          </a>
+        </span>
+      </div>
+      {% endif %}
+      {% if invoice.status == "OVERDUE" %}
+      <div class="kv-alert">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        {% trans "Esta factura está vencida. El pago estaba pendiente al" %} {{ invoice.due_date|date:"d/m/Y" }}.
+      </div>
+      {% elif invoice.status == "CANCELLED" %}
+      <div class="kv-alert">
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+        {% trans "Esta factura fue anulada." %}
+      </div>
+      {% endif %}
+    </section>
 
-    {# Items table #}
-    <div class="app-table-wrap mb-3">
-      <table class="table table-sm mb-0">
+    {# Metrics strip #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-calculator" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen financiero" %}</span>
+      </div>
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Subtotal" %}</div>
+          <div class="kv-stat-n font-monospace">{{ invoice.subtotal|floatformat:2|intcomma }}</div>
+        </div>
+        {% if invoice.itbis_18 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 18%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ invoice.itbis_18|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        {% if invoice.itbis_16 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 16%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ invoice.itbis_16|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Total" %} {{ invoice.currency }}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ invoice.total|floatformat:2|intcomma }}</div>
+        </div>
+        {% if invoice.paid_amount %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Pagado" %}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ invoice.paid_amount|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Artículos" %}</div>
+          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    {# Line items #}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-list-ul" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Artículos" %}</span>
+      </div>
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Descripción" %}</th>
@@ -189,35 +238,39 @@
             <td class="text-end font-monospace">{{ invoice.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr>
+          <tr style="border-top:2px solid #e5e7eb">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
-            <td class="text-end font-monospace fw-bold">{{ invoice.total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-bold num-pos">{{ invoice.total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </section>
 
+    {# Notes & Terms #}
     {% if invoice.notes or invoice.terms %}
-    <div class="app-table-wrap mb-3">
-      <div class="app-card-head">
-        {% trans "Notas y condiciones" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Notas y condiciones" %}</span>
       </div>
-      <div class="p-3 small text-muted">
-        {% if invoice.notes %}<p class="mb-2">{{ invoice.notes }}</p>{% endif %}
-        {% if invoice.terms %}<p class="mb-0">{{ invoice.terms }}</p>{% endif %}
-      </div>
-    </div>
+      {% if invoice.notes %}
+      <div class="kv-note">{{ invoice.notes }}</div>
+      {% endif %}
+      {% if invoice.terms %}
+      <div class="kv-note">{{ invoice.terms }}</div>
+      {% endif %}
+    </section>
     {% endif %}
 
     {# Consolidated sale orders #}
     {% if consolidated_orders %}
-    <div class="app-table-wrap mb-3">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;display:flex;align-items:center;gap:8px">
-        <i class="bi bi-boxes"></i>
-        {% trans "Órdenes de venta consolidadas" %}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-boxes" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Órdenes de venta consolidadas" %}</span>
         <span class="badge-soft badge-default ms-1">{{ consolidated_orders|length }}</span>
       </div>
-      <table class="table table-sm mb-0">
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Número" %}</th>
@@ -230,28 +283,28 @@
           {% for o in consolidated_orders %}
           <tr>
             <td>
-              <a href="{% url 'sales:sale_order_detail' o.pk %}"
-                 class="font-monospace text-decoration-none link-brand">
+              <a href="{% url 'sales:sale_order_detail' o.pk %}" class="v-link font-monospace fw-semibold small">
                 {{ o.doc_number|default:"—" }}
               </a>
             </td>
             <td class="small text-muted">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
-            <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
-            <td class="text-end fw-semibold font-monospace">{{ o.total|floatformat:2|intcomma }}</td>
+            <td class="small text-muted">{{ o.signed_by|default:"—" }}</td>
+            <td class="text-end fw-semibold font-monospace small">{{ o.total|floatformat:2|intcomma }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-    </div>
+    </section>
     {% endif %}
 
     {# Payments applied #}
     {% if allocations %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Pagos aplicados" %}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Pagos aplicados" %}</span>
       </div>
-      <table class="table table-sm mb-0">
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Fecha" %}</th>
@@ -263,83 +316,88 @@
         <tbody>
           {% for alloc in allocations %}
           <tr>
-            <td class="small text-muted">{{ alloc.payment.date|date:"d/m/Y" }}</td>
-            <td>{{ alloc.payment.get_method_display }}</td>
-            <td class="text-muted small">{{ alloc.payment.reference|default:"—" }}</td>
-            <td class="text-end fw-semibold font-monospace num-pos">
-              {{ alloc.amount|floatformat:2|intcomma }}
-            </td>
+            <td class="small text-muted text-nowrap">{{ alloc.payment.date|date:"d/m/Y" }}</td>
+            <td class="small">{{ alloc.payment.get_method_display }}</td>
+            <td class="small text-muted font-monospace">{{ alloc.payment.reference|default:"—" }}</td>
+            <td class="text-end fw-semibold font-monospace num-pos">{{ alloc.amount|floatformat:2|intcomma }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-    </div>
+    </section>
     {% endif %}
 
   </div>
 
-  {# ── Right: Status sidebar ── #}
+  {# ── Right sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
 
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ invoice.total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Total" %} {{ invoice.currency }}</div>
-    </div>
+    {# Status card #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Estado del documento" %}</span>
+      </div>
+      <div class="p-3 pb-0">
+        {% include "sales/partials/status_badge.html" with status=invoice.status %}
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "e-NCF" %}</span>
+        <span class="kv-v font-monospace fw-semibold">{{ invoice.encf|default:"—" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Estado DGII" %}</span>
+        <span class="kv-v v-type">{{ invoice.get_dgii_status_display }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda" %}</span>
+        <span class="kv-v v-type">{{ invoice.currency }}</span>
+      </div>
+      {% if invoice.currency != "DOP" %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Tasa" %}</span>
+        <span class="kv-v font-monospace">{{ invoice.exchange_rate }}</span>
+      </div>
+      {% endif %}
+    </section>
 
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Estado del documento" %}
+    {# Emisor #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-building" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Emisor" %}</span>
       </div>
-      <div class="p-3">
-        <div class="mb-3">
-          {% include "sales/partials/status_badge.html" with status=invoice.status %}
-        </div>
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "e-NCF" %}</td>
-              <td class="text-end font-monospace fw-semibold">{{ invoice.encf|default:"—" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Estado DGII" %}</td>
-              <td class="text-end">{{ invoice.get_dgii_status_display }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Creada" %}</td>
-              <td class="text-end font-monospace">{{ invoice.created_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Actualizada" %}</td>
-              <td class="text-end font-monospace">{{ invoice.updated_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Razón social" %}</span>
+        <span class="kv-v">{{ invoice.organization.name }}</span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">RNC</span>
+        <span class="kv-v font-monospace">{{ invoice.organization.tax_id|default:"—" }}</span>
+      </div>
+      {% if invoice.organization.address %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Dirección" %}</span>
+        <span class="kv-v v-link small">{{ invoice.organization.address }}</span>
+      </div>
+      {% endif %}
+    </section>
 
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Emisor" %}
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
       </div>
-      <div class="p-3">
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "Razón social" %}</td>
-              <td class="text-end">{{ invoice.organization.name }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">RNC</td>
-              <td class="text-end font-monospace">{{ invoice.organization.tax_id|default:"—" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Dirección" %}</td>
-              <td class="text-end small">{{ invoice.organization.address|default:"—" }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.created_at|date:"d/m/Y H:i" }}</span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
 
   </div>
 

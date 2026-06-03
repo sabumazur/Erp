@@ -6,6 +6,7 @@
       // Column visibility state
       tableId: tableId,
       allCols: allCols,
+      defaultVisible: defaultVisible,
       visible: [],
 
       // Single-row selection state
@@ -22,21 +23,24 @@
         var saved = localStorage.getItem("dt-visible-" + tableId);
         try {
           this.visible = saved ? JSON.parse(saved) : defaultVisible.slice();
-          if (!Array.isArray(this.visible)) {
-            this.visible = [];
-          }
-          this.visible = this.visible.filter(function (key) {
-            return self.allCols.includes(key);
-          });
-          if (this.visible.length === 0) {
-            this.visible = defaultVisible.slice();
-            localStorage.removeItem("dt-visible-" + tableId);
-          }
+          this.visible = this.normalizeVisible(this.visible);
         } catch (e) {
-          this.visible = defaultVisible.slice();
+          this.visible = this.normalizeVisible(defaultVisible);
           localStorage.removeItem("dt-visible-" + tableId);
         }
         this.$nextTick(function () { self.applyColVisibility(); });
+
+        // Single source of truth: any change to `visible` (checkbox x-model,
+        // select-all, deselect) reactively persists + re-applies column display.
+        this.$watch("visible", function (val) {
+          // Empty-guard: never hide every column — fall back to one.
+          if ((!val || val.length === 0) && self.allCols.length > 0) {
+            self.visible = self.normalizeVisible([]);
+            return; // re-assignment re-fires this watcher with the fallback
+          }
+          self.persistVisibility();
+          self.applyColVisibility();
+        });
 
         this._swapHandler = function (e) {
           if (e.detail.target && e.detail.target.id === "dt-results") {
@@ -52,18 +56,36 @@
       },
 
       // ── Column visibility ────────────────────────────────────────────────
-      toggleCol: function (key, checked) {
-        if (checked === true && !this.visible.includes(key)) {
-          this.visible.push(key);
-        } else if (checked === false) {
-          this.visible = this.visible.filter(function (k) { return k !== key; });
-        } else if (checked === undefined && this.visible.includes(key)) {
-          this.visible = this.visible.filter(function (k) { return k !== key; });
-        } else if (checked === undefined) {
-          this.visible.push(key);
+      normalizeVisible: function (cols) {
+        var source = Array.isArray(cols) ? cols : [];
+        var seen = {};
+        var normalized = [];
+        source.forEach(function (key) {
+          if (this.allCols.includes(key) && !seen[key]) {
+            seen[key] = true;
+            normalized.push(key);
+          }
+        }, this);
+        if (normalized.length === 0 && this.allCols.length > 0) {
+          var fallback = this.defaultVisible.find(function (key) {
+            return this.allCols.includes(key);
+          }, this) || this.allCols[0];
+          normalized.push(fallback);
         }
+        return normalized;
+      },
+      persistVisibility: function () {
         localStorage.setItem("dt-visible-" + this.tableId, JSON.stringify(this.visible));
-        this.applyColVisibility();
+      },
+      setVisible: function (cols) {
+        // Reassign only — the $watch on `visible` persists + applies.
+        this.visible = this.normalizeVisible(cols);
+      },
+      selectAllCols: function () {
+        this.setVisible(this.allCols.slice());
+      },
+      unselectCols: function () {
+        this.setVisible([]);
       },
       applyColVisibility: function () {
         var $el = this.$el;

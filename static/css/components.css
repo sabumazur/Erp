@@ -423,10 +423,9 @@
   }
 }
 
-/* ── Filter offcanvas: size to content, cap at 50vh ─────── */
+/* ── Filter offcanvas: size to content ───────────────────── */
 #dt-filter-offcanvas {
   height: auto;
-  max-height: 50vh;
 }
 
 #dt-filter-offcanvas .offcanvas-body {

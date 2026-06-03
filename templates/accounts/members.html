@@ -85,6 +85,7 @@
               <form method="post" action="{% url 'accounts:member_role' m.pk %}">
                 {% csrf_token %}
                 <select name="role" class="form-select form-select-sm w-auto"
+                        data-tom="" data-placeholder="Seleccione rol…"
                         onchange="this.form.submit()"
                         {% if not membership.role == 'owner' and m.role == 'owner' %}disabled{% endif %}>
                   {% for value, label in roles %}
@@ -110,6 +111,7 @@
             <form method="post" action="{% url 'accounts:member_assign_team' m.pk %}">
               {% csrf_token %}
               <select name="team" class="form-select form-select-sm w-auto"
+                      data-tom="" data-placeholder="Sin equipo…"
                       onchange="this.form.submit()">
                 <option value="">{% trans "— Sin equipo —" %}</option>
                 {% for t in teams %}

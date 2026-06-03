@@ -3,32 +3,21 @@
 
 {% block title %}{% trans "Pago" %} — {{ payment.date|date:"d/m/Y" }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 38%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{% trans "Recibo de pago" %}</h1>
-    <p class="app-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'sales:payment_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{% trans "Recibo de pago" %}</h1>
+      <p class="app-header-sub">{{ payment.customer.name }} · {{ payment.date|date:"d/m/Y" }}</p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
     <form method="post" action="{% url 'sales:payment_delete' payment.pk %}"
           x-data
           x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar este pago? Las facturas cubiertas se reabrirán." %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
@@ -42,74 +31,65 @@
 
 <div class="row g-3">
 
-  {# ── Left: Document ── #}
+  {# ── Left column ── #}
   <div class="col-lg-8 d-flex flex-column gap-3">
 
-    {# Amount hero #}
-    <div class="app-metric-card">
-      <div class="app-metric-value" style="color:#16a34a;font-size:2rem">
-        RD$&nbsp;{{ payment.amount|floatformat:2|intcomma }}
+    {# Payment info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información del pago" %}</span>
       </div>
-      <div class="app-metric-label">
-        {% trans "Monto total" %} ·
-        {% if payment.method == 'TRANSFER' %}
-          <span class="badge-soft badge-sent">{{ payment.get_method_display }}</span>
-        {% elif payment.method == 'CHECK' %}
-          <span class="badge-soft badge-confirmed">{{ payment.get_method_display }}</span>
-        {% else %}
-          <span class="badge-soft badge-paid">{{ payment.get_method_display }}</span>
-        {% endif %}
-      </div>
-    </div>
-
-    {# Meta info #}
-    <div class="app-table-wrap">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Cliente" %}</th>
-            <td>
-              <a href="{% url 'sales:customer_detail' payment.customer.pk %}"
-                 class="fw-semibold text-decoration-none link-brand">
-                {{ payment.customer.name }}
-              </a>
-              {% if payment.customer.rnc_cedula %}
-                <span class="text-muted small ms-1">· {{ payment.customer.get_id_type_display }}: {{ payment.customer.rnc_cedula }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha" %}</th>
-            <td class="font-monospace">{{ payment.date|date:"d/m/Y" }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Forma de pago" %}</th>
-            <td>{{ payment.get_method_display }}</td>
-          </tr>
-          {% if payment.reference %}
-          <tr>
-            <th class="detail-key">{% trans "Referencia" %}</th>
-            <td class="font-monospace">{{ payment.reference }}</td>
-          </tr>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Cliente" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:customer_detail' payment.customer.pk %}" class="v-link fw-semibold">
+            {{ payment.customer.name }}
+          </a>
+          {% if payment.customer.rnc_cedula %}
+            <small class="text-muted ms-1 font-monospace">· {{ payment.customer.get_id_type_display }}: {{ payment.customer.rnc_cedula }}</small>
           {% endif %}
-          <tr>
-            <th class="detail-key">{% trans "Facturas cubiertas" %}</th>
-            <td>{{ payment.allocations.count }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Registrado" %}</th>
-            <td class="font-monospace">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    {# Allocations table #}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Facturas aplicadas" %}
+        </span>
       </div>
-      <table class="table table-sm mb-0">
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha" %}</span>
+        <span class="kv-v font-monospace">{{ payment.date|date:"d/m/Y" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Forma de pago" %}</span>
+        <span class="kv-v">
+          {% if payment.method == 'TRANSFER' %}
+            <span class="badge-soft badge-sent">{{ payment.get_method_display }}</span>
+          {% elif payment.method == 'CHECK' %}
+            <span class="badge-soft badge-confirmed">{{ payment.get_method_display }}</span>
+          {% else %}
+            <span class="badge-soft badge-paid">{{ payment.get_method_display }}</span>
+          {% endif %}
+        </span>
+      </div>
+      {% if payment.reference %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Referencia" %}</span>
+        <span class="kv-v font-monospace">{{ payment.reference }}</span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Facturas cubiertas" %}</span>
+        <span class="kv-v">{{ payment.allocations.count }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Registrado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ payment.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
+
+    {# Allocations #}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Facturas aplicadas" %}</span>
+      </div>
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "NCF" %}</th>
@@ -125,16 +105,14 @@
           <tr>
             <td>
               <a href="{% url 'sales:invoice_detail' alloc.invoice.pk %}"
-                 class="text-decoration-none font-monospace small link-brand">
+                 class="v-link font-monospace small fw-semibold">
                 {{ alloc.invoice.display_number }}
               </a>
             </td>
             <td class="small text-nowrap text-muted">{{ alloc.invoice.issue_date|date:"d/m/Y" }}</td>
             <td class="small text-nowrap text-muted">{{ alloc.invoice.due_date|date:"d/m/Y"|default:"—" }}</td>
             <td class="text-end small font-monospace">{{ alloc.invoice.total|floatformat:2|intcomma }}</td>
-            <td class="text-end small fw-semibold font-monospace num-pos">
-              {{ alloc.amount|floatformat:2|intcomma }}
-            </td>
+            <td class="text-end small fw-semibold font-monospace num-pos">{{ alloc.amount|floatformat:2|intcomma }}</td>
             <td class="text-center">
               {% include "sales/partials/status_badge.html" with status=alloc.invoice.status %}
             </td>
@@ -148,55 +126,79 @@
           {% endfor %}
         </tbody>
         <tfoot>
-          <tr>
-            <td colspan="4" class="text-end">{% trans "Total pagado" %}</td>
-            <td class="text-end font-monospace num-pos">{{ payment.amount|floatformat:2|intcomma }}</td>
+          <tr style="border-top:2px solid #e5e7eb">
+            <td colspan="4" class="text-end fw-bold">{% trans "Total pagado" %}</td>
+            <td class="text-end font-monospace fw-bold num-pos">{{ payment.amount|floatformat:2|intcomma }}</td>
             <td></td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </section>
 
+    {# Notes #}
     {% if payment.notes %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Notas" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Notas" %}</span>
       </div>
-      <div class="p-3 small text-muted">{{ payment.notes }}</div>
-    </div>
+      <div class="kv-note">{{ payment.notes }}</div>
+    </section>
     {% endif %}
 
   </div>
 
-  {# ── Sidebar ── #}
-  <div class="col-lg-4">
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Resumen" %}
+  {# ── Right sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    {# Amount summary #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-wallet2" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen" %}</span>
       </div>
-      <div class="p-3">
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "Cliente" %}</td>
-              <td class="text-end fw-semibold">{{ payment.customer.name }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Facturas" %}</td>
-              <td class="text-end">{{ payment.allocations.count }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Método" %}</td>
-              <td class="text-end">{{ payment.get_method_display }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Organización" %}</td>
-              <td class="text-end small">{{ payment.organization.name }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="kv-stats">
+        <div class="kv-stat" style="grid-column:1/-1">
+          <div class="kv-stat-l">{% trans "Monto total recibido" %}</div>
+          <div class="kv-stat-n font-monospace num-pos" style="font-size:1.6rem">
+            RD$&nbsp;{{ payment.amount|floatformat:2|intcomma }}
+          </div>
+        </div>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Cliente" %}</span>
+        <span class="kv-v fw-semibold">{{ payment.customer.name }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Facturas" %}</span>
+        <span class="kv-v">{{ payment.allocations.count }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Método" %}</span>
+        <span class="kv-v">{{ payment.get_method_display }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Organización" %}</span>
+        <span class="kv-v small">{{ payment.organization.name }}</span>
+      </div>
+    </section>
+
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Registrado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ payment.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ payment.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
+
   </div>
 
 </div>

@@ -2,6 +2,7 @@ import django_filters
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.search import fts_search
+from apps.core.widgets import TomSelect
 
 from .models import Item
 
@@ -15,11 +16,13 @@ class ItemFilter(django_filters.FilterSet):
         choices=[("", _("Todos los tipos"))] + list(Item.ItemType.choices),
         empty_label=None,
         label=_("Tipo"),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los tipos")),
     )
     itbis_rate = django_filters.ChoiceFilter(
         choices=[("", _("Todos"))] + list(Item.ITBISRate.choices),
         empty_label=None,
         label=_("ITBIS"),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos")),
     )
     is_active = django_filters.ChoiceFilter(
         choices=[
@@ -30,6 +33,7 @@ class ItemFilter(django_filters.FilterSet):
         method="active_filter",
         empty_label=None,
         label=_("Estado"),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Activos e inactivos")),
     )
 
     class Meta:

@@ -3,33 +3,21 @@
 
 {% block title %}{{ po.number|default:"Borrador" }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 35%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{{ po.number|default:"Borrador" }}</h1>
-    <p class="app-header-sub">{% trans "Orden de Compra" %} · {{ po.supplier.name }}</p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'purchases:po_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{{ po.number|default:"Borrador" }}</h1>
+      <p class="app-header-sub">{% trans "Orden de Compra" %} · {{ po.supplier.name }}</p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'purchases:po_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
-
     <form method="post" action="{% url 'purchases:po_clone' po.pk %}"
           x-data
           x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
@@ -38,6 +26,13 @@
         <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
       </button>
     </form>
+
+    {% if po.status == "RECEIVED" and linked_invoice %}
+      <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
+      </a>
+    {% endif %}
 
     {% if po.status == "DRAFT" %}
       <a href="{% url 'purchases:po_edit' po.pk %}" class="btn btn-outline-secondary btn-sm">
@@ -60,7 +55,9 @@
       <form method="post" action="{% url 'purchases:po_delete' po.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
       </form>
 
     {% elif po.status == "CONFIRMED" %}
@@ -79,56 +76,96 @@
         </button>
       </form>
     {% endif %}
-
-    {% if po.status == "RECEIVED" and linked_invoice %}
-      <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
-         class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
-      </a>
-    {% endif %}
   </div>
 </div>
 
 <div class="row g-3">
 
-  {# ── Left: Document ── #}
-  <div class="col-lg-8">
+  {# ── Left column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
 
-    <div class="app-table-wrap mb-3">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Proveedor" %}</th>
-            <td>
-              <a href="{% url 'purchases:supplier_detail' po.supplier.pk %}"
-                 class="fw-semibold text-decoration-none link-brand">
-                {{ po.supplier.name }}
-              </a>
-              {% if po.supplier.rnc_cedula %}
-                <span class="text-muted small ms-1">· {{ po.supplier.get_id_type_display }}: {{ po.supplier.rnc_cedula }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
-            <td class="font-monospace">{{ po.issue_date|date:"d/m/Y" }}</td>
-          </tr>
-          {% if po.expected_date %}
-          <tr>
-            <th class="detail-key">{% trans "Fecha esperada" %}</th>
-            <td class="font-monospace">{{ po.expected_date|date:"d/m/Y" }}</td>
-          </tr>
+    {# Document info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-cart3" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Proveedor" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'purchases:supplier_detail' po.supplier.pk %}" class="v-link fw-semibold">
+            {{ po.supplier.name }}
+          </a>
+          {% if po.supplier.rnc_cedula %}
+            <small class="text-muted ms-1 font-monospace">· {{ po.supplier.get_id_type_display }}: {{ po.supplier.rnc_cedula }}</small>
           {% endif %}
-          <tr>
-            <th class="detail-key">{% trans "Moneda" %}</th>
-            <td>{{ po.currency }}{% if po.exchange_rate != 1 %} <span class="text-muted small">@ {{ po.exchange_rate }}</span>{% endif %}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha de emisión" %}</span>
+        <span class="kv-v font-monospace">{{ po.issue_date|date:"d/m/Y" }}</span>
+      </div>
+      {% if po.expected_date %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha esperada" %}</span>
+        <span class="kv-v font-monospace">{{ po.expected_date|date:"d/m/Y" }}</span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda" %}</span>
+        <span class="kv-v v-type font-monospace">
+          {{ po.currency }}{% if po.exchange_rate != 1 %} <span class="text-muted fw-normal">@ {{ po.exchange_rate }}</span>{% endif %}
+        </span>
+      </div>
+      {% if po.status == "CANCELLED" %}
+      <div class="kv-alert">
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+        {% trans "Esta orden fue anulada." %}
+      </div>
+      {% endif %}
+    </section>
 
-    <div class="app-table-wrap mb-3">
-      <table class="table table-sm mb-0">
+    {# Metrics strip #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-calculator" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen financiero" %}</span>
+      </div>
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Subtotal" %}</div>
+          <div class="kv-stat-n font-monospace">{{ po.subtotal|floatformat:2|intcomma }}</div>
+        </div>
+        {% if po.itbis_18 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 18%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ po.itbis_18|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        {% if po.itbis_16 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 16%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ po.itbis_16|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Total" %} {{ po.currency }}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ po.total|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Artículos" %}</div>
+          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    {# Line items #}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-list-ul" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Artículos" %}</span>
+      </div>
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Descripción" %}</th>
@@ -176,80 +213,89 @@
             <td class="text-end font-monospace">{{ po.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr>
+          <tr style="border-top:2px solid #e5e7eb">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
-            <td class="text-end font-monospace fw-bold">{{ po.total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-bold num-pos">{{ po.total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </section>
 
+    {# Notes #}
     {% if po.notes %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Notas" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Notas" %}</span>
       </div>
-      <div class="p-3 small text-muted">{{ po.notes }}</div>
-    </div>
+      <div class="kv-note">{{ po.notes }}</div>
+    </section>
     {% endif %}
 
   </div>
 
-  {# ── Right: Status sidebar ── #}
+  {# ── Right sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
 
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ po.total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Total" %} {{ po.currency }}</div>
-    </div>
-
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Estado del documento" %}
+    {# Status card #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Estado del documento" %}</span>
       </div>
-      <div class="p-3" style="overflow-x:auto">
-        <div class="mb-3">
-          <span class="badge-soft badge-{% if po.status == 'CONFIRMED' %}primary{% elif po.status == 'RECEIVED' %}confirmed{% elif po.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
-            {{ po.get_status_display }}
-          </span>
-        </div>
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "Número" %}</td>
-              <td class="text-end font-monospace fw-semibold" style="white-space:nowrap">{{ po.number|default:"—" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Moneda" %}</td>
-              <td class="text-end" style="white-space:nowrap">{{ po.currency }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Creada" %}</td>
-              <td class="text-end font-monospace" style="white-space:nowrap">{{ po.created_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Actualizada" %}</td>
-              <td class="text-end font-monospace" style="white-space:nowrap">{{ po.updated_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="p-3 pb-0">
+        <span class="badge-soft badge-{% if po.status == 'CONFIRMED' %}primary{% elif po.status == 'RECEIVED' %}confirmed{% elif po.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
+          {{ po.get_status_display }}
+        </span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Número" %}</span>
+        <span class="kv-v font-monospace fw-semibold">{{ po.number|default:"—" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda" %}</span>
+        <span class="kv-v v-type">{{ po.currency }}</span>
+      </div>
+    </section>
 
+    {# Linked supplier invoice #}
     {% if linked_invoice %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Factura vinculada" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Factura vinculada" %}</span>
       </div>
-      <div class="p-3">
-        <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
-           class="font-monospace fw-semibold text-decoration-none link-brand">
-          {{ linked_invoice.supplier_ncf|default:"Borrador" }}
-        </a>
-        <p class="text-muted small mb-0 mt-1">{{ linked_invoice.issue_date|date:"d/m/Y" }}</p>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "NCF" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'purchases:supplier_invoice_detail' linked_invoice.pk %}"
+             class="v-link fw-semibold font-monospace">
+            {{ linked_invoice.supplier_ncf|default:"Borrador" }}
+          </a>
+        </span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha" %}</span>
+        <span class="kv-v font-monospace">{{ linked_invoice.issue_date|date:"d/m/Y" }}</span>
+      </div>
+    </section>
     {% endif %}
+
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ po.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ po.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
 
   </div>
 

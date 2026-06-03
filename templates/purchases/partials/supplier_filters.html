@@ -1,7 +1,7 @@
 {% load i18n %}
 <div class="mb-3">
   <label class="form-label small fw-semibold">{% trans "Estado" %}</label>
-  <select name="is_active" class="form-select form-select-sm">
+  <select name="is_active" class="form-select form-select-sm" data-tom="" data-placeholder="Todos…">
     <option value="">{% trans "Todos" %}</option>
     <option value="1" {% if request.GET.is_active == "1" %}selected{% endif %}>{% trans "Activo" %}</option>
     <option value="0" {% if request.GET.is_active == "0" %}selected{% endif %}>{% trans "Inactivo" %}</option>

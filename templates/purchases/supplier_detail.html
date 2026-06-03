@@ -3,102 +3,123 @@
 
 {% block title %}{{ supplier }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 35%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{{ supplier.name }}</h1>
-    <p class="app-header-sub">
-      {% trans "Proveedores" %}
-      {% if supplier.rnc_cedula %}
-        · <span class="font-monospace">{{ supplier.get_id_type_display }}: {{ supplier.rnc_cedula }}</span>
-      {% endif %}
-    </p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'purchases:supplier_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{{ supplier.name }}</h1>
+      <p class="app-header-sub">
+        {% trans "Proveedores" %}
+        {% if supplier.rnc_cedula %}
+          · <span class="font-monospace">{{ supplier.get_id_type_display }}: {{ supplier.rnc_cedula }}</span>
+        {% endif %}
+      </p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'purchases:supplier_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
-    <a href="{% url 'purchases:supplier_edit' supplier.pk %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    <a href="{% url 'purchases:supplier_edit' supplier.pk %}" class="btn btn-brand btn-sm">
+      <i class="bi bi-pencil me-1" aria-hidden="true"></i>{% trans "Editar" %}
     </a>
   </div>
 </div>
 
 <div class="row g-3">
-  <div class="col-lg-4">
-    <div class="app-table-wrap mb-3">
-      <div class="app-card-head">
-        {% trans "Información" %}
+
+  {# ── Main column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
+
+    {# Contact & fiscal info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-building" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información de contacto" %}</span>
       </div>
-      <table class="table mb-0">
-        <tbody>
-          <tr><th class="detail-key">{% trans "Nombre" %}</th><td>{{ supplier.name }}</td></tr>
-          {% if supplier.rnc_cedula %}
-          <tr><th class="detail-key">{% trans "RNC/Cédula" %}</th><td class="font-monospace">{{ supplier.rnc_cedula }}</td></tr>
-          {% endif %}
-          {% if supplier.email %}
-          <tr><th class="detail-key">{% trans "Correo" %}</th><td><a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a></td></tr>
-          {% endif %}
-          {% if supplier.phone %}
-          <tr><th class="detail-key">{% trans "Teléfono" %}</th><td>{{ supplier.phone }}</td></tr>
-          {% endif %}
-          {% if supplier.address %}
-          <tr><th class="detail-key">{% trans "Dirección" %}</th><td>{{ supplier.address }}</td></tr>
-          {% endif %}
-          {% if supplier.payment_term %}
-          <tr><th class="detail-key">{% trans "Plazo pago" %}</th><td>{{ supplier.payment_term }}</td></tr>
-          {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Correo electrónico" %}</span>
+        <span class="kv-v {% if supplier.email %}v-link{% else %}v-muted{% endif %}">{{ supplier.email|default:"—" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Teléfono" %}</span>
+        <span class="kv-v font-monospace">{{ supplier.phone|default:"—" }}</span>
+      </div>
+      {% if supplier.contact_name %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Persona de contacto" %}</span>
+        <span class="kv-v">{{ supplier.contact_name }}</span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Término de pago" %}</span>
+        <span class="kv-v">{{ supplier.payment_term|default:"—" }}</span>
+      </div>
+      {% if supplier.address or supplier.city %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Dirección" %}</span>
+        <span class="kv-v v-link">
+          {% if supplier.address %}{{ supplier.address }}{% endif %}{% if supplier.city %}, {{ supplier.city }}{% endif %}
+        </span>
+      </div>
+      {% endif %}
+      {% if supplier.notes %}
+      <div class="kv-note">{{ supplier.notes }}</div>
+      {% endif %}
+    </section>
+
+    {# Account summary #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen de cuenta" %}</span>
+      </div>
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Comprado" %}</div>
+          <div class="kv-stat-n font-monospace">{{ total_invoiced|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Pagado" %}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ total_paid|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Saldo" %}</div>
+          <div class="kv-stat-n font-monospace {% if balance > 0 %}num-warn{% else %}num-muted{% endif %}">{{ balance|floatformat:2|intcomma }}</div>
+        </div>
+      </div>
+    </section>
+
+    {# Invoices #}
+    {% if invoices %}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Facturas de proveedor" %}</span>
+        <a href="{% url 'purchases:supplier_invoice_list' %}?supplier={{ supplier.pk }}" class="kv-card-act">{% trans "Ver todas" %} →</a>
+      </div>
+      <table class="kv-table">
+        <thead>
           <tr>
-            <th class="detail-key">{% trans "Estado" %}</th>
-            <td>
-              {% if supplier.is_active %}
-                <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>
-              {% else %}
-                <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
-              {% endif %}
-            </td>
+            <th>{% trans "NCF" %}</th>
+            <th>{% trans "Fecha" %}</th>
+            <th class="text-end">{% trans "Total" %}</th>
+            <th class="text-center">{% trans "Estado" %}</th>
           </tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
-
-  <div class="col-lg-8">
-    <div class="app-table-wrap mb-3">
-      <div class="app-card-head">
-        {% trans "Facturas de proveedor" %}
-      </div>
-      {% if invoices %}
-      <table class="table table-sm mb-0">
-        <thead><tr>
-          <th>{% trans "NCF" %}</th>
-          <th>{% trans "Fecha" %}</th>
-          <th class="text-end">{% trans "Total" %}</th>
-          <th class="text-center">{% trans "Estado" %}</th>
-        </tr></thead>
+        </thead>
         <tbody>
           {% for inv in invoices %}
           <tr>
-            <td><a href="{% url 'purchases:supplier_invoice_detail' inv.pk %}">{{ inv.supplier_ncf|default:"—" }}</a></td>
-            <td>{{ inv.issue_date }}</td>
-            <td class="text-end font-monospace">{{ inv.total|intcomma }}</td>
+            <td>
+              <a href="{% url 'purchases:supplier_invoice_detail' inv.pk %}" class="link-brand font-monospace small">
+                {{ inv.supplier_ncf|default:"—" }}
+              </a>
+            </td>
+            <td class="small text-nowrap text-muted">{{ inv.issue_date|date:"d/m/Y" }}</td>
+            <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
             <td class="text-center">
               <span class="badge-soft badge-{% if inv.status == 'PAID' %}confirmed{% elif inv.status == 'CONFIRMED' %}primary{% elif inv.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
                 {{ inv.get_status_display }}
@@ -108,11 +129,107 @@
           {% endfor %}
         </tbody>
       </table>
-      {% else %}
-      <p class="text-muted small p-3 mb-0">{% trans "No hay facturas registradas." %}</p>
-      {% endif %}
-    </div>
+    </section>
+    {% endif %}
+
+    {# Recent payments #}
+    {% if recent_payments %}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Últimos pagos" %}</span>
+      </div>
+      <table class="kv-table">
+        <thead>
+          <tr>
+            <th>{% trans "Fecha" %}</th>
+            <th>{% trans "Factura" %}</th>
+            <th>{% trans "Forma" %}</th>
+            <th>{% trans "Referencia" %}</th>
+            <th class="text-end">{% trans "Monto" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pmt in recent_payments %}
+          <tr>
+            <td class="small text-nowrap text-muted">{{ pmt.date|date:"d/m/Y" }}</td>
+            <td class="small">
+              {% for alloc in pmt.allocations.all %}
+                <a href="{% url 'purchases:supplier_invoice_detail' alloc.supplier_invoice.pk %}" class="link-brand font-monospace d-block small">
+                  {{ alloc.supplier_invoice.supplier_ncf|default:"—" }}
+                  <span class="text-muted">({{ alloc.amount|floatformat:2|intcomma }})</span>
+                </a>
+              {% endfor %}
+            </td>
+            <td class="small">{{ pmt.get_method_display }}</td>
+            <td class="small text-muted font-monospace">{{ pmt.reference|default:"—" }}</td>
+            <td class="text-end small fw-semibold font-monospace num-pos">{{ pmt.amount|floatformat:2|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
   </div>
+
+  {# ── Sidebar ── #}
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    {# AP summary #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-credit-card-2-front" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Cuentas por pagar" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Saldo pendiente" %}</span>
+        <span class="kv-v font-monospace {% if balance > 0 %}num-warn{% endif %}">{{ balance|floatformat:2|intcomma }}</span>
+      </div>
+      {% if supplier.credit_limit %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Límite de crédito" %}</span>
+        <span class="kv-v font-monospace">{{ supplier.credit_limit|floatformat:2|intcomma }}</span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Última factura" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Último pago" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Estado" %}</span>
+        <span class="kv-v">
+          {% if supplier.is_active %}
+            <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>
+          {% else %}
+            <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+          {% endif %}
+        </span>
+      </div>
+    </section>
+
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ supplier.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizado" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ supplier.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
+
+  </div>
+
 </div>
 
 {% endblock %}

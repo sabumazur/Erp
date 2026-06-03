@@ -3,32 +3,21 @@
 
 {% block title %}{{ order }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 35%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{{ order.doc_number|default:"Borrador" }}</h1>
-    <p class="app-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'sales:sale_order_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{{ order.doc_number|default:"Borrador" }}</h1>
+      <p class="app-header-sub">{% trans "Orden de Venta" %} · {{ order.customer.name }}</p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
     <a href="{% url 'sales:sale_order_print' order.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
@@ -41,6 +30,22 @@
         <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
       </button>
     </form>
+
+    {% if order.status != "DRAFT" and order.status != "CANCELLED" %}
+      <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
+        </button>
+      </form>
+    {% endif %}
+
+    {% if order.status == "INVOICED" and order.consolidated_into %}
+      <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
+      </a>
+    {% endif %}
 
     {% if order.status == "DRAFT" %}
       <a href="{% url 'sales:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
@@ -56,7 +61,9 @@
       <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
       </form>
 
     {% elif order.status == "CONFIRMED" %}
@@ -72,79 +79,109 @@
         </button>
       </form>
     {% endif %}
-
-    {% if order.status == "INVOICED" and order.consolidated_into %}
-      <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
-         class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-receipt me-1"></i>{% trans "Ver factura" %}
-      </a>
-    {% endif %}
-
-    {% if order.status != "DRAFT" and order.status != "CANCELLED" %}
-      <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
-        </button>
-      </form>
-    {% endif %}
   </div>
 </div>
 
 <div class="row g-3">
 
-  {# ── Left: Document ── #}
-  <div class="col-lg-8">
+  {# ── Left column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
 
-    {# Meta info #}
-    <div class="app-table-wrap mb-3">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Cliente" %}</th>
-            <td>
-              {{ order.customer.name }}
-              {% if order.customer.rnc_cedula %}
-                <span class="text-muted small ms-1">· {{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
-            <td class="font-monospace">{{ order.issue_date|date:"d/m/Y" }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha de entrega" %}</th>
-            <td class="font-monospace">{{ order.delivery_date|date:"d/m/Y"|default:"—" }}</td>
-          </tr>
-          {% if order.department %}
-          <tr>
-            <th class="detail-key">{% trans "Departamento" %}</th>
-            <td>
-              <span class="badge-soft badge-sent">{{ order.department.name }}</span>
-              {% if order.department.contact_name %}
-                <span class="text-muted small ms-1">{{ order.department.contact_name }}{% if order.department.phone %} · {{ order.department.phone }}{% endif %}</span>
-              {% endif %}
-            </td>
-          </tr>
+    {# Document & customer info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-bag-check" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Cliente" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:customer_detail' order.customer.pk %}" class="v-link fw-semibold">
+            {{ order.customer.name }}
+          </a>
+          {% if order.customer.rnc_cedula %}
+            <small class="text-muted ms-1 font-monospace">· {{ order.customer.get_id_type_display }}: {{ order.customer.rnc_cedula }}</small>
           {% endif %}
-          {% if order.signed_by %}
-          <tr>
-            <th class="detail-key">{% trans "Recibido por" %}</th>
-            <td>{{ order.signed_by }}</td>
-          </tr>
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha de emisión" %}</span>
+        <span class="kv-v font-monospace">{{ order.issue_date|date:"d/m/Y" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha de entrega" %}</span>
+        <span class="kv-v font-monospace">{{ order.delivery_date|date:"d/m/Y"|default:"—" }}</span>
+      </div>
+      {% if order.department %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Departamento" %}</span>
+        <span class="kv-v">
+          <span class="badge-soft badge-sent">{{ order.department.name }}</span>
+          {% if order.department.contact_name %}
+            <small class="text-muted ms-1">{{ order.department.contact_name }}{% if order.department.phone %} · {{ order.department.phone }}{% endif %}</small>
           {% endif %}
-          <tr>
-            <th class="detail-key">{% trans "Condición de pago" %}</th>
-            <td>{{ order.get_payment_condition_display }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        </span>
+      </div>
+      {% endif %}
+      {% if order.signed_by %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Recibido por" %}</span>
+        <span class="kv-v">{{ order.signed_by }}</span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Condición de pago" %}</span>
+        <span class="kv-v">{{ order.get_payment_condition_display }}</span>
+      </div>
+      {% if order.status == "CANCELLED" %}
+      <div class="kv-alert">
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+        {% trans "Esta orden fue anulada." %}
+      </div>
+      {% endif %}
+    </section>
 
-    {# Items table #}
-    <div class="app-table-wrap mb-3">
-      <table class="table table-sm mb-0">
+    {# Metrics strip #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-calculator" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen financiero" %}</span>
+      </div>
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Subtotal" %}</div>
+          <div class="kv-stat-n font-monospace">{{ order.subtotal|floatformat:2|intcomma }}</div>
+        </div>
+        {% if order.itbis_18 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 18%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ order.itbis_18|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        {% if order.itbis_16 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 16%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ order.itbis_16|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Total" %} {{ order.currency }}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ order.total|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Artículos" %}</div>
+          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    {# Line items #}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-list-ul" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Artículos" %}</span>
+      </div>
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Descripción" %}</th>
@@ -192,84 +229,93 @@
             <td class="text-end font-monospace">{{ order.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr>
+          <tr style="border-top:2px solid #e5e7eb">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
-            <td class="text-end font-monospace fw-bold">{{ order.total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-bold num-pos">{{ order.total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </section>
 
+    {# Notes #}
     {% if order.notes %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Notas" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Notas" %}</span>
       </div>
-      <div class="p-3 small text-muted">{{ order.notes }}</div>
-    </div>
+      <div class="kv-note">{{ order.notes }}</div>
+    </section>
     {% endif %}
 
   </div>
 
-  {# ── Right: Status sidebar ── #}
+  {# ── Right sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
 
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ order.total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Total" %} {{ order.currency }}</div>
-    </div>
-
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Estado del documento" %}
+    {# Status card #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Estado del documento" %}</span>
       </div>
-      <div class="p-3" style="overflow-x:auto">
-        <div class="mb-3">
-          {% include "sales/partials/status_badge.html" with status=order.status %}
-        </div>
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "Número" %}</td>
-              <td class="text-end font-monospace fw-semibold" style="white-space:nowrap">{{ order.doc_number|default:"—" }}</td>
-            </tr>
-            {% if order.department %}
-            <tr>
-              <td class="text-muted">{% trans "Departamento" %}</td>
-              <td class="text-end" style="white-space:nowrap"><span class="badge-soft badge-sent">{{ order.department.name }}</span></td>
-            </tr>
-            {% endif %}
-            <tr>
-              <td class="text-muted">{% trans "Moneda" %}</td>
-              <td class="text-end" style="white-space:nowrap">{{ order.currency }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Creada" %}</td>
-              <td class="text-end font-monospace" style="white-space:nowrap">{{ order.created_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Actualizada" %}</td>
-              <td class="text-end font-monospace" style="white-space:nowrap">{{ order.updated_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="p-3 pb-0">
+        {% include "sales/partials/status_badge.html" with status=order.status %}
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Número" %}</span>
+        <span class="kv-v font-monospace fw-semibold">{{ order.doc_number|default:"—" }}</span>
+      </div>
+      {% if order.department %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Departamento" %}</span>
+        <span class="kv-v"><span class="badge-soft badge-sent">{{ order.department.name }}</span></span>
+      </div>
+      {% endif %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda" %}</span>
+        <span class="kv-v v-type">{{ order.currency }}</span>
+      </div>
+    </section>
 
+    {# Consolidated invoice #}
     {% if order.consolidated_into %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Factura consolidada" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Factura consolidada" %}</span>
       </div>
-      <div class="p-3">
-        <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
-           class="font-monospace fw-semibold text-decoration-none link-brand">
-          {{ order.consolidated_into.display_number }}
-        </a>
-        <p class="text-muted small mb-0 mt-1">{{ order.consolidated_into.issue_date|date:"d/m/Y" }}</p>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Factura" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
+             class="v-link fw-semibold font-monospace">
+            {{ order.consolidated_into.display_number }}
+          </a>
+        </span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha" %}</span>
+        <span class="kv-v font-monospace">{{ order.consolidated_into.issue_date|date:"d/m/Y" }}</span>
+      </div>
+    </section>
     {% endif %}
+
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ order.created_at|date:"d/m/Y H:i" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ order.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
 
   </div>
 

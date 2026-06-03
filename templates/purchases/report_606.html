@@ -15,7 +15,7 @@
   <form method="get" class="d-flex align-items-end gap-2">
     <div>
       <label class="form-label small mb-1">{% trans "Mes" %}</label>
-      <select name="month" class="form-select form-select-sm">
+      <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Seleccione mes…">
         {% for num, name in months %}
         <option value="{{ num }}"{% if num == month %} selected{% endif %}>{{ name }}</option>
         {% endfor %}

@@ -6,6 +6,7 @@
     <div class="col-md-4">
       <label class="form-label small fw-semibold">Proveedor</label>
       <select name="supplier" class="form-select form-select-sm"
+              data-tom="" data-placeholder="{% if supplier_required %}— Seleccionar —{% else %}— Todos los proveedores —{% endif %}"
         {% if supplier_required %}required
         oninvalid="this.setCustomValidity('Debe seleccionar un proveedor.')"
         onchange="this.setCustomValidity('')"{% endif %}>
@@ -51,6 +52,7 @@
         Mes{% if not month_required %} <span class="text-muted fw-normal">(opcional)</span>{% endif %}
       </label>
       <select name="month" class="form-select form-select-sm"
+              data-tom="" data-placeholder="{% if month_required %}— Seleccionar —{% else %}— Todos —{% endif %}"
         {% if month_required %}required
         oninvalid="this.setCustomValidity('Debe seleccionar un mes.')"
         onchange="this.setCustomValidity('')"{% endif %}>

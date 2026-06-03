@@ -3,32 +3,21 @@
 
 {% block title %}{{ quotation }}{% endblock %}
 
-{% block extra_css %}
-<style>
-.detail-key {
-  background: #f9fafb;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-  width: 35%;
-  vertical-align: middle;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="app-header">
-  <div>
-    <h1 class="app-header-title">{{ quotation.doc_number|default:"Borrador" }}</h1>
-    <p class="app-header-sub">{% trans "Cotización" %} · {{ quotation.customer.name }}</p>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'sales:quotation_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+    </a>
+    <div>
+      <h1 class="app-header-title">{{ quotation.doc_number|default:"Borrador" }}</h1>
+      <p class="app-header-sub">{% trans "Cotización" %} · {{ quotation.customer.name }}</p>
+    </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
     <a href="{% url 'sales:quotation_print' quotation.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
@@ -57,7 +46,9 @@
       <form method="post" action="{% url 'sales:quotation_delete' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </button>
       </form>
 
     {% elif quotation.status == "CONFIRMED" %}
@@ -94,49 +85,102 @@
 
 <div class="row g-3">
 
-  {# ── Left: Document ── #}
-  <div class="col-lg-8">
+  {# ── Left column ── #}
+  <div class="col-lg-8 d-flex flex-column gap-3">
 
-    {# Meta info #}
-    <div class="app-table-wrap mb-3">
-      <table class="table mb-0">
-        <tbody>
-          <tr>
-            <th class="detail-key">{% trans "Cliente" %}</th>
-            <td>
-              {{ quotation.customer.name }}
-              {% if quotation.customer.rnc_cedula %}
-                <span class="text-muted small ms-1">· {{ quotation.customer.get_id_type_display }}: {{ quotation.customer.rnc_cedula }}</span>
-              {% endif %}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Fecha de emisión" %}</th>
-            <td class="font-monospace">{{ quotation.issue_date|date:"d/m/Y" }}</td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Válida hasta" %}</th>
-            <td class="font-monospace {% if quotation.status == 'EXPIRED' %}text-danger{% endif %}">
-              {{ quotation.valid_until|date:"d/m/Y"|default:"—" }}
-            </td>
-          </tr>
-          <tr>
-            <th class="detail-key">{% trans "Condición de pago" %}</th>
-            <td>{{ quotation.get_payment_condition_display }}</td>
-          </tr>
-          {% if quotation.currency != "DOP" %}
-          <tr>
-            <th class="detail-key">{% trans "Moneda / Tasa" %}</th>
-            <td>{{ quotation.currency }} @ {{ quotation.exchange_rate }}</td>
-          </tr>
+    {# Document & customer info #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Información" %}</span>
+      </div>
+
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Cliente" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'sales:customer_detail' quotation.customer.pk %}" class="v-link fw-semibold">
+            {{ quotation.customer.name }}
+          </a>
+          {% if quotation.customer.rnc_cedula %}
+            <small class="text-muted ms-1 font-monospace">· {{ quotation.customer.get_id_type_display }}: {{ quotation.customer.rnc_cedula }}</small>
           {% endif %}
-        </tbody>
-      </table>
-    </div>
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Fecha de emisión" %}</span>
+        <span class="kv-v font-monospace">{{ quotation.issue_date|date:"d/m/Y" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Válida hasta" %}</span>
+        <span class="kv-v font-monospace {% if quotation.status == 'EXPIRED' %}num-neg{% endif %}">
+          {{ quotation.valid_until|date:"d/m/Y"|default:"—" }}
+        </span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Condición de pago" %}</span>
+        <span class="kv-v">{{ quotation.get_payment_condition_display }}</span>
+      </div>
+      {% if quotation.currency != "DOP" %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda / Tasa" %}</span>
+        <span class="kv-v v-type font-monospace">{{ quotation.currency }} @ {{ quotation.exchange_rate }}</span>
+      </div>
+      {% endif %}
 
-    {# Items table #}
-    <div class="app-table-wrap mb-3">
-      <table class="table table-sm mb-0">
+      {% if quotation.status == "EXPIRED" or quotation.status == "REJECTED" %}
+      <div class="kv-alert">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        {% if quotation.status == "EXPIRED" %}{% trans "Esta cotización ha expirado." %}{% else %}{% trans "Esta cotización fue rechazada." %}{% endif %}
+      </div>
+      {% elif quotation.valid_until and quotation.status in "CONFIRMED,SENT" %}
+      <div class="kv-note">
+        <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>
+        {% trans "Válida hasta" %} {{ quotation.valid_until|date:"j \d\e F \d\e Y" }}.
+      </div>
+      {% endif %}
+    </section>
+
+    {# Metrics strip #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-calculator" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Resumen financiero" %}</span>
+      </div>
+      <div class="kv-stats">
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Subtotal" %}</div>
+          <div class="kv-stat-n font-monospace">{{ quotation.subtotal|floatformat:2|intcomma }}</div>
+        </div>
+        {% if quotation.itbis_18 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 18%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ quotation.itbis_18|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        {% if quotation.itbis_16 %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "ITBIS 16%" %}</div>
+          <div class="kv-stat-n font-monospace">{{ quotation.itbis_16|floatformat:2|intcomma }}</div>
+        </div>
+        {% endif %}
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Total" %} {{ quotation.currency }}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ quotation.total|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Artículos" %}</div>
+          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    {# Line items #}
+    <section class="kv-card kv-card--flush">
+      <div class="kv-card-head">
+        <i class="bi bi-list-ul" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Artículos" %}</span>
+      </div>
+      <table class="kv-table">
         <thead>
           <tr>
             <th>{% trans "Descripción" %}</th>
@@ -184,73 +228,75 @@
             <td class="text-end font-monospace">{{ quotation.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr>
+          <tr style="border-top:2px solid #e5e7eb">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
-            <td class="text-end font-monospace fw-bold">{{ quotation.total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-bold num-pos">{{ quotation.total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
       </table>
-    </div>
+    </section>
 
-    {# Notes / Terms #}
+    {# Notes & Terms #}
     {% if quotation.notes or quotation.terms %}
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Notas y condiciones" %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Notas y condiciones" %}</span>
       </div>
-      <div class="p-3 small text-muted">
-        {% if quotation.notes %}<p class="mb-2">{{ quotation.notes }}</p>{% endif %}
-        {% if quotation.terms %}<p class="mb-0">{{ quotation.terms }}</p>{% endif %}
-      </div>
-    </div>
+      {% if quotation.notes %}
+      <div class="kv-note">{{ quotation.notes }}</div>
+      {% endif %}
+      {% if quotation.terms %}
+      <div class="kv-note">{{ quotation.terms }}</div>
+      {% endif %}
+    </section>
     {% endif %}
 
   </div>
 
-  {# ── Right: Status sidebar ── #}
+  {# ── Right sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
 
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ quotation.total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Total" %} {{ quotation.currency }}</div>
-    </div>
+    {# Status card #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Estado del documento" %}</span>
+      </div>
+      <div class="p-3 pb-0">
+        {% include "sales/partials/status_badge.html" with status=quotation.status %}
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Número" %}</span>
+        <span class="kv-v font-monospace fw-semibold">{{ quotation.doc_number|default:"—" }}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Moneda" %}</span>
+        <span class="kv-v v-type">{{ quotation.currency }}</span>
+      </div>
+      {% if quotation.currency != "DOP" %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Tasa" %}</span>
+        <span class="kv-v font-monospace">{{ quotation.exchange_rate }}</span>
+      </div>
+      {% endif %}
+    </section>
 
-    <div class="app-table-wrap">
-      <div class="app-card-head">
-        {% trans "Estado del documento" %}
+    {# Audit #}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Auditoría" %}</span>
       </div>
-      <div class="p-3">
-        <div class="mb-3">
-          {% include "sales/partials/status_badge.html" with status=quotation.status %}
-        </div>
-        <table class="table table-sm mb-0 table-detail">
-          <tbody>
-            <tr>
-              <td class="text-muted">{% trans "Número" %}</td>
-              <td class="text-end font-monospace fw-semibold">{{ quotation.doc_number|default:"—" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Moneda" %}</td>
-              <td class="text-end">{{ quotation.currency }}</td>
-            </tr>
-            {% if quotation.currency != "DOP" %}
-            <tr>
-              <td class="text-muted">{% trans "Tasa" %}</td>
-              <td class="text-end">{{ quotation.exchange_rate }}</td>
-            </tr>
-            {% endif %}
-            <tr>
-              <td class="text-muted">{% trans "Creada" %}</td>
-              <td class="text-end font-monospace">{{ quotation.created_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-            <tr>
-              <td class="text-muted">{% trans "Actualizada" %}</td>
-              <td class="text-end font-monospace">{{ quotation.updated_at|date:"d/m/Y H:i" }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Creada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ quotation.created_at|date:"d/m/Y H:i" }}</span>
       </div>
-    </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Actualizada" %}</span>
+        <span class="kv-v font-monospace" style="font-weight:500">{{ quotation.updated_at|date:"d/m/Y H:i" }}</span>
+      </div>
+    </section>
 
   </div>
 
@@ -272,7 +318,7 @@
         <div class="modal-body">
           <p class="text-muted small">{% trans "Seleccione el tipo de comprobante fiscal para la nueva factura." %}</p>
           <label class="form-label fw-semibold small">{% trans "Tipo de comprobante" %}</label>
-          <select name="ncf_type" class="form-select" required>
+          <select name="ncf_type" class="form-select" data-tom="" data-placeholder="Seleccione tipo…" required>
             {% for value, label in ncf_type_choices %}
               <option value="{{ value }}">{{ label }}</option>
             {% empty %}

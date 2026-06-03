@@ -2,6 +2,7 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.widgets import TomSelect
 from .models import SalesDocument, Customer, CustomerDepartment, NCFType, Payment, PaymentMethod, PaymentTerm
 
 
@@ -17,19 +18,19 @@ class InvoiceFilter(django_filters.FilterSet):
         ],
         empty_label=_("Todos los estados"),
         label=_("Estado"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los estados")),
     )
     ncf_type = django_filters.ChoiceFilter(
         choices=[("", _("Todos los tipos"))] + NCFType.choices,
         label=_("Tipo NCF"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los tipos")),
         empty_label=None,
     )
     customer = django_filters.ModelChoiceFilter(
         queryset=Customer.objects.none(),
         label=_("Cliente"),
         empty_label=_("Todos los clientes"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los clientes")),
     )
     issue_date_after = django_filters.DateFilter(
         field_name="issue_date",
@@ -76,13 +77,13 @@ class QuotationFilter(django_filters.FilterSet):
         ],
         empty_label=_("Todos los estados"),
         label=_("Estado"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los estados")),
     )
     customer = django_filters.ModelChoiceFilter(
         queryset=Customer.objects.none(),
         label=_("Cliente"),
         empty_label=_("Todos los clientes"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los clientes")),
     )
     issue_date_after = django_filters.DateFilter(
         field_name="issue_date",
@@ -129,13 +130,13 @@ class SaleOrderFilter(django_filters.FilterSet):
         ],
         empty_label=_("Todos los estados"),
         label=_("Estado"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los estados")),
     )
     customer = django_filters.ModelChoiceFilter(
         queryset=Customer.objects.none(),
         label=_("Cliente"),
         empty_label=_("Todos los clientes"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los clientes")),
     )
     delivery_date_after = django_filters.DateFilter(
         field_name="delivery_date",
@@ -153,7 +154,7 @@ class SaleOrderFilter(django_filters.FilterSet):
         queryset=CustomerDepartment.objects.none(),
         label=_("Departamento"),
         empty_label=_("Todos los departamentos"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los departamentos")),
     )
     doc_number = django_filters.CharFilter(
         lookup_expr="icontains",
@@ -187,7 +188,7 @@ class PaymentFilter(django_filters.FilterSet):
         queryset=Customer.objects.none(),
         label=_("Cliente"),
         empty_label=_("Todos los clientes"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los clientes")),
     )
     date_after = django_filters.DateFilter(
         field_name="date",
@@ -205,7 +206,7 @@ class PaymentFilter(django_filters.FilterSet):
         choices=[("", _("Todos los métodos"))] + PaymentMethod.choices,
         empty_label=None,
         label=_("Método"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los métodos")),
     )
     reference = django_filters.CharFilter(
         lookup_expr="icontains",
@@ -233,7 +234,7 @@ class CustomerFilter(django_filters.FilterSet):
         choices=[("", _("Todos los tipos NCF"))] + NCFType.choices,
         empty_label=None,
         label=_("Tipo NCF"),
-        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los tipos NCF")),
     )
 
     class Meta:
