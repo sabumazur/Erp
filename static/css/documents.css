@@ -151,6 +151,13 @@
   resize: vertical;
 }
 
+.po-order-card-body textarea.autosize-ta {
+  resize: none;
+  overflow: hidden;
+  min-height: 72px;
+  transition: height .1s ease;
+}
+
 .po-order-card-body .form-control:focus,
 .po-order-card-body .form-select:focus,
 .document-footer-notes textarea:focus {

@@ -76,3 +76,25 @@ class ItbisSelect(TomSelect):
         if badge:
             option["attrs"]["data-rate"] = badge
         return option
+
+
+# ── AutosizeTextarea ──────────────────────────────────────────────────────────
+
+
+class AutosizeTextarea(forms.Textarea):
+    """Textarea that grows with its content via a JS .autosize-ta hook."""
+
+    def __init__(self, attrs=None):
+        merged = {"rows": 2}
+        if attrs:
+            merged.update(attrs)
+        super().__init__(attrs=merged)
+
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        attrs = super().build_attrs(base_attrs, extra_attrs)
+        cls = attrs.get("class", "")
+        for needed in ("form-control", "autosize-ta"):
+            if needed not in cls:
+                cls = f"{cls} {needed}".strip()
+        attrs["class"] = cls
+        return attrs
