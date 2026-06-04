@@ -144,6 +144,9 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ctx["has_sales_access"] = bool(
             org and can_access_module(self.request.membership, "sales")
         )
+        ctx["has_purchasing_access"] = bool(
+            org and can_access_module(self.request.membership, "purchasing")
+        )
         if not org or not ctx["has_sales_access"]:
             return ctx
 
@@ -277,9 +280,29 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .annotate(total=Sum("amount"))
         }
 
+        from apps.purchases.models import PurchaseDocument, SupplierPayment
+        from apps.purchases.views.reports import _bucket_for
+
+        purch_by_month = {
+            row["month"]: float(row["total"])
+            for row in PurchaseDocument.supplier_invoices.filter(
+                organization=org,
+                deleted_at__isnull=True,
+                issue_date__gte=six_months_ago,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            )
+            .annotate(month=TruncMonth("issue_date"))
+            .values("month")
+            .annotate(total=Sum("total"))
+        }
+
         chart_months = [f"{_MONTH_ES[m.month - 1]} {m.year}" for m in months_list]
         chart_invoiced = [inv_by_month.get(m, 0.0) for m in months_list]
         chart_collected = [pay_by_month.get(m, 0.0) for m in months_list]
+        chart_purchased = [purch_by_month.get(m, 0.0) for m in months_list]
 
         _STATUS_LABELS = {
             SalesDocument.Status.CONFIRMED: "Confirmada",
@@ -306,58 +329,55 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         chart_status_counts = [status_counts_qs[s] for s in ordered_statuses]
         chart_status_colors = [_STATUS_COLORS[s] for s in ordered_statuses]
 
-        _CUSTOMER_COLORS = [
-            "rgba(13,110,253,0.8)",
-            "rgba(25,135,84,0.8)",
-            "rgba(255,193,7,0.8)",
-            "rgba(220,53,69,0.8)",
-            "rgba(13,202,240,0.8)",
-            "rgba(111,66,193,0.8)",
-        ]
+        # ── AR vs AP aging + accounts-payable summary ───────────────────────
+        _AGING_KEYS = ["current", "1_30", "31_60", "61_90", "90_plus"]
+        chart_aging_labels = ["Corriente", "1–30", "31–60", "61–90", "+90"]
 
-        _inv_status_filter = [
-            SalesDocument.Status.CONFIRMED,
-            SalesDocument.Status.SENT,
-            SalesDocument.Status.PAID,
-            SalesDocument.Status.OVERDUE,
-        ]
+        _unpaid = _inv.filter(
+            status__in=[
+                SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.SENT,
+                SalesDocument.Status.OVERDUE,
+            ],
+        ).with_aging()
+        ar_aging_map = {
+            row["aging_bucket_db"]: float(row["t"] or 0)
+            for row in _unpaid.values("aging_bucket_db").annotate(t=Sum("signed_total"))
+        }
+        chart_ar_aging = [ar_aging_map.get(k, 0.0) for k in _AGING_KEYS]
 
-        top_customers = list(
-            _inv.filter(issue_date__gte=six_months_ago, status__in=_inv_status_filter)
-            .values("customer__id", "customer__name")
-            .annotate(total=Sum("signed_total"))
-            .order_by("-total")[:6]
+        ap_outstanding = _zero
+        ap_aging_acc = {k: 0.0 for k in _AGING_KEYS}
+        for sinv in PurchaseDocument.supplier_invoices.filter(
+            organization=org,
+            deleted_at__isnull=True,
+            status=PurchaseDocument.Status.CONFIRMED,
+            due_date__isnull=False,
+        ):
+            ap_outstanding += sinv.total
+            ap_aging_acc[_bucket_for((today - sinv.due_date).days)] += float(sinv.total)
+        chart_ap_aging = [ap_aging_acc[k] for k in _AGING_KEYS]
+        ap_overdue = sum(ap_aging_acc[k] for k in ("1_30", "31_60", "61_90", "90_plus"))
+
+        net_position = outstanding - ap_outstanding
+
+        month_purchased = (
+            PurchaseDocument.supplier_invoices.filter(
+                organization=org,
+                deleted_at__isnull=True,
+                issue_date__gte=month_start,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            ).aggregate(t=Sum("total"))["t"] or _zero
         )
 
-        if top_customers:
-            top_ids = [c["customer__id"] for c in top_customers]
-
-            cust_monthly = (
-                _inv.filter(
-                    issue_date__gte=six_months_ago,
-                    status__in=_inv_status_filter,
-                    customer__id__in=top_ids,
-                )
-                .annotate(month=TruncMonth("issue_date"))
-                .values("customer__id", "month")
-                .annotate(total=Sum("signed_total"))
-            )
-
-            cust_data = {cid: {} for cid in top_ids}
-            for row in cust_monthly:
-                cust_data[row["customer__id"]][row["month"]] = float(row["total"])
-
-            chart_customer_datasets = [
-                {
-                    "label": c["customer__name"],
-                    "data": [cust_data[c["customer__id"]].get(m, 0.0) for m in months_list],
-                    "backgroundColor": _CUSTOMER_COLORS[i % len(_CUSTOMER_COLORS)],
-                    "borderRadius": 3,
-                }
-                for i, c in enumerate(top_customers)
-            ]
-        else:
-            chart_customer_datasets = []
+        month_supplier_paid = (
+            SupplierPayment.objects.for_org(org)
+            .filter(date__gte=month_start)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
 
         computed = {
             "month_invoiced": month_invoiced,
@@ -368,13 +388,21 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             "pending_quotations": pending_quotations,
             "pending_sale_orders": pending_sale_orders,
             "overdue_count": overdue_count,
+            "ap_outstanding": ap_outstanding,
+            "ap_overdue": ap_overdue,
+            "net_position": net_position,
+            "month_purchased": month_purchased,
+            "month_supplier_paid": month_supplier_paid,
             "chart_months": chart_months,
             "chart_invoiced": chart_invoiced,
             "chart_collected": chart_collected,
+            "chart_purchased": chart_purchased,
             "chart_status_labels": chart_status_labels,
             "chart_status_counts": chart_status_counts,
             "chart_status_colors": chart_status_colors,
-            "chart_customer_datasets": chart_customer_datasets,
+            "chart_aging_labels": chart_aging_labels,
+            "chart_ar_aging": chart_ar_aging,
+            "chart_ap_aging": chart_ap_aging,
         }
         cache.set(_cache_key, computed, timeout=900)
         ctx.update(computed)

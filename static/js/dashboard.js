@@ -16,7 +16,29 @@
     var stLabels = parseJsonScript("chart-status-labels", []);
     var stCounts = parseJsonScript("chart-status-counts", []);
     var stColors = parseJsonScript("chart-status-colors", []);
-    var custDatasets = parseJsonScript("chart-customer-datasets", []);
+    var purchased = parseJsonScript("chart-purchased", []);
+    var agingLabels = parseJsonScript("chart-aging-labels", []);
+    var arAging = parseJsonScript("chart-ar-aging", []);
+    var apAging = parseJsonScript("chart-ap-aging", []);
+
+    var spCanvas = document.getElementById("salesPurchasesChart");
+    if (spCanvas) {
+      var spDatasets = [
+        { label: getConfig("chartInvoicedLabel", "Facturado"), data: invoiced, backgroundColor: "rgba(13,110,253,0.75)", borderRadius: 4 },
+      ];
+      if (getConfig("hasPurchasingAccess", false)) {
+        spDatasets.push({ label: getConfig("chartPurchasedLabel", "Comprado"), data: purchased, backgroundColor: "rgba(245,158,11,0.78)", borderRadius: 4 });
+      }
+      new Chart(spCanvas, {
+        type: "bar",
+        data: { labels: months, datasets: spDatasets },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "top", labels: { boxWidth: 12 } } },
+          scales: { y: { beginAtZero: true, ticks: { maxTicksLimit: 6 } } },
+        },
+      });
+    }
 
     new Chart(document.getElementById("revenueChart"), {
       type: "bar",
@@ -44,18 +66,23 @@
       replaceChartPanel("statusChart", getConfig("chartNoInvoicesText", "Sin facturas registradas."));
     }
 
-    if (custDatasets.length) {
-      new Chart(document.getElementById("customerChart"), {
+    var agCanvas = document.getElementById("arApAgingChart");
+    if (agCanvas) {
+      var agDatasets = [
+        { label: getConfig("chartARLabel", "Por cobrar"), data: arAging, backgroundColor: "rgba(63,111,214,0.78)", borderRadius: 4 },
+      ];
+      if (getConfig("hasPurchasingAccess", false)) {
+        agDatasets.push({ label: getConfig("chartAPLabel", "Por pagar"), data: apAging, backgroundColor: "rgba(217,119,6,0.80)", borderRadius: 4 });
+      }
+      new Chart(agCanvas, {
         type: "bar",
-        data: { labels: months, datasets: custDatasets },
+        data: { labels: agingLabels, datasets: agDatasets },
         options: {
           responsive: true,
           plugins: { legend: { position: "top", labels: { boxWidth: 12 } } },
-          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { maxTicksLimit: 6 } } },
+          scales: { y: { beginAtZero: true, ticks: { maxTicksLimit: 6 } } },
         },
       });
-    } else {
-      replaceChartPanel("customerChart", getConfig("chartNoCustomerDataText", "Sin datos de clientes."));
     }
   }
 

@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}SabSys{% endblock %} — SabSys</title>
+  <title>SabSys - {% block title %}{% trans "Inicio" %}{% endblock %}</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/sabsys-favicon-32x32-trprnt0.png' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +25,7 @@
   <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 
   <style>[x-cloak]{display:none!important}</style>
+  {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-light"{% if module %} data-module="{{ module }}"{% endif %}>
 
