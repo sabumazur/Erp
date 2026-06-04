@@ -198,6 +198,7 @@ class Item(ERPBaseModel):
             GinIndex(SearchVector("name", config="spanish"), name="item_name_fts_idx"),
             GinIndex(fields=["name"], opclasses=["gin_trgm_ops"], name="item_name_trgm_idx"),
             GinIndex(fields=["code"], opclasses=["gin_trgm_ops"], name="item_code_trgm_idx"),
+            models.Index(fields=["organization", "is_active"], name="item_org_active_idx"),
         ]
         constraints = [
             models.UniqueConstraint(

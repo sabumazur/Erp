@@ -10,13 +10,14 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, SaleOrderDeliverForm, ConsolidateForm
 from ..models import SalesDocument, SalesDocumentItem, CustomerDepartment
 from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
+from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
@@ -60,16 +61,12 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         org_qs = SalesDocument.sale_orders.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "DELIVERED", "label": _("Entregada"), "color": "#06b6d4",
-             "count": org_qs.filter(status="DELIVERED").count()},
-            {"value": "INVOICED",  "label": _("Facturada"), "color": "#10b981",
-             "count": org_qs.filter(status="INVOICED").count()},
-        ]
+        status_pills = status_pill_counts(org_qs, [
+            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8"},
+            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6"},
+            {"value": "DELIVERED", "label": _("Entregada"), "color": "#06b6d4"},
+            {"value": "INVOICED",  "label": _("Facturada"), "color": "#10b981"},
+        ])
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
         if not self.request.htmx:
@@ -118,7 +115,8 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
             order.doc_type = SalesDocument.DocType.SALE_ORDER
             order.save()
             formset.instance = order
-            formset.save()
+            with suspend_recompute(order):
+                formset.save()
             messages.success(request, _("Orden de venta creada como borrador."))
             return redirect("sales:sale_order_detail", pk=order.pk)
         ctx = self.get_context_data()
@@ -141,7 +139,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["deliver_form"] = SaleOrderDeliverForm()
         ctx["module"] = "sale-order"
         o = self.object
@@ -184,7 +182,8 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         formset = InvoiceItemFormSet(request.POST, instance=o, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
-            formset.save()
+            with suspend_recompute(o):
+                formset.save()
             messages.success(request, _("Orden de venta actualizada."))
             return redirect("sales:sale_order_detail", pk=o.pk)
         ctx = self.get_context_data(form=form, formset=formset, order=o)

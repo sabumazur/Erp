@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Sum
+from django.db.models import Case, CharField, Count, Sum, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -86,15 +86,28 @@ class ERPBaseViewMixin(LoginRequiredMixin):
 
         return super().dispatch(request, *args, **kwargs)
 
+    def _user_memberships(self):
+        """Materialize the sidebar membership list once per request.
+
+        The result is cached on the request object so multiple context builds
+        within the same request (e.g. get_context_data + a nested get_context)
+        reuse a single query instead of re-issuing it each time.
+        """
+        cached = getattr(self.request, "_cached_user_memberships", None)
+        if cached is None:
+            cached = list(
+                self.request.user.memberships
+                .select_related("organization")
+                .order_by("created_at")
+            )
+            self.request._cached_user_memberships = cached
+        return cached
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["organization"] = self.request.organization
         ctx["membership"] = self.request.membership
-        ctx["user_memberships"] = (
-            self.request.user.memberships
-            .select_related("organization")
-            .order_by("created_at")
-        )
+        ctx["user_memberships"] = self._user_memberships()
         return ctx
 
     def get_context(self, **kwargs):
@@ -111,11 +124,7 @@ class ERPBaseViewMixin(LoginRequiredMixin):
         return {
             "organization": self.request.organization,
             "membership": self.request.membership,
-            "user_memberships": (
-                self.request.user.memberships
-                .select_related("organization")
-                .order_by("created_at")
-            ),
+            "user_memberships": self._user_memberships(),
             **kwargs,
         }
 
@@ -281,7 +290,6 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         }
 
         from apps.purchases.models import PurchaseDocument, SupplierPayment
-        from apps.purchases.views.reports import _bucket_for
 
         purch_by_month = {
             row["month"]: float(row["total"])
@@ -346,18 +354,34 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         }
         chart_ar_aging = [ar_aging_map.get(k, 0.0) for k in _AGING_KEYS]
 
-        ap_outstanding = _zero
-        ap_aging_acc = {k: 0.0 for k in _AGING_KEYS}
-        for sinv in PurchaseDocument.supplier_invoices.filter(
+        # AP aging via a single grouped aggregate (mirrors AR with_aging above)
+        _ap_unpaid = PurchaseDocument.supplier_invoices.filter(
             organization=org,
             deleted_at__isnull=True,
             status=PurchaseDocument.Status.CONFIRMED,
             due_date__isnull=False,
-        ):
-            ap_outstanding += sinv.total
-            ap_aging_acc[_bucket_for((today - sinv.due_date).days)] += float(sinv.total)
-        chart_ap_aging = [ap_aging_acc[k] for k in _AGING_KEYS]
-        ap_overdue = sum(ap_aging_acc[k] for k in ("1_30", "31_60", "61_90", "90_plus"))
+        ).annotate(
+            aging_bucket_db=Case(
+                When(due_date__gte=today, then=Value("current")),
+                When(due_date__gte=today - timedelta(days=30), then=Value("1_30")),
+                When(due_date__gte=today - timedelta(days=60), then=Value("31_60")),
+                When(due_date__gte=today - timedelta(days=90), then=Value("61_90")),
+                default=Value("90_plus"),
+                output_field=CharField(max_length=10),
+            )
+        )
+        ap_aging_map = {
+            row["aging_bucket_db"]: (row["t"] or _zero)
+            for row in _ap_unpaid.values("aging_bucket_db").annotate(t=Sum("total"))
+        }
+        ap_outstanding = sum(ap_aging_map.values(), _zero)
+        chart_ap_aging = [float(ap_aging_map.get(k, _zero)) for k in _AGING_KEYS]
+        ap_overdue = float(
+            sum(
+                (ap_aging_map.get(k, _zero) for k in ("1_30", "31_60", "61_90", "90_plus")),
+                _zero,
+            )
+        )
 
         net_position = outstanding - ap_outstanding
 

@@ -6,7 +6,7 @@ from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
-from django.db.models import Case, DecimalField, F, When
+from django.db.models import Case, DecimalField, F, Q, Sum, When
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.core.models import AbstractDocumentLineItem, ERPBaseModel, SoftDeleteQuerySet
@@ -883,6 +883,14 @@ class SalesDocument(ERPBaseModel):
                 fields=["organization", "due_date", "status"],
                 name="invoice_org_duedate_status_idx",
             ),
+            models.Index(
+                fields=["organization", "doc_type", "status", "issue_date"],
+                name="inv_org_dt_status_date_idx",
+            ),
+            models.Index(
+                fields=["organization", "doc_type", "issue_date"],
+                name="inv_org_dt_issuedate_idx",
+            ),
             GinIndex(
                 fields=["encf"],
                 opclasses=["gin_trgm_ops"],
@@ -978,18 +986,21 @@ class SalesDocument(ERPBaseModel):
 
     def recompute_totals(self):
         """Recompute subtotal, itbis_18, itbis_16 and total from line items."""
-        items = self.items.all()
-        subtotal = sum(i.line_total for i in items)
-        itbis_18 = sum(
-            i.itbis_amount
-            for i in items
-            if i.itbis_rate == SalesDocumentItem.ITBISRate.RATE_18
+        _zero = Decimal("0.00")
+        agg = self.items.aggregate(
+            subtotal=Sum("line_total"),
+            itbis_18=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=SalesDocumentItem.ITBISRate.RATE_18),
+            ),
+            itbis_16=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=SalesDocumentItem.ITBISRate.RATE_16),
+            ),
         )
-        itbis_16 = sum(
-            i.itbis_amount
-            for i in items
-            if i.itbis_rate == SalesDocumentItem.ITBISRate.RATE_16
-        )
+        subtotal = agg["subtotal"] or _zero
+        itbis_18 = agg["itbis_18"] or _zero
+        itbis_16 = agg["itbis_16"] or _zero
         self.subtotal = subtotal
         self.itbis_18 = itbis_18
         self.itbis_16 = itbis_16
@@ -1137,6 +1148,12 @@ class SalesDocumentItem(AbstractDocumentLineItem):
         verbose_name = _("línea de documento")
         verbose_name_plural = _("líneas de documento")
         ordering = ["pk"]
+        indexes = [
+            models.Index(
+                fields=["document", "itbis_rate"],
+                name="sales_item_doc_itbis_idx",
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(quantity__gt=0),
@@ -1214,6 +1231,14 @@ class Payment(ERPBaseModel):
                 fields=["reference"],
                 opclasses=["gin_trgm_ops"],
                 name="payment_reference_trgm_idx",
+            ),
+            models.Index(
+                fields=["organization", "date"],
+                name="payment_org_date_idx",
+            ),
+            models.Index(
+                fields=["organization", "customer", "date"],
+                name="payment_org_cust_date_idx",
             ),
         ]
         constraints = [

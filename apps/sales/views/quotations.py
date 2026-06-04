@@ -8,13 +8,14 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet, InvoiceItemFormSetCreate
 from ..models import SalesDocument, NCFType
 from ..email import send_quotation_email, _signature_url
 from ..services import QuotationService
+from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
@@ -54,20 +55,14 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = QuotationFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         org_qs = SalesDocument.quotations.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "SENT",      "label": _("Enviada"),   "color": "#06b6d4",
-             "count": org_qs.filter(status="SENT").count()},
-            {"value": "ACCEPTED",  "label": _("Aceptada"),  "color": "#10b981",
-             "count": org_qs.filter(status="ACCEPTED").count()},
-            {"value": "REJECTED",  "label": _("Rechazada"), "color": "#ef4444",
-             "count": org_qs.filter(status="REJECTED").count()},
-            {"value": "EXPIRED",   "label": _("Expirada"),  "color": "#f97316",
-             "count": org_qs.filter(status="EXPIRED").count()},
-        ]
+        status_pills = status_pill_counts(org_qs, [
+            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8"},
+            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6"},
+            {"value": "SENT",      "label": _("Enviada"),   "color": "#06b6d4"},
+            {"value": "ACCEPTED",  "label": _("Aceptada"),  "color": "#10b981"},
+            {"value": "REJECTED",  "label": _("Rechazada"), "color": "#ef4444"},
+            {"value": "EXPIRED",   "label": _("Expirada"),  "color": "#f97316"},
+        ])
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
         if not self.request.htmx:
@@ -119,7 +114,8 @@ class QuotationCreateView(ERPBaseViewMixin, TemplateView):
             quotation.doc_type = SalesDocument.DocType.QUOTATION
             quotation.save()
             formset.instance = quotation
-            formset.save()
+            with suspend_recompute(quotation):
+                formset.save()
             messages.success(request, _("Cotización creada como borrador."))
             return redirect("sales:quotation_detail", pk=quotation.pk)
         ctx = self.get_context_data()
@@ -142,7 +138,7 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["ncf_type_choices"] = NCFType.choices
         ctx["module"] = "quotation"
         q = self.object
@@ -185,7 +181,8 @@ class QuotationUpdateView(ERPBaseViewMixin, TemplateView):
         formset = InvoiceItemFormSet(request.POST, instance=q, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
-            formset.save()
+            with suspend_recompute(q):
+                formset.save()
             messages.success(request, _("Cotización actualizada."))
             return redirect("sales:quotation_detail", pk=q.pk)
         ctx = self.get_context_data(form=form, formset=formset, quotation=q)

@@ -2,6 +2,19 @@ import json
 from dataclasses import dataclass
 
 from django.core.paginator import Paginator
+from django.db.models import Count
+
+
+def status_pill_counts(qs, specs, *, field="status"):
+    """Build status-filter pills with a single grouped COUNT query.
+
+    *specs* is an iterable of dicts, each carrying at least ``"value"`` (plus
+    any passthrough keys like ``label``/``color``). Returns a new list where
+    each dict has ``"count"`` populated from one ``GROUP BY`` over *qs*,
+    replacing the old pattern of one ``.count()`` query per pill.
+    """
+    counts = dict(qs.values_list(field).annotate(_n=Count("id")))
+    return [{**spec, "count": counts.get(spec["value"], 0)} for spec in specs]
 
 
 @dataclass

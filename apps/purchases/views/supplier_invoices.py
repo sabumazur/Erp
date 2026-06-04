@@ -9,7 +9,7 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
 from apps.core.search import fts_search
 from ..forms import SupplierInvoiceForm, PurchaseDocumentItemFormSet, PurchaseDocumentItemFormSetCreate
 from ..models import PurchaseDocument, PurchaseDocumentItem
@@ -53,16 +53,12 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if status_filter:
             qs = qs.filter(status=status_filter)
         org_qs = PurchaseDocument.supplier_invoices.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981",
-             "count": org_qs.filter(status="PAID").count()},
-            {"value": "CANCELLED", "label": _("Anulada"),    "color": "#ef4444",
-             "count": org_qs.filter(status="CANCELLED").count()},
-        ]
+        status_pills = status_pill_counts(org_qs, [
+            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8"},
+            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6"},
+            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981"},
+            {"value": "CANCELLED", "label": _("Anulada"),    "color": "#ef4444"},
+        ])
         ctx.update(self.apply_datatable(qs, status_pills=status_pills))
         if not self.request.htmx:
             today = date.today()
@@ -145,7 +141,7 @@ class SupplierInvoiceDetailView(ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["module"] = "supplier-invoice"
         inv = self.object
         ctx["breadcrumbs"] = [

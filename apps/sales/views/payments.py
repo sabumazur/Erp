@@ -51,7 +51,7 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = (
             Payment.objects.filter(organization=org)
             .select_related("customer")
-            .prefetch_related("allocations__invoice")
+            .prefetch_related("allocations__invoice__customer")
         )
         q = self.request.GET.get("q", "").strip()
         if q:
@@ -154,7 +154,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         payment = get_object_or_404(
-            Payment.objects.select_related("customer", "organization").prefetch_related("allocations__invoice"),
+            Payment.objects.select_related("customer", "organization").prefetch_related("allocations__invoice__customer"),
             pk=pk, organization=request.organization,
         )
         return render(

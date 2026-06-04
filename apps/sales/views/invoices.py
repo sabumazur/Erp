@@ -14,7 +14,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
 from apps.core.search import fts_search
 from ..filters import InvoiceFilter
 from ..forms import (
@@ -24,6 +24,7 @@ from ..forms import (
 from ..models import SalesDocument, SalesDocumentItem, NCFSequence, Payment
 from ..email import send_invoice_email, _signature_url
 from ..services import NCFService, PaymentService
+from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
@@ -63,18 +64,13 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         org_qs = SalesDocument.invoices.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "SENT",      "label": _("Enviada"),    "color": "#06b6d4",
-             "count": org_qs.filter(status="SENT").count()},
-            {"value": "OVERDUE",   "label": _("Vencida"),    "color": "#ef4444",
-             "count": org_qs.filter(status="OVERDUE").count()},
-            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981",
-             "count": org_qs.filter(status="PAID").count()},
-        ]
+        status_pills = status_pill_counts(org_qs, [
+            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8"},
+            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6"},
+            {"value": "SENT",      "label": _("Enviada"),    "color": "#06b6d4"},
+            {"value": "OVERDUE",   "label": _("Vencida"),    "color": "#ef4444"},
+            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981"},
+        ])
         ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
 
         if not self.request.htmx:
@@ -164,7 +160,8 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
             invoice.doc_type = SalesDocument.DocType.INVOICE
             invoice.save()
             formset.instance = invoice
-            formset.save()
+            with suspend_recompute(invoice):
+                formset.save()
             messages.success(request, _("Factura creada como borrador."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data()
@@ -207,7 +204,8 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         formset = InvoiceItemFormSet(request.POST, instance=invoice, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             form.save()
-            formset.save()
+            with suspend_recompute(invoice):
+                formset.save()
             messages.success(request, _("Factura actualizada."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data(form=form, formset=formset, invoice=invoice)
@@ -373,7 +371,8 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
             note = form.save(commit=False)
             note.save()
             formset.instance = note
-            formset.save()
+            with suspend_recompute(note):
+                formset.save()
             messages.success(request, _("Nota de Crédito/Débito creada como borrador."))
             return redirect("sales:invoice_detail", pk=note.pk)
         ctx = self.get_context_data(form=form, formset=formset, original=original)

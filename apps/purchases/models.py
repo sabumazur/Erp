@@ -6,6 +6,7 @@ from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -308,6 +309,14 @@ class PurchaseDocument(ERPBaseModel):
                 fields=["organization", "doc_type", "status"],
                 name="pur_org_doctype_status_idx",
             ),
+            models.Index(
+                fields=["organization", "supplier"],
+                name="pur_org_supplier_idx",
+            ),
+            models.Index(
+                fields=["organization", "doc_type", "status", "issue_date"],
+                name="pur_org_dt_status_date_idx",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -339,16 +348,21 @@ class PurchaseDocument(ERPBaseModel):
         return self.itbis_18 + self.itbis_16
 
     def recompute_totals(self):
-        items = self.items.all()
-        subtotal = sum(i.line_total for i in items)
-        itbis_18 = sum(
-            i.itbis_amount for i in items
-            if i.itbis_rate == PurchaseDocumentItem.ITBISRate.RATE_18
+        _zero = Decimal("0.00")
+        agg = self.items.aggregate(
+            subtotal=Sum("line_total"),
+            itbis_18=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=PurchaseDocumentItem.ITBISRate.RATE_18),
+            ),
+            itbis_16=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=PurchaseDocumentItem.ITBISRate.RATE_16),
+            ),
         )
-        itbis_16 = sum(
-            i.itbis_amount for i in items
-            if i.itbis_rate == PurchaseDocumentItem.ITBISRate.RATE_16
-        )
+        subtotal = agg["subtotal"] or _zero
+        itbis_18 = agg["itbis_18"] or _zero
+        itbis_16 = agg["itbis_16"] or _zero
         self.subtotal = subtotal
         self.itbis_18 = itbis_18
         self.itbis_16 = itbis_16
@@ -393,6 +407,12 @@ class PurchaseDocumentItem(AbstractDocumentLineItem):
         verbose_name = _("línea de compra")
         verbose_name_plural = _("líneas de compra")
         ordering = ["pk"]
+        indexes = [
+            models.Index(
+                fields=["purchase_document", "itbis_rate"],
+                name="pur_item_doc_itbis_idx",
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(quantity__gt=0),
@@ -457,6 +477,16 @@ class SupplierPayment(ERPBaseModel):
         verbose_name = _("pago a proveedor")
         verbose_name_plural = _("pagos a proveedores")
         ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["organization", "supplier", "date"],
+                name="suppay_org_supplier_date_idx",
+            ),
+            models.Index(
+                fields=["organization", "date"],
+                name="suppay_org_date_idx",
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0),
