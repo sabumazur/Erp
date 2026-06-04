@@ -198,6 +198,59 @@
     });
   }
 
+  function initHeaderCardCollapse() {
+    document.querySelectorAll(".doc-order-card").forEach(function (card) {
+      var head = card.querySelector(".doc-order-card-head");
+      var body = card.querySelector(".doc-order-card-body");
+      if (!head || !body || head.dataset.collapseInit) return;
+      head.dataset.collapseInit = "1";
+
+      // Wrap the body to animate height via the grid-rows trick. The inner
+      // (padding-less) div is the clip surface — body padding lives below it so
+      // it collapses fully, leaving only the head visible.
+      var wrap = document.createElement("div");
+      wrap.className = "doc-card-collapse";
+      var inner = document.createElement("div");
+      inner.className = "doc-card-collapse-inner";
+      body.parentNode.insertBefore(wrap, body);
+      wrap.appendChild(inner);
+      inner.appendChild(body);
+
+      // Turn the head into an accessible toggle with a chevron affordance.
+      head.classList.add("is-toggle");
+      head.setAttribute("role", "button");
+      head.setAttribute("tabindex", "0");
+      var chev = document.createElement("i");
+      chev.className = "bi bi-chevron-down doc-card-chevron";
+      chev.setAttribute("aria-hidden", "true");
+      head.appendChild(chev);
+
+      // Persist per doc-type: strip UUID/numeric segments so create + edit share state.
+      var key = "sabsys.docHead." +
+        location.pathname.replace(/\/[0-9a-f-]{6,}/gi, "/:id").replace(/\/$/, "");
+
+      function apply(collapsed, persist) {
+        card.classList.toggle("is-collapsed", collapsed);
+        head.setAttribute("aria-expanded", String(!collapsed));
+        if (persist) {
+          try { localStorage.setItem(key, collapsed ? "1" : "0"); } catch (e) {}
+        }
+      }
+
+      var saved = null;
+      try { saved = localStorage.getItem(key); } catch (e) {}
+      apply(saved === "1", false); // default open
+
+      function toggle() {
+        apply(!card.classList.contains("is-collapsed"), true);
+      }
+      head.addEventListener("click", toggle);
+      head.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
+    });
+  }
+
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
   window.recalcGrandTotal = recalcGrandTotal;
@@ -206,6 +259,7 @@
   window.initCustomerDefaults = initCustomerDefaults;
   window.initIssueDateDeliverySync = initIssueDateDeliverySync;
   window.addDocumentLine = addDocumentLine;
+  window.initHeaderCardCollapse = initHeaderCardCollapse;
 
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-add-line]")) addDocumentLine();

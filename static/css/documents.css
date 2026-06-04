@@ -72,8 +72,8 @@
   overflow: hidden;
 }
 
-/* ── Purchase order form header card ───────────────────────── */
-.po-order-card {
+/* ── Document form header card ─────────────────────────────── */
+.doc-order-card {
   border: 1px solid #dde3ec;
   border-radius: 8px;
   background: #fff;
@@ -81,7 +81,7 @@
   overflow: hidden;
 }
 
-.po-order-card .po-order-card-head {
+.doc-order-card .doc-order-card-head {
   display: flex;
   align-items: center;
   min-height: 46px;
@@ -91,13 +91,69 @@
   color: #334155;
 }
 
-.po-order-card-title {
+.doc-order-card-title {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.po-order-card-title i {
+/* ── Collapsible head ──────────────────────────────────────────────────────
+   JS (initHeaderCardCollapse) wraps the body in .doc-card-collapse and marks
+   the head .is-toggle. Body height animates via the grid-template-rows trick. */
+.doc-order-card-head.is-toggle {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .14s ease;
+}
+
+.doc-order-card-head.is-toggle:hover {
+  background: #f1f5fb;
+}
+
+.doc-order-card-head.is-toggle:focus-visible {
+  outline: 2px solid #86b7fe;
+  outline-offset: -2px;
+}
+
+.doc-card-chevron {
+  margin-left: auto;
+  display: inline-flex;
+  color: #94a3b8;
+  font-size: .95rem;
+  transition: transform .26s cubic-bezier(.4, 0, .2, 1), color .14s ease;
+}
+
+.doc-order-card-head.is-toggle:hover .doc-card-chevron {
+  color: #475569;
+}
+
+.doc-order-card.is-collapsed .doc-card-chevron {
+  transform: rotate(-90deg);
+}
+
+.doc-card-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows .26s cubic-bezier(.4, 0, .2, 1);
+}
+
+.doc-order-card.is-collapsed .doc-card-collapse {
+  grid-template-rows: 0fr;
+}
+
+.doc-card-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-card-collapse,
+  .doc-card-chevron {
+    transition: none;
+  }
+}
+
+.doc-order-card-title i {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -109,34 +165,34 @@
   font-size: .86rem;
 }
 
-.po-order-card-body {
+.doc-order-card-body {
   padding: 18px 16px 16px;
 }
 
-.po-order-card-body .row {
+.doc-order-card-body .row {
   --bs-gutter-x: 1.5rem;
   --bs-gutter-y: .85rem;
 }
 
-.po-order-card-body .mb-3 {
+.doc-order-card-body .mb-3 {
   margin-bottom: .9rem !important;
 }
 
-.po-order-card-body .form-label {
+.doc-order-card-body .form-label {
   margin-bottom: 6px;
   font-size: .78rem;
   font-weight: 700;
   color: #1f2937;
 }
 
-.po-order-card-body .asteriskField {
+.doc-order-card-body .asteriskField {
   margin-left: 1px;
   color: #b42318;
 }
 
-.po-order-card-body .form-control,
-.po-order-card-body .form-select,
-.po-order-card-body .supplier-display-text {
+.doc-order-card-body .form-control,
+.doc-order-card-body .form-select,
+.doc-order-card-body .supplier-display-text {
   min-height: 38px;
   border-color: #d7dde6;
   border-radius: 7px;
@@ -146,32 +202,32 @@
   transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease;
 }
 
-.po-order-card-body textarea.form-control {
+.doc-order-card-body textarea.form-control {
   min-height: 40px;
   resize: vertical;
 }
 
-.po-order-card-body textarea.autosize-ta {
+.doc-order-card-body textarea.autosize-ta {
   resize: none;
   overflow: hidden;
   min-height: 72px;
   transition: height .1s ease;
 }
 
-.po-order-card-body .form-control:focus,
-.po-order-card-body .form-select:focus,
+.doc-order-card-body .form-control:focus,
+.doc-order-card-body .form-select:focus,
 .document-footer-notes textarea:focus {
   border-color: #86b7fe;
   outline: 0;
   box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
 }
 
-.po-order-card-body .input-group {
+.doc-order-card-body .input-group {
   border-radius: 7px;
   box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
 }
 
-.po-order-card-body .supplier-display-text {
+.doc-order-card-body .supplier-display-text {
   display: flex;
   align-items: center;
   border-right: 0;
@@ -179,12 +235,12 @@
   padding: .45rem .7rem;
 }
 
-.po-order-card-body .supplier-display-text:hover {
+.doc-order-card-body .supplier-display-text:hover {
   background-color: #fbfcfe;
   border-color: #cbd5e1;
 }
 
-.po-order-card-body .input-group .btn {
+.doc-order-card-body .input-group .btn {
   width: 42px;
   border-color: #d7dde6;
   border-radius: 0 7px 7px 0;
@@ -192,7 +248,7 @@
   background: #f8fafc;
 }
 
-.po-order-card-body .input-group .btn:hover {
+.doc-order-card-body .input-group .btn:hover {
   color: var(--brand-accent);
   background: var(--brand-soft);
   border-color: rgba(63, 111, 214, .3);
@@ -766,44 +822,46 @@ tr.dt-row-selected:hover > td {
 
 
 /* ============================================================================
-   PURCHASE-ORDER FORM REDESIGN  (merged 2026-06-02)
+   DOCUMENT FORM CHROME  (doc-* — shared by sales + purchases editable forms)
    ----------------------------------------------------------------------------
-   New layout for purchase_order_form.html:
-     • .po-lines-head  — Líneas card header + count chip
-     • .po-bottom-grid — notes (left) + totals (right)
-     • .po-totals-card — standalone "Resumen" card  (uses #grand-* IDs)
-     • .po-notes-acc   — collapsible Notas accordion (Alpine + CSS max-height)
-     • .po-notes-ribbon — OPTIONAL ribbon alternative (markup in comment below)
+   Shared layout across all *_form.html (invoice, quotation, sale order,
+   purchase order, supplier invoice, sales/supplier payments):
+     • .doc-order-card  — header "Datos" card
+     • .doc-lines-card  — line-items / allocations table card
+     • .doc-lines-head  — lines card header + count chip
+     • .doc-bottom-grid — notes (left) + totals (right)
+     • .doc-totals-card — standalone "Resumen" card  (uses #grand-* IDs)
+     • .doc-notes-acc   — collapsible Notas accordion (Alpine + CSS max-height)
+     • .doc-notes-ribbon — OPTIONAL ribbon alternative (markup in comment below)
 
    NOTE: the older .document-totals-footer / .document-footer-notes /
-   .document-totals-table rules above are intentionally KEPT — the
-   supplier-invoice form still uses them. They do not conflict with the
-   po-* classes below.
+   .document-totals-table rules above are legacy print/detail styles, kept
+   separately; they do not conflict with the doc-* form chrome below.
    ============================================================================ */
 
 :root {
-  --po-accent: #0f766e;            /* teal — matches .po-order-card icon */
-  --po-accent-soft: #eef6f7;
-  --po-accent-border: rgba(15, 118, 110, .22);
+  --doc-accent: #0f766e;            /* teal — matches .doc-order-card icon */
+  --doc-accent-soft: #eef6f7;
+  --doc-accent-border: rgba(15, 118, 110, .22);
 }
 
 [x-cloak] { display: none !important; }
 
 /* ── Líneas card header (title + count chip) ─────────────────────────────── */
-.po-lines-head.app-card-head {
+.doc-lines-head.app-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-.po-lines-title {
+.doc-lines-title {
   font-size: .7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
 }
-.po-lines-count {
+.doc-lines-count {
   margin-left: auto;
   font-size: .68rem;
   font-weight: 700;
@@ -816,25 +874,25 @@ tr.dt-row-selected:hover > td {
 }
 
 /* ── Bottom grid: Notas (left) + Resumen (right) ─────────────────────────── */
-.po-bottom-grid {
+.doc-bottom-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
   gap: 18px;
   align-items: start;
 }
 @media (max-width: 767.98px) {
-  .po-bottom-grid { grid-template-columns: 1fr; }
+  .doc-bottom-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Resumen (totals) card ───────────────────────────────────────────────── */
-.po-totals-card {
+.doc-totals-card {
   background: #fff;
   border: 1px solid var(--hairline);
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
   padding: 16px 20px 18px;
 }
-.po-totals-head {
+.doc-totals-head {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -842,23 +900,23 @@ tr.dt-row-selected:hover > td {
   margin-bottom: 4px;
   border-bottom: 2px solid var(--kv-title, #2b3a44);
 }
-.po-totals-head i { color: var(--kv-title, #2b3a44); font-size: 1rem; }
-.po-totals-head span {
+.doc-totals-head i { color: var(--kv-title, #2b3a44); font-size: 1rem; }
+.doc-totals-head span {
   font-size: .76rem;
   font-weight: 800;
   letter-spacing: .085em;
   text-transform: uppercase;
   color: var(--kv-title, #2b3a44);
 }
-.po-tot-row {
+.doc-tot-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 24px;
   padding: 9px 0;
 }
-.po-tot-row + .po-tot-row { border-top: 1px solid var(--hairline-soft, #eef0f6); }
-.po-tot-k {
+.doc-tot-row + .doc-tot-row { border-top: 1px solid var(--hairline-soft, #eef0f6); }
+.doc-tot-k {
   font-size: .86rem;
   font-weight: 500;
   color: var(--kv-label, #5f7d8c);
@@ -866,27 +924,27 @@ tr.dt-row-selected:hover > td {
   align-items: center;
   gap: 7px;
 }
-.po-tot-tag {
+.doc-tot-tag {
   font-size: .62rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 5px;
-  background: var(--po-accent-soft);
-  color: var(--po-accent);
+  background: var(--doc-accent-soft);
+  color: var(--doc-accent);
 }
-.po-tot-v {
+.doc-tot-v {
   font-size: .9rem;
   font-weight: 600;
   color: #111827;
   white-space: nowrap;
 }
-.po-tot-row--grand {
+.doc-tot-row--grand {
   border-top: 2px solid var(--kv-title, #2b3a44);
   margin-top: 4px;
   padding-top: 13px;
   align-items: center;
 }
-.po-tot-row--grand .po-tot-k {
+.doc-tot-row--grand .doc-tot-k {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.15rem;
   font-weight: 700;
@@ -894,7 +952,7 @@ tr.dt-row-selected:hover > td {
   letter-spacing: .04em;
   color: var(--kv-title, #2b3a44);
 }
-.po-tot-row--grand .po-tot-v {
+.doc-tot-row--grand .doc-tot-v {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.85rem;
   font-weight: 700;
@@ -902,16 +960,13 @@ tr.dt-row-selected:hover > td {
   color: #0f172a;
 }
 
-/* ── Líneas — item rows (scoped to .po-lines-card; no partial/JS changes) ── */
+/* ── Líneas — item rows (scoped to .doc-lines-card; no partial/JS changes) ── */
 /* item = two stacked rows (.item-row-main + .item-row-desc); kill the global
    even-row striping so it doesn't alternate mid-item. */
-.po-lines-card tbody tr:nth-child(even),
 .doc-lines-card tbody tr:nth-child(even) { background: transparent; }
 
-.po-lines-card .table,
 .doc-lines-card .table { min-width: 660px; }
 
-.po-lines-card .item-row-main > td,
 .doc-lines-card .item-row-main > td {
   padding-top: 10px;
   padding-bottom: 6px;
@@ -920,8 +975,6 @@ tr.dt-row-selected:hover > td {
 }
 
 /* inputs + select in the line row */
-.po-lines-card .item-row-main .form-control,
-.po-lines-card .item-row-main .form-select,
 .doc-lines-card .item-row-main .form-control,
 .doc-lines-card .item-row-main .form-select {
   min-height: 36px;
@@ -929,64 +982,49 @@ tr.dt-row-selected:hover > td {
   border-radius: 7px;
   font-size: .85rem;
 }
-.po-lines-card .item-row-main .form-control:focus,
-.po-lines-card .item-row-main .form-select:focus,
 .doc-lines-card .item-row-main .form-control:focus,
 .doc-lines-card .item-row-main .form-select:focus {
   border-color: #86b7fe;
   box-shadow: 0 0 0 .18rem rgba(13, 110, 253, .18);
 }
-.po-lines-card .item-row-main input[name$="-quantity"],
-.po-lines-card .item-row-main input[name$="-unit_price"],
 .doc-lines-card .item-row-main input[name$="-quantity"],
 .doc-lines-card .item-row-main input[name$="-unit_price"] {
   text-align: right;
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
 }
-.po-lines-card .item-row-main select[name$="-itbis_rate"],
 .doc-lines-card .item-row-main select[name$="-itbis_rate"] {
-  color: var(--po-accent);
+  color: var(--doc-accent);
   font-weight: 600;
 }
 
 /* computed cells */
-.po-lines-card .row-subtotal,
-.po-lines-card .row-itbis,
-.po-lines-card .row-total,
 .doc-lines-card .row-subtotal,
 .doc-lines-card .row-itbis,
 .doc-lines-card .row-total {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
 }
-.po-lines-card .row-subtotal,
 .doc-lines-card .row-subtotal { font-weight: 600; color: #1f2937; }
-.po-lines-card .row-itbis,
 .doc-lines-card .row-itbis    { color: var(--muted); }
-.po-lines-card .row-total,
 .doc-lines-card .row-total    { font-weight: 700; color: #111827; }
 
 /* catalog (search) button — softer, accent on hover */
-.po-lines-card .item-row-main .btn-outline-secondary,
 .doc-lines-card .item-row-main .btn-outline-secondary {
   border-color: #d7dde6;
   color: #475569;
   background: #f8fafc;
 }
-.po-lines-card .item-row-main .btn-outline-secondary:hover,
 .doc-lines-card .item-row-main .btn-outline-secondary:hover {
-  color: var(--po-accent);
-  background: var(--po-accent-soft);
-  border-color: var(--po-accent-border);
+  color: var(--doc-accent);
+  background: var(--doc-accent-soft);
+  border-color: var(--doc-accent-border);
 }
 
 /* description / item-name row — reads as an intentional inline field, not a
    dead empty band; indents to line up past the catalog button. */
-.po-lines-card .item-row-desc > td,
 .doc-lines-card .item-row-desc > td {
   padding: 0 16px 12px 56px;
   border-bottom: 1px solid var(--hairline-soft, #eef0f6);
 }
-.po-lines-card .item-row-desc .form-control,
 .doc-lines-card .item-row-desc .form-control {
   min-height: 34px;
   border: 1px solid transparent;
@@ -996,30 +1034,25 @@ tr.dt-row-selected:hover > td {
   color: #1f2937;
   padding: 6px 10px;
 }
-.po-lines-card .item-row-desc .form-control:hover,
 .doc-lines-card .item-row-desc .form-control:hover {
   background: #fff;
   border-color: var(--hairline);
 }
-.po-lines-card .item-row-desc .form-control:focus,
 .doc-lines-card .item-row-desc .form-control:focus {
   background: #fff;
   border-color: #86b7fe;
   box-shadow: 0 0 0 .16rem rgba(13, 110, 253, .15);
 }
-.po-lines-card .item-row-desc:last-child > td,
 .doc-lines-card .item-row-desc:last-child > td { border-bottom: 0; }
 
 /* hover highlights the whole item (main + its description row) */
-.po-lines-card tbody tr.item-row-main:hover > td,
-.po-lines-card tbody tr.item-row-main:hover + tr.item-row-desc > td,
 .doc-lines-card tbody tr.item-row-main:hover > td,
 .doc-lines-card tbody tr.item-row-main:hover + tr.item-row-desc > td {
   background: #fbfcfe;
 }
 
 /* ── Notas accordion ─────────────────────────────────────────────────────── */
-.po-notes-acc {
+.doc-notes-acc {
   border: 1px solid var(--hairline);
   border-radius: 10px;
   background: #fff;
@@ -1027,7 +1060,7 @@ tr.dt-row-selected:hover > td {
   box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
   align-self: start;
 }
-.po-notes-trigger {
+.doc-notes-trigger {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -1039,8 +1072,8 @@ tr.dt-row-selected:hover > td {
   text-align: left;
   font: inherit;
 }
-.po-notes-trigger:hover { background: #fafbfd; }
-.po-notes-ico {
+.doc-notes-trigger:hover { background: #fafbfd; }
+.doc-notes-ico {
   width: 30px;
   height: 30px;
   border-radius: 8px;
@@ -1052,10 +1085,10 @@ tr.dt-row-selected:hover > td {
   color: #b45309;
   font-size: .95rem;
 }
-.po-notes-txt { flex: 1; min-width: 0; }
-.po-notes-title { display: block; font-size: .8rem; font-weight: 700; color: #1f2937; }
-.po-notes-hint  { display: block; font-size: .74rem; color: var(--muted); margin-top: 1px; }
-.po-notes-badge {
+.doc-notes-txt { flex: 1; min-width: 0; }
+.doc-notes-title { display: block; font-size: .8rem; font-weight: 700; color: #1f2937; }
+.doc-notes-hint  { display: block; font-size: .74rem; color: var(--muted); margin-top: 1px; }
+.doc-notes-badge {
   font-size: .64rem;
   font-weight: 700;
   padding: 2px 8px;
@@ -1063,21 +1096,21 @@ tr.dt-row-selected:hover > td {
   background: #fef3c7;
   color: #b45309;
 }
-.po-notes-chev { color: var(--muted-2, #9ca3af); transition: transform .22s ease; font-size: .9rem; }
-.po-notes-acc.open .po-notes-chev { transform: rotate(180deg); }
+.doc-notes-chev { color: var(--muted-2, #9ca3af); transition: transform .22s ease; font-size: .9rem; }
+.doc-notes-acc.open .doc-notes-chev { transform: rotate(180deg); }
 
-.po-notes-panel { max-height: 0; overflow: hidden; transition: max-height .26s ease; }
-.po-notes-acc.open .po-notes-panel { max-height: 320px; }
-.po-notes-panel-inner { padding: 0 15px 15px; }
+.doc-notes-panel { max-height: 0; overflow: hidden; transition: max-height .26s ease; }
+.doc-notes-acc.open .doc-notes-panel { max-height: 320px; }
+.doc-notes-panel-inner { padding: 0 15px 15px; }
 /* the crispy/widget textarea inside the panel */
-.po-notes-panel-inner textarea {
+.doc-notes-panel-inner textarea {
   width: 100%;
   min-height: 84px;
   resize: vertical;
   border: 1px solid #d7dde6;
   border-radius: 8px;
 }
-.po-notes-panel-inner textarea:focus {
+.doc-notes-panel-inner textarea:focus {
   border-color: #86b7fe;
   outline: 0;
   box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .18);
@@ -1086,21 +1119,21 @@ tr.dt-row-selected:hover > td {
 /* ============================================================================
    OPTIONAL — Ribbon alternative for the Notas field
    ----------------------------------------------------------------------------
-   To use the ribbon instead of the accordion, replace the .po-notes-acc block
+   To use the ribbon instead of the accordion, replace the .doc-notes-acc block
    in the template with:
 
-   <div class="po-notes-ribbon" x-data="{ open: false }" :class="{ open }">
-     <div class="po-ribbon-tabwrap">
-       <button type="button" class="po-ribbon-tab" @click="open = !open">
+   <div class="doc-notes-ribbon" x-data="{ open: false }" :class="{ open }">
+     <div class="doc-ribbon-tabwrap">
+       <button type="button" class="doc-ribbon-tab" @click="open = !open">
          <i class="bi bi-bookmark-star"></i> {% trans "Nota" %}
-         <i class="bi bi-chevron-down po-ribbon-chev"></i>
+         <i class="bi bi-chevron-down doc-ribbon-chev"></i>
        </button>
-       <span class="po-ribbon-tagline">{% trans "Toca la cinta para agregar una nota" %}</span>
+       <span class="doc-ribbon-tagline">{% trans "Toca la cinta para agregar una nota" %}</span>
      </div>
-     <div class="po-ribbon-body"><div class="po-ribbon-body-inner">{{ form.notes }}</div></div>
+     <div class="doc-ribbon-body"><div class="doc-ribbon-body-inner">{{ form.notes }}</div></div>
    </div>
    ============================================================================ */
-.po-notes-ribbon {
+.doc-notes-ribbon {
   position: relative;
   background: #fffdf4;
   border: 1px solid #f1e4b8;
@@ -1109,13 +1142,13 @@ tr.dt-row-selected:hover > td {
   box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
   align-self: start;
 }
-.po-ribbon-tabwrap { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; }
-.po-ribbon-tab {
+.doc-ribbon-tabwrap { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; }
+.doc-ribbon-tab {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--po-accent);
+  background: var(--doc-accent);
   color: #fff;
   font-size: .68rem;
   font-weight: 800;
@@ -1126,21 +1159,21 @@ tr.dt-row-selected:hover > td {
   cursor: pointer;
   font-family: inherit;
 }
-.po-ribbon-tab::after {
+.doc-ribbon-tab::after {
   content: "";
   position: absolute;
   right: 0; top: 0; bottom: 0;
   width: 14px;
-  background: var(--po-accent);
+  background: var(--doc-accent);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-.po-ribbon-chev { transition: transform .22s ease; }
-.po-notes-ribbon.open .po-ribbon-chev { transform: rotate(180deg); }
-.po-ribbon-tagline { font-size: .74rem; color: #9a7b2e; font-weight: 600; }
-.po-ribbon-body { max-height: 0; overflow: hidden; transition: max-height .26s ease; }
-.po-notes-ribbon.open .po-ribbon-body { max-height: 320px; }
-.po-ribbon-body-inner { padding: 11px 14px 14px; }
-.po-ribbon-body-inner textarea {
+.doc-ribbon-chev { transition: transform .22s ease; }
+.doc-notes-ribbon.open .doc-ribbon-chev { transform: rotate(180deg); }
+.doc-ribbon-tagline { font-size: .74rem; color: #9a7b2e; font-weight: 600; }
+.doc-ribbon-body { max-height: 0; overflow: hidden; transition: max-height .26s ease; }
+.doc-notes-ribbon.open .doc-ribbon-body { max-height: 320px; }
+.doc-ribbon-body-inner { padding: 11px 14px 14px; }
+.doc-ribbon-body-inner textarea {
   width: 100%;
   min-height: 84px;
   resize: vertical;
@@ -1148,21 +1181,15 @@ tr.dt-row-selected:hover > td {
   border: 1px solid #ecdca0;
   border-radius: 8px;
 }
-.po-ribbon-body-inner textarea:focus {
+.doc-ribbon-body-inner textarea:focus {
   border-color: #d9b441;
   outline: 0;
   box-shadow: 0 0 0 .18rem rgba(217, 180, 65, .22);
 }
 
 /* ── Shared document line-item utilities ─────────────────────── */
-
-.doc-lines-card {
-  border: 1px solid #dde3ec;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 28px rgba(15, 23, 42, .05);
-  overflow: hidden;
-}
+/* NOTE: .doc-lines-card card chrome (border/radius/shadow) comes from
+   .app-table-wrap (components.css); templates use both classes together. */
 
 .doc-col-desc {
   min-width: 200px;
@@ -1184,3 +1211,38 @@ tr.dt-row-selected:hover > td {
   font-size: 0.78rem;
   padding: 4px 14px;
 }
+
+/* ── Optional document fields (chips) — quotation / invoice / sale order ── */
+.doc-optfields {
+  --opt-accent:        #64748b;                 /* slate-500 */
+  --opt-accent-dark:   #475569;                 /* slate-600 — chip text */
+  --opt-accent-soft:   #f1f5f9;                 /* slate-100 — hover bg   */
+  --opt-accent-border: rgba(71, 85, 105, .30);  /* slate-600 @30% dashed  */
+}
+.doc-optfields-hint {
+  font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: #9ca3af; margin-bottom: 9px;
+}
+.doc-optfields-add { display: flex; flex-wrap: wrap; gap: 10px; }
+.doc-optfield-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px dashed var(--opt-accent-border); border-radius: 8px; background: #fff;
+  color: var(--opt-accent-dark); font: inherit; font-size: .8rem; font-weight: 700;
+  padding: 9px 14px; cursor: pointer; transition: background .14s ease, border-color .14s ease;
+}
+.doc-optfield-chip:hover { background: var(--opt-accent-soft); border-style: solid; }
+.doc-optfield-chip i { font-size: .9rem; }
+.doc-optfields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.doc-optfields-grid:has(.is-open) { margin-top: 12px; }
+.doc-optfields-grid--single { grid-template-columns: 1fr; }   /* single-chip forms */
+@media (max-width: 640px) { .doc-optfields-grid { grid-template-columns: 1fr; } }
+.doc-optfield-wrap { display: none; position: relative; }
+.doc-optfield-wrap.is-open { display: block; }
+.doc-optfield-wrap .mb-3 { margin-bottom: 0 !important; }
+.doc-optfield-remove {
+  position: absolute; top: 0; right: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 0; background: none; cursor: pointer; padding: 2px 5px; border-radius: 5px;
+  font: inherit; font-size: .72rem; font-weight: 600; color: #6b7280; line-height: 1;
+}
+.doc-optfield-remove:hover { color: #b42318; background: #fdecee; }

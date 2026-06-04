@@ -27,6 +27,7 @@
     initInvoiceItemHtmx();
     initCustomerDefaults();
     initIssueDateDeliverySync();
+    initHeaderCardCollapse();
 
     // Payment
     initPaymentForm();
