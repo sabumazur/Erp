@@ -19,8 +19,6 @@ class Supplier(ERPBaseModel):
     class IdType(models.TextChoices):
         RNC = "RNC", _("RNC")
         CEDULA = "CED", _("Cédula")
-        PASAPORTE = "PAS", _("Pasaporte")
-        EXTERIOR = "EXT", _("Identificación extranjera")
 
     organization = models.ForeignKey(
         "accounts.Organization",
@@ -78,7 +76,11 @@ class Supplier(ERPBaseModel):
                 fields=["organization", "rnc_cedula"],
                 condition=models.Q(deleted_at__isnull=True) & ~models.Q(rnc_cedula=""),
                 name="unique_active_supplier_rnc_cedula_per_org",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(id_type__in=["RNC", "CED"]),
+                name="supplier_id_type_rnc_or_cedula",
+            ),
         ]
 
     def __str__(self):
@@ -86,6 +88,10 @@ class Supplier(ERPBaseModel):
 
     def clean(self):
         super().clean()
+        if self.id_type not in (self.IdType.RNC, self.IdType.CEDULA):
+            raise ValidationError(
+                {"id_type": _("El tipo de identificación debe ser RNC o Cédula.")}
+            )
         if not self.rnc_cedula:
             return
 
@@ -103,11 +109,6 @@ class Supplier(ERPBaseModel):
                     "rnc_cedula": _("La Cédula debe tener exactamente 11 dígitos numéricos.")
                 })
             self.rnc_cedula = normalized
-        elif self.id_type in (self.IdType.PASAPORTE, self.IdType.EXTERIOR):
-            if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", self.rnc_cedula):
-                raise ValidationError({
-                    "rnc_cedula": _("Identificación inválida (4–20 caracteres alfanuméricos).")
-                })
 
     def delete(self, *args, **kwargs):
         has_documents = PurchaseDocument.objects.filter(supplier=self).exists()

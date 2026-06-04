@@ -26,22 +26,22 @@
   {% csrf_token %}
 
   {# ── Card 1 · Datos de la orden ───────────────────────────────────────── #}
-  <div class="app-table-wrap po-order-card mb-3">
-    <div class="app-card-head po-order-card-head">
-      <span class="po-order-card-title">
+  <div class="app-table-wrap doc-order-card mb-3">
+    <div class="app-card-head doc-order-card-head">
+      <span class="doc-order-card-title">
         <i class="bi bi-bag-check" aria-hidden="true"></i>
         {% trans "Datos de la orden" %}
       </span>
     </div>
-    <div class="po-order-card-body">{% crispy form %}</div>
+    <div class="doc-order-card-body">{% crispy form %}</div>
   </div>
 
   {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
-  <div class="app-table-wrap po-lines-card mb-3">
-    <div class="app-card-head po-lines-head">
-      <span class="po-lines-title">{% trans "Líneas" %}</span>
+  <div class="app-table-wrap doc-lines-card mb-3">
+    <div class="app-card-head doc-lines-head">
+      <span class="doc-lines-title">{% trans "Líneas" %}</span>
       <div class="d-flex align-items-center gap-2">
-        <span class="po-lines-count" id="po-line-count"></span>
+        <span class="doc-lines-count" id="doc-line-count"></span>
         <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
           <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
         </button>
@@ -82,54 +82,29 @@
     </div>
   </div>
 
-  {# ── Bottom · Notas (accordion) + Resumen (totals card) ──────────────── #}
-  <div class="po-bottom-grid mb-3">
+  {# ── Bottom · Resumen (totals card) ──────────────────────────────────── #}
+  <div class="d-flex justify-content-end mb-3">
 
-    <div class="po-notes-acc"
-         x-data="{ open: {% if form.notes.value %}true{% else %}false{% endif %},
-                   has: {% if form.notes.value %}true{% else %}false{% endif %} }"
-         :class="{ open }">
-      <button type="button" class="po-notes-trigger" @click="open = !open"
-              :aria-expanded="open.toString()">
-        <span class="po-notes-ico"><i class="bi bi-sticky" aria-hidden="true"></i></span>
-        <span class="po-notes-txt">
-          <span class="po-notes-title">{% trans "Notas" %}</span>
-          <span class="po-notes-hint">{% trans "Instrucciones o referencias internas" %}</span>
-        </span>
-        <span class="po-notes-badge" x-show="has" x-cloak>{% trans "Nota agregada" %}</span>
-        <i class="bi bi-chevron-down po-notes-chev" aria-hidden="true"></i>
-      </button>
-      <div class="po-notes-panel">
-        <div class="po-notes-panel-inner"
-             @input="has = ($event.target.value || '').trim().length > 0">
-          {{ form.notes }}
-          {% if form.notes.errors %}
-            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="po-totals-card">
-      <div class="po-totals-head">
+    <div class="doc-totals-card" style="width:360px">
+      <div class="doc-totals-head">
         <i class="bi bi-calculator" aria-hidden="true"></i>
         <span>{% trans "Resumen" %}</span>
       </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "Subtotal" %}</span>
-        <span class="po-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
+      <div class="doc-tot-row">
+        <span class="doc-tot-k">{% trans "Subtotal" %}</span>
+        <span class="doc-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
       </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">18%</span></span>
-        <span class="po-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
+      <div class="doc-tot-row">
+        <span class="doc-tot-k">{% trans "ITBIS" %} <span class="doc-tot-tag">18%</span></span>
+        <span class="doc-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
       </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">16%</span></span>
-        <span class="po-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
+      <div class="doc-tot-row">
+        <span class="doc-tot-k">{% trans "ITBIS" %} <span class="doc-tot-tag">16%</span></span>
+        <span class="doc-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
       </div>
-      <div class="po-tot-row po-tot-row--grand">
-        <span class="po-tot-k">{% trans "Total" %}</span>
-        <span class="po-tot-v font-monospace"><span id="grand-total">0.00</span></span>
+      <div class="doc-tot-row doc-tot-row--grand">
+        <span class="doc-tot-k">{% trans "Total" %}</span>
+        <span class="doc-tot-v font-monospace"><span id="grand-total">0.00</span></span>
       </div>
     </div>
 
@@ -192,7 +167,7 @@ window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
 
 (function () {
   function syncCount() {
-    var el = document.getElementById("po-line-count");
+    var el = document.getElementById("doc-line-count");
     if (!el) return;
     var rows = document.querySelectorAll('#item-tbody tr.item-row-main');
     var n = 0;

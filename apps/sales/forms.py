@@ -10,6 +10,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
+from apps.core.layout import optional_fields
 from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
@@ -162,13 +163,6 @@ class CustomerForm(forms.ModelForm):
                 else:
                     cleaned_data["rnc_cedula"] = normalized
 
-            elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
-                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
-                    self.add_error(
-                        "rnc_cedula",
-                        _("Identificación inválida (4–20 caracteres alfanuméricos)."),
-                    )
-
         normalized = cleaned_data.get("rnc_cedula") or ""
         if self._organization and normalized and "rnc_cedula" not in self.errors:
             qs = Customer.objects.filter(
@@ -247,10 +241,6 @@ class CustomerQuickCreateForm(forms.ModelForm):
                     self.add_error("rnc_cedula", _("La Cédula debe tener exactamente 11 dígitos numéricos."))
                 else:
                     cleaned_data["rnc_cedula"] = normalized
-
-            elif id_type in (Customer.IdType.PASAPORTE, Customer.IdType.EXTERIOR):
-                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
-                    self.add_error("rnc_cedula", _("Identificación inválida (4–20 caracteres alfanuméricos)."))
 
             # Uniqueness within org (only if no prior errors on this field)
             if self._organization and "rnc_cedula" not in self.errors and normalized:
@@ -347,8 +337,8 @@ class InvoiceForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "due_date": FlatpickrDateInput(),
-            "notes": forms.TextInput(),
-            "terms": forms.TextInput(),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
+            "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones…")}),
             "ncf_type": TomSelect(placeholder="Tipo NCF…"),
             "payment_condition": TomSelect(placeholder="Condición…"),
         }
@@ -413,9 +403,7 @@ class InvoiceForm(forms.ModelForm):
                 Column("payment_condition", css_class="col-md-4"),
             ),
             HTML('<hr class="my-3">'),
-            Row(
-                Column("terms", css_class="col-md-6"),
-            ),
+            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
         )
 
 
@@ -438,8 +426,8 @@ class QuotationForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "valid_until": FlatpickrDateInput(),
-            "notes": AutosizeTextarea(attrs={"placeholder": "Instrucciones o referencias internas…"}),
-            "terms": AutosizeTextarea(attrs={"placeholder": "Términos y condiciones de la cotización…"}),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
+            "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones de la cotización…")}),
             "payment_condition": TomSelect(placeholder="Condición…"),
         }
         error_messages = {
@@ -501,10 +489,7 @@ class QuotationForm(forms.ModelForm):
                 Column("valid_until", css_class="col-md-4"),
             ),
             HTML('<hr class="my-3">'),
-            Row(
-                Column("terms", css_class="col-md-6"),
-                Column("notes", css_class="col-md-6"),
-            ),
+            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
         )
 
 
@@ -527,7 +512,7 @@ class SaleOrderForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "delivery_date": FlatpickrDateInput(),
-            "notes": forms.TextInput(),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "department": TomSelect(placeholder="Departamento…"),
             "payment_condition": TomSelect(placeholder="Condición…"),
         }
@@ -615,6 +600,8 @@ class SaleOrderForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("delivery_date", css_class="col-md-4"),
             ),
+            HTML('<hr class="my-3">'),
+            optional_fields(("notes", _("Añadir notas"))),
         )
 
 
@@ -838,8 +825,7 @@ class PaymentHeaderForm(forms.ModelForm):
         fields = ["customer", "date", "method", "reference", "notes"]
         widgets = {
             "date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1, "class": "form-control"}),
-            "customer": TomSelect(placeholder="Cliente…"),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "method": TomSelect(placeholder="Método…"),
         }
         error_messages = {
@@ -855,8 +841,9 @@ class PaymentHeaderForm(forms.ModelForm):
                 organization=organization
             ).order_by("name")
         self.fields["customer"].empty_label = _("— Seleccione un cliente —")
-        self.fields["customer"].widget.attrs.update(
-            {
+        self.fields["customer"].widget = forms.HiddenInput(
+            attrs={
+                "id": "id_customer",
                 "hx-get": reverse_lazy("sales:payment_outstanding_invoices"),
                 "hx-trigger": "change",
                 "hx-target": "#allocation-tbody",
@@ -864,17 +851,54 @@ class PaymentHeaderForm(forms.ModelForm):
                 "hx-include": "this",
             }
         )
+        customer_id = None
+        if self.instance and self.instance.pk and self.instance.customer_id:
+            customer_id = self.instance.customer_id
+        elif self.data.get("customer"):
+            customer_id = self.data.get("customer")
+        elif self.initial.get("customer"):
+            customer_id = self.initial.get("customer")
+        self.selected_customer = None
+        if customer_id:
+            self.selected_customer = self.fields["customer"].queryset.filter(
+                pk=customer_id
+            ).first()
         self.fields["reference"].widget.attrs["class"] = "form-control"
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("customer", css_class="col-md-5"),
+                Column(
+                    HTML(
+                        '<label class="form-label requiredField">'
+                        + str(_("Cliente"))
+                        + '<span class="asteriskField">*</span></label>'
+                        '<div class="input-group mb-1">'
+                        '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
+                        ' onclick="openCustomerPicker()">'
+                        '{% if form.selected_customer %}{{ form.selected_customer.name }}'
+                        '{% if form.selected_customer.rnc_cedula %} ({{ form.selected_customer.rnc_cedula }}){% endif %}'
+                        '{% else %}<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
+                        '{% endif %}'
+                        '</span>'
+                        '<button type="button" class="btn btn-outline-secondary" onclick="openCustomerPicker()">'
+                        '<i class="bi bi-search"></i>'
+                        '</button>'
+                        '</div>'
+                        '{% if form.customer.errors %}'
+                        '<div class="text-danger small">{{ form.customer.errors.0 }}</div>'
+                        '{% endif %}'
+                    ),
+                    Field("customer"),
+                    css_class="col-md-5",
+                ),
                 Column("date", css_class="col-md-2"),
                 Column("method", css_class="col-md-3"),
                 Column("reference", css_class="col-md-2"),
             ),
-            "notes",
+            HTML('<hr class="my-3">'),
+            optional_fields(("notes", _("Añadir notas"))),
         )
 
 
@@ -933,8 +957,8 @@ class CreditNoteForm(forms.ModelForm):
         widgets = {
             "issue_date": FlatpickrDateInput(),
             "due_date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1}),
-            "terms": forms.Textarea(attrs={"rows": 1}),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
+            "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones…")}),
             "ncf_type": TomSelect(placeholder="Tipo NCF…"),
         }
         error_messages = {
@@ -953,6 +977,15 @@ class CreditNoteForm(forms.ModelForm):
         ]
         self.helper = FormHelper()
         self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column("ncf_type", css_class="col-md-4"),
+                Column("issue_date", css_class="col-md-4"),
+                Column("due_date", css_class="col-md-4"),
+            ),
+            HTML('<hr class="my-3">'),
+            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
+        )
 
 
 # ── NCFSequence ───────────────────────────────────────────────────────────────

@@ -96,7 +96,7 @@ class Report607View(ERPBaseViewMixin, View):
         buf = io.StringIO()
         for inv in invoices:
             c = inv.customer
-            id_type_code = {"RNC": "1", "CED": "2", "PAS": "3", "EXT": "4"}.get(c.id_type, "")
+            id_type_code = {"RNC": "1", "CED": "2"}.get(c.id_type, "")
             buyer_id = c.rnc_cedula or ""
             buyer_type = id_type_code if buyer_id else ""
             encf_mod = inv.encf_modified.encf if inv.encf_modified else ""

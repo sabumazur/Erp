@@ -18,9 +18,11 @@
     <td colspan="4">
       <div class="picker-empty">
         {% trans "No se encontraron clientes." %}
+        {% if customer_picker_allow_create != False %}
         <a href="#" onclick="customerPickerShowCreate(); return false;" class="ms-1">
           {% trans "¿Crear uno nuevo?" %}
         </a>
+        {% endif %}
       </div>
     </td>
   </tr>

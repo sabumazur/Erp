@@ -1,8 +1,7 @@
 import json
-from datetime import date
 
 from django.contrib import messages
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -123,24 +122,6 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = CustomerFilter(self.request.GET, queryset=qs)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-        if not self.request.htmx:
-            today = date.today()
-            active_dept = CustomerDepartment.objects.filter(
-                customer=OuterRef("pk"), deleted_at__isnull=True, is_active=True,
-            )
-            stats_qs = Customer.objects.filter(organization=org)
-            ctx["stats"] = [
-                {"label": _("Total clientes"),     "value": stats_qs.count(),
-                 "icon": "bi-people",              "color": "primary"},
-                {"label": _("Con límite de crédito"),"value": stats_qs.filter(credit_limit__isnull=False).count(),
-                 "icon": "bi-credit-card",         "color": "info"},
-                {"label": _("Con departamentos"),  "value": stats_qs.filter(Exists(active_dept)).count(),
-                 "icon": "bi-building",            "color": "secondary"},
-                {"label": _("Nuevos este mes"),    "value": stats_qs.filter(
-                    created_at__month=today.month, created_at__year=today.year,
-                 ).count(),
-                 "icon": "bi-person-plus",         "color": "success"},
-            ]
         ctx["module"] = "customer"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

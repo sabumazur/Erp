@@ -2,8 +2,6 @@ import json
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from datetime import date
-from django.db.models import Exists, OuterRef
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -70,22 +68,6 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if q:
             qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         ctx.update(self.apply_datatable(qs))
-        if not self.request.htmx:
-            today = date.today()
-            base = Supplier.objects.filter(organization=org)
-            has_invoice = PurchaseDocument.supplier_invoices.filter(supplier=OuterRef("pk"))
-            ctx["stats"] = [
-                {"label": _("Total proveedores"), "value": base.count(),
-                 "icon": "bi-truck",        "color": "primary"},
-                {"label": _("Activos"), "value": base.filter(is_active=True).count(),
-                 "icon": "bi-check-circle", "color": "success"},
-                {"label": _("Con facturas"), "value": base.filter(Exists(has_invoice)).count(),
-                 "icon": "bi-receipt",      "color": "info"},
-                {"label": _("Nuevos este mes"), "value": base.filter(
-                    created_at__year=today.year, created_at__month=today.month,
-                 ).count(),
-                 "icon": "bi-building-add", "color": "secondary"},
-            ]
         ctx["form"] = SupplierForm(organization=org)
         ctx["module"] = "supplier"
         ctx["breadcrumbs"] = [
