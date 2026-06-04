@@ -71,7 +71,7 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                 {"label": _("Valor pendiente"),
                  "value": "{:,.2f}".format(
                      org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack",      "color": "info"},
+                 "icon": "bi-cash-stack",      "color": "info", "currency": "RD$"},
             ]
         ctx["module"] = "purchase-order"
         ctx["breadcrumbs"] = [

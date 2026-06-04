@@ -22,69 +22,21 @@
   </div>
 </div>
 
+<div class="db-welcome" data-dashboard-welcome>
+  <span class="db-welcome-mark" aria-hidden="true"></span>
+  <span class="db-welcome-text">{{ dashboard_greeting }}, {{ dashboard_first_name }}</span>
+  <button class="db-welcome-close no-print" type="button" data-dashboard-welcome-close aria-label="{% trans 'Cerrar bienvenida' %}">
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>
+
 {% if has_sales_access %}
-<section class="db-command mb-3" aria-labelledby="cash-position-title">
-  <div class="db-command-head">
-    <div>
-      <span class="db-command-eyebrow">{% trans "Cash Command Center" %}</span>
-      <h2 id="cash-position-title" class="db-command-title">{% trans "Posición de caja" %}</h2>
-    </div>
-    <span class="db-command-date"><i class="bi bi-clock-history me-1"></i>{{ today|date:"d/m/Y" }}</span>
-  </div>
-  <div class="row g-2">
-    <div class="col-sm-6 {% if has_purchasing_access %}col-xl-3{% else %}col-xl-4{% endif %}">
-      <a href="{% url 'sales:invoice_list' %}" class="db-kpi is-ar">
-        <span class="db-kpi-icon"><i class="bi bi-arrow-down-circle"></i></span>
-        <div class="db-kpi-body">
-          <div class="db-kpi-value"><span class="db-kpi-cur">RD$</span>{{ outstanding|floatformat:2|intcomma }}</div>
-          <div class="db-kpi-label">{% trans "Por cobrar" %}</div>
-        </div>
-      </a>
-    </div>
-    {% if has_purchasing_access %}
-    <div class="col-sm-6 col-xl-3">
-      <a href="{% url 'purchases:supplier_invoice_list' %}" class="db-kpi is-ap">
-        <span class="db-kpi-icon"><i class="bi bi-arrow-up-circle"></i></span>
-        <div class="db-kpi-body">
-          <div class="db-kpi-value"><span class="db-kpi-cur">RD$</span>{{ ap_outstanding|floatformat:2|intcomma }}</div>
-          <div class="db-kpi-label">{% trans "Por pagar" %}</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-      <div class="db-kpi is-net">
-        <span class="db-kpi-icon"><i class="bi bi-bank"></i></span>
-        <div class="db-kpi-body">
-          <div class="db-kpi-value {% if net_position < 0 %}num-neg{% else %}num-pos{% endif %}"><span class="db-kpi-cur">RD$</span>{{ net_position|floatformat:2|intcomma }}</div>
-          <div class="db-kpi-label">{% trans "Posición neta (CxC − CxP)" %}</div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-    <div class="col-sm-6 {% if has_purchasing_access %}col-xl-3{% else %}col-xl-4{% endif %}">
-      <a href="{% url 'sales:invoice_list' %}?status=OVERDUE" class="db-kpi is-neg">
-        <span class="db-kpi-icon"><i class="bi bi-exclamation-triangle"></i></span>
-        <div class="db-kpi-body">
-          <div class="db-kpi-value num-neg"><span class="db-kpi-cur">RD$</span>{{ overdue_total|floatformat:2|intcomma }}</div>
-          <div class="db-kpi-label">
-            {% trans "Vencido CxC" %}{% if overdue_count %} · {{ overdue_count }}{% endif %}
-          </div>
-        </div>
-      </a>
-    </div>
-    {% if not has_purchasing_access %}
-    <div class="col-sm-6 col-xl-4">
-      <a href="{% url 'sales:customer_list' %}" class="db-kpi">
-        <span class="db-kpi-icon"><i class="bi bi-people"></i></span>
-        <div class="db-kpi-body">
-          <div class="db-kpi-value">{{ customer_count|intcomma }}</div>
-          <div class="db-kpi-label">{% trans "Clientes" %}</div>
-        </div>
-      </a>
-    </div>
-    {% endif %}
-  </div>
-</section>
+{# ── Administración ── #}
+<div class="db-section">
+  <span class="db-section-label">{% trans "Administración" %}</span>
+  <span class="db-section-rule"></span>
+</div>
+{% include "components/_kpi_cards.html" with stats=admin_stats col_class=admin_col_class %}
 
 {# ── Ventas ── #}
 <div class="db-section">
@@ -92,44 +44,7 @@
   <span class="db-section-rule"></span>
   <span class="db-section-note">{% trans "Mes actual" %}</span>
 </div>
-<div class="row g-2 mb-3">
-  <div class="col-sm-6 col-xl-3">
-    <div class="db-kpi">
-      <span class="db-kpi-icon"><i class="bi bi-receipt"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value"><span class="db-kpi-cur">RD$</span>{{ month_invoiced|floatformat:2|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Facturado" %}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="db-kpi is-pos">
-      <span class="db-kpi-icon"><i class="bi bi-cash-coin"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value num-pos"><span class="db-kpi-cur">RD$</span>{{ month_collected|floatformat:2|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Cobrado" %}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <a href="{% url 'sales:quotation_list' %}" class="db-kpi">
-      <span class="db-kpi-icon"><i class="bi bi-file-earmark-text"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value">{{ pending_quotations|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Cotizaciones activas" %}</div>
-      </div>
-    </a>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <a href="{% url 'sales:sale_order_list' %}" class="db-kpi">
-      <span class="db-kpi-icon"><i class="bi bi-cart"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value">{{ pending_sale_orders|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Órdenes pendientes" %}</div>
-      </div>
-    </a>
-  </div>
-</div>
+{% include "components/_kpi_cards.html" with stats=sales_stats col_class="col-6 col-md-3" %}
 
 {% if has_purchasing_access %}
 {# ── Compras ── #}
@@ -138,41 +53,13 @@
   <span class="db-section-rule"></span>
   <span class="db-section-note">{% trans "Mes actual" %}</span>
 </div>
-<div class="row g-2 mb-3">
-  <div class="col-sm-6 col-xl-3">
-    <div class="db-kpi is-ap">
-      <span class="db-kpi-icon"><i class="bi bi-bag"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value"><span class="db-kpi-cur">RD$</span>{{ month_purchased|floatformat:2|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Comprado" %}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <a href="{% url 'purchases:supplier_payment_list' %}" class="db-kpi">
-      <span class="db-kpi-icon"><i class="bi bi-cash-stack"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value"><span class="db-kpi-cur">RD$</span>{{ month_supplier_paid|floatformat:2|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Pagado a proveedores" %}</div>
-      </div>
-    </a>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <a href="{% url 'purchases:supplier_invoice_list' %}" class="db-kpi is-neg">
-      <span class="db-kpi-icon"><i class="bi bi-exclamation-triangle"></i></span>
-      <div class="db-kpi-body">
-        <div class="db-kpi-value num-neg"><span class="db-kpi-cur">RD$</span>{{ ap_overdue|floatformat:2|intcomma }}</div>
-        <div class="db-kpi-label">{% trans "Vencido proveedores" %}</div>
-      </div>
-    </a>
-  </div>
-</div>
+{% include "components/_kpi_cards.html" with stats=purchase_stats col_class="col-6 col-md-3" %}
 {% endif %}
 
 {# ── Facturado vs Comprado ── #}
 <div class="row g-2 mb-3">
-  <div class="col-12">
-    <div class="db-panel">
+  <div class="col-12 col-md-8">
+    <div class="db-panel h-100">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Facturado vs Comprado" %}</span>
         <span class="db-panel-sub">{% trans "Últimos 6 meses" %}</span>
@@ -182,11 +69,21 @@
       </div>
     </div>
   </div>
+  <div class="col-12 col-md-4">
+    <div class="db-panel h-100 d-flex flex-column">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Estado de facturas" %}</span>
+      </div>
+      <div class="db-panel-body flex-grow-1 d-flex align-items-center justify-content-center">
+        <canvas id="statusChart" class="db-chart-status"></canvas>
+      </div>
+    </div>
+  </div>
 </div>
 
 {# ── Charts ── #}
 <div class="row g-2 mb-3">
-  <div class="col-lg-5">
+  <div class="col-12 col-md-6">
     <div class="db-panel h-100">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Facturación vs Cobros" %}</span>
@@ -197,7 +94,7 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-4">
+  <div class="col-12 col-md-6">
     <div class="db-panel h-100">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Cartera por antigüedad" %}</span>
@@ -205,16 +102,6 @@
       </div>
       <div class="db-panel-body">
         <canvas id="arApAgingChart"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3">
-    <div class="db-panel h-100 d-flex flex-column">
-      <div class="db-panel-header">
-        <span class="db-panel-title">{% trans "Estado de facturas" %}</span>
-      </div>
-      <div class="db-panel-body flex-grow-1 d-flex align-items-center justify-content-center">
-        <canvas id="statusChart" class="db-chart-status"></canvas>
       </div>
     </div>
   </div>
@@ -256,7 +143,7 @@
       {% empty %}
       <tr>
         <td colspan="6">
-          <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+          <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
             <i class="bi bi-info-circle"></i>{% trans "No hay facturas registradas." %}
           </div>
         </td>
@@ -298,7 +185,7 @@
           {% empty %}
           <tr>
             <td colspan="4">
-              <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+              <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
                 <i class="bi bi-check-circle"></i>{% trans "Sin facturas vencidas." %}
               </div>
             </td>
@@ -350,7 +237,7 @@
           {% empty %}
           <tr>
             <td colspan="4">
-              <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+              <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
                 <i class="bi bi-info-circle"></i>{% trans "Sin pagos recientes." %}
               </div>
             </td>
@@ -366,6 +253,34 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+(function () {
+  const banner = document.querySelector("[data-dashboard-welcome]");
+  if (!banner) return;
+
+  const key = "sabsys.dashboardWelcome.dismissed.{{ request.user.pk|escapejs }}";
+  let canPersist = true;
+  try {
+    if (window.localStorage.getItem(key) === "1") {
+      banner.hidden = true;
+    }
+  } catch (error) {
+    canPersist = false;
+  }
+
+  const closeButton = banner.querySelector("[data-dashboard-welcome-close]");
+  if (!closeButton) return;
+  closeButton.addEventListener("click", function () {
+    banner.hidden = true;
+    if (!canPersist) return;
+    try {
+      window.localStorage.setItem(key, "1");
+    } catch (error) {
+      // localStorage can be unavailable in private or restricted contexts.
+    }
+  });
+})();
+</script>
 {% if has_sales_access %}
 {{ chart_months|json_script:"chart-months" }}
 {{ chart_invoiced|json_script:"chart-invoiced" }}
@@ -385,6 +300,7 @@ window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   chartPurchasedLabel: "{% trans 'Comprado' %}",
   chartARLabel: "{% trans 'Por cobrar' %}",
   chartAPLabel: "{% trans 'Por pagar' %}",
+  chartStatusTotalLabel: "{% trans 'Facturas' %}",
   hasPurchasingAccess: {{ has_purchasing_access|yesno:"true,false" }},
   chartNoInvoicesText: "{% trans 'Sin facturas registradas.' %}"
 });

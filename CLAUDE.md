@@ -235,7 +235,7 @@ Staff-only CRUD for global `Module` registry. Uses `ModuleStaffMixin` (no org co
 
 | View | URL name | Description |
 |------|----------|-------------|
-| `ModuleListView` | `core:module_list` | Datatable list + inline create |
+| `ModuleListView` | `core:module_list` | Datatable list + inline create (ribbon `core/partials/module_ribbon.html`) |
 | `ModuleDetailView` | `core:module_detail` | Read-only detail |
 | `ModuleUpdateView` | `core:module_edit` | HTMX modal edit |
 | `ModuleToggleView` | `core:module_toggle` | Toggle `is_active` |
@@ -265,7 +265,9 @@ Customer CRUD uses **full-page forms** (two-column layout, not HTMX modals). Lis
 | `CustomerDetailView` | `sales:customer_detail` | Detail with smart buttons |
 | `CustomerDeleteView` | `sales:customer_delete` | Delete (blocked if has invoices/payments) |
 
-**`CustomerDepartment`** — org-scoped sub-entity of `Customer` (name, is_active). Used to tag sale orders for departmental billing. Managed from the customer detail page via HTMX modals.
+**`Customer.id_type`** — restricted to `RNC` or `CED` only (Pasaporte/Exterior removed). `CheckConstraint customer_id_type_rnc_or_cedula` + `clean()` enforce it. `rnc_cedula` validated via `validate_rnc_cedula` (length only; no passport branch).
+
+**`CustomerDepartment`** — org-scoped sub-entity of `Customer` (name, is_active). Used to tag sale orders for departmental billing. Managed from the customer detail page via HTMX modals. `SaleOrderForm` disables the `department` field (`disabled` attr) when the selected customer has no departments.
 
 | View | URL name | Description |
 |------|----------|-------------|
@@ -300,13 +302,46 @@ Inline helpers used by the invoice/quotation/sale-order create/edit forms via HT
 
 `ItemQuickCreateForm` (`apps/sales/forms.py`) — minimal item creation (name, unit_price, itbis_rate) scoped to org. Used from item picker modal without leaving the document form.
 
+### Document forms UI (`static/js/document-form.js`, `apps/core/layout.py`)
+
+All invoice/quotation/sale-order/payment create+edit forms share `static/js/document-form.js`. Exposes on `window`: `itemRow` (Alpine row factory), `deleteRow`, `recalcGrandTotal`, `addDocumentLine`, `initInvoiceItemFormset`, `initInvoiceItemHtmx`, `initCustomerDefaults`, `initIssueDateDeliverySync`, `initHeaderCardCollapse`. Line totals + grand totals (`grand-subtotal`, `grand-itbis18`, `grand-itbis16`, `grand-total`) recompute client-side; ITBIS split by rate (`RATE_18`/`RATE_16`). New lines cloned from `#empty-item-row` template, formset `TOTAL_FORMS` bumped, Alpine + TomSelect re-init.
+
+- **Customer defaults** — `window.CUSTOMER_DEFAULTS[pk]` carries `payment_condition` + `days_due`; selecting a customer sets payment condition and computes `due_date` from `issue_date + days_due`. On sale orders, also clears `#id_department`.
+- **Collapsible header card** (`initHeaderCardCollapse`) — `.doc-order-card` head becomes accessible toggle (role/tabindex/chevron); body wrapped in `.doc-card-collapse` for grid-rows height animation. State persisted in `localStorage` key `sabsys.docHead.<path-with-:id>` (UUID/numeric segments stripped so create + edit share state). Default open.
+
+**Optional fields** — `optional_fields(*specs)` in `apps/core/layout.py` builds a crispy fragment of "chips" that reveal hidden field wrappers on click (`static/js/optional-fields.js`). Each spec is a `(field_name, chip_label)` tuple. Used for `terms`/`notes` on invoice/quotation/credit-note forms, `notes` on sale-order/payment forms. Pre-filled fields auto-reveal; `doc-optfield-remove` button clears + hides.
+
+**Page title** — `templates/base.html` renders `<title>SabSys - {% block title %}{% trans "Inicio" %}{% endblock %}</title>` (SabSys **prefix**, default "Inicio"). Page templates set only their own name in `{% block title %}` — no `— SabSys` suffix. `{% block extra_css %}` added to `<head>`.
+
 ### KPI cards (`templates/components/_kpi_cards.html`)
 
-Reusable partial for summary metric grids:
+App-wide standard for summary metric grids. Emits the `.db-kpi` tile (mono `tnum`
+digits, `RD$` currency affix, semantic accent stripe + tinted icon, uppercase label).
+CSS lives in `static/css/components.css` (`.db-kpi*`, global). The dashboard and all
+7 sales/purchases list views feed it a `stats` list:
 ```django
-{% include "components/_kpi_cards.html" with cards=kpi_cards %}
+{% include "components/_kpi_cards.html" with stats=stats %}
 ```
-Each card: dict with `label`, `value`, `icon`, `color` (Bootstrap color), optional `url`.
+Each `stats` dict — required: `label`, `value` (pre-formatted), `icon` (e.g. `bi-receipt`).
+Optional:
+- `variant` — semantic class: `is-ar` (blue/receivable), `is-ap` (amber/payable),
+  `is-neg` (red), `is-pos` (green), `is-net` (navy).
+- `color` — legacy Bootstrap token, mapped for back-compat when `variant` absent:
+  `primary→is-ar`, `success→is-pos`, `danger→is-neg`, `warning→is-ap`, `info→is-net`.
+- `currency` — affix before value (e.g. `"RD$"`); omit for counts.
+- `value_class` — `num-pos` / `num-neg` to colour the value.
+- `href` — renders the card as a link instead of a div.
+- `trend` + `trend_up` — secondary line with up/down arrow.
+
+Include-level `col_class` overrides the per-card Bootstrap columns
+(default `col-12 col-sm-6 col-xl-3`). `DashboardView._build_kpi_stats()`
+(`apps/accounts/views.py`) builds `admin_stats`/`sales_stats`/`purchase_stats`
+per-request from cached primitives (cache stays primitive-only).
+
+**Two intentional roles:** `_kpi_cards.html` (`.db-kpi`) is the standard interactive
+metric tile (dashboard + list pages). The ~10 report templates deliberately keep the
+compact, centered, print-tuned `.app-metric-card` tile (icon-less, dense) — by design,
+not a pending migration. Shim/rule for both in `components.css`.
 
 ### Test factories
 
@@ -338,7 +373,7 @@ Module slug `"purchasing"`. URL namespace `purchases`. Registered in `config/url
 
 **Models:**
 
-- **`Supplier`** — `id_type` (RNC/CEDULA/PASAPORTE/EXTERIOR), `rnc_cedula` (validated via `validate_rnc_cedula`), `payment_term` FK to `sales.PaymentTerm`, `is_active`. Unique constraint: `(organization, rnc_cedula)` where rnc_cedula non-empty and not soft-deleted. `delete()` blocked if has `PurchaseDocument` or `SupplierPayment`. GIN trgm indexes on `name` and `rnc_cedula`.
+- **`Supplier`** — `id_type` (RNC/CEDULA only; `CheckConstraint supplier_id_type_rnc_or_cedula`), `rnc_cedula` (validated via `validate_rnc_cedula`), `payment_term` FK to `sales.PaymentTerm`, `is_active`. Unique constraint: `(organization, rnc_cedula)` where rnc_cedula non-empty and not soft-deleted. `delete()` blocked if has `PurchaseDocument` or `SupplierPayment`. GIN trgm indexes on `name` and `rnc_cedula`.
 - **`PurchaseDocument`** — unified model for purchase orders and supplier invoices, mirroring `SalesDocument`:
   - `doc_type`: `PURCHASE_ORDER` | `SUPPLIER_INVOICE`
   - `status`: `DRAFT` → `CONFIRMED` → `RECEIVED`/`PAID`/`CANCELLED`

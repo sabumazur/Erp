@@ -65,10 +65,10 @@ class SupplierPaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                  "icon": "bi-cash-coin",       "color": "primary"},
                 {"label": _("Pagado este mes"),
                  "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-cash-stack",      "color": "success"},
+                 "icon": "bi-cash-stack",      "color": "success", "currency": "RD$"},
                 {"label": _("Total pagado"),
                  "value": "{:,.2f}".format(pbase.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-wallet2",         "color": "info"},
+                 "icon": "bi-wallet2",         "color": "info", "currency": "RD$"},
                 {"label": _("Pagos este mes"), "value": month_qs.count(),
                  "icon": "bi-calendar-check",  "color": "secondary"},
             ]

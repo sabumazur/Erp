@@ -70,11 +70,11 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                  "icon": "bi-receipt",          "color": "primary"},
                 {"label": _("Comprado este mes"),
                  "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack",       "color": "success"},
+                 "icon": "bi-cash-stack",       "color": "success", "currency": "RD$"},
                 {"label": _("Por pagar"),
                  "value": "{:,.2f}".format(
                      org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-hourglass-split",  "color": "warning"},
+                 "icon": "bi-hourglass-split",  "color": "warning", "currency": "RD$"},
                 {"label": _("Pagadas"), "value": org_qs.filter(status="PAID").count(),
                  "icon": "bi-check2-circle",    "color": "info"},
             ]

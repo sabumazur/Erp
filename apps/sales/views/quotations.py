@@ -77,7 +77,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                 {"label": _("Valor aceptado"),
                  "value": "{:,.2f}".format(
                      org_qs.filter(status="ACCEPTED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "warning"},
+                 "icon": "bi-cash-stack", "color": "warning", "currency": "RD$"},
             ]
 
         ctx["module"] = "quotation"

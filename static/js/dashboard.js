@@ -20,6 +20,34 @@
     var agingLabels = parseJsonScript("chart-aging-labels", []);
     var arAging = parseJsonScript("chart-ar-aging", []);
     var apAging = parseJsonScript("chart-ap-aging", []);
+    var statusTotal = stCounts.reduce(function (total, count) {
+      return total + Number(count || 0);
+    }, 0);
+
+    var statusCenterText = {
+      id: "statusCenterText",
+      afterDraw: function (chart) {
+        if (chart.canvas.id !== "statusChart" || !statusTotal) return;
+        var meta = chart.getDatasetMeta(0);
+        var arc = meta && meta.data && meta.data[0];
+        if (!arc) return;
+
+        var ctx = chart.ctx;
+        var centerX = arc.x;
+        var centerY = arc.y;
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#111827";
+        ctx.font = "700 1.15rem 'IBM Plex Mono', 'Courier New', monospace";
+        ctx.fillText(String(statusTotal), centerX, centerY - 6);
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "700 .58rem Manrope, sans-serif";
+        ctx.fillText(getConfig("chartStatusTotalLabel", "Facturas").toUpperCase(), centerX, centerY + 15);
+        ctx.restore();
+      },
+    };
 
     var spCanvas = document.getElementById("salesPurchasesChart");
     if (spCanvas) {
@@ -59,8 +87,33 @@
     if (stCounts.length) {
       new Chart(document.getElementById("statusChart"), {
         type: "doughnut",
-        data: { labels: stLabels, datasets: [{ data: stCounts, backgroundColor: stColors, borderWidth: 2 }] },
-        options: { responsive: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+        data: {
+          labels: stLabels,
+          datasets: [{
+            data: stCounts,
+            backgroundColor: stColors,
+            borderColor: "#fff",
+            borderWidth: 3,
+            hoverOffset: 5,
+          }],
+        },
+        options: {
+          responsive: true,
+          cutout: "64%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                boxWidth: 8,
+                boxHeight: 8,
+                padding: 12,
+                usePointStyle: true,
+                pointStyle: "circle",
+              },
+            },
+          },
+        },
+        plugins: [statusCenterText],
       });
     } else {
       replaceChartPanel("statusChart", getConfig("chartNoInvoicesText", "Sin facturas registradas."));

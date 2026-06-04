@@ -148,6 +148,17 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
         ctx["today"] = timezone.localdate()
+        hour = timezone.localtime(timezone.now()).hour
+        if hour < 12:
+            ctx["dashboard_greeting"] = _("Buen día")
+        elif hour < 18:
+            ctx["dashboard_greeting"] = _("Buenas tardes")
+        else:
+            ctx["dashboard_greeting"] = _("Buenas noches")
+        first_name = (self.request.user.first_name or "").strip()
+        if not first_name:
+            first_name = self.request.user.email.split("@", 1)[0]
+        ctx["dashboard_first_name"] = first_name
 
         org = self.request.organization
         ctx["has_sales_access"] = bool(
@@ -192,6 +203,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         cached = cache.get(_cache_key)
         if cached is not None:
             ctx.update(cached)
+            self._build_kpi_stats(ctx)
             return ctx
 
         month_start = today.replace(day=1)
@@ -403,6 +415,14 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .aggregate(t=Sum("amount"))["t"] or _zero
         )
 
+        pending_purchase_orders = PurchaseDocument.purchase_orders.filter(
+            organization=org,
+            status__in=[
+                PurchaseDocument.Status.DRAFT,
+                PurchaseDocument.Status.CONFIRMED,
+            ],
+        ).count()
+
         computed = {
             "month_invoiced": month_invoiced,
             "month_collected": month_collected,
@@ -417,6 +437,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             "net_position": net_position,
             "month_purchased": month_purchased,
             "month_supplier_paid": month_supplier_paid,
+            "pending_purchase_orders": pending_purchase_orders,
             "chart_months": chart_months,
             "chart_invoiced": chart_invoiced,
             "chart_collected": chart_collected,
@@ -430,7 +451,88 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         }
         cache.set(_cache_key, computed, timeout=900)
         ctx.update(computed)
+        self._build_kpi_stats(ctx)
         return ctx
+
+    @staticmethod
+    def _build_kpi_stats(ctx):
+        """Package the cached KPI primitives into `stats` lists for the shared
+        `components/_kpi_cards.html` partial. Built per-request (cheap dict work)
+        so the cache keeps storing only primitives, and translated labels / URLs
+        never get pickled."""
+        def money(value):
+            return "{:,.2f}".format(value or 0)
+
+        has_purchasing = ctx.get("has_purchasing_access")
+
+        # ── Administración ──
+        admin = [{
+            "label": _("Por cobrar"), "value": money(ctx.get("outstanding")),
+            "icon": "bi-arrow-down-circle", "currency": "RD$", "variant": "is-ar",
+            "href": reverse("sales:invoice_list"),
+        }]
+        if has_purchasing:
+            admin.append({
+                "label": _("Por pagar"), "value": money(ctx.get("ap_outstanding")),
+                "icon": "bi-arrow-up-circle", "currency": "RD$", "variant": "is-ap",
+                "href": reverse("purchases:supplier_invoice_list"),
+            })
+            net = ctx.get("net_position") or 0
+            admin.append({
+                "label": _("Posición neta (CxC − CxP)"), "value": money(net),
+                "icon": "bi-bank", "currency": "RD$", "variant": "is-net",
+                "value_class": "num-neg" if net < 0 else "num-pos",
+            })
+        overdue_label = _("Vencido CxC")
+        if ctx.get("overdue_count"):
+            overdue_label = f"{overdue_label} · {ctx['overdue_count']}"
+        admin.append({
+            "label": overdue_label, "value": money(ctx.get("overdue_total")),
+            "icon": "bi-exclamation-triangle", "currency": "RD$", "variant": "is-neg",
+            "value_class": "num-neg", "href": reverse("sales:invoice_list") + "?status=OVERDUE",
+        })
+        if not has_purchasing:
+            admin.append({
+                "label": _("Clientes"), "value": "{:,}".format(ctx.get("customer_count") or 0),
+                "icon": "bi-people", "href": reverse("sales:customer_list"),
+            })
+        ctx["admin_stats"] = admin
+        ctx["admin_col_class"] = (
+            "col-6 col-md-3" if has_purchasing else "col-sm-6 col-xl-4"
+        )
+
+        # ── Ventas ──
+        ctx["sales_stats"] = [
+            {"label": _("Facturado"), "value": money(ctx.get("month_invoiced")),
+             "icon": "bi-receipt", "currency": "RD$"},
+            {"label": _("Cobrado"), "value": money(ctx.get("month_collected")),
+             "icon": "bi-cash-coin", "currency": "RD$", "variant": "is-pos",
+             "value_class": "num-pos"},
+            {"label": _("Cotizaciones activas"),
+             "value": "{:,}".format(ctx.get("pending_quotations") or 0),
+             "icon": "bi-file-earmark-text", "href": reverse("sales:quotation_list")},
+            {"label": _("Órdenes pendientes"),
+             "value": "{:,}".format(ctx.get("pending_sale_orders") or 0),
+             "icon": "bi-cart", "href": reverse("sales:sale_order_list")},
+        ]
+
+        # ── Compras ──
+        if has_purchasing:
+            ctx["purchase_stats"] = [
+                {"label": _("Comprado"), "value": money(ctx.get("month_purchased")),
+                 "icon": "bi-bag", "currency": "RD$", "variant": "is-ap"},
+                {"label": _("Pagado a proveedores"),
+                 "value": money(ctx.get("month_supplier_paid")),
+                 "icon": "bi-cash-stack", "currency": "RD$",
+                 "href": reverse("purchases:supplier_payment_list")},
+                {"label": _("Vencido proveedores"), "value": money(ctx.get("ap_overdue")),
+                 "icon": "bi-exclamation-triangle", "currency": "RD$", "variant": "is-neg",
+                 "value_class": "num-neg",
+                 "href": reverse("purchases:supplier_invoice_list")},
+                {"label": _("Órdenes pendientes"),
+                 "value": "{:,}".format(ctx.get("pending_purchase_orders") or 0),
+                 "icon": "bi-clipboard-check", "href": reverse("purchases:po_list")},
+            ]
 
 
 class ProfileView(ERPBaseViewMixin, UpdateView):

@@ -312,6 +312,147 @@
   color: var(--warn) !important;
 }
 
+/* ── KPI summary cards (app-wide standard, driven by components/_kpi_cards.html)
+   Money-aware metric tile: mono tnum digits, RD$ affix, semantic accent stripe.
+   Promoted here from dashboard.css so every list page shares the dashboard look. */
+.db-kpi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  min-height: 74px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #9ca3af;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .05), 0 2px 12px rgba(16, 24, 40, .03);
+  transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+
+a.db-kpi:hover {
+  border-color: #d7dde6;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, .10), 0 4px 16px rgba(16, 24, 40, .06);
+  color: inherit;
+  transform: translateY(-1px);
+}
+
+a.db-kpi:focus-visible {
+  outline: 2px solid #86b7fe;
+  outline-offset: 2px;
+}
+
+.db-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 1.05rem;
+}
+
+.db-kpi-body {
+  min-width: 0;
+}
+
+.db-kpi-value {
+  color: #111827;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.db-kpi-cur {
+  margin-right: 2px;
+  color: #9ca3af;
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.db-kpi-label {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.db-kpi.is-ar {
+  border-left-color: #3f6fd6;
+}
+
+.db-kpi.is-ar .db-kpi-icon {
+  background: #eef3fc;
+  color: #3f6fd6;
+}
+
+.db-kpi.is-ap {
+  border-left-color: #d97706;
+}
+
+.db-kpi.is-ap .db-kpi-icon {
+  background: #fdf3e7;
+  color: #d97706;
+}
+
+.db-kpi.is-neg {
+  border-left-color: #b42318;
+}
+
+.db-kpi.is-neg .db-kpi-icon {
+  background: #fdeceb;
+  color: #b42318;
+}
+
+.db-kpi.is-pos {
+  border-left-color: #16a34a;
+}
+
+.db-kpi.is-pos .db-kpi-icon {
+  background: #eaf7ef;
+  color: #16a34a;
+}
+
+.db-kpi.is-net {
+  border-left-color: #1e2130;
+}
+
+.db-kpi.is-net .db-kpi-icon {
+  background: #eef0f6;
+  color: #1e2130;
+}
+
+@media (max-width: 767.98px) {
+  .db-kpi {
+    min-height: 68px;
+  }
+
+  .db-kpi-value {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .db-kpi {
+    transition: none;
+  }
+
+  a.db-kpi:hover {
+    transform: none;
+  }
+}
+
 .num-muted {
   color: var(--muted-2) !important;
 }
@@ -712,24 +853,21 @@
 /* ════════════════════════════════════════════════════════════════════════
    SabSys — Refined Slate consolidation                    (review steps 4–5)
    ────────────────────────────────────────────────────────────────────────
-   The component-consolidation + polish layer. Pairs with MIGRATION-2.md.
+   The component-consolidation + polish layer.
    Nothing here changes the look of a page that hasn't opted in.
 
-   NOTE on existing components: the repo already ships the canonical
-   `templates/components/_kpi_cards.html` (F5) and
-   `templates/sales/partials/status_badge.html` (F6). We consolidate ONTO those
-   — no competing copies are introduced here. The only KPI rule below is a small
-   shim so the legacy inline `.app-metric-card` tiles converge visually with the
-   `_kpi_cards.html` card until each page is migrated to it.
+   NOTE on existing components: the canonical KPI partial is
+   `templates/components/_kpi_cards.html` (F5), which emits the `.db-kpi` tile.
+   `templates/sales/partials/status_badge.html` (F6) is the canonical badge.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* ── F5 · KPI visual convergence (target component: components/_kpi_cards.html)
-   The repo has two metric-card systems: the inline `.app-metric-card`
-   (bordered / centered) and the nicer `_kpi_cards.html` (card shadow-sm + tinted
-   icon bubble + `.kpi-value`, defined in documents.css). Full consolidation =
-   feed a `stats` list to `_kpi_cards.html` from the view (see MIGRATION-2.md for
-   the dashboard worked example). Until then, this shim gives the legacy tiles
-   the same shadow/radius so the two systems stop looking different. */
+/* ── F5 · KPI cards · TWO INTENTIONAL ROLES (not a pending migration):
+   • `.db-kpi` via `components/_kpi_cards.html` — the standard interactive metric
+     tile (icon + accent stripe + mono digits). Used by the dashboard and all
+     sales/purchases list pages, fed a `stats` list from the view.
+   • `.app-metric-card` (below) — compact, centered, print-tuned summary tile
+     used by the ~10 report templates. Kept deliberately: reports want dense,
+     icon-less, print-friendly tiles. This rule aligns its shadow/radius. */
 .app-metric-card {
   box-shadow: 0 1px 3px rgba(16, 24, 40, .05), 0 2px 12px rgba(16, 24, 40, .03);
   border-radius: 10px;

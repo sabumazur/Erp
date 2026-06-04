@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from apps.accounts.tests.factories import TeamFactory
 from apps.core.models import Module
+from apps.purchases.models import PurchaseDocument
+from apps.purchases.tests.factories import PurchaseDocumentFactory
 from apps.sales.models import SalesDocument
 from apps.sales.tests.factories import (
     CustomerFactory,
@@ -83,6 +85,32 @@ class TestDashboardKPIs:
 
         assert 'href="/static/css/dashboard.css"' in content
         assert ".db-kpi {" not in content
+
+    def test_dashboard_renders_dismissible_welcome_banner(self, client, owner_membership):
+        owner_membership.user.first_name = "Ana"
+        owner_membership.user.save(update_fields=["first_name", "updated_at"])
+
+        response = _dashboard(client, owner_membership)
+        content = response.content.decode()
+
+        assert 'class="db-welcome"' in content
+        assert "Ana" in content
+        assert "data-dashboard-welcome-close" in content
+        assert response.context["dashboard_greeting"] in {
+            "Buen día",
+            "Buenas tardes",
+            "Buenas noches",
+        }
+
+    def test_dashboard_welcome_name_falls_back_to_email_local_part(self, client, owner_membership):
+        owner_membership.user.first_name = ""
+        owner_membership.user.email = "ana.admin@example.com"
+        owner_membership.user.save(update_fields=["first_name", "email", "updated_at"])
+
+        response = _dashboard(client, owner_membership)
+
+        assert response.context["dashboard_first_name"] == "ana.admin"
+        assert "ana.admin" in response.content.decode()
 
     def test_month_invoiced_includes_confirmed(self, client, owner_membership):
         org = owner_membership.organization
@@ -231,6 +259,21 @@ class TestDashboardCounts:
         SalesDocumentFactory(organization=org, customer=customer, status=SalesDocument.Status.DRAFT, doc_type=SalesDocument.DocType.SALE_ORDER)
         ctx = _dashboard(client, owner_membership).context
         assert ctx["pending_sale_orders"] == 2
+
+    def test_pending_purchase_orders_counts_draft_and_confirmed(self, client, owner_membership):
+        org = owner_membership.organization
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.DRAFT)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.CONFIRMED)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.RECEIVED)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.CANCELLED)
+
+        ctx = _dashboard(client, owner_membership).context
+
+        assert ctx["pending_purchase_orders"] == 2
+        assert any(
+            stat["label"] == "Órdenes pendientes" and stat["value"] == "2"
+            for stat in ctx["purchase_stats"]
+        )
 
     def test_counts_zero_when_empty_org(self, client, owner_membership):
         ctx = _dashboard(client, owner_membership).context
