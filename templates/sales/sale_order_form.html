@@ -124,12 +124,30 @@ window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
 (function () {
   var url = "{% url 'sales:departments_for_customer' %}";
 
+  function setDepartmentDisabled(deptSel, disabled) {
+    deptSel.disabled = disabled;
+    if (deptSel.tomselect) {
+      if (disabled) {
+        deptSel.tomselect.disable();
+      } else {
+        deptSel.tomselect.enable();
+      }
+    }
+  }
+
+  function hasDepartmentOptions(deptSel) {
+    return Array.prototype.some.call(deptSel.options, function (opt) {
+      return opt.value !== "";
+    });
+  }
+
   function refreshDepartmentOptions(customerId) {
     var deptSel = document.getElementById('id_department');
     if (!deptSel) return;
 
     if (deptSel.tomselect) { deptSel.tomselect.destroy(); }
     deptSel.value = '';
+    setDepartmentDisabled(deptSel, true);
 
     if (!customerId) {
       deptSel.innerHTML = '<option value="">— {% trans "Sin departamento" %} —</option>';
@@ -143,6 +161,7 @@ window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
     .then(function (response) { return response.text(); })
     .then(function (html) {
       deptSel.innerHTML = html;
+      setDepartmentDisabled(deptSel, !hasDepartmentOptions(deptSel));
       if (window.SabSysTom) { window.SabSysTom.init(deptSel.parentElement); }
     });
   }

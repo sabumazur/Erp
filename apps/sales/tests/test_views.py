@@ -691,6 +691,37 @@ class TestSaleOrderFormView:
         assert "Sucursal Sur" not in content
         assert "Sucursal Inactiva" not in content
 
+    def test_sale_order_department_field_is_disabled_without_customer_departments(self):
+        org = OrganizationFactory()
+        customer = CustomerFactory(organization=org)
+
+        blank_form = SaleOrderForm(organization=org)
+        customer_form = SaleOrderForm(data={"customer": customer.pk}, organization=org)
+
+        assert blank_form.fields["department"].widget.attrs["disabled"] == "disabled"
+        assert customer_form.fields["department"].widget.attrs["disabled"] == "disabled"
+
+    def test_sale_order_department_field_is_enabled_for_customer_with_departments(self):
+        org = OrganizationFactory()
+        customer = CustomerFactory(organization=org)
+        CustomerDepartment.objects.create(
+            organization=org,
+            customer=customer,
+            name="Sucursal Norte",
+            is_active=True,
+        )
+
+        form = SaleOrderForm(data={"customer": customer.pk}, organization=org)
+
+        assert "disabled" not in form.fields["department"].widget.attrs
+
+    def test_sale_order_template_disables_department_until_customer_has_options(self):
+        source = Path("templates/sales/sale_order_form.html").read_text(encoding="utf-8")
+
+        assert "setDepartmentDisabled(deptSel, true)" in source
+        assert "hasDepartmentOptions(deptSel)" in source
+        assert "setDepartmentDisabled(deptSel, !hasDepartmentOptions(deptSel))" in source
+
     @pytest.mark.parametrize("view_name", ["sale_order_create", "sale_order_edit"])
     def test_issue_date_change_updates_delivery_date_on_create_and_edit(self, client, view_name):
         user, org, _ = make_member()

@@ -553,6 +553,10 @@ class SaleOrderForm(forms.ModelForm):
             ).order_by("name")
         else:
             self.fields["department"].queryset = CustomerDepartment.objects.none()
+        if self.fields["department"].queryset.exists():
+            self.fields["department"].widget.attrs.pop("disabled", None)
+        else:
+            self.fields["department"].widget.attrs["disabled"] = "disabled"
 
         # The customer picker sets this hidden value. The sale order page reloads
         # department options explicitly because the picker changes the value in JS.
