@@ -5,8 +5,7 @@
     <tr>
       <th>{% trans "Número" %}</th>
       <th>{% trans "Departamento" %}</th>
-      <th>{% trans "Entrega" %}</th>
-      <th>{% trans "Recibido por" %}</th>
+      <th>{% trans "Emisión" %}</th>
       <th class="text-end">{% trans "Total" %}</th>
     </tr>
   </thead>
@@ -21,15 +20,14 @@
           <span class="text-muted">—</span>
         {% endif %}
       </td>
-      <td class="small">{{ o.delivery_date|date:"d/m/Y"|default:"—" }}</td>
-      <td class="text-muted small">{{ o.signed_by|default:"—" }}</td>
+      <td class="small">{{ o.issue_date|date:"d/m/Y"|default:"—" }}</td>
       <td class="text-end fw-semibold">{{ o.total|floatformat:2|intcomma }}</td>
     </tr>
     {% endfor %}
   </tbody>
   <tfoot class="table-light fw-bold">
     <tr>
-      <td colspan="4" class="text-end">
+      <td colspan="3" class="text-end">
         {% blocktrans count n=orders|length %}{{ n }} orden{% plural %}{{ n }} órdenes{% endblocktrans %}
         &nbsp;·&nbsp; {% trans "TOTAL" %}
       </td>
@@ -40,6 +38,6 @@
 {% else %}
 <div class="text-center text-muted py-4 small">
   <i class="bi bi-inbox me-1"></i>
-  {% trans "No hay órdenes entregadas pendientes de facturar para los parámetros seleccionados." %}
+  {% trans "No hay órdenes pendientes de facturar para los parámetros seleccionados." %}
 </div>
 {% endif %}

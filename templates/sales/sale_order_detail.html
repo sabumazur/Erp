@@ -31,13 +31,20 @@
       </button>
     </form>
 
-    {% if order.status != "DRAFT" and order.status != "CANCELLED" %}
-      <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary btn-sm">
+    {% if order.status != "CANCELLED" %}
+      {% if order.has_line_items %}
+        <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
+          </button>
+        </form>
+      {% else %}
+        <button type="button" class="btn btn-outline-secondary btn-sm" disabled
+                title="{% trans 'Agregue líneas para enviar' %}">
           <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
         </button>
-      </form>
+      {% endif %}
     {% endif %}
 
     {% if order.status == "INVOICED" and order.consolidated_into %}
@@ -51,13 +58,7 @@
       <a href="{% url 'sales:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
       </a>
-      <form method="post" action="{% url 'sales:sale_order_confirm' order.pk %}"
-            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar orden?" %}', {icon:'question', color:'#6366f1', ok:'Sí, confirmar'})">
-        {% csrf_token %}
-        <button class="btn btn-sm btn-brand">
-          <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
-        </button>
-      </form>
+      {# deferred: confirm/deliver workflow — re-enable when the full lifecycle ships #}
       <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
         {% csrf_token %}
@@ -67,6 +68,7 @@
       </form>
 
     {% elif order.status == "CONFIRMED" %}
+      {# deferred: confirm/deliver workflow — unreachable in the create→send flow, kept for later #}
       <button class="btn btn-sm btn-brand"
               data-bs-toggle="modal" data-bs-target="#deliverModal">
         <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}

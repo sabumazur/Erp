@@ -4,6 +4,7 @@ Tests for invoice views — status transitions, permission guards, DGII rules.
 import json
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from django.core.cache import cache
@@ -742,6 +743,50 @@ class TestSaleOrderFormView:
         content = response.content.decode()
         assert "issueInput.addEventListener('change'" in content
         assert "deliveryInput.value = issueInput.value" in content
+
+
+# -- Sale order email view -----------------------------------------------------
+
+@pytest.mark.django_db
+class TestSaleOrderEmailView:
+
+    def _order(self, org, *, with_item, email="customer@example.com"):
+        customer = CustomerFactory(organization=org, email=email)
+        order = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            doc_type=SalesDocument.DocType.SALE_ORDER,
+            status=SalesDocument.Status.DRAFT,
+        )
+        if with_item:
+            SalesDocumentItemFactory(document=order, unit_price=Decimal("1000.00"))
+            order.recompute_totals()
+            order.refresh_from_db()
+        return order
+
+    def test_email_empty_order_blocked(self, client, mailoutbox):
+        user, org, _ = make_member()
+        order = self._order(org, with_item=False)
+        login(client, user)
+        set_active_org(client, org)
+
+        resp = client.post(reverse("sales:sale_order_email", kwargs={"pk": order.pk}))
+
+        assert resp.status_code == 302
+        assert resp.url == reverse("sales:sale_order_detail", kwargs={"pk": order.pk})
+        assert len(mailoutbox) == 0
+
+    def test_email_draft_with_items_sends(self, client, mailoutbox):
+        user, org, _ = make_member()
+        order = self._order(org, with_item=True)
+        login(client, user)
+        set_active_org(client, org)
+
+        with patch("apps.sales.views.sale_orders.send_sale_order_email", return_value=True) as send:
+            resp = client.post(reverse("sales:sale_order_email", kwargs={"pk": order.pk}))
+
+        assert resp.status_code == 302
+        send.assert_called_once()
 
 
 # -- Report views --------------------------------------------------------------

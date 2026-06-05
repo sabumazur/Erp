@@ -925,6 +925,10 @@ class SalesDocument(ERPBaseModel):
         return self.status == self.Status.DRAFT
 
     @property
+    def has_line_items(self) -> bool:
+        return self.items.exists()
+
+    @property
     def is_invoice(self):
         return self.doc_type == self.DocType.INVOICE
 

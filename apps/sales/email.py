@@ -139,6 +139,8 @@ def send_sale_order_email(order: SalesDocument, request) -> bool:
     to_email = order.customer.email
     if not to_email:
         return False
+    if not order.items.exists():
+        return False
     org = order.organization
     ctx = {
         "order": order,

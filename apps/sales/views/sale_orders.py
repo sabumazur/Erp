@@ -273,6 +273,9 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
+        if not o.has_line_items:
+            messages.error(request, _("No se puede enviar una orden sin líneas. Agregue al menos un producto."))
+            return redirect("sales:sale_order_detail", pk=o.pk)
         try:
             sent = send_sale_order_email(o, request)
             if sent:
@@ -325,13 +328,15 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                     SalesDocument.sale_orders.filter(
                         organization=request.organization,
                         customer_id=customer_id,
-                        status=SalesDocument.Status.DELIVERED,
+                        status=SalesDocument.Status.DRAFT,
                         consolidated_into__isnull=True,
-                        delivery_date__gte=p_start,
-                        delivery_date__lte=p_end,
+                        items__isnull=False,
+                        issue_date__gte=p_start,
+                        issue_date__lte=p_end,
                     )
                     .select_related("customer", "department")
-                    .order_by("delivery_date")
+                    .order_by("issue_date")
+                    .distinct()
                 )
                 if department_id:
                     qs = qs.filter(department_id=department_id)

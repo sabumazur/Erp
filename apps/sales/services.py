@@ -403,16 +403,18 @@ class SaleOrderService:
             .filter(
                 organization=organization,
                 customer=customer,
-                status=SalesDocument.Status.DELIVERED,
+                status=SalesDocument.Status.DRAFT,
                 consolidated_into__isnull=True,
-                delivery_date__gte=period_start,
-                delivery_date__lte=period_end,
+                items__isnull=False,
+                issue_date__gte=period_start,
+                issue_date__lte=period_end,
             )
+            .distinct()
         )
         if department is not None:
             qs = qs.filter(department=department)
 
-        orders = list(qs.order_by("delivery_date", "doc_number"))
+        orders = list(qs.order_by("issue_date", "doc_number"))
 
         if not orders:
             scope = (
@@ -421,7 +423,7 @@ class SaleOrderService:
                 else _("para este cliente")
             )
             raise ValueError(
-                _("No hay órdenes de venta entregadas pendientes de facturar "
+                _("No hay órdenes de venta pendientes de facturar "
                   "%(scope)s en el período indicado.") % {"scope": scope}
             )
 
@@ -450,7 +452,8 @@ class SaleOrderService:
             rates = [item.itbis_rate for item in order.items.all()]
             dominant_rate = _dominant_itbis_rate(rates)
 
-            date_str = order.delivery_date.strftime("%d/%m/%Y") if order.delivery_date else ""
+            line_date = order.delivery_date or order.issue_date
+            date_str = line_date.strftime("%d/%m/%Y") if line_date else ""
             ref = order.doc_number or str(order.pk)[:8]
 
             SalesDocumentItem.objects.create(

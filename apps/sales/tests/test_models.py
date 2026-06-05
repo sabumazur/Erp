@@ -87,6 +87,21 @@ class TestNCFConcurrency:
         assert len(results) == len(set(results)), "Duplicate e-NCFs generated!"
 
 
+# ── has_line_items property ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestHasLineItems:
+
+    def test_false_without_items(self):
+        doc = SalesDocumentFactory()
+        assert doc.has_line_items is False
+
+    def test_true_with_items(self):
+        doc = SalesDocumentFactory()
+        SalesDocumentItemFactory(document=doc)
+        assert doc.has_line_items is True
+
+
 # ── InvoiceItem signals ───────────────────────────────────────────────────────
 
 @pytest.mark.django_db

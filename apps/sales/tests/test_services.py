@@ -386,3 +386,74 @@ class TestQuotationService:
         assert count >= 1
         q.refresh_from_db()
         assert q.status == SalesDocument.Status.EXPIRED
+
+
+# ─ SaleOrderService.consolidate_and_invoice ────────────
+
+@pytest.mark.django_db
+class TestSaleOrderConsolidate:
+
+    def _draft_order(self, org, customer, *, with_item=True):
+        order = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            doc_type=SalesDocument.DocType.SALE_ORDER,
+            status=SalesDocument.Status.DRAFT,
+            issue_date=timezone.now().date(),
+        )
+        if with_item:
+            SalesDocumentItemFactory(
+                document=order,
+                quantity=Decimal("1"),
+                unit_price=Decimal("1000.00"),
+                itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
+            )
+            order.recompute_totals()
+            order.refresh_from_db()
+        return order
+
+    def test_consolidate_pulls_draft_orders(self):
+        from apps.sales.services import SaleOrderService
+        customer = CustomerFactory()
+        org = customer.organization
+        today = timezone.now().date()
+        o1 = self._draft_order(org, customer)
+        o2 = self._draft_order(org, customer)
+
+        invoice = SaleOrderService.consolidate_and_invoice(
+            organization=org,
+            customer=customer,
+            period_start=today,
+            period_end=today,
+            ncf_type=31,
+        )
+
+        assert invoice.doc_type == SalesDocument.DocType.INVOICE
+        assert invoice.status == SalesDocument.Status.DRAFT
+        assert invoice.items.count() == 2
+        for o in (o1, o2):
+            o.refresh_from_db()
+            assert o.status == SalesDocument.Status.INVOICED
+            assert o.consolidated_into_id == invoice.pk
+
+    def test_consolidate_skips_empty_orders(self):
+        from apps.sales.services import SaleOrderService
+        customer = CustomerFactory()
+        org = customer.organization
+        today = timezone.now().date()
+        good = self._draft_order(org, customer)
+        empty = self._draft_order(org, customer, with_item=False)
+
+        invoice = SaleOrderService.consolidate_and_invoice(
+            organization=org,
+            customer=customer,
+            period_start=today,
+            period_end=today,
+            ncf_type=31,
+        )
+
+        # Only the order with a line produced a consolidated line.
+        assert invoice.items.count() == 1
+        empty.refresh_from_db()
+        assert empty.status == SalesDocument.Status.DRAFT
+        assert empty.consolidated_into_id is None
