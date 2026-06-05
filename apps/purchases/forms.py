@@ -11,7 +11,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from apps.core.layout import optional_fields
-from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput, AutosizeTextarea
+from apps.core.widgets import TomSelect, ItbisSelect, DateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from apps.sales.models import PaymentTerm
@@ -261,8 +261,8 @@ class PurchaseOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "expected_date": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "expected_date": DateInput(),
             "notes": AutosizeTextarea(
                 attrs={
                     "placeholder": _("Instrucciones, términos de entrega o referencias internas…")
@@ -330,8 +330,8 @@ class SupplierInvoiceForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "due_date": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "due_date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "currency": TomSelect(placeholder="Moneda…"),
         }
@@ -434,7 +434,7 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
         model = SupplierPayment
         fields = ["supplier", "date", "method", "reference", "notes"]
         widgets = {
-            "date": FlatpickrDateInput(),
+            "date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "method": TomSelect(placeholder="Método…"),
         }

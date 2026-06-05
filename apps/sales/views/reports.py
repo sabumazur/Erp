@@ -14,6 +14,12 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.daterange import (
+    DATE_INVALID_MSG,
+    DATE_RANGE_ERROR_MSG,
+    DateRangeError,
+    parse_date_range,
+)
 from ..models import Customer, SalesDocument, SalesDocumentItem, NCFType, Payment
 
 _AGING_CSS = {
@@ -281,8 +287,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
             if customer_id and date_from_str and date_to_str:
                 try:
                     customer = get_object_or_404(Customer, pk=customer_id, organization=org)
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     inv_before = (
                         SalesDocument.invoices.filter(
@@ -333,8 +338,10 @@ class ReportStatementView(ERPBaseViewMixin, View):
                         line["balance"] = balance
                     closing_balance = balance
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "customer": customer, "customer_id": customer_id,
@@ -477,36 +484,50 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
         from datetime import datetime as dt
         org = request.organization
         customers = Customer.objects.filter(organization=org).order_by("name")
-        customer_id   = request.GET.get("customer",  "").strip()
+        customer_ids  = [c.strip() for c in request.GET.getlist("customer") if c.strip()]
+        doc_type_ids  = [d.strip() for d in request.GET.getlist("doc_type") if d.strip()]
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
+
+        valid_doc_types = {c[0] for c in SalesDocument.DocType.choices}
+        doc_type_ids = [d for d in doc_type_ids if d in valid_doc_types]
 
         _cache_key = f"report_inv_by_customer:{org.pk}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
             _zero = Decimal("0.00")
-            customer = None
+            selected_customers = []
             invoices = []
             totals = {"subtotal": _zero, "itbis_18": _zero, "total": _zero}
             error = None
+            ran = False
 
-            if customer_id and date_from_str and date_to_str:
+            if date_from_str and date_to_str:
+                ran = True
                 try:
-                    customer = get_object_or_404(Customer, pk=customer_id, organization=org)
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
-                    invoices = list(
-                        SalesDocument.invoices.filter(
-                            organization=org,
-                            customer=customer,
-                            issue_date__gte=d_from,
-                            issue_date__lte=d_to,
+                    if customer_ids:
+                        selected_customers = list(
+                            Customer.objects.filter(pk__in=customer_ids, organization=org).order_by("name")
                         )
+
+                    docs_qs = SalesDocument.objects.filter(
+                        organization=org,
+                        issue_date__gte=d_from,
+                        issue_date__lte=d_to,
+                    )
+                    if customer_ids:
+                        docs_qs = docs_qs.filter(customer__in=selected_customers)
+                    if doc_type_ids:
+                        docs_qs = docs_qs.filter(doc_type__in=doc_type_ids)
+                    invoices = list(
+                        docs_qs
                         .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                        .select_related("customer")
                         .with_signed_totals()
-                        .order_by("issue_date", "created_at")
+                        .order_by("customer__name", "issue_date", "created_at")
                     )
 
                     for inv in invoices:
@@ -514,20 +535,28 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                         totals["itbis_18"] += inv.signed_itbis_18
                         totals["total"]    += inv.signed_total
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
+            customer = selected_customers[0] if len(selected_customers) == 1 else None
             computed = {
-                "customer": customer, "customer_id": customer_id,
+                "selected_customers": selected_customers,
+                "customer": customer,
+                "multi_customer": customer is None,
+                "ran": ran,
+                "customer_ids": customer_ids,
+                "doc_type_ids": doc_type_ids,
                 "date_from": date_from_str, "date_to": date_to_str,
                 "invoices": invoices, "totals": totals, "error": error,
                 "today": timezone.now().date(),
             }
-            if customer and not error:
+            if ran and not error:
                 cache.set(_cache_key, computed, timeout=600)
 
         return render(
-            request, "sales/report_invoices_by_customer.html",
+            request, "sales/report_salesdoc_by_customer.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -537,6 +566,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                     ]
                 ),
                 "customers": customers,
+                "doc_types": SalesDocument.DocType.choices,
                 **computed,
             },
         )
@@ -565,8 +595,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
 
             if date_from_str and date_to_str:
                 try:
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     payments = list(
                         Payment.objects.filter(
@@ -589,8 +618,10 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
 
                     grand_total = sum(p.amount for p in payments)
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "date_from": date_from_str, "date_to": date_to_str,

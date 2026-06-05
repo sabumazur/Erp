@@ -41,7 +41,7 @@
 </div>
 {% endif %}
 
-{% if supplier %}
+{% if supplier and not error %}
 
 <div class="customer-block no-print">
   <div class="customer-avatar">{{ supplier.name|slice:":2"|upper }}</div>

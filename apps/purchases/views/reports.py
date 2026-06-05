@@ -14,6 +14,12 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.daterange import (
+    DATE_INVALID_MSG,
+    DATE_RANGE_ERROR_MSG,
+    DateRangeError,
+    parse_date_range,
+)
 from ..models import PurchaseDocument, PurchaseDocumentItem, Supplier, SupplierPayment
 
 _MONTHS_ES = [
@@ -259,8 +265,7 @@ class ReportSupplierStatementView(ERPBaseViewMixin, View):
             if supplier_id and date_from_str and date_to_str:
                 try:
                     supplier = get_object_or_404(Supplier, pk=supplier_id, organization=org)
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     inv_before = (
                         PurchaseDocument.supplier_invoices.filter(
@@ -309,8 +314,10 @@ class ReportSupplierStatementView(ERPBaseViewMixin, View):
                         line["balance"] = balance
                     closing_balance = balance
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "supplier": supplier, "supplier_id": supplier_id,
@@ -468,8 +475,7 @@ class ReportPurchasesBySupplierView(ERPBaseViewMixin, View):
 
             if date_from_str and date_to_str:
                 try:
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     base_qs = (
                         PurchaseDocument.supplier_invoices.filter(
@@ -518,8 +524,10 @@ class ReportPurchasesBySupplierView(ERPBaseViewMixin, View):
                             totals["itbis"]    += itbis
                             totals["total"]    += r["total"]
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "supplier": supplier, "supplier_id": supplier_id,
@@ -569,8 +577,7 @@ class ReportSupplierPaymentsView(ERPBaseViewMixin, View):
 
             if date_from_str and date_to_str:
                 try:
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     payments = list(
                         SupplierPayment.objects.filter(
@@ -593,8 +600,10 @@ class ReportSupplierPaymentsView(ERPBaseViewMixin, View):
 
                     grand_total = sum(p.amount for p in payments)
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "date_from": date_from_str, "date_to": date_to_str,

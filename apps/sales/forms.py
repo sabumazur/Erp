@@ -11,7 +11,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 from django.urls import reverse_lazy
 
 from apps.core.layout import optional_fields
-from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput, AutosizeTextarea
+from apps.core.widgets import TomSelect, ItbisSelect, DateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from .models import (
@@ -335,8 +335,8 @@ class InvoiceForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "due_date": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "due_date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones…")}),
             "ncf_type": TomSelect(placeholder="Tipo NCF…"),
@@ -424,8 +424,8 @@ class QuotationForm(forms.ModelForm):
             "terms",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "valid_until": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "valid_until": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones de la cotización…")}),
             "payment_condition": TomSelect(placeholder="Condición…"),
@@ -510,8 +510,8 @@ class SaleOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "delivery_date": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "delivery_date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "department": TomSelect(placeholder="Departamento…"),
             "payment_condition": TomSelect(placeholder="Condición…"),
@@ -655,11 +655,11 @@ class ConsolidateForm(forms.Form):
     )
     period_start = forms.DateField(
         label=_("Desde"),
-        widget=FlatpickrDateInput(),
+        widget=DateInput(),
     )
     period_end = forms.DateField(
         label=_("Hasta"),
-        widget=FlatpickrDateInput(),
+        widget=DateInput(),
     )
     ncf_type = forms.ChoiceField(
         label=_("Tipo de comprobante"),
@@ -828,7 +828,7 @@ class PaymentHeaderForm(forms.ModelForm):
         model = Payment
         fields = ["customer", "date", "method", "reference", "notes"]
         widgets = {
-            "date": FlatpickrDateInput(),
+            "date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "method": TomSelect(placeholder="Método…"),
         }
@@ -919,7 +919,7 @@ class PaymentForm(forms.ModelForm):
         model = Payment
         fields = ["amount", "date", "method", "reference", "notes"]
         widgets = {
-            "date": FlatpickrDateInput(),
+            "date": DateInput(),
             "notes": forms.Textarea(attrs={"rows": 1}),
             "method": TomSelect(placeholder="Método…"),
         }
@@ -959,8 +959,8 @@ class CreditNoteForm(forms.ModelForm):
         model = SalesDocument
         fields = ["ncf_type", "issue_date", "due_date", "notes", "terms"]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "due_date": FlatpickrDateInput(),
+            "issue_date": DateInput(),
+            "due_date": DateInput(),
             "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "terms": AutosizeTextarea(attrs={"placeholder": _("Términos y condiciones…")}),
             "ncf_type": TomSelect(placeholder="Tipo NCF…"),

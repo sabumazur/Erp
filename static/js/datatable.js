@@ -240,11 +240,6 @@
           return;
         }
 
-        if (field._flatpickr) {
-          field._flatpickr.clear();
-          return;
-        }
-
         if (field.type === "checkbox" || field.type === "radio") {
           field.checked = false;
         } else {
