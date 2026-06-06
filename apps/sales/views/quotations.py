@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -8,7 +7,7 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
+from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet, InvoiceItemFormSetCreate
@@ -54,31 +53,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = QuotationFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        org_qs = SalesDocument.quotations.filter(organization=org)
-        status_pills = status_pill_counts(org_qs, [
-            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8"},
-            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6"},
-            {"value": "SENT",      "label": _("Enviada"),   "color": "#06b6d4"},
-            {"value": "ACCEPTED",  "label": _("Aceptada"),  "color": "#10b981"},
-            {"value": "REJECTED",  "label": _("Rechazada"), "color": "#ef4444"},
-            {"value": "EXPIRED",   "label": _("Expirada"),  "color": "#f97316"},
-        ])
-        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
-
-        if not self.request.htmx:
-            ctx["stats"] = [
-                {"label": _("Total cotizaciones"), "value": org_qs.count(),
-                 "icon": "bi-file-earmark-text", "color": "primary"},
-                {"label": _("Aceptadas"), "value": org_qs.filter(status="ACCEPTED").count(),
-                 "icon": "bi-check2-circle", "color": "success"},
-                {"label": _("Pendientes"),
-                 "value": org_qs.filter(status__in=["SENT", "CONFIRMED"]).count(),
-                 "icon": "bi-hourglass-split", "color": "info"},
-                {"label": _("Valor aceptado"),
-                 "value": "{:,.2f}".format(
-                     org_qs.filter(status="ACCEPTED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "warning", "currency": "RD$"},
-            ]
+        ctx.update(self.apply_datatable(f.qs))
 
         ctx["module"] = "quotation"
         ctx["breadcrumbs"] = [

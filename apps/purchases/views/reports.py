@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.daterange import (
@@ -57,24 +57,10 @@ def _bucket_for(days_overdue):
     return "90_plus"
 
 
-class ReportPurchasesIndexView(ERPBaseViewMixin, TemplateView):
-    template_name = "purchases/reports.html"
-    required_module = "purchasing"
-    admin_required = True
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        today = timezone.now().date()
-        ctx["today"] = today
-        ctx["months"] = _MONTHS_ES
-        next_month = today.month % 12 + 1
-        next_year = today.year + (1 if today.month == 12 else 0)
-        ctx["dgii_deadline"] = date(next_year, next_month, 15)
-        ctx["breadcrumbs"] = [
-            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Reportes de Compras")},
-        ]
-        return ctx
+class ReportPurchasesIndexView(RedirectView):
+    """Deprecated — purchase reports merged into the unified core report center."""
+    permanent = False
+    pattern_name = "core:reports"
 
 
 class Report606View(ERPBaseViewMixin, View):

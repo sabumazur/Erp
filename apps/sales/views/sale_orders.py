@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
+from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, SaleOrderDeliverForm, ConsolidateForm
@@ -60,26 +60,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        org_qs = SalesDocument.sale_orders.filter(organization=org)
-        status_pills = status_pill_counts(org_qs, [
-            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8"},
-            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6"},
-            {"value": "DELIVERED", "label": _("Entregada"), "color": "#06b6d4"},
-            {"value": "INVOICED",  "label": _("Facturada"), "color": "#10b981"},
-        ])
-        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
-
-        if not self.request.htmx:
-            ctx["stats"] = [
-                {"label": _("Total órdenes"), "value": org_qs.count(),
-                 "icon": "bi-cart", "color": "primary"},
-                {"label": _("Por entregar"), "value": org_qs.filter(status="CONFIRMED").count(),
-                 "icon": "bi-truck", "color": "warning"},
-                {"label": _("Entregadas"), "value": org_qs.filter(status="DELIVERED").count(),
-                 "icon": "bi-box-seam", "color": "info"},
-                {"label": _("Facturadas"), "value": org_qs.filter(status="INVOICED").count(),
-                 "icon": "bi-receipt", "color": "success"},
-            ]
+        ctx.update(self.apply_datatable(f.qs))
 
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [

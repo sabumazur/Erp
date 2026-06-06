@@ -123,8 +123,7 @@ class SaleOrderFilter(django_filters.FilterSet):
         choices=[
             (s.value, s.label) for s in SalesDocument.Status
             if s in (
-                SalesDocument.Status.DRAFT, SalesDocument.Status.CONFIRMED,
-                SalesDocument.Status.DELIVERED, SalesDocument.Status.INVOICED,
+                SalesDocument.Status.DRAFT, SalesDocument.Status.INVOICED,
                 SalesDocument.Status.CANCELLED,
             )
         ],

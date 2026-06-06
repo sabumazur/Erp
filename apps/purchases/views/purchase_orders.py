@@ -9,7 +9,7 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
+from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..forms import PurchaseOrderForm, PurchaseDocumentItemFormSet, PurchaseDocumentItemFormSetCreate
 from ..models import PurchaseDocument, PurchaseDocumentItem
@@ -53,13 +53,7 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if status_filter:
             qs = qs.filter(status=status_filter)
         org_qs = PurchaseDocument.purchase_orders.filter(organization=org)
-        status_pills = status_pill_counts(org_qs, [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8"},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6"},
-            {"value": "RECEIVED",  "label": _("Recibida"),   "color": "#10b981"},
-            {"value": "CANCELLED", "label": _("Anulada"),    "color": "#ef4444"},
-        ])
-        ctx.update(self.apply_datatable(qs, status_pills=status_pills))
+        ctx.update(self.apply_datatable(qs))
         if not self.request.htmx:
             ctx["stats"] = [
                 {"label": _("Total órdenes"), "value": org_qs.count(),

@@ -14,7 +14,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin, status_pill_counts
+from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import InvoiceFilter
 from ..forms import (
@@ -64,14 +64,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         org_qs = SalesDocument.invoices.filter(organization=org)
-        status_pills = status_pill_counts(org_qs, [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8"},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6"},
-            {"value": "SENT",      "label": _("Enviada"),    "color": "#06b6d4"},
-            {"value": "OVERDUE",   "label": _("Vencida"),    "color": "#ef4444"},
-            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981"},
-        ])
-        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
+        ctx.update(self.apply_datatable(f.qs))
 
         if not self.request.htmx:
             today = date.today()

@@ -794,6 +794,19 @@ class TestSaleOrderEmailView:
 @pytest.mark.django_db
 class TestReportViews:
 
+    def test_report_index_template_contains_scroll_overflow_guards(self):
+        source = Path("templates/core/reports.html").read_text(encoding="utf-8")
+
+        assert "#main-content { min-height: 0; overflow-x: hidden; }" in source
+        assert "scrollbar-gutter" not in source
+        assert ".rep-band { min-width: 0;" in source
+        assert ".rep-band-grid {" in source
+        assert "min-width: 0;" in source
+        assert ".rep-band-cell > .flex-grow-1 { min-width: 0; }" in source
+        assert ".rep-field { min-width: 0;" in source
+        assert ".rep-name > span:last-child {" in source
+        assert ".rep-band-btn { width: 100%;" in source
+
     def test_report_607_returns_txt(self, client):
         user, org, _ = make_member()
         login(client, user)
