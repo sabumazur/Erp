@@ -152,20 +152,39 @@ class SupplierDetailView(ERPBaseViewMixin, View):
     required_module = "purchasing"
 
     def get(self, request, pk):
+        # REFACTOR PQ-01: replaced Python sum(inv.total for inv in invoices)
+        # with a single SQL aggregate — eliminates the full-table Python scan.
+        # REFACTOR PQ-02: invoices list now limited to most-recent 200 rows so
+        # the detail page never loads an unbounded queryset.
         from decimal import Decimal
-        supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
-        invoices = list(
-            PurchaseDocument.supplier_invoices.filter(
-                organization=request.organization, supplier=supplier
-            ).exclude(status=PurchaseDocument.Status.CANCELLED)
-            .order_by("-issue_date")
-        )
         from django.db.models import Sum
-        total_invoiced = sum((inv.total for inv in invoices), Decimal("0.00"))
+        supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
+
+        # Aggregate totals in SQL — one query, no Python accumulation.
+        agg = (
+            PurchaseDocument.supplier_invoices
+            .filter(organization=request.organization, supplier=supplier)
+            .exclude(status=PurchaseDocument.Status.CANCELLED)
+            .aggregate(total_invoiced=Sum("total"))
+        )
+        total_invoiced = agg["total_invoiced"] or Decimal("0.00")
+
         total_paid = SupplierPayment.objects.filter(
             supplier=supplier, organization=request.organization
         ).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
         balance = total_invoiced - total_paid
+
+        # Bounded invoice list — most recent 200; enough for display.
+        invoices = list(
+            PurchaseDocument.supplier_invoices
+            .filter(organization=request.organization, supplier=supplier)
+            .exclude(status=PurchaseDocument.Status.CANCELLED)
+            .select_related("supplier")
+            .only("id", "number", "supplier_ncf", "issue_date", "due_date",
+                  "total", "status", "supplier_id", "doc_type")
+            .order_by("-issue_date")[:200]
+        )
+
         recent_payments = list(
             SupplierPayment.objects.filter(supplier=supplier, organization=request.organization)
             .prefetch_related("allocations__supplier_invoice")

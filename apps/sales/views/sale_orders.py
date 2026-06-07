@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -91,13 +92,14 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         form = SaleOrderForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            order = form.save(commit=False)
-            order.organization = request.organization
-            order.doc_type = SalesDocument.DocType.SALE_ORDER
-            order.save()
-            formset.instance = order
-            with suspend_recompute(order):
-                formset.save()
+            with transaction.atomic():
+                order = form.save(commit=False)
+                order.organization = request.organization
+                order.doc_type = SalesDocument.DocType.SALE_ORDER
+                order.save()
+                formset.instance = order
+                with suspend_recompute(order):
+                    formset.save()
             messages.success(request, _("Orden de venta creada como borrador."))
             return redirect("sales:sale_order_detail", pk=order.pk)
         ctx = self.get_context_data()
@@ -162,9 +164,10 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         form = SaleOrderForm(organization=request.organization, data=request.POST, instance=o)
         formset = InvoiceItemFormSet(request.POST, instance=o, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            form.save()
-            with suspend_recompute(o):
-                formset.save()
+            with transaction.atomic():
+                form.save()
+                with suspend_recompute(o):
+                    formset.save()
             messages.success(request, _("Orden de venta actualizada."))
             return redirect("sales:sale_order_detail", pk=o.pk)
         ctx = self.get_context_data(form=form, formset=formset, order=o)
@@ -378,8 +381,11 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
             notes=source.notes,
             terms=getattr(source, "terms", ""),
         )
-        for line in source.items.all():
-            SalesDocumentItem.objects.create(
+        # REFACTOR SAL-002: bulk_create all line items in 1 INSERT instead of N.
+        # bulk_create bypasses the post_save signal (recompute_totals), so we
+        # call recompute_totals() once explicitly after.
+        SalesDocumentItem.objects.bulk_create([
+            SalesDocumentItem(
                 document=new_order,
                 item=line.item,
                 description=line.description,
@@ -387,6 +393,9 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
+            for line in source.items.all()
+        ])
+        new_order.recompute_totals()
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
         return redirect("sales:sale_order_edit", pk=new_order.pk)
 

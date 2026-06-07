@@ -1,5 +1,7 @@
 import django_filters
 from django import forms
+from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.widgets import TomSelect
@@ -64,6 +66,16 @@ class InvoiceFilter(django_filters.FilterSet):
                 organization=organization
             )
 
+    def clean(self):
+        data = super().clean()
+        after = data.get("issue_date_after")
+        before = data.get("issue_date_before")
+        if after and before and after > before:
+            raise forms.ValidationError(
+                _("La fecha inicial no puede ser mayor que la fecha final.")
+            )
+        return data
+
 
 class QuotationFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(
@@ -98,10 +110,10 @@ class QuotationFilter(django_filters.FilterSet):
         widget=forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
     )
     doc_number = django_filters.CharFilter(
-        lookup_expr="icontains",
-        label=_("Número"),
+        method="search_by_ref",
+        label=_("Número / cliente"),
         widget=forms.TextInput(attrs={
-            "placeholder": "COT-…",
+            "placeholder": "COT-… o cliente",
             "class": "form-control form-control-sm",
         }),
     )
@@ -110,12 +122,41 @@ class QuotationFilter(django_filters.FilterSet):
         model = SalesDocument
         fields = ["status", "customer", "issue_date_after", "issue_date_before", "doc_number"]
 
+    def search_by_ref(self, queryset, name, value):
+        """
+        Fix Q5: use TrigramSimilarity on doc_number (backed by GIN trgm index)
+        combined with icontains on customer__name for FK traversal.
+        Falls back to icontains for very short terms (< 3 chars).
+        """
+        if not value:
+            return queryset
+        if len(value) < 3:
+            return queryset.filter(
+                Q(doc_number__icontains=value) | Q(customer__name__icontains=value)
+            )
+        return (
+            queryset
+            .annotate(sim_doc=TrigramSimilarity("doc_number", value))
+            .filter(Q(sim_doc__gte=0.1) | Q(customer__name__icontains=value))
+            .order_by("-sim_doc")
+        )
+
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
         if organization:
             self.filters["customer"].queryset = Customer.objects.filter(
                 organization=organization
             )
+
+    def clean(self):
+        data = super().clean()
+        after = data.get("issue_date_after")
+        before = data.get("issue_date_before")
+        if after and before and after > before:
+            raise forms.ValidationError(
+                _("La fecha inicial no puede ser mayor que la fecha final.")
+            )
+        return data
 
 
 class SaleOrderFilter(django_filters.FilterSet):
@@ -181,6 +222,16 @@ class SaleOrderFilter(django_filters.FilterSet):
                 deleted_at__isnull=True,
             ).select_related("customer").order_by("customer__name", "name")
 
+    def clean(self):
+        data = super().clean()
+        after = data.get("delivery_date_after")
+        before = data.get("delivery_date_before")
+        if after and before and after > before:
+            raise forms.ValidationError(
+                _("La fecha inicial no puede ser mayor que la fecha final.")
+            )
+        return data
+
 
 class PaymentFilter(django_filters.FilterSet):
     customer = django_filters.ModelChoiceFilter(
@@ -226,6 +277,16 @@ class PaymentFilter(django_filters.FilterSet):
             self.filters["customer"].queryset = Customer.objects.filter(
                 organization=organization
             ).order_by("name")
+
+    def clean(self):
+        data = super().clean()
+        after = data.get("date_after")
+        before = data.get("date_before")
+        if after and before and after > before:
+            raise forms.ValidationError(
+                _("La fecha inicial no puede ser mayor que la fecha final.")
+            )
+        return data
 
 
 class CustomerFilter(django_filters.FilterSet):

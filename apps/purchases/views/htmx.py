@@ -14,13 +14,14 @@ class SupplierSearchView(ERPBaseViewMixin, View):
     required_module = "purchasing"
 
     def get(self, request):
+        # REFACTOR PQ-09: replaced icontains (seq scan) with fts_search which
+        # routes through the existing GIN trigram indexes on name and rnc_cedula.
+        from apps.core.search import fts_search
         q = request.GET.get("q", "").strip()
         org = request.organization
         qs = Supplier.objects.filter(organization=org, is_active=True).order_by("name")
         if q:
-            qs = qs.filter(
-                Q(name__icontains=q) | Q(rnc_cedula__icontains=q)
-            )
+            qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         suppliers = qs[:50]
         return render(
             request,

@@ -17,6 +17,7 @@ from apps.core.search import fts_search
 from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
 from ..models import Customer, CustomerDepartment
+from ..services import CustomerService
 from ._helpers import _customers_with_depts
 
 
@@ -219,50 +220,8 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
     required_module = "sales"
 
     def get(self, request, pk):
-        from decimal import Decimal
-        from django.db.models import DecimalField, Sum
-        from django.db.models.functions import Coalesce
-        from ..models import SalesDocument, Payment
-
         customer = get_object_or_404(Customer, pk=pk, organization=request.organization)
-        _zero = Decimal("0.00")
-        _dec_field = DecimalField(max_digits=14, decimal_places=2)
-
-        invoices = list(
-            SalesDocument.invoices.filter(organization=request.organization, customer=customer)
-            .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
-            .with_signed_totals()
-            .annotate(
-                paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
-            )
-            .select_related("customer")
-            .order_by("-issue_date")
-        )
-
-        for inv in invoices:
-            inv.line_balance = inv.signed_total - inv.paid_amount
-
-        total_invoiced = sum((inv.signed_total for inv in invoices), _zero)
-        total_paid = sum((inv.paid_amount for inv in invoices), _zero)
-        balance = total_invoiced - total_paid
-        overdue = sum(
-            inv.line_balance for inv in invoices if inv.status == SalesDocument.Status.OVERDUE
-        )
-
-        _aging = {b: _zero for b in SalesDocument.AgingBucket.values}
-        for inv in invoices:
-            if inv.line_balance > _zero:
-                _aging[inv.aging_bucket] += inv.line_balance
-        aging_breakdown = [
-            {"label": SalesDocument.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
-            for b in SalesDocument.AgingBucket.values
-        ]
-
-        recent_payments = list(
-            Payment.objects.filter(customer=customer, organization=request.organization)
-            .prefetch_related("allocations__invoice")
-            .order_by("-date", "-created_at")[:30]
-        )
+        summary = CustomerService.get_account_summary(customer, request.organization)
 
         from ..forms import CustomerDepartmentForm as _DeptForm
         return render(
@@ -281,18 +240,7 @@ class CustomerDetailView(HistoryMixin, ERPBaseViewMixin, View):
                     ],
                 ),
                 "history_records": self.get_history(customer),
-                "invoices": invoices,
-                "total_invoiced": total_invoiced,
-                "total_paid": total_paid,
-                "balance": balance,
-                "overdue": overdue,
-                "aging_breakdown": aging_breakdown,
-                "recent_payments": recent_payments,
-                "credit_available": (
-                    (customer.credit_limit - balance)
-                    if customer.credit_limit is not None
-                    else None
-                ),
+                **summary,
             },
         )
 

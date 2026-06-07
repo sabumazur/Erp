@@ -1,9 +1,9 @@
 import csv
-from datetime import date, datetime as dt
+from datetime import date, datetime as dt, timedelta
 from decimal import Decimal
 
 from django.core.cache import cache
-from django.db.models import Count, DecimalField, Sum
+from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -31,10 +31,10 @@ _MONTHS_ES = [
 _BUCKETS = ["current", "1_30", "31_60", "61_90", "90_plus"]
 _BUCKET_LABELS = {
     "current": "Corriente",
-    "1_30": "1–30 días",
-    "31_60": "31–60 días",
-    "61_90": "61–90 días",
-    "90_plus": "+90 días",
+    "1_30": "1-30 dias",
+    "31_60": "31-60 dias",
+    "61_90": "61-90 dias",
+    "90_plus": "+90 dias",
 }
 _AGING_CSS = {
     "current": "text-success",
@@ -58,7 +58,6 @@ def _bucket_for(days_overdue):
 
 
 class ReportPurchasesIndexView(RedirectView):
-    """Deprecated — purchase reports merged into the unified core report center."""
     permanent = False
     pattern_name = "core:reports"
 
@@ -113,10 +112,15 @@ class Report606View(ERPBaseViewMixin, View):
             next_year = today.year + (1 if today.month == 12 else 0)
             dgii_deadline = date(next_year, next_month, 15)
 
+            _DEC = DecimalField(max_digits=14, decimal_places=2)
+            _zero = Decimal("0.00")
+            agg = qs.aggregate(
+                total_subtotal=Coalesce(Sum("subtotal"), Value(0, output_field=_DEC), output_field=_DEC),
+                total_itbis_18=Coalesce(Sum("itbis_18"), Value(0, output_field=_DEC), output_field=_DEC),
+                total_itbis_16=Coalesce(Sum("itbis_16"), Value(0, output_field=_DEC), output_field=_DEC),
+                total_total=Coalesce(Sum("total"), Value(0, output_field=_DEC), output_field=_DEC),
+            )
             invoices = list(qs)
-            total_subtotal = sum(i.subtotal for i in invoices)
-            total_itbis = sum(i.itbis_18 + i.itbis_16 for i in invoices)
-            total_total = sum(i.total for i in invoices)
 
             computed = {
                 "invoices": invoices,
@@ -125,9 +129,9 @@ class Report606View(ERPBaseViewMixin, View):
                 "months": _MONTHS_ES,
                 "today": today,
                 "dgii_deadline": dgii_deadline,
-                "total_subtotal": total_subtotal,
-                "total_itbis": total_itbis,
-                "total_total": total_total,
+                "total_subtotal": agg["total_subtotal"],
+                "total_itbis": agg["total_itbis_18"] + agg["total_itbis_16"],
+                "total_total": agg["total_total"],
             }
             cache.set(_cache_key, computed, timeout=600)
 
@@ -159,51 +163,86 @@ class ReportAPAgingView(ERPBaseViewMixin, View):
 
         if computed is None:
             _zero = Decimal("0.00")
+            _DEC = DecimalField(max_digits=14, decimal_places=2)
             today = timezone.now().date()
 
-            qs = list(
-                PurchaseDocument.supplier_invoices.filter(
+            raw_rows = list(
+                PurchaseDocument.supplier_invoices
+                .filter(
                     organization=org,
                     status=PurchaseDocument.Status.CONFIRMED,
                     due_date__isnull=False,
-                ).select_related("supplier")
+                )
+                .values("supplier_id", "supplier__name")
+                .annotate(
+                    bucket_current=Coalesce(
+                        Sum("total", filter=Q(due_date__gte=today)),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    bucket_1_30=Coalesce(
+                        Sum("total", filter=Q(
+                            due_date__lt=today,
+                            due_date__gte=today - timedelta(days=30),
+                        )),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    bucket_31_60=Coalesce(
+                        Sum("total", filter=Q(
+                            due_date__lt=today - timedelta(days=30),
+                            due_date__gte=today - timedelta(days=60),
+                        )),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    bucket_61_90=Coalesce(
+                        Sum("total", filter=Q(
+                            due_date__lt=today - timedelta(days=60),
+                            due_date__gte=today - timedelta(days=90),
+                        )),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    bucket_90_plus=Coalesce(
+                        Sum("total", filter=Q(due_date__lt=today - timedelta(days=90))),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    row_total=Coalesce(
+                        Sum("total"), Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                )
+                .order_by("supplier__name")
             )
 
-            suppliers_map = {}
-            for inv in qs:
-                days_overdue = (today - inv.due_date).days
-                bucket = _bucket_for(days_overdue)
-                spk = inv.supplier_id
-                if spk not in suppliers_map:
-                    suppliers_map[spk] = {
-                        "supplier": inv.supplier,
-                        "buckets": {b: _zero for b in _BUCKETS},
-                        "total": _zero,
-                    }
-                suppliers_map[spk]["buckets"][bucket] += inv.total
-                suppliers_map[spk]["total"] += inv.total
+            _BUCKET_KEYS = ["current", "1_30", "31_60", "61_90", "90_plus"]
+            _BUCKET_DB = [
+                "bucket_current", "bucket_1_30", "bucket_31_60",
+                "bucket_61_90", "bucket_90_plus",
+            ]
 
-            col_totals = {b: _zero for b in _BUCKETS}
+            col_totals = {b: _zero for b in _BUCKET_KEYS}
             grand_total = _zero
-            rows = sorted(suppliers_map.values(), key=lambda r: r["supplier"].name)
-            for row in rows:
-                row["bucket_cells"] = [
-                    {"amount": row["buckets"][b], "css": _AGING_CSS[b]}
-                    for b in _BUCKETS
-                ]
-                for b in _BUCKETS:
-                    col_totals[b] += row["buckets"][b]
-                grand_total += row["total"]
+            rows = []
+            for r in raw_rows:
+                bucket_cells = []
+                for bkey, dbkey in zip(_BUCKET_KEYS, _BUCKET_DB):
+                    amt = r[dbkey]
+                    bucket_cells.append({"amount": amt, "css": _AGING_CSS[bkey]})
+                    col_totals[bkey] += amt
+                grand_total += r["row_total"]
+                rows.append({
+                    "supplier_name": r["supplier__name"],
+                    "supplier_id":   r["supplier_id"],
+                    "bucket_cells":  bucket_cells,
+                    "total":         r["row_total"],
+                })
 
             computed = {
                 "rows": rows,
                 "bucket_headers": [
                     {"label": _BUCKET_LABELS[b], "css": _AGING_CSS[b]}
-                    for b in _BUCKETS
+                    for b in _BUCKET_KEYS
                 ],
                 "col_total_cells": [
                     {"amount": col_totals[b], "css": _AGING_CSS[b]}
-                    for b in _BUCKETS
+                    for b in _BUCKET_KEYS
                 ],
                 "grand_total": grand_total,
                 "today": today,
@@ -217,7 +256,7 @@ class ReportAPAgingView(ERPBaseViewMixin, View):
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
                         {"label": _("Reportes"), "url": reverse("purchases:reports")},
-                        {"label": _("Antigüedad de Cuentas por Pagar")},
+                        {"label": _("Antiguedad de Cuentas por Pagar")},
                     ]
                 ),
                 **computed,
@@ -428,7 +467,7 @@ class ReportSpendByPeriodView(ERPBaseViewMixin, View):
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
                         {"label": _("Reportes"), "url": reverse("purchases:reports")},
-                        {"label": _("Compras por Período")},
+                        {"label": _("Compras por Periodo")},
                     ]
                 ),
                 **computed,
@@ -473,16 +512,23 @@ class ReportPurchasesBySupplierView(ERPBaseViewMixin, View):
 
                     if supplier_id:
                         supplier = get_object_or_404(Supplier, pk=supplier_id, organization=org)
+                        supplier_qs = base_qs.filter(supplier=supplier)
+                        agg = supplier_qs.aggregate(
+                            count=Count("id"),
+                            subtotal=Coalesce(Sum("subtotal"), _zero, output_field=_dec),
+                            itbis_18=Coalesce(Sum("itbis_18"), _zero, output_field=_dec),
+                            itbis_16=Coalesce(Sum("itbis_16"), _zero, output_field=_dec),
+                            total=Coalesce(Sum("total"), _zero, output_field=_dec),
+                        )
+                        totals["count"]    = agg["count"]
+                        totals["subtotal"] = agg["subtotal"]
+                        totals["itbis"]    = agg["itbis_18"] + agg["itbis_16"]
+                        totals["total"]    = agg["total"]
                         detail_invoices = list(
-                            base_qs.filter(supplier=supplier)
+                            supplier_qs
                             .select_related("supplier")
                             .order_by("issue_date", "created_at")
                         )
-                        for inv in detail_invoices:
-                            totals["count"]    += 1
-                            totals["subtotal"] += inv.subtotal
-                            totals["itbis"]    += inv.itbis_total
-                            totals["total"]    += inv.total
                     else:
                         raw = (
                             base_qs.values("supplier__id", "supplier__name")
@@ -498,12 +544,12 @@ class ReportPurchasesBySupplierView(ERPBaseViewMixin, View):
                         for r in raw:
                             itbis = r["itbis_18"] + r["itbis_16"]
                             rows.append({
-                                "supplier_id": r["supplier__id"],
+                                "supplier_id":   r["supplier__id"],
                                 "supplier_name": r["supplier__name"],
-                                "count": r["count"],
+                                "count":    r["count"],
                                 "subtotal": r["subtotal"],
-                                "itbis": itbis,
-                                "total": r["total"],
+                                "itbis":    itbis,
+                                "total":    r["total"],
                             })
                             totals["count"]    += r["count"]
                             totals["subtotal"] += r["subtotal"]
@@ -565,26 +611,29 @@ class ReportSupplierPaymentsView(ERPBaseViewMixin, View):
                 try:
                     d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
+                    pmt_qs = SupplierPayment.objects.filter(
+                        organization=org, date__gte=d_from, date__lte=d_to,
+                    )
                     payments = list(
-                        SupplierPayment.objects.filter(
-                            organization=org, date__gte=d_from, date__lte=d_to,
-                        )
-                        .select_related("supplier")
+                        pmt_qs.select_related("supplier")
                         .order_by("date", "supplier__name")
                     )
 
                     method_labels = dict(SupplierPayment.Method.choices)
                     by_method = [
                         {**r, "method_display": method_labels.get(r["method"], r["method"])}
-                        for r in SupplierPayment.objects.filter(
-                            organization=org, date__gte=d_from, date__lte=d_to,
-                        )
+                        for r in pmt_qs
                         .values("method")
-                        .annotate(count=Count("id"), total=Coalesce(Sum("amount"), _zero, output_field=_dec))
+                        .annotate(
+                            count=Count("id"),
+                            total=Coalesce(Sum("amount"), _zero, output_field=_dec),
+                        )
                         .order_by("method")
                     ]
 
-                    grand_total = sum(p.amount for p in payments)
+                    grand_total = pmt_qs.aggregate(
+                        t=Coalesce(Sum("amount"), _zero, output_field=_dec)
+                    )["t"]
 
                 except DateRangeError:
                     error = DATE_RANGE_ERROR_MSG
@@ -721,7 +770,7 @@ class ReportITBISCreditsView(ERPBaseViewMixin, View):
                     breadcrumbs=[
                         {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
                         {"label": _("Reportes"), "url": reverse("purchases:reports")},
-                        {"label": _("Crédito ITBIS en Compras")},
+                        {"label": _("Credito ITBIS en Compras")},
                     ]
                 ),
                 **computed,

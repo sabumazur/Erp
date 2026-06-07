@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -57,7 +58,18 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         org = self.request.organization
-        qs = SalesDocument.invoices.filter(organization=org).select_related("customer")
+        # Fix Q1: .only() avoids fetching wide columns (xml_content, notes,
+        # terms, dgii_track_id, etc.) that are not rendered in the list row.
+        # ncf_type is required by with_signed_totals(); doc_type/encf by
+        # display_number; customer_id by select_related join.
+        qs = (
+            SalesDocument.invoices.filter(organization=org)
+            .select_related("customer")
+            .only(
+                "id", "encf", "doc_number", "doc_type", "ncf_type",
+                "issue_date", "due_date", "total", "status", "customer_id",
+            )
+        )
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["encf"])
@@ -148,13 +160,14 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         form = InvoiceForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            invoice = form.save(commit=False)
-            invoice.organization = request.organization
-            invoice.doc_type = SalesDocument.DocType.INVOICE
-            invoice.save()
-            formset.instance = invoice
-            with suspend_recompute(invoice):
-                formset.save()
+            with transaction.atomic():
+                invoice = form.save(commit=False)
+                invoice.organization = request.organization
+                invoice.doc_type = SalesDocument.DocType.INVOICE
+                invoice.save()
+                formset.instance = invoice
+                with suspend_recompute(invoice):
+                    formset.save()
             messages.success(request, _("Factura creada como borrador."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data()
@@ -196,9 +209,10 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         form = InvoiceForm(organization=request.organization, data=request.POST, instance=invoice)
         formset = InvoiceItemFormSet(request.POST, instance=invoice, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            form.save()
-            with suspend_recompute(invoice):
-                formset.save()
+            with transaction.atomic():
+                form.save()
+                with suspend_recompute(invoice):
+                    formset.save()
             messages.success(request, _("Factura actualizada."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data(form=form, formset=formset, invoice=invoice)
@@ -361,11 +375,12 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         form = CreditNoteForm(request.POST, instance=note)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            note = form.save(commit=False)
-            note.save()
-            formset.instance = note
-            with suspend_recompute(note):
-                formset.save()
+            with transaction.atomic():
+                note = form.save(commit=False)
+                note.save()
+                formset.instance = note
+                with suspend_recompute(note):
+                    formset.save()
             messages.success(request, _("Nota de Crédito/Débito creada como borrador."))
             return redirect("sales:invoice_detail", pk=note.pk)
         ctx = self.get_context_data(form=form, formset=formset, original=original)
@@ -398,7 +413,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            SalesDocument.objects.select_related("customer", "organization"),
+            SalesDocument.objects.select_related("customer", "organization").prefetch_related("items"),
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         if invoice.status == SalesDocument.Status.DRAFT:
@@ -437,7 +452,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            SalesDocument.objects.select_related("customer", "organization"),
+            SalesDocument.objects.select_related("customer", "organization").prefetch_related("items"),
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         return render(

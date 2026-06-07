@@ -262,9 +262,12 @@ class QuotationService:
             status=SalesDocument.Status.DRAFT,
         )
 
-        # Copy line items
-        for item in quotation.items.all():
-            SalesDocumentItem.objects.create(
+        # REFACTOR SAL-003: bulk_create all line items in 1 INSERT instead of N.
+        # bulk_create bypasses the post_save signal, so recompute_totals() is
+        # called once explicitly. quotation.items is already prefetch_related
+        # by the caller (get_object_or_404 with prefetch_related("items")).
+        SalesDocumentItem.objects.bulk_create([
+            SalesDocumentItem(
                 document=invoice,
                 item=item.item,
                 description=item.description,
@@ -272,6 +275,9 @@ class QuotationService:
                 unit_price=item.unit_price,
                 itbis_rate=item.itbis_rate,
             )
+            for item in quotation.items.all()
+        ])
+        invoice.recompute_totals()
 
         # Mark quotation as converted
         quotation.status = SalesDocument.Status.CONVERTED
@@ -371,7 +377,7 @@ class SaleOrderService:
         department=None,
     ) -> SalesDocument:
         """
-        Consolidate all DELIVERED sale orders for a customer within a date range
+        Consolidate all DRAFT sale orders for a customer within a date range
         into a single new DRAFT Invoice.
 
         Each sale order becomes one invoice line:
@@ -398,6 +404,7 @@ class SaleOrderService:
 
         qs = (
             SalesDocument.sale_orders
+            .select_for_update()
             .select_related("customer")
             .prefetch_related("items")
             .filter(
@@ -651,6 +658,82 @@ class PaymentService:
                         "reopen skipped for invoice %s after deleting payment %s: %s",
                         inv_pk, payment.pk, exc,
                     )
+
+
+# ── CustomerService ───────────────────────────────────────────────────────────
+
+class CustomerService:
+    """Read-only account summary for the customer detail page."""
+
+    @staticmethod
+    def get_account_summary(customer, organization) -> dict:
+        """
+        Return balance, aging breakdown, and recent payments for a customer.
+
+        Keys returned match the template context in CustomerDetailView:
+          invoices, total_invoiced, total_paid, balance, overdue,
+          aging_breakdown, recent_payments, credit_available
+        """
+        from decimal import Decimal
+        from django.db.models import DecimalField, Sum
+        from django.db.models.functions import Coalesce
+        from .models import Payment  # avoid circular at module level
+
+        _zero = Decimal("0.00")
+        _dec_field = DecimalField(max_digits=14, decimal_places=2)
+
+        invoices = list(
+            SalesDocument.invoices.filter(organization=organization, customer=customer)
+            .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+            .with_signed_totals()
+            .annotate(
+                paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
+            )
+            .select_related("customer")
+            .order_by("-issue_date")
+        )
+
+        for inv in invoices:
+            inv.line_balance = inv.signed_total - inv.paid_amount
+
+        total_invoiced = sum((inv.signed_total for inv in invoices), _zero)
+        total_paid = sum((inv.paid_amount for inv in invoices), _zero)
+        balance = total_invoiced - total_paid
+        overdue = sum(
+            inv.line_balance for inv in invoices if inv.status == SalesDocument.Status.OVERDUE
+        )
+
+        _aging = {b: _zero for b in SalesDocument.AgingBucket.values}
+        for inv in invoices:
+            if inv.line_balance > _zero:
+                _aging[inv.aging_bucket] += inv.line_balance
+        aging_breakdown = [
+            {"label": SalesDocument.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
+            for b in SalesDocument.AgingBucket.values
+        ]
+
+        recent_payments = list(
+            Payment.objects.filter(customer=customer, organization=organization)
+            .prefetch_related("allocations__invoice")
+            .order_by("-date", "-created_at")[:30]
+        )
+
+        credit_available = (
+            (customer.credit_limit - balance)
+            if customer.credit_limit is not None
+            else None
+        )
+
+        return {
+            "invoices": invoices,
+            "total_invoiced": total_invoiced,
+            "total_paid": total_paid,
+            "balance": balance,
+            "overdue": overdue,
+            "aging_breakdown": aging_breakdown,
+            "recent_payments": recent_payments,
+            "credit_available": credit_available,
+        }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

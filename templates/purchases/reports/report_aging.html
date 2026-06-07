@@ -45,9 +45,9 @@
         {% for row in rows %}
         <tr>
           <td>
-            <a href="{% url 'purchases:supplier_detail' row.supplier.pk %}"
+            <a href="{% url 'purchases:supplier_detail' row.supplier_id %}"
                class="text-decoration-none fw-semibold">
-              {{ row.supplier.name }}
+              {{ row.supplier_name }}
             </a>
           </td>
           {% for bc in row.bucket_cells %}

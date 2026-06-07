@@ -601,7 +601,9 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
                         .order_by("method")
                     ]
 
-                    grand_total = sum(p.amount for p in payments)
+                    # REFACTOR SAL-001: derive grand_total from the already-aggregated
+                    # by_method data (≤6 rows) instead of iterating the full payment list.
+                    grand_total = sum(r["total"] for r in by_method)
 
                 except DateRangeError:
                     error = DATE_RANGE_ERROR_MSG

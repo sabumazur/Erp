@@ -12,7 +12,7 @@ from .models import (
     PurchaseDocumentItem,
     PurchaseSequence,
     SupplierPayment,
-    SupplierPaymentAllocation,
+    SupplierPaymentAllocation,  # used in create_payment bulk-outstanding and delete_payment
 )
 
 logger = logging.getLogger(__name__)
@@ -75,8 +75,11 @@ class PurchaseOrderService:
             notes=f"Generada desde {po.number}",
         )
 
-        for line in po.items.all():
-            PurchaseDocumentItem.objects.create(
+        # REFACTOR PQ-003: bulk_create all line items in 1 INSERT instead of N.
+        # No post_save signal on PurchaseDocumentItem; recompute_totals()
+        # called once below as before.
+        PurchaseDocumentItem.objects.bulk_create([
+            PurchaseDocumentItem(
                 purchase_document=si,
                 item=line.item,
                 description=line.description,
@@ -84,6 +87,8 @@ class PurchaseOrderService:
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
+            for line in po.items.all()
+        ])
 
         si.recompute_totals()
         return po, si
@@ -142,22 +147,20 @@ class SupplierInvoiceService:
         except IntegrityError as exc:
             raise ValueError(_duplicate_ncf_error(invoice.supplier_ncf)) from exc
 
-        # Update item cost_price and default_supplier
+        # REFACTOR PQ-004: replace N individual Item.update() calls with a
+        # single bulk_update.  Accumulate mutations in Python, then flush once.
         from apps.items.models import Item
+        items_to_update = []
         for line in invoice.items.select_related("item").all():
             if line.item_id is None:
                 continue
             item = line.item
-            update_fields = ["updated_at"]
             item.cost_price = line.unit_price
-            update_fields.append("cost_price")
             if item.default_supplier_id is None:
                 item.default_supplier = invoice.supplier
-                update_fields.append("default_supplier")
-            Item.objects.filter(pk=item.pk).update(
-                cost_price=item.cost_price,
-                default_supplier_id=item.default_supplier_id,
-            )
+            items_to_update.append(item)
+        if items_to_update:
+            Item.objects.bulk_update(items_to_update, ["cost_price", "default_supplier"])
 
         return invoice
 
@@ -227,11 +230,17 @@ class SupplierPaymentService:
             for a in allocations
         ]
 
-        def _outstanding(inv):
-            paid = inv.allocations.aggregate(
-                t=Coalesce(Sum("amount"), _ZERO, output_field=_DEC)
-            )["t"]
-            return inv.total - paid
+        # REFACTOR PQ-07: bulk-fetch all existing allocation totals in ONE query
+        # instead of calling inv.allocations.aggregate() once per invoice inside
+        # the loop below.  With N invoices this was N extra queries; now it's 1.
+        existing_paid = {
+            row["supplier_invoice_id"]: row["paid"]
+            for row in SupplierPaymentAllocation.objects.filter(
+                supplier_invoice_id__in=supplied_ids
+            ).values("supplier_invoice_id").annotate(
+                paid=Coalesce(Sum("amount"), _ZERO, output_field=_DEC)
+            )
+        }
 
         for alloc in allocations:
             inv = alloc["invoice"]
@@ -244,7 +253,7 @@ class SupplierPaymentService:
                 raise ValueError(_(f"La factura {inv.display_number} no está pendiente de pago."))
             if amt <= _ZERO:
                 raise ValueError(_(f"El monto para {inv.display_number} debe ser mayor a cero."))
-            balance = _outstanding(inv)
+            balance = inv.total - existing_paid.get(inv.pk, _ZERO)
             alloc["_balance"] = balance
             if amt > balance:
                 raise ValueError(
@@ -289,19 +298,40 @@ class SupplierPaymentService:
         )
         payment.hard_delete()
 
-        for inv_pk in affected:
-            try:
-                inv = PurchaseDocument.objects.get(pk=inv_pk)
-            except PurchaseDocument.DoesNotExist:
-                continue
-            if inv.status != PurchaseDocument.Status.PAID:
-                continue
-            still_paid = inv.allocations.aggregate(
+        # REFACTOR PQ-08: replaced N×get() + N×aggregate() with a single
+        # bulk fetch followed by a single aggregation query, then a bulk update.
+        # Before: 2N DB queries for N affected invoices.
+        # After:  3 DB queries regardless of N.
+        paid_invoices = {
+            inv.pk: inv
+            for inv in PurchaseDocument.objects.filter(
+                pk__in=affected,
+                status=PurchaseDocument.Status.PAID,
+            )
+        }
+        if not paid_invoices:
+            return
+
+        # One aggregate query: sum remaining allocations for all affected invoices.
+        remaining_paid = {
+            row["supplier_invoice_id"]: row["t"]
+            for row in SupplierPaymentAllocation.objects.filter(
+                supplier_invoice_id__in=list(paid_invoices.keys())
+            ).values("supplier_invoice_id").annotate(
                 t=Coalesce(Sum("amount"), _ZERO, output_field=_DEC)
-            )["t"]
+            )
+        }
+
+        reopen_pks = []
+        for inv_pk, inv in paid_invoices.items():
+            still_paid = remaining_paid.get(inv_pk, _ZERO)
             if still_paid < inv.total:
-                try:
-                    inv.status = PurchaseDocument.Status.CONFIRMED
-                    inv.save(update_fields=["status", "updated_at"])
-                except Exception as exc:
-                    logger.warning("Could not reopen invoice %s: %s", inv_pk, exc)
+                reopen_pks.append(inv_pk)
+
+        if reopen_pks:
+            try:
+                PurchaseDocument.objects.filter(pk__in=reopen_pks).update(
+                    status=PurchaseDocument.Status.CONFIRMED
+                )
+            except Exception as exc:
+                logger.warning("Could not reopen invoices %s: %s", reopen_pks, exc)
