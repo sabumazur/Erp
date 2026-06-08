@@ -1,11 +1,12 @@
 from django import forms
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.core.widgets import TomSelect
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, HTML, Row, Column
 from allauth.account.forms import SignupForm, ChangePasswordForm
 from apps.core.models import Module
-from .models import User, Organization, Membership, Team
+from .models import User, Organization, Membership, Team, Invitation
 
 _PASSWORD_HELP = (
     "Usa 8 o más caracteres con una combinación de letras, números y símbolos."
@@ -20,6 +21,19 @@ class CustomSignupForm(SignupForm):
                 self.fields[field_name].widget.attrs["autocomplete"] = "new-password"
         if "password1" in self.fields:
             self.fields["password1"].help_text = ""
+
+    def clean_email(self):
+        email = super().clean_email()
+        has_invitation = Invitation.objects.filter(
+            email__iexact=email,
+            accepted_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        ).exists()
+        if not has_invitation:
+            raise forms.ValidationError(
+                "El registro es solo por invitación. Contacta al administrador de tu organización."
+            )
+        return email
 
 
 class CustomChangePasswordForm(ChangePasswordForm):

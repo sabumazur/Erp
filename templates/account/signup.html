@@ -9,9 +9,9 @@
 
 {% block content %}
 <div class="auth-card">
-  <span class="auth-eyebrow">Empieza hoy</span>
-  <h1 class="auth-card-title">Crea tu cuenta</h1>
-  <p class="auth-card-sub">Se crea un espacio de trabajo personal de forma automática</p>
+  <span class="auth-eyebrow">Invitación recibida</span>
+  <h1 class="auth-card-title">Crea tu acceso</h1>
+  <p class="auth-card-sub">Completa tu registro para unirte a la organización</p>
 
   <form method="post" action="{% url 'account_signup' %}" x-data="passwordChecker()">
     {% csrf_token %}
@@ -60,5 +60,6 @@
 
   <hr class="auth-divider">
   <p class="auth-foot">¿Ya tienes cuenta? <a href="{% url 'account_login' %}">Iniciar sesión</a></p>
+  <p class="auth-foot">¿No recibiste invitación? Contacta al administrador de tu organización.</p>
 </div>
 {% endblock %}
