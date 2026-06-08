@@ -48,15 +48,25 @@ STORAGES = {
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv(), default="")
 CSRF_COOKIE_HTTPONLY = True
 
-# SSL / HTTPS — set SECURE_SSL_REDIRECT=true when running behind a TLS-terminating
-# reverse proxy (nginx, Traefik, Railway). Leave false for plain HTTP on a LAN.
+# BEHIND_PROXY=true — set when Django sits behind any TLS-terminating proxy
+# (Cloudflare Tunnel, nginx, Traefik) that forwards plain HTTP internally.
+# Enables SECURE_PROXY_SSL_HEADER + secure cookies without triggering
+# Django's own HTTP→HTTPS redirect (the proxy already handles that).
+BEHIND_PROXY = config("BEHIND_PROXY", cast=bool, default=False)
+
+# SECURE_SSL_REDIRECT=true — set only when the proxy does NOT redirect HTTP→HTTPS
+# itself and you want Django to do it (e.g. plain nginx without redirect config).
+# Do NOT set this with Cloudflare Tunnel — Cloudflare handles the redirect and
+# Django only ever sees plain HTTP, which would cause a redirect loop.
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", cast=bool, default=False)
 
-if SECURE_SSL_REDIRECT:
-    # Trust the X-Forwarded-Proto header from a trusted reverse proxy.
+if BEHIND_PROXY or SECURE_SSL_REDIRECT:
+    # Trust X-Forwarded-Proto so Django knows the original request was HTTPS.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+if SECURE_SSL_REDIRECT:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
