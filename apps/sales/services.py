@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from decimal import Decimal as _Decimal
 
-from django.db.models import Sum as _Sum
+from django.db.models import Exists as _Exists, OuterRef as _OuterRef, Sum as _Sum
 from django.db.models.functions import Coalesce as _Coalesce
 from django.db.models import DecimalField as _DecimalField
 
@@ -380,11 +380,13 @@ class SaleOrderService:
         Consolidate all DRAFT sale orders for a customer within a date range
         into a single new DRAFT Invoice.
 
-        Each sale order becomes one invoice line:
-          description = "Entrega {doc_number} – {delivery_date}"
-          quantity    = 1
-          unit_price  = order.subtotal  (pre-ITBIS)
-          itbis_rate  = dominant rate from the order's items (or EXEMPT if mixed)
+        One invoice line is created per unique catalog Item across all orders:
+          description = item.name
+          quantity    = sum of quantities for that item across all orders
+          unit_price  = item.unit_price  (from Item model)
+          itbis_rate  = item.itbis_rate  (from Item model)
+
+        Free-text lines (no linked Item) are skipped.
 
         If `department` is given, only orders assigned to that department are
         included. Pass None to include all departments.
@@ -392,7 +394,7 @@ class SaleOrderService:
         The new Invoice is returned in DRAFT status so the user can review it
         and then call NCFService.confirm() to assign the e-NCF.
 
-        Raises ValueError if no eligible orders are found.
+        Raises ValueError if no eligible orders are found or no catalog items exist.
         """
         if customer.organization_id != organization.pk:
             raise ValueError(_("El cliente no pertenece a esta organizacion."))
@@ -402,21 +404,22 @@ class SaleOrderService:
         ):
             raise ValueError(_("El departamento no pertenece al cliente y organizacion indicados."))
 
+        has_items = _Exists(
+            SalesDocumentItem.objects.filter(document=_OuterRef("pk"))
+        )
         qs = (
             SalesDocument.sale_orders
             .select_for_update()
             .select_related("customer")
-            .prefetch_related("items")
             .filter(
                 organization=organization,
                 customer=customer,
                 status=SalesDocument.Status.DRAFT,
                 consolidated_into__isnull=True,
-                items__isnull=False,
                 issue_date__gte=period_start,
                 issue_date__lte=period_end,
             )
-            .distinct()
+            .filter(has_items)
         )
         if department is not None:
             qs = qs.filter(department=department)
@@ -432,6 +435,20 @@ class SaleOrderService:
             raise ValueError(
                 _("No hay órdenes de venta pendientes de facturar "
                   "%(scope)s en el período indicado.") % {"scope": scope}
+            )
+
+        # Aggregate quantities per catalog Item across all orders
+        item_agg = list(
+            SalesDocumentItem.objects
+            .filter(document__in=orders, item__isnull=False)
+            .values('item_id', 'item__name', 'item__unit_price', 'item__itbis_rate')
+            .annotate(total_qty=_Sum('quantity'))
+            .order_by('item__name')
+        )
+
+        if not item_agg:
+            raise ValueError(
+                _("Las órdenes seleccionadas no contienen artículos de catálogo para facturar.")
             )
 
         # Use the currency/exchange_rate of the first order (all should match)
@@ -454,23 +471,17 @@ class SaleOrderService:
             status=SalesDocument.Status.DRAFT,
         )
 
-        for order in orders:
-            # Determine the dominant ITBIS rate for this order's items
-            rates = [item.itbis_rate for item in order.items.all()]
-            dominant_rate = _dominant_itbis_rate(rates)
-
-            line_date = order.delivery_date or order.issue_date
-            date_str = line_date.strftime("%d/%m/%Y") if line_date else ""
-            ref = order.doc_number or str(order.pk)[:8]
-
+        for row in item_agg:
             SalesDocumentItem.objects.create(
                 document=invoice,
-                description=f"Entrega {ref} – {date_str}",
-                quantity=1,
-                unit_price=order.subtotal,
-                itbis_rate=dominant_rate,
+                item_id=row['item_id'],
+                description=row['item__name'],
+                quantity=row['total_qty'],
+                unit_price=row['item__unit_price'],
+                itbis_rate=row['item__itbis_rate'],
             )
 
+        for order in orders:
             order.consolidated_into = invoice
             order.status = SalesDocument.Status.INVOICED
             order.save(update_fields=["consolidated_into", "status", "updated_at"])

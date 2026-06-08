@@ -31,30 +31,9 @@
 </div>
 
 {% if has_sales_access %}
-{# ── Administración ── #}
-<div class="db-section">
-  <span class="db-section-label">{% trans "Administración" %}</span>
-  <span class="db-section-rule"></span>
-</div>
-{% include "components/_kpi_cards.html" with stats=admin_stats col_class=admin_col_class %}
-
-{# ── Ventas ── #}
-<div class="db-section">
-  <span class="db-section-label">{% trans "Ventas" %}</span>
-  <span class="db-section-rule"></span>
-  <span class="db-section-note">{% trans "Mes actual" %}</span>
-</div>
-{% include "components/_kpi_cards.html" with stats=sales_stats col_class="col-6 col-md-3" %}
-
-{% if has_purchasing_access %}
-{# ── Compras ── #}
-<div class="db-section">
-  <span class="db-section-label">{% trans "Compras" %}</span>
-  <span class="db-section-rule"></span>
-  <span class="db-section-note">{% trans "Mes actual" %}</span>
-</div>
-{% include "components/_kpi_cards.html" with stats=purchase_stats col_class="col-6 col-md-3" %}
-{% endif %}
+{% include "components/_cash_position.html" %}
+{% include "components/_flow_stats.html" %}
+{% include "components/_worklist.html" %}
 
 {# ── Facturado vs Comprado ── #}
 <div class="row g-2 mb-3">

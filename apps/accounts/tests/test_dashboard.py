@@ -271,8 +271,8 @@ class TestDashboardCounts:
 
         assert ctx["pending_purchase_orders"] == 2
         assert any(
-            stat["label"] == "Órdenes pendientes" and stat["value"] == "2"
-            for stat in ctx["purchase_stats"]
+            "Órdenes de compra" in str(chip["label"]) and chip["count"] == 2
+            for chip in ctx["worklist"]
         )
 
     def test_counts_zero_when_empty_org(self, client, owner_membership):

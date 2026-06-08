@@ -1,0 +1,23 @@
+{% load i18n %}
+{% comment %}
+  Tier 3 — Worklist navigation chips. Replaces the operational-count db-kpi tiles
+  (Cotizaciones activas, Órdenes pendientes ×2) + the AP-overdue risk tile.
+  Required context:
+    worklist  list[dict]  one per chip:
+      label  str          e.g. "Cotizaciones activas"
+      icon   str          Bootstrap Icon class, e.g. "bi-file-earmark-text"
+      count  str|int      badge value (e.g. 12 or "RD$92k")
+      href   str          destination
+      risk   bool         True → red badge/icon (overdue, alerts)
+{% endcomment %}
+{% if worklist %}
+<div class="db-work mb-3">
+  {% for c in worklist %}
+  <a class="db-work-chip{% if c.risk %} risk{% endif %}" href="{{ c.href }}">
+    <span class="db-work-ic"><i class="bi {{ c.icon }}"></i></span>
+    <span class="db-work-txt">{{ c.label }}</span>
+    <span class="db-work-count">{{ c.count }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}

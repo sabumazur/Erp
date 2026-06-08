@@ -75,11 +75,11 @@ class PurchaseOrderService:
             notes=f"Generada desde {po.number}",
         )
 
-        # REFACTOR PQ-003: bulk_create all line items in 1 INSERT instead of N.
-        # No post_save signal on PurchaseDocumentItem; recompute_totals()
-        # called once below as before.
-        PurchaseDocumentItem.objects.bulk_create([
-            PurchaseDocumentItem(
+        # bulk_create bypasses save(), so compute() must be called explicitly
+        # to populate line_total/itbis_amount/line_total_with_itbis.
+        new_lines = []
+        for line in po.items.all():
+            new_line = PurchaseDocumentItem(
                 purchase_document=si,
                 item=line.item,
                 description=line.description,
@@ -87,8 +87,9 @@ class PurchaseOrderService:
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
-            for line in po.items.all()
-        ])
+            new_line.compute()
+            new_lines.append(new_line)
+        PurchaseDocumentItem.objects.bulk_create(new_lines)
 
         si.recompute_totals()
         return po, si

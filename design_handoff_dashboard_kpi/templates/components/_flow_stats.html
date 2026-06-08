@@ -1,0 +1,29 @@
+{% load i18n humanize %}
+{% comment %}
+  Tier 2 — Monthly flow stats with MoM delta. Replaces Facturado/Cobrado/Comprado tiles.
+  Required context:
+    flow_stats  list[dict]  one per cell:
+      label      str             e.g. "Facturado"
+      value      Decimal         current-month amount
+      delta      str|None        e.g. "8.4%"; omit → no pill
+      delta_up   bool            True → green up, False → red down
+      foot       str             secondary line, e.g. "vs. RD$ 2,956,100 en mayo"
+{% endcomment %}
+{% if flow_stats %}
+<div class="db-flow-grid mb-3">
+  {% for s in flow_stats %}
+  <div class="db-flow">
+    <div class="db-flow-label">{{ s.label }}</div>
+    <div class="db-flow-row">
+      <span class="db-flow-value"><span class="cur">RD$</span>{{ s.value|floatformat:0|intcomma }}</span>
+      {% if s.delta %}
+      <span class="db-flow-delta {% if s.delta_up %}up{% else %}down{% endif %}">
+        <i class="bi bi-arrow-{% if s.delta_up %}up{% else %}down{% endif %}-short"></i>{{ s.delta }}
+      </span>
+      {% endif %}
+    </div>
+    {% if s.foot %}<div class="db-flow-foot">{{ s.foot }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

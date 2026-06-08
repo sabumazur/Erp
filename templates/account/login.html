@@ -5,9 +5,7 @@
 
 {% block content %}
 <div class="auth-card">
-  <span class="auth-eyebrow">Bienvenido de vuelta</span>
   <h1 class="auth-card-title">Iniciar sesión</h1>
-  <p class="auth-card-sub">Accede a tu espacio de trabajo en SabSys</p>
 
   <form method="post" action="{% url 'account_login' %}">
     {% csrf_token %}

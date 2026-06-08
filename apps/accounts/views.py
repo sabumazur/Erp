@@ -203,7 +203,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         cached = cache.get(_cache_key)
         if cached is not None:
             ctx.update(cached)
-            self._build_kpi_stats(ctx)
+            self._build_dashboard_context(ctx)
             return ctx
 
         month_start = today.replace(day=1)
@@ -423,6 +423,53 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             ],
         ).count()
 
+        # ── Open-invoice counts (for cash band sub-captions) ──
+        ar_open_count = SalesDocument.invoices.filter(
+            organization=org, deleted_at__isnull=True,
+            status__in=[SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE],
+        ).count()
+
+        ap_open_count = PurchaseDocument.supplier_invoices.filter(
+            organization=org, deleted_at__isnull=True,
+            status__in=[PurchaseDocument.Status.CONFIRMED],
+        ).count()
+
+        # ── Previous-month flow figures (for MoM deltas) ──
+        if month_start.month == 1:
+            prev_start = month_start.replace(year=month_start.year - 1, month=12)
+        else:
+            prev_start = month_start.replace(month=month_start.month - 1)
+        prev_end = month_start
+
+        prev_invoiced = (
+            _inv.filter(
+                issue_date__gte=prev_start, issue_date__lt=prev_end,
+                status__in=[
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.PAID,
+                    SalesDocument.Status.OVERDUE,
+                ],
+            ).aggregate(t=Sum("signed_total"))["t"] or _zero
+        )
+
+        prev_collected = (
+            Payment.objects.for_org(org)
+            .filter(date__gte=prev_start, date__lt=prev_end)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
+
+        prev_purchased = (
+            PurchaseDocument.supplier_invoices.filter(
+                organization=org, deleted_at__isnull=True,
+                issue_date__gte=prev_start, issue_date__lt=prev_end,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            ).aggregate(t=Sum("total"))["t"] or _zero
+        )
+
         computed = {
             "month_invoiced": month_invoiced,
             "month_collected": month_collected,
@@ -448,91 +495,86 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             "chart_aging_labels": chart_aging_labels,
             "chart_ar_aging": chart_ar_aging,
             "chart_ap_aging": chart_ap_aging,
+            "ar_open_count": ar_open_count,
+            "ap_open_count": ap_open_count,
+            "prev_invoiced": prev_invoiced,
+            "prev_collected": prev_collected,
+            "prev_purchased": prev_purchased,
         }
         cache.set(_cache_key, computed, timeout=900)
         ctx.update(computed)
-        self._build_kpi_stats(ctx)
+        self._build_dashboard_context(ctx)
         return ctx
 
     @staticmethod
-    def _build_kpi_stats(ctx):
-        """Package the cached KPI primitives into `stats` lists for the shared
-        `components/_kpi_cards.html` partial. Built per-request (cheap dict work)
-        so the cache keeps storing only primitives, and translated labels / URLs
-        never get pickled."""
-        def money(value):
-            return "{:,.2f}".format(value or 0)
+    def _build_dashboard_context(ctx):
+        """Package cached primitives into the 3-tier dashboard structures.
+        Built per-request so the cache stores only primitives (no pickled
+        translations / URLs)."""
+
+        def money0(v):
+            return "{:,.0f}".format(v or 0)
+
+        def delta(curr, prev):
+            """Return ('8.4%', up_bool) or (None, True) when prev is 0/None."""
+            curr = curr or 0
+            prev = prev or 0
+            if not prev:
+                return None, True
+            pct = (curr - prev) / prev * 100
+            return f"{abs(pct):.1f}%", pct >= 0
 
         has_purchasing = ctx.get("has_purchasing_access")
 
-        # ── Administración ──
-        admin = [{
-            "label": _("Por cobrar"), "value": money(ctx.get("outstanding")),
-            "icon": "bi-arrow-down-circle", "currency": "RD$", "variant": "is-ar",
-            "href": reverse("sales:invoice_list"),
-        }]
-        if has_purchasing:
-            admin.append({
-                "label": _("Por pagar"), "value": money(ctx.get("ap_outstanding")),
-                "icon": "bi-arrow-up-circle", "currency": "RD$", "variant": "is-ap",
-                "href": reverse("purchases:supplier_invoice_list"),
-            })
-            net = ctx.get("net_position") or 0
-            admin.append({
-                "label": _("Posición neta (CxC − CxP)"), "value": money(net),
-                "icon": "bi-bank", "currency": "RD$", "variant": "is-net",
-                "value_class": "num-neg" if net < 0 else "num-pos",
-            })
-        overdue_label = _("Vencido CxC")
-        if ctx.get("overdue_count"):
-            overdue_label = f"{overdue_label} · {ctx['overdue_count']}"
-        admin.append({
-            "label": overdue_label, "value": money(ctx.get("overdue_total")),
-            "icon": "bi-exclamation-triangle", "currency": "RD$", "variant": "is-neg",
-            "value_class": "num-neg", "href": reverse("sales:invoice_list") + "?status=OVERDUE",
-        })
-        if not has_purchasing:
-            admin.append({
-                "label": _("Clientes"), "value": "{:,}".format(ctx.get("customer_count") or 0),
-                "icon": "bi-people", "href": reverse("sales:customer_list"),
-            })
-        ctx["admin_stats"] = admin
-        ctx["admin_col_class"] = (
-            "col-6 col-md-3" if has_purchasing else "col-sm-6 col-xl-4"
-        )
+        # ── Tier 1 · cash band scalars ──
+        net = ctx.get("net_position") or 0
+        ctx["net_position_delta"] = None
+        ctx["net_position_up"] = net >= 0
+        ctx["ar_outstanding"] = ctx.get("outstanding")
 
-        # ── Ventas ──
-        ctx["sales_stats"] = [
-            {"label": _("Facturado"), "value": money(ctx.get("month_invoiced")),
-             "icon": "bi-receipt", "currency": "RD$"},
-            {"label": _("Cobrado"), "value": money(ctx.get("month_collected")),
-             "icon": "bi-cash-coin", "currency": "RD$", "variant": "is-pos",
-             "value_class": "num-pos"},
-            {"label": _("Cotizaciones activas"),
-             "value": "{:,}".format(ctx.get("pending_quotations") or 0),
-             "icon": "bi-file-earmark-text", "href": reverse("sales:quotation_list")},
-            {"label": _("Órdenes pendientes"),
-             "value": "{:,}".format(ctx.get("pending_sale_orders") or 0),
-             "icon": "bi-cart", "href": reverse("sales:sale_order_list")},
+        # ── Tier 2 · flow stats ──
+        di, di_up = delta(ctx.get("month_invoiced"), ctx.get("prev_invoiced"))
+        dc, dc_up = delta(ctx.get("month_collected"), ctx.get("prev_collected"))
+        flow = [
+            {"label": _("Facturado"), "value": ctx.get("month_invoiced"),
+             "delta": di, "delta_up": di_up,
+             "foot": _("vs. RD$ %(p)s el mes pasado") % {"p": money0(ctx.get("prev_invoiced"))}},
+            {"label": _("Cobrado"), "value": ctx.get("month_collected"),
+             "delta": dc, "delta_up": dc_up,
+             "foot": _("%(p)s%% de lo facturado") % {
+                 "p": int((ctx.get("month_collected") or 0) /
+                          (ctx.get("month_invoiced") or 1) * 100)}},
         ]
-
-        # ── Compras ──
         if has_purchasing:
-            ctx["purchase_stats"] = [
-                {"label": _("Comprado"), "value": money(ctx.get("month_purchased")),
-                 "icon": "bi-bag", "currency": "RD$", "variant": "is-ap"},
-                {"label": _("Pagado a proveedores"),
-                 "value": money(ctx.get("month_supplier_paid")),
-                 "icon": "bi-cash-stack", "currency": "RD$",
-                 "href": reverse("purchases:supplier_payment_list")},
-                {"label": _("Vencido proveedores"), "value": money(ctx.get("ap_overdue")),
-                 "icon": "bi-exclamation-triangle", "currency": "RD$", "variant": "is-neg",
-                 "value_class": "num-neg",
-                 "href": reverse("purchases:supplier_invoice_list")},
-                {"label": _("Órdenes pendientes"),
-                 "value": "{:,}".format(ctx.get("pending_purchase_orders") or 0),
-                 "icon": "bi-clipboard-check", "href": reverse("purchases:po_list")},
-            ]
+            dp, dp_up = delta(ctx.get("month_purchased"), ctx.get("prev_purchased"))
+            flow.append({"label": _("Comprado"), "value": ctx.get("month_purchased"),
+                         "delta": dp, "delta_up": dp_up,
+                         "foot": _("vs. RD$ %(p)s el mes pasado") % {"p": money0(ctx.get("prev_purchased"))}})
+        ctx["flow_stats"] = flow
+
+        # ── Tier 3 · worklist chips ──
+        work = [
+            {"label": _("Cotizaciones activas"), "icon": "bi-file-earmark-text",
+             "count": ctx.get("pending_quotations") or 0,
+             "href": reverse("sales:quotation_list")},
+            {"label": _("Órdenes de venta"), "icon": "bi-cart",
+             "count": ctx.get("pending_sale_orders") or 0,
+             "href": reverse("sales:sale_order_list")},
+        ]
+        if has_purchasing:
+            work.append({"label": _("Órdenes de compra"), "icon": "bi-clipboard-check",
+                         "count": ctx.get("pending_purchase_orders") or 0,
+                         "href": reverse("purchases:po_list")})
+            if ctx.get("ap_overdue"):
+                work.append({"label": _("Vencido proveedores"), "icon": "bi-exclamation-triangle",
+                             "count": "RD$" + money0(ctx.get("ap_overdue")),
+                             "href": reverse("purchases:supplier_invoice_list"),
+                             "risk": True})
+        else:
+            work.append({"label": _("Clientes"), "icon": "bi-people",
+                         "count": ctx.get("customer_count") or 0,
+                         "href": reverse("sales:customer_list")})
+        ctx["worklist"] = work
 
 
 class ProfileView(ERPBaseViewMixin, UpdateView):

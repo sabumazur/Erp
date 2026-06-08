@@ -10,10 +10,13 @@ Usage:
     python manage.py seed_purchasing_documents --org <slug> --skip-payments
 
 Creates inside a single org:
-  - 100 suppliers  (full Dominican profile with RNCs)
-  - 1,000 purchase orders (CONFIRMED, 3-5 line items each)
-  - 1,000 supplier invoices (CONFIRMED, one per PO via receive_and_invoice)
-  - 500 payments (half of confirmed invoices, full-invoice amount)
+  - 50 purchase items  (PURCHASE type, used as catalog items)
+  - 50 suppliers  (full Dominican profile with RNCs)
+  - 500 purchase orders (CONFIRMED, 3-5 line items each)
+  - 500 supplier invoices (CONFIRMED, one per PO via receive_and_invoice)
+  - payments for half of confirmed invoices (full-invoice amount)
+
+Line items use the 50 seeded catalog items (PURCHASE type).
 """
 import random
 from datetime import date, timedelta
@@ -23,6 +26,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.accounts.models import Organization
+from apps.items.models import Item
 from apps.purchases.models import (
     PurchaseDocument,
     PurchaseDocumentItem,
@@ -171,18 +175,24 @@ def _rand_contact():
     return f"{random.choice(DR_FIRST_NAMES)} {random.choice(DR_LAST_NAMES)}"
 
 
-def _add_lines(doc, count=None):
-    """Add 3–5 random line items to a PurchaseDocument."""
+def _add_lines(doc, catalog_items: list, count=None):
+    """Add 3-5 random line items to a PurchaseDocument using catalog items."""
     if count is None:
         count = random.randint(3, 5)
+    lines = []
     for _ in range(count):
-        PurchaseDocumentItem.objects.create(
+        cat = random.choice(catalog_items)
+        line = PurchaseDocumentItem(
             purchase_document=doc,
-            description=random.choice(DR_PRODUCTS),
+            item=cat,
+            description=cat.name,
             quantity=Decimal(str(random.randint(1, 20))),
-            unit_price=random.choice(UNIT_PRICES),
-            itbis_rate=random.choice(ITBIS_RATES_WEIGHTED),
+            unit_price=cat.unit_price,
+            itbis_rate=cat.itbis_rate,
         )
+        line.compute()
+        lines.append(line)
+    PurchaseDocumentItem.objects.bulk_create(lines)
     doc.recompute_totals()
     doc.refresh_from_db()
 
@@ -191,8 +201,8 @@ def _add_lines(doc, count=None):
 
 class Command(BaseCommand):
     help = (
-        "Seed an organization with 100 suppliers, 1 000 purchase orders, "
-        "1 000 supplier invoices, and 500 payments."
+        "Seed an organization with 50 purchase items, 50 suppliers, 500 purchase orders, "
+        "500 supplier invoices, and payments for half the invoices."
     )
 
     def add_arguments(self, parser):
@@ -234,8 +244,9 @@ class Command(BaseCommand):
 
         payment_terms = list(PaymentTerm.objects.all())
 
-        suppliers = self._seed_suppliers(org, 100, payment_terms)
-        purchase_orders = self._seed_purchase_orders(org, suppliers, 1_000)
+        catalog_items = self._seed_purchase_items(org, 50)
+        suppliers = self._seed_suppliers(org, 50, payment_terms)
+        purchase_orders = self._seed_purchase_orders(org, suppliers, catalog_items, 500)
         invoices = self._seed_supplier_invoices(org, purchase_orders)
 
         if not options["skip_payments"]:
@@ -246,24 +257,65 @@ class Command(BaseCommand):
     # ── Clear ─────────────────────────────────────────────────────────────────
 
     def _clear(self, org):
-        self.stdout.write(self.style.WARNING("Clearing existing purchasing records…"))
-        # Delete in dependency order (hard-delete, bypassing soft-delete guards)
+        self.stdout.write(self.style.WARNING("Clearing existing purchasing records..."))
         from apps.purchases.models import SupplierPaymentAllocation
         SupplierPaymentAllocation.objects.filter(
             payment__organization=org
         ).delete()
-        SupplierPayment.objects.filter(organization=org).all_objects.all().delete()
+        SupplierPayment.all_objects.filter(organization=org).delete()
         PurchaseDocumentItem.objects.filter(
             purchase_document__organization=org
         ).delete()
         PurchaseDocument.all_objects.filter(organization=org).delete()
         Supplier.all_objects.filter(organization=org).delete()
+        # Remove purchase items seeded previously
+        Item.objects.filter(
+            organization=org,
+            item_type=Item.ItemType.PURCHASE,
+        ).delete()
+        PurchaseSequence.objects.filter(organization=org).delete()
         self.stdout.write("  Done.\n")
+
+    # ── Purchase Items ────────────────────────────────────────────────────────
+
+    def _seed_purchase_items(self, org, count: int) -> list:
+        self.stdout.write(f"\nSeeding {count} purchase items (PURCHASE type)...")
+        itbis_choices = [
+            Item.ITBISRate.RATE_18, Item.ITBISRate.RATE_18, Item.ITBISRate.RATE_18,
+            Item.ITBISRate.RATE_16, Item.ITBISRate.EXEMPT,
+        ]
+        items = []
+        for i, product in enumerate(DR_PRODUCTS[:count]):
+            item = Item(
+                organization=org,
+                name=product,
+                item_type=Item.ItemType.PURCHASE,
+                unit_price=random.choice(UNIT_PRICES),
+                cost_price=random.choice(UNIT_PRICES),
+                itbis_rate=random.choice(itbis_choices),
+                is_active=True,
+            )
+            items.append(item)
+        # If DR_PRODUCTS has fewer than count, pad with numbered extras
+        for j in range(len(DR_PRODUCTS), count):
+            item = Item(
+                organization=org,
+                name=f"Producto de Compra {j + 1}",
+                item_type=Item.ItemType.PURCHASE,
+                unit_price=random.choice(UNIT_PRICES),
+                cost_price=random.choice(UNIT_PRICES),
+                itbis_rate=random.choice(itbis_choices),
+                is_active=True,
+            )
+            items.append(item)
+        created = Item.objects.bulk_create(items)
+        self.stdout.write(f"  {len(created)} purchase items created.")
+        return list(created)
 
     # ── Suppliers ─────────────────────────────────────────────────────────────
 
     def _seed_suppliers(self, org, count: int, payment_terms: list) -> list:
-        self.stdout.write(f"\nSeeding {count} suppliers…")
+        self.stdout.write(f"\nSeeding {count} suppliers...")
         used_rncs = set(
             Supplier.objects.filter(organization=org)
             .values_list("rnc_cedula", flat=True)
@@ -308,8 +360,8 @@ class Command(BaseCommand):
 
     # ── Purchase Orders ───────────────────────────────────────────────────────
 
-    def _seed_purchase_orders(self, org, suppliers: list, count: int) -> list:
-        self.stdout.write(f"\nSeeding {count} purchase orders (CONFIRMED)…")
+    def _seed_purchase_orders(self, org, suppliers: list, catalog_items: list, count: int) -> list:
+        self.stdout.write(f"\nSeeding {count} purchase orders (CONFIRMED)...")
         purchase_orders = []
 
         for chunk_start in range(0, count, CHUNK):
@@ -329,7 +381,7 @@ class Command(BaseCommand):
                         exchange_rate=Decimal("1.0000"),
                         notes="",
                     )
-                    _add_lines(po, count=random.randint(3, 5))
+                    _add_lines(po, catalog_items, count=random.randint(3, 5))
                     try:
                         PurchaseOrderService.confirm(po)
                         purchase_orders.append(po)
@@ -346,11 +398,11 @@ class Command(BaseCommand):
 
     def _seed_supplier_invoices(self, org, purchase_orders: list) -> list:
         """
-        Convert each CONFIRMED PO → RECEIVED + DRAFT SI via receive_and_invoice(),
+        Convert each CONFIRMED PO -> RECEIVED + DRAFT SI via receive_and_invoice(),
         then confirm the SI with a unique supplier NCF.
         """
         count = len(purchase_orders)
-        self.stdout.write(f"\nSeeding {count} supplier invoices (via receive_and_invoice)…")
+        self.stdout.write(f"\nSeeding {count} supplier invoices (via receive_and_invoice)...")
 
         confirmed_invoices = []
         ncf_counter = 1   # monotonically increasing per-org NCF suffix
@@ -419,7 +471,7 @@ class Command(BaseCommand):
         total_count = len(selected)
         methods = [m.value for m in PaymentMethod]
 
-        self.stdout.write(f"\nSeeding payments for {total_count} invoices…")
+        self.stdout.write(f"\nSeeding payments for {total_count} invoices...")
 
         paid_count = 0
         total_paid = Decimal("0.00")

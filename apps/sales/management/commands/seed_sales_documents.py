@@ -9,12 +9,14 @@ Usage:
     python manage.py seed_sales_documents --org <slug> --clear
 
 Creates inside a single org:
-  - 100 customers
-  - 1,000 quotations  (500 CONFIRMED/SENT mix + 500 ACCEPTED for conversion)
-  - 1,000 sale orders (CONFIRMED with doc_number)
-  - 1,000 standalone invoices (CONFIRMED with NCF)
-  - 67 consolidated invoices, each covering 15 DRAFT sale orders
-  - 500 invoices converted from the ACCEPTED quotations
+  - 50 customers
+  - 500 quotations  (250 CONFIRMED/SENT mix + 250 ACCEPTED for conversion)
+  - 500 sale orders (CONFIRMED with doc_number)
+  - 500 standalone invoices (CONFIRMED with NCF)
+  - 33 consolidated invoices, each covering 15 DRAFT sale orders
+  - 250 invoices converted from the ACCEPTED quotations
+
+Line items use existing catalog Items from the org (SALE/BOTH types).
 """
 import random
 from datetime import date, timedelta
@@ -24,6 +26,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.accounts.models import Organization
+from apps.items.models import Item
 from apps.sales.models import (
     Customer,
     DocumentSequence,
@@ -148,23 +151,25 @@ def _rand_price() -> Decimal:
     return random.choice(UNIT_PRICES)
 
 
-def _add_items(document: SalesDocument, count: int = 2) -> None:
+def _add_items(document: SalesDocument, catalog_items: list, count: int = 2) -> None:
     """
-    Bulk-create `count` line items for `document` and recompute totals once.
+    Bulk-create `count` line items for `document` using existing catalog items.
     Uses bulk_create to avoid N signal firings; calls recompute_totals manually.
     """
-    items = []
+    lines = []
     for _ in range(count):
-        item = SalesDocumentItem(
+        cat = random.choice(catalog_items)
+        line = SalesDocumentItem(
             document=document,
-            description=random.choice(DR_SERVICES),
+            item=cat,
+            description=cat.name,
             quantity=Decimal(str(random.randint(1, 10))),
-            unit_price=_rand_price(),
-            itbis_rate=random.choice(ITBIS_RATES_WEIGHTED),
+            unit_price=cat.unit_price,
+            itbis_rate=cat.itbis_rate,
         )
-        item.compute()
-        items.append(item)
-    SalesDocumentItem.objects.bulk_create(items)
+        line.compute()
+        lines.append(line)
+    SalesDocumentItem.objects.bulk_create(lines)
     document.recompute_totals()
     document.refresh_from_db()
 
@@ -172,7 +177,7 @@ def _add_items(document: SalesDocument, count: int = 2) -> None:
 def _progress(stdout, current: int, total: int, label: str = "") -> None:
     bar_len = 30
     filled  = int(bar_len * current / total)
-    bar     = "█" * filled + "░" * (bar_len - filled)
+    bar     = "#" * filled + "-" * (bar_len - filled)
     stdout.write(f"\r  [{bar}] {current:>5}/{total}  {label}", ending="")
     stdout.flush()
 
@@ -181,9 +186,10 @@ def _progress(stdout, current: int, total: int, label: str = "") -> None:
 
 class Command(BaseCommand):
     help = (
-        "Seed an organization with 100 customers, 1,000 quotations, "
-        "1,000 sale orders, 1,000 standalone invoices, ~67 consolidated invoices, "
-        "and 500 invoices converted from accepted quotations."
+        "Seed an organization with 50 customers, 500 quotations, "
+        "500 sale orders, 500 standalone invoices, ~33 consolidated invoices, "
+        "and 250 invoices converted from accepted quotations. "
+        "Line items use existing SALE/BOTH catalog items."
     )
 
     def add_arguments(self, parser):
@@ -223,12 +229,25 @@ class Command(BaseCommand):
 
         self._ensure_ncf_sequence(org)
 
-        customers   = self._seed_customers(org, 100)
-        quotations  = self._seed_quotations(org, customers, 1_000)
-        self._seed_sale_orders(org, customers, 1_000)
-        self._seed_standalone_invoices(org, customers, 1_000)
-        self._seed_consolidated_invoices(org, customers, 67)
-        self._convert_quotations(org, quotations, 500)
+        catalog_items = list(
+            Item.objects.filter(
+                organization=org,
+                item_type__in=[Item.ItemType.SALE, Item.ItemType.BOTH],
+                deleted_at__isnull=True,
+            )
+        )
+        if not catalog_items:
+            raise CommandError(
+                "No SALE/BOTH items found for this org. Create at least one item first."
+            )
+        self.stdout.write(f"  Using {len(catalog_items)} catalog item(s) for line items.")
+
+        customers   = self._seed_customers(org, 50)
+        quotations  = self._seed_quotations(org, customers, catalog_items, 500)
+        self._seed_sale_orders(org, customers, catalog_items, 500)
+        self._seed_standalone_invoices(org, customers, catalog_items, 500)
+        self._seed_consolidated_invoices(org, customers, catalog_items, 33)
+        self._convert_quotations(org, quotations, 250)
 
         if not options["skip_payments"]:
             self._seed_payments(org)
@@ -239,10 +258,14 @@ class Command(BaseCommand):
     # ── Setup helpers ─────────────────────────────────────────────────────────
 
     def _clear(self, org) -> None:
-        self.stdout.write("  Clearing existing sales data…", ending="")
+        self.stdout.write("  Clearing existing sales data...", ending="")
+        from apps.sales.models import PaymentAllocation
         with transaction.atomic():
-            SalesDocument.all_objects.filter(organization=org).hard_delete()
-            Customer.all_objects.filter(organization=org).hard_delete()
+            # Must delete allocations -> payments before documents (PROTECT FK).
+            PaymentAllocation.objects.filter(invoice__organization=org).delete()
+            Payment.all_objects.filter(organization=org).delete()
+            SalesDocument.all_objects.filter(organization=org).delete()
+            Customer.all_objects.filter(organization=org).delete()
             DocumentSequence.objects.filter(organization=org).delete()
             NCFSequence.objects.filter(organization=org).delete()
         self.stdout.write(self.style.SUCCESS(" done.\n"))
@@ -269,14 +292,14 @@ class Command(BaseCommand):
     # ── Section: customers ────────────────────────────────────────────────────
 
     def _seed_customers(self, org, count: int) -> list:
-        self.stdout.write(f"\nCreating {count} customers…")
+        self.stdout.write(f"\nCreating {count} customers...")
         customers = []
 
         for chunk_start in range(0, count, CHUNK):
             chunk_end = min(chunk_start + CHUNK, count)
             with transaction.atomic():
                 for i in range(chunk_start, chunk_end):
-                    # Customer.save() is not overridden → no full_clean() fired.
+                    # Customer.save() is not overridden -> no full_clean() fired.
                     # RNCs are 9-digit sequential integers, always valid.
                     c = Customer.objects.create(
                         organization=org,
@@ -306,14 +329,14 @@ class Command(BaseCommand):
 
     # ── Section: quotations ───────────────────────────────────────────────────
 
-    def _seed_quotations(self, org, customers: list, count: int) -> list:
+    def _seed_quotations(self, org, customers: list, catalog_items: list, count: int) -> list:
         """
         Create `count` quotations:
-          - First half  → CONFIRMED or SENT (mix)
-          - Second half → ACCEPTED (will be converted to invoices later)
+          - First half  -> CONFIRMED or SENT (mix)
+          - Second half -> ACCEPTED (will be converted to invoices later)
         Returns all quotation objects.
         """
-        self.stdout.write(f"\nCreating {count} quotations…")
+        self.stdout.write(f"\nCreating {count} quotations...")
         quotations = []
         half = count // 2
 
@@ -335,7 +358,7 @@ class Command(BaseCommand):
                         currency=SalesDocument.Currency.DOP,
                         status=SalesDocument.Status.DRAFT,
                     )
-                    _add_items(q, count=random.randint(1, 3))
+                    _add_items(q, catalog_items, count=random.randint(1, 3))
 
                     if i < half:
                         # First 500: CONFIRMED (odd) or SENT (even)
@@ -357,9 +380,9 @@ class Command(BaseCommand):
 
     # ── Section: sale orders ──────────────────────────────────────────────────
 
-    def _seed_sale_orders(self, org, customers: list, count: int) -> list:
+    def _seed_sale_orders(self, org, customers: list, catalog_items: list, count: int) -> list:
         """Create `count` CONFIRMED sale orders."""
-        self.stdout.write(f"\nCreating {count} sale orders (CONFIRMED)…")
+        self.stdout.write(f"\nCreating {count} sale orders (CONFIRMED)...")
         orders = []
 
         for chunk_start in range(0, count, CHUNK):
@@ -379,7 +402,7 @@ class Command(BaseCommand):
                         currency=SalesDocument.Currency.DOP,
                         status=SalesDocument.Status.DRAFT,
                     )
-                    _add_items(order, count=random.randint(1, 4))
+                    _add_items(order, catalog_items, count=random.randint(1, 4))
                     SaleOrderService.confirm(order)
                     orders.append(order)
             _progress(self.stdout, chunk_end, count, "sale orders")
@@ -389,12 +412,12 @@ class Command(BaseCommand):
 
     # ── Section: standalone invoices ──────────────────────────────────────────
 
-    def _seed_standalone_invoices(self, org, customers: list, count: int) -> list:
+    def _seed_standalone_invoices(self, org, customers: list, catalog_items: list, count: int) -> list:
         """
         Create `count` CONFIRMED standalone invoices, each with a real NCF
         assigned by NCFService.confirm().
         """
-        self.stdout.write(f"\nCreating {count} standalone invoices…")
+        self.stdout.write(f"\nCreating {count} standalone invoices...")
         invoices = []
 
         for chunk_start in range(0, count, CHUNK):
@@ -418,7 +441,7 @@ class Command(BaseCommand):
                         currency=SalesDocument.Currency.DOP,
                         status=SalesDocument.Status.DRAFT,
                     )
-                    _add_items(inv, count=random.randint(1, 4))
+                    _add_items(inv, catalog_items, count=random.randint(1, 4))
                     NCFService.confirm(inv)
                     invoices.append(inv)
             _progress(self.stdout, chunk_end, count, "invoices")
@@ -428,7 +451,7 @@ class Command(BaseCommand):
 
     # ── Section: consolidated invoices ───────────────────────────────────────
 
-    def _seed_consolidated_invoices(self, org, customers: list, num_groups: int) -> None:
+    def _seed_consolidated_invoices(self, org, customers: list, catalog_items: list, num_groups: int) -> None:
         """
         Create `num_groups` × 15 DRAFT sale orders and consolidate each group
         into one invoice via SaleOrderService.consolidate_and_invoice().
@@ -437,7 +460,7 @@ class Command(BaseCommand):
         """
         orders_total = num_groups * 15
         self.stdout.write(
-            f"\nCreating {orders_total} orders → {num_groups} consolidated invoices…"
+            f"\nCreating {orders_total} orders -> {num_groups} consolidated invoices..."
         )
 
         # Wide date window covering all seed orders we're about to create.
@@ -462,7 +485,7 @@ class Command(BaseCommand):
                         currency=SalesDocument.Currency.DOP,
                         status=SalesDocument.Status.DRAFT,
                     )
-                    _add_items(order, count=1)
+                    _add_items(order, catalog_items, count=1)
 
                 # 2. Consolidate all 15 DRAFT orders into one invoice.
                 try:
@@ -496,7 +519,7 @@ class Command(BaseCommand):
             f"(covering {consolidated_count * 15} orders)."
         )
 
-    # ── Section: convert quotations → invoices ────────────────────────────────
+    # ── Section: convert quotations -> invoices ────────────────────────────────
 
     def _convert_quotations(self, org, all_quotations: list, count: int) -> None:
         """
@@ -514,7 +537,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("\n  No ACCEPTED quotations found to convert."))
             return
 
-        self.stdout.write(f"\nConverting {actual} accepted quotations to invoices…")
+        self.stdout.write(f"\nConverting {actual} accepted quotations to invoices...")
         converted = 0
         failed    = 0
 
@@ -566,7 +589,7 @@ class Command(BaseCommand):
 
         selected = random.sample(all_invoices, len(all_invoices) // 2)
         total_count = len(selected)
-        self.stdout.write(f"\nSeeding payments for {total_count} invoices…")
+        self.stdout.write(f"\nSeeding payments for {total_count} invoices...")
 
         methods = [m.value for m in PaymentMethod]
         paid_count = 0

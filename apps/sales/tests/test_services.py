@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.sales.models import SalesDocument, SalesDocumentItem, Payment, PaymentAllocation
 from apps.sales.services import PaymentService, QuotationService
+from apps.items.tests.factories import ItemFactory
 from .factories import (
     CustomerFactory,
     SalesDocumentFactory,
@@ -393,7 +394,14 @@ class TestQuotationService:
 @pytest.mark.django_db
 class TestSaleOrderConsolidate:
 
-    def _draft_order(self, org, customer, *, with_item=True):
+    def _make_item(self, org, unit_price=Decimal("100.00")):
+        return ItemFactory(
+            organization=org,
+            unit_price=unit_price,
+            itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
+        )
+
+    def _draft_order(self, org, customer, item=None, quantity=Decimal("1"), *, with_item=True):
         order = SalesDocumentFactory(
             organization=org,
             customer=customer,
@@ -401,24 +409,29 @@ class TestSaleOrderConsolidate:
             status=SalesDocument.Status.DRAFT,
             issue_date=timezone.now().date(),
         )
-        if with_item:
+        if with_item and item is not None:
             SalesDocumentItemFactory(
                 document=order,
-                quantity=Decimal("1"),
-                unit_price=Decimal("1000.00"),
-                itbis_rate=SalesDocumentItem.ITBISRate.RATE_18,
+                item=item,
+                description=item.name,
+                quantity=quantity,
+                unit_price=item.unit_price,
+                itbis_rate=item.itbis_rate,
             )
             order.recompute_totals()
             order.refresh_from_db()
         return order
 
-    def test_consolidate_pulls_draft_orders(self):
+    def test_consolidate_aggregates_same_item_across_orders(self):
+        """Two orders with the same item → one invoice line with summed qty."""
         from apps.sales.services import SaleOrderService
         customer = CustomerFactory()
         org = customer.organization
         today = timezone.now().date()
-        o1 = self._draft_order(org, customer)
-        o2 = self._draft_order(org, customer)
+        item = self._make_item(org, unit_price=Decimal("500.00"))
+
+        o1 = self._draft_order(org, customer, item=item, quantity=Decimal("3"))
+        o2 = self._draft_order(org, customer, item=item, quantity=Decimal("5"))
 
         invoice = SaleOrderService.consolidate_and_invoice(
             organization=org,
@@ -430,18 +443,71 @@ class TestSaleOrderConsolidate:
 
         assert invoice.doc_type == SalesDocument.DocType.INVOICE
         assert invoice.status == SalesDocument.Status.DRAFT
-        assert invoice.items.count() == 2
+        assert invoice.items.count() == 1
+        line = invoice.items.first()
+        assert line.item_id == item.pk
+        assert line.description == item.name
+        assert line.quantity == Decimal("8")
+        assert line.unit_price == Decimal("500.00")
+        assert line.itbis_rate == SalesDocumentItem.ITBISRate.RATE_18
         for o in (o1, o2):
             o.refresh_from_db()
             assert o.status == SalesDocument.Status.INVOICED
             assert o.consolidated_into_id == invoice.pk
 
-    def test_consolidate_skips_empty_orders(self):
+    def test_consolidate_separate_items_produce_separate_lines(self):
+        """Two orders with different items → two invoice lines."""
         from apps.sales.services import SaleOrderService
         customer = CustomerFactory()
         org = customer.organization
         today = timezone.now().date()
-        good = self._draft_order(org, customer)
+        item_a = self._make_item(org, unit_price=Decimal("200.00"))
+        item_b = self._make_item(org, unit_price=Decimal("300.00"))
+
+        self._draft_order(org, customer, item=item_a, quantity=Decimal("2"))
+        self._draft_order(org, customer, item=item_b, quantity=Decimal("4"))
+
+        invoice = SaleOrderService.consolidate_and_invoice(
+            organization=org,
+            customer=customer,
+            period_start=today,
+            period_end=today,
+            ncf_type=31,
+        )
+
+        assert invoice.items.count() == 2
+
+    def test_consolidate_uses_item_model_price(self):
+        """Invoice line uses Item.unit_price, ignoring order line price."""
+        from apps.sales.services import SaleOrderService
+        customer = CustomerFactory()
+        org = customer.organization
+        today = timezone.now().date()
+        item = self._make_item(org, unit_price=Decimal("999.00"))
+
+        order = self._draft_order(org, customer, item=item, quantity=Decimal("2"))
+        # Override line price to something different — consolidate must ignore it
+        order.items.update(unit_price=Decimal("1.00"))
+
+        invoice = SaleOrderService.consolidate_and_invoice(
+            organization=org,
+            customer=customer,
+            period_start=today,
+            period_end=today,
+            ncf_type=31,
+        )
+
+        line = invoice.items.first()
+        assert line.unit_price == Decimal("999.00")
+
+    def test_consolidate_skips_empty_orders(self):
+        """Order with no lines stays DRAFT; order with catalog item gets invoiced."""
+        from apps.sales.services import SaleOrderService
+        customer = CustomerFactory()
+        org = customer.organization
+        today = timezone.now().date()
+        item = self._make_item(org)
+        good = self._draft_order(org, customer, item=item)
         empty = self._draft_order(org, customer, with_item=False)
 
         invoice = SaleOrderService.consolidate_and_invoice(
@@ -452,8 +518,36 @@ class TestSaleOrderConsolidate:
             ncf_type=31,
         )
 
-        # Only the order with a line produced a consolidated line.
         assert invoice.items.count() == 1
         empty.refresh_from_db()
         assert empty.status == SalesDocument.Status.DRAFT
         assert empty.consolidated_into_id is None
+        good.refresh_from_db()
+        assert good.status == SalesDocument.Status.INVOICED
+
+    def test_consolidate_free_text_only_raises(self):
+        """Orders with only free-text lines (no Item FK) raise ValueError."""
+        from apps.sales.services import SaleOrderService
+        customer = CustomerFactory()
+        org = customer.organization
+        today = timezone.now().date()
+
+        order = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            doc_type=SalesDocument.DocType.SALE_ORDER,
+            status=SalesDocument.Status.DRAFT,
+            issue_date=today,
+        )
+        # Free-text line: no item FK
+        SalesDocumentItemFactory(document=order, item=None)
+        order.recompute_totals()
+
+        with pytest.raises(ValueError, match="artículos de catálogo"):
+            SaleOrderService.consolidate_and_invoice(
+                organization=org,
+                customer=customer,
+                period_start=today,
+                period_end=today,
+                ncf_type=31,
+            )
