@@ -40,6 +40,15 @@ python manage.py audit_module_access --strict  # Exit non-zero if audit findings
 
 Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
 
+## Skills
+
+Three project skills are installed as `.skill` files in the repo root:
+
+| Skill | File | Trigger |
+|-------|------|---------|
+| `sabsys-review` | `sabsys-review.skill` | Reviewing a PR or diff for sabsys-specific correctness |
+| `sabsys-test` | `sabsys-test.skill` | Writing tests for any sabsys app |
+
 ## Architecture
 
 ### Multi-tenancy
@@ -182,6 +191,18 @@ Templates: `components/datatable/wrapper.html` (full page), `results.html` (HTMX
 **`.dt-kebab` dropdown positioning** — `static/js/core.js` patches `bootstrap.Dropdown.prototype._getPopperConfig` for any toggle inside `.dt-kebab` to use `strategy: 'fixed'` (escapes `app-table-wrap { overflow: hidden }`) and `placement: 'auto'` (Popper picks best direction, so dropdown is fully visible even when the table has only one row). Patch applies globally including HTMX-swapped content.
 
 **Detail page sidebar tables** — status/meta tables inside `app-table-wrap` on detail pages (e.g. "Estado del documento") use `overflow-x: auto` on their `p-3` wrapper and `min-width: max-content` on the `<table>` so values are never clipped by the parent `overflow: hidden`. Value `<td>` elements carry `white-space: nowrap`. Apply this pattern to any new sidebar info table.
+
+### New app checklist
+
+When scaffolding an entirely new Django app:
+
+1. Create `apps/<app_name>/` with `__init__.py`, `apps.py`, `models.py`, `forms.py`, `filters.py`, `views.py` (or `views/`), `urls.py`, `admin.py`, `tests/`, `migrations/`.
+2. Add `"apps.<app_name>"` to `INSTALLED_APPS` in `config/settings/base.py`.
+3. Register URLs in `config/urls.py` with an appropriate prefix.
+4. Create templates under `templates/<app_name>/` and `templates/<app_name>/partials/`.
+5. Run `python manage.py makemigrations <app_name>`.
+6. Register models in `admin.py`.
+7. If module-gated, add module slug to `seed_modules` management command so it can be seeded.
 
 ### Full-text search (`apps/core/search.py`)
 
