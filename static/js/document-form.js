@@ -1,12 +1,13 @@
 (function () {
   "use strict";
 
+  var ITBIS_RATES = { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 };
+
   function itemRow() {
     return {
       qty: 1,
       price: 0,
       rate: "RATE_18",
-      rateMap: { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 },
       init: function () {
         var row = this.$el;
         var qEl = row.querySelector('[name$="-quantity"]');
@@ -18,7 +19,7 @@
         this.$nextTick(function () { recalcGrandTotal(); });
       },
       subtotal: function () { return this.qty * this.price; },
-      itbisAmt: function () { return this.subtotal() * (this.rateMap[this.rate] || 0); },
+      itbisAmt: function () { return this.subtotal() * (ITBIS_RATES[this.rate] || 0); },
       rowTotal: function () { return this.subtotal() + this.itbisAmt(); },
       fmt: function (n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); },
       fmtSubtotal: function () { return this.fmt(this.subtotal()); },
@@ -71,7 +72,6 @@
   }
 
   function recalcGrandTotal() {
-    var rateMap = { EXEMPT: 0, RATE_0: 0, RATE_16: 0.16, RATE_18: 0.18 };
     var subtotal = 0;
     var itbis18 = 0;
     var itbis16 = 0;
@@ -88,7 +88,7 @@
       var price = parseFloat(pEl.value) || 0;
       var rate = rEl.value;
       var base = qty * price;
-      var itbis = base * (rateMap[rate] || 0);
+      var itbis = base * (ITBIS_RATES[rate] || 0);
 
       var subSpan = row.querySelector(".row-subtotal");
       var itbSpan = row.querySelector(".row-itbis");

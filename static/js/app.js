@@ -33,9 +33,7 @@
     initPaymentForm();
 
     // Modals
-    initItemModal();
-    initModuleModal();
-    initPaymentTermModal();
+    initEditableModals();
     initCustomerList();
     initNcfModal();
     initDeptModalClose();

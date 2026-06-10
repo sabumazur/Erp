@@ -44,6 +44,11 @@
     if (el) el.textContent = text;
   }
 
+  function getCsrfToken() {
+    var el = document.querySelector("[name=csrfmiddlewaretoken]");
+    return el ? el.value : "";
+  }
+
   // dt-kebab dropdowns: fixed strategy escapes overflow:hidden containers;
   // auto placement picks best direction when table has few rows.
   (function patchDtKebabDropdowns() {
@@ -72,10 +77,11 @@
     });
   });
 
-  window.SabSysCore = { getConfig: getConfig, ready: ready, parseJsonScript: parseJsonScript, escapeHtml: escapeHtml, formatMoney: formatMoney, setText: setText };
+  window.SabSysCore = { getConfig: getConfig, ready: ready, parseJsonScript: parseJsonScript, escapeHtml: escapeHtml, formatMoney: formatMoney, setText: setText, getCsrfToken: getCsrfToken };
   window.getConfig = getConfig;
   window.parseJsonScript = parseJsonScript;
   window.escapeHtml = escapeHtml;
   window.formatMoney = formatMoney;
   window.setText = setText;
+  window.getCsrfToken = getCsrfToken;
 })();
