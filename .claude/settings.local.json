@@ -112,7 +112,9 @@
       "Bash(xargs grep -l \"class.*Invoice\")",
       "PowerShell(Select-String -Path \"c:\\\\Users\\\\sabum\\\\sabsys\\\\apps\\\\invoices\\\\forms.py\" -Pattern \"\\\\bInvoice\\\\b|\\\\bInvoiceItem\\\\b\" | ForEach-Object { \"$\\($_.LineNumber\\): $\\($_.Line\\)\" })",
       "Bash(mkdir -p apps/purchases)",
-      "Bash(python manage.py startapp purchases apps/purchases)"
+      "Bash(python manage.py startapp purchases apps/purchases)",
+      "Bash(Select-Object -First 1)",
+      "Bash(find /c/Users/sabum/sabsys -type d -name \"apps\" | head -5)"
     ]
   }
 }

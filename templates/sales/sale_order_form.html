@@ -1,151 +1,22 @@
-{% extends "base.html" %}
-{% load crispy_forms_tags i18n %}
+{% extends "components/document_form_base.html" %}
+{% load i18n %}
 
-{% block title %}
-  {% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}
-{% endblock %}
+{% block doc_title %}{% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}{% endblock %}
+{% block doc_heading %}{% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}{% endblock %}
+{% block doc_sub %}{% trans "Órdenes de venta" %}{% endblock %}
+{% block cancel_url %}{% url 'sales:sale_order_list' %}{% endblock %}
 
-{% block content %}
+{% block card1_icon %}bi-bag-check{% endblock %}
+{% block card1_title %}{% trans "Datos de la orden" %}{% endblock %}
 
-<div class="app-header">
-  <div>
-    <h1 class="app-header-title">
-      {% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}
-    </h1>
-    <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
-  </div>
-  <div class="app-header-actions">
-    <button type="submit" form="sale-order-form" class="btn btn-sm btn-brand">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
-    </button>
-    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
-  </div>
-</div>
-
-<form method="post" id="sale-order-form">
-  {% csrf_token %}
-
-  {# ── Card 1 · Datos de la orden ───────────────────────────────────────── #}
-  <div class="app-table-wrap po-order-card mb-3">
-    <div class="app-card-head po-order-card-head">
-      <span class="po-order-card-title">
-        <i class="bi bi-bag-check" aria-hidden="true"></i>
-        {% trans "Datos de la orden" %}
-      </span>
-    </div>
-    <div class="po-order-card-body">{% crispy form %}</div>
-  </div>
-
-  {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
-  <div class="app-table-wrap po-lines-card mb-3">
-    <div class="app-card-head po-lines-head">
-      <span class="po-lines-title">{% trans "Líneas" %}</span>
-      <div class="d-flex align-items-center gap-2">
-        <span class="po-lines-count" id="po-line-count"></span>
-        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
-          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
-        </button>
-      </div>
-    </div>
-    <div>
-      {{ formset.management_form }}
-      {% if formset.non_form_errors %}
-        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
-          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
-        </div>
-      {% endif %}
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th style="width:44px"></th>
-              <th>{% trans "Descripción" %}</th>
-              <th style="width:110px">{% trans "Cantidad" %}</th>
-              <th style="width:130px">{% trans "P. Unitario" %}</th>
-              <th style="width:130px">{% trans "ITBIS" %}</th>
-              <th class="text-end" style="width:130px">{% trans "Subtotal" %}</th>
-              <th class="text-end" style="width:110px">{% trans "ITBIS RD$" %}</th>
-              <th class="text-end" style="width:130px">{% trans "Total" %}</th>
-              <th style="width:40px"></th>
-            </tr>
-          </thead>
-          <tbody id="item-tbody">
-            {% for item_form in formset %}
-              {% include "components/_line_item_row.html" with form=item_form %}
-            {% endfor %}
-          </tbody>
-          <template id="empty-item-row">
-            {% include "components/_line_item_row.html" with form=formset.empty_form %}
-          </template>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  {# ── Bottom · Notas (accordion) + Resumen (totals card) ──────────────── #}
-  <div class="po-bottom-grid mb-3">
-
-    <div class="po-notes-acc"
-         x-data="{ open: {% if form.notes.value %}true{% else %}false{% endif %},
-                   has: {% if form.notes.value %}true{% else %}false{% endif %} }"
-         :class="{ open }">
-      <button type="button" class="po-notes-trigger" @click="open = !open"
-              :aria-expanded="open.toString()">
-        <span class="po-notes-ico"><i class="bi bi-sticky" aria-hidden="true"></i></span>
-        <span class="po-notes-txt">
-          <span class="po-notes-title">{% trans "Notas" %}</span>
-          <span class="po-notes-hint">{% trans "Instrucciones o referencias internas" %}</span>
-        </span>
-        <span class="po-notes-badge" x-show="has" x-cloak>{% trans "Nota agregada" %}</span>
-        <i class="bi bi-chevron-down po-notes-chev" aria-hidden="true"></i>
-      </button>
-      <div class="po-notes-panel">
-        <div class="po-notes-panel-inner"
-             @input="has = ($event.target.value || '').trim().length > 0">
-          {{ form.notes }}
-          {% if form.notes.errors %}
-            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="po-totals-card">
-      <div class="po-totals-head">
-        <i class="bi bi-calculator" aria-hidden="true"></i>
-        <span>{% trans "Resumen" %}</span>
-      </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "Subtotal" %}</span>
-        <span class="po-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
-      </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">18%</span></span>
-        <span class="po-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
-      </div>
-      <div class="po-tot-row">
-        <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">16%</span></span>
-        <span class="po-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
-      </div>
-      <div class="po-tot-row po-tot-row--grand">
-        <span class="po-tot-k">{% trans "Total" %}</span>
-        <span class="po-tot-v font-monospace"><span id="grand-total">0.00</span></span>
-      </div>
-    </div>
-
-  </div>
-
-</form>
-
-{% url 'sales:item_search' as item_search_url %}
-{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
-{% include "sales/partials/customer_picker_modal.html" %}
-
-<script>
+{% block window_config %}
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'sales:customer_quick_create' %}";
 window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
+{% endblock %}
 
+{% block extra_scripts %}
+<script>
 (function () {
   var url = "{% url 'sales:departments_for_customer' %}";
 
@@ -179,38 +50,5 @@ window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
     });
   }
 })();
-
-(function () {
-  var issueInput    = document.getElementById('id_issue_date');
-  var deliveryInput = document.getElementById('id_delivery_date');
-  if (issueInput && deliveryInput) {
-    issueInput.addEventListener('change', function () {
-      deliveryInput.value = issueInput.value;
-    });
-  }
-})();
-
-(function () {
-  function syncCount() {
-    var el = document.getElementById("po-line-count");
-    if (!el) return;
-    var rows = document.querySelectorAll('#item-tbody tr.item-row-main');
-    var n = 0;
-    rows.forEach(function (r) {
-      var del = r.querySelector('[name$="-DELETE"]');
-      if (!(del && del.checked) && r.style.display !== "none") n++;
-    });
-    el.textContent = n + (n === 1 ? " línea" : " líneas");
-  }
-  document.addEventListener("DOMContentLoaded", syncCount);
-  document.body.addEventListener("htmx:afterSwap", syncCount);
-  document.addEventListener("click", function (e) {
-    if (e.target.closest('[onclick*="deleteRow"]') || e.target.closest('[data-add-line]')) {
-      setTimeout(syncCount, 50);
-    }
-  });
-})();
 </script>
-{% include "sales/partials/item_js.html" %}
-
 {% endblock %}

@@ -1,0 +1,25 @@
+{% load i18n %}
+{# Resumen — totals card shared by all document forms.
+   The grand-* ids are targeted by recalcGrandTotal() in document-form.js. #}
+<div class="po-totals-card"{% if totals_card_style %} style="{{ totals_card_style }}"{% endif %}>
+  <div class="po-totals-head">
+    <i class="bi bi-calculator" aria-hidden="true"></i>
+    <span>{% trans "Resumen" %}</span>
+  </div>
+  <div class="po-tot-row">
+    <span class="po-tot-k">{% trans "Subtotal" %}</span>
+    <span class="po-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
+  </div>
+  <div class="po-tot-row">
+    <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">18%</span></span>
+    <span class="po-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
+  </div>
+  <div class="po-tot-row">
+    <span class="po-tot-k">{% trans "ITBIS" %} <span class="po-tot-tag">16%</span></span>
+    <span class="po-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
+  </div>
+  <div class="po-tot-row po-tot-row--grand">
+    <span class="po-tot-k">{% trans "Total" %}</span>
+    <span class="po-tot-v font-monospace"><span id="grand-total">0.00</span></span>
+  </div>
+</div>

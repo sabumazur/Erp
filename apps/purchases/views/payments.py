@@ -50,7 +50,6 @@ class SupplierPaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = (
             SupplierPayment.objects.filter(organization=org)
             .select_related("supplier")
-            .prefetch_related("allocations__supplier_invoice")
         )
         q = self.request.GET.get("q", "").strip()
         if q:

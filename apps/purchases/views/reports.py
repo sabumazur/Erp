@@ -39,6 +39,13 @@ _AGING_CSS = {
 }
 
 
+def _report_gen(org):
+    """Per-org generation value bumped by apps/purchases/signals.py on every
+    PurchaseDocument / SupplierPayment / item mutation. Embedding it in cache
+    keys makes stale report entries unreachable immediately."""
+    return cache.get(f"purchases_report_gen:{org.pk}", 0)
+
+
 def _bucket_for(days_overdue):
     if days_overdue <= 0:
         return "current"
@@ -113,7 +120,7 @@ class Report606View(ERPBaseViewMixin, View):
                 ])
             return response
 
-        _cache_key = f"report_606:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_606:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -162,7 +169,7 @@ class ReportAPAgingView(ERPBaseViewMixin, View):
 
     def get(self, request):
         org = request.organization
-        _cache_key = f"report_ap_aging:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_ap_aging:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -244,7 +251,7 @@ class ReportSupplierStatementView(ERPBaseViewMixin, View):
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
 
-        _cache_key = f"report_supplier_statement:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_supplier_statement:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -347,7 +354,7 @@ class ReportSpendByPeriodView(ERPBaseViewMixin, View):
         year_str  = request.GET.get("year",  "").strip()
         month_str = request.GET.get("month", "").strip()
 
-        _cache_key = f"report_spend_period:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_spend_period:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -454,7 +461,7 @@ class ReportPurchasesBySupplierView(ERPBaseViewMixin, View):
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
 
-        _cache_key = f"report_purchases_by_supplier:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_purchases_by_supplier:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -556,7 +563,7 @@ class ReportSupplierPaymentsView(ERPBaseViewMixin, View):
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
 
-        _cache_key = f"report_supplier_payments:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_supplier_payments:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
@@ -628,7 +635,7 @@ class ReportITBISCreditsView(ERPBaseViewMixin, View):
         year_str  = request.GET.get("year",  "").strip()
         month_str = request.GET.get("month", "").strip()
 
-        _cache_key = f"report_itbis_credits:{org.pk}:{request.GET.urlencode()}"
+        _cache_key = f"report_itbis_credits:{org.pk}:{_report_gen(org)}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:

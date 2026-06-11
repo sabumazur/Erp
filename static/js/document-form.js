@@ -28,6 +28,18 @@
     };
   }
 
+  function syncLineCount() {
+    var el = document.getElementById("po-line-count");
+    if (!el) return;
+    var rows = document.querySelectorAll("#item-tbody tr.item-row-main");
+    var n = 0;
+    rows.forEach(function (r) {
+      var del = r.querySelector('[name$="-DELETE"]');
+      if (!(del && del.checked) && r.style.display !== "none") n++;
+    });
+    el.textContent = n + (n === 1 ? " línea" : " líneas");
+  }
+
   function deleteRow(btn) {
     var row = btn.closest("tr");
     var next = row && row.nextElementSibling;
@@ -42,6 +54,7 @@
       row.remove();
     }
     recalcGrandTotal();
+    syncLineCount();
   }
 
   function addDocumentLine() {
@@ -68,6 +81,7 @@
       window.SabSysTom.init(row);
     }
     recalcGrandTotal();
+    syncLineCount();
   }
 
   function recalcGrandTotal() {
@@ -139,6 +153,7 @@
   function initInvoiceItemFormset() {
     if (!document.getElementById("item-tbody")) return;
     recalcGrandTotal();
+    syncLineCount();
 
     var tbody = document.getElementById("item-tbody");
     tbody.addEventListener("input", function (e) {
@@ -174,6 +189,7 @@
         if (newRow && typeof Alpine !== "undefined") Alpine.initTree(newRow);
       }
       recalcGrandTotal();
+      syncLineCount();
     });
   }
 
@@ -200,6 +216,7 @@
 
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
+  window.syncLineCount = syncLineCount;
   window.recalcGrandTotal = recalcGrandTotal;
   window.initInvoiceItemFormset = initInvoiceItemFormset;
   window.initInvoiceItemHtmx = initInvoiceItemHtmx;

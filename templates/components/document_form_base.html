@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags i18n %}
+{% comment %}
+  Shared base for the five document create/edit forms (invoice, quotation,
+  sale order, purchase order, supplier invoice).
+
+  Blocks a child must define:
+    doc_title / doc_heading / doc_sub — page title, h1 and subtitle
+    cancel_url                        — list URL for the "Cancelar" button
+    card1_icon / card1_title          — header-card icon class and label
+    window_config                     — window.* globals (URLs, defaults) only
+
+  Optional blocks:
+    form_attrs       — extra attributes on the <form> tag (e.g. Alpine x-data)
+    notes_title / notes_hint — accordion labels
+    bottom           — replaces the notes + totals grid entirely
+    picker_includes  — defaults to the sales customer/item picker modals
+    extra_scripts    — additional <script> tags after the config block
+{% endcomment %}
+
+{% block title %}{% block doc_title %}{% endblock %}{% endblock %}
+
+{% block content %}
+
+<div class="app-header">
+  <div>
+    <h1 class="app-header-title">{% block doc_heading %}{% endblock %}</h1>
+    <p class="app-header-sub">{% block doc_sub %}{% endblock %}</p>
+  </div>
+  <div class="app-header-actions">
+    <button type="submit" form="document-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% block cancel_url %}{% endblock %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+  </div>
+</div>
+
+<form method="post" id="document-form"{% block form_attrs %}{% endblock %}>
+  {% csrf_token %}
+
+  {# ── Card 1 · Datos generales ─────────────────────────────────────────── #}
+  <div class="app-table-wrap po-order-card mb-3">
+    <div class="app-card-head po-order-card-head">
+      <span class="po-order-card-title">
+        <i class="bi {% block card1_icon %}bi-receipt{% endblock %}" aria-hidden="true"></i>
+        {% block card1_title %}{% endblock %}
+      </span>
+    </div>
+    <div class="po-order-card-body">{% crispy form %}</div>
+  </div>
+
+  {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
+  <div class="app-table-wrap po-lines-card mb-3">
+    <div class="app-card-head po-lines-head">
+      <span class="po-lines-title">{% trans "Líneas" %}</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="po-lines-count" id="po-line-count"></span>
+        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
+        </button>
+      </div>
+    </div>
+    <div>
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}
+        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
+          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width:44px"></th>
+              <th>{% trans "Descripción" %}</th>
+              <th style="width:110px">{% trans "Cantidad" %}</th>
+              <th style="width:130px">{% trans "P. Unitario" %}</th>
+              <th style="width:130px">{% trans "ITBIS" %}</th>
+              <th class="text-end" style="width:130px">{% trans "Subtotal" %}</th>
+              <th class="text-end" style="width:110px">{% trans "ITBIS RD$" %}</th>
+              <th class="text-end" style="width:130px">{% trans "Total" %}</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="item-tbody">
+            {% for item_form in formset %}
+              {% include "components/_line_item_row.html" with form=item_form %}
+            {% endfor %}
+          </tbody>
+          <template id="empty-item-row">
+            {% include "components/_line_item_row.html" with form=formset.empty_form %}
+          </template>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ── Bottom · Notas (accordion) + Resumen (totals card) ──────────────── #}
+  {% block bottom %}
+  <div class="po-bottom-grid mb-3">
+
+    <div class="po-notes-acc"
+         x-data="{ open: {% if form.notes.value %}true{% else %}false{% endif %},
+                   has: {% if form.notes.value %}true{% else %}false{% endif %} }"
+         :class="{ open }">
+      <button type="button" class="po-notes-trigger" @click="open = !open"
+              :aria-expanded="open.toString()">
+        <span class="po-notes-ico"><i class="bi bi-sticky" aria-hidden="true"></i></span>
+        <span class="po-notes-txt">
+          <span class="po-notes-title">{% block notes_title %}{% trans "Notas" %}{% endblock %}</span>
+          <span class="po-notes-hint">{% block notes_hint %}{% trans "Instrucciones o referencias internas" %}{% endblock %}</span>
+        </span>
+        <span class="po-notes-badge" x-show="has" x-cloak>{% trans "Nota agregada" %}</span>
+        <i class="bi bi-chevron-down po-notes-chev" aria-hidden="true"></i>
+      </button>
+      <div class="po-notes-panel">
+        <div class="po-notes-panel-inner"
+             @input="has = ($event.target.value || '').trim().length > 0">
+          {{ form.notes }}
+          {% if form.notes.errors %}
+            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% include "components/_doc_totals_card.html" %}
+
+  </div>
+  {% endblock %}
+
+</form>
+
+{% block picker_includes %}
+{% url 'sales:item_search' as item_search_url %}
+{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
+{% include "sales/partials/customer_picker_modal.html" %}
+{% endblock %}
+
+<script>
+{% block window_config %}{% endblock %}
+</script>
+{% block extra_scripts %}{% endblock %}
+
+{% endblock %}
