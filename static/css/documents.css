@@ -10,8 +10,6 @@
 }
 
 .module-page-title {
-  border-left: 4px solid var(--module-accent);
-  padding-left: 12px;
   line-height: 1.1;
 }
 
@@ -592,8 +590,7 @@ tr.dt-row-selected > td {
 }
 
 tr.dt-row-selected > td:first-child {
-  border-left: 3px solid var(--module-accent, #0078d4);
-  padding-left: 9px; /* compensate 3px border: original is 12px, 12-3=9 */
+  padding-left: 12px;
 }
 
 tr.dt-row-selected:hover > td {
