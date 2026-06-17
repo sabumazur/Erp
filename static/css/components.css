@@ -455,11 +455,9 @@ a.db-kpi:focus-visible {
 .app-card-head {
   padding: 10px 14px 9px;
   border-bottom: 1px solid var(--hairline);
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  color: #374151;
 }
 
 .app-card-head--row {
@@ -467,15 +465,12 @@ a.db-kpi:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  text-transform: none;
 }
 
 .app-card-head--row .app-card-head-title {
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  color: #374151;
 }
 
 /* ── In-card stat strip (account summary & similar) ──────────────────────────
