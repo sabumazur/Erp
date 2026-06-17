@@ -118,7 +118,7 @@
 .doc-card-chevron {
   margin-left: auto;
   display: inline-flex;
-  color: #94a3b8;
+  color: #6b7280;
   font-size: .95rem;
   transition: transform .26s cubic-bezier(.4, 0, .2, 1), color .14s ease;
 }
@@ -303,7 +303,7 @@
 }
 
 .doc-stamp-draft {
-  color: #94a3b8;
+  color: #6b7280;
 }
 
 .doc-stamp-confirmed {
@@ -366,7 +366,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #94a3b8;
+  color: #6b7280;
   margin-bottom: 3px;
 }
 
@@ -388,7 +388,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: #94a3b8;
+  color: #6b7280;
   border-top: none;
   border-bottom: 1px solid #eef0f6;
   padding: 10px 12px;
@@ -478,7 +478,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #94a3b8;
+  color: #6b7280;
   background: #fafbfd;
 }
 
@@ -556,7 +556,7 @@ tr.dt-row-selected .dt-row-actions {
 
 .dt-kebab-btn {
   line-height: 1;
-  color: #94a3b8 !important;
+  color: #6b7280 !important;
   width: 20px;
   height: 20px;
   display: flex;
@@ -669,7 +669,7 @@ tr.dt-row-selected:hover > td {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #94a3b8;
+  color: #6b7280;
   margin-bottom: 4px;
 }
 
