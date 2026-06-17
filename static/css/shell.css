@@ -125,12 +125,6 @@ body.sidebar-collapsed #sidebar {
   font-size: 0.84rem;
 }
 
-.sidebar-nav-link--disabled {
-  opacity: .4;
-  cursor: default;
-  pointer-events: none;
-}
-
 .dropdown-toggle-no-caret::after { display: none; }
 
 

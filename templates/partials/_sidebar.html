@@ -141,23 +141,6 @@
     </ul>
     {% endif %}
 
-    {# ── Coming soon modules (greyed out placeholders) ───────── #}
-    <div class="sidebar-section-label">{% trans "Próximamente" %}</div>
-    <ul class="sidebar-nav">
-      <li>
-        <span class="sidebar-nav-link sidebar-nav-link--disabled">
-          <i class="bi bi-boxes"></i>
-          <span>{% trans "Inventario" %}</span>
-        </span>
-      </li>
-      <li>
-        <span class="sidebar-nav-link sidebar-nav-link--disabled">
-          <i class="bi bi-person-vcard-fill"></i>
-          <span>{% trans "Recursos Humanos" %}</span>
-        </span>
-      </li>
-    </ul>
-
     {# ── Organización (admin only) ──────────────────────────── #}
     {% if membership.is_admin %}
     <div class="sidebar-section-label">{% trans "Organización" %}</div>
