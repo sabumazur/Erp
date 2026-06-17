@@ -98,8 +98,6 @@
   /* money received / positive */
   --neg: #b42318;
   /* overdue / negative */
-  --warn: #d97706;
-  /* outstanding balance / aging (was inlined, no token) */
   --muted: #6b7280;
   --muted-2: #9ca3af;
   --hairline: #e5e7eb;
@@ -306,10 +304,6 @@
 .num-neg {
   color: var(--neg) !important;
   font-weight: 600;
-}
-
-.num-warn {
-  color: var(--warn) !important;
 }
 
 /* ── KPI summary cards (app-wide standard, driven by components/_kpi_cards.html)
