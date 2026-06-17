@@ -146,7 +146,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
+        ctx["breadcrumbs"] = [{"label": _("Dashboard"), "url": None}]
         ctx["today"] = timezone.localdate()
         hour = timezone.localtime(timezone.now()).hour
         if hour < 12:
