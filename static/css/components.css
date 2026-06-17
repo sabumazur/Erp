@@ -600,7 +600,7 @@ a.db-kpi:focus-visible {
 }
 
 .app-filter-label {
-  font-size: 9px;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -625,7 +625,7 @@ a.db-kpi:focus-visible {
 }
 
 .app-metric-label {
-  font-size: 9px;
+  font-size: 0.6875rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: .05em;
