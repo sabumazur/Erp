@@ -2,6 +2,7 @@ import io
 from decimal import Decimal
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.cache import cache
 from django.db.models import Case, Count, DecimalField, F, Sum, When
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth
@@ -170,7 +171,10 @@ class ReportAgingView(ERPBaseViewMixin, View):
 
             selected_customer = None
             if customer_id:
-                selected_customer = get_object_or_404(Customer, pk=customer_id, organization=org)
+                try:
+                    selected_customer = get_object_or_404(Customer, pk=customer_id, organization=org)
+                except (ValueError, TypeError, DjangoValidationError):
+                    selected_customer = None
 
             qs = SalesDocument.invoices.filter(
                 organization=org,

@@ -600,7 +600,8 @@ class TestSaleOrderFormView:
         assert "doc-notes-acc" not in source
         assert "doc-bottom-grid mb-3" not in source
         assert 'class="d-flex justify-content-end mb-3"' in source
-        assert 'class="doc-totals-card" style="width:360px"' in source
+        assert 'class="doc-totals-card"' in source
+        assert 'style="width:360px"' not in source
         for total_id in [
             "grand-subtotal",
             "grand-itbis18",

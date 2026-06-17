@@ -103,7 +103,7 @@ class TestPaymentListView:
         assert resp.status_code == 200
         # The response rows should contain our payment, not the other org's
         # We test context rather than HTML to avoid rendering dependency
-        ctx_payments = list(resp.context["object_list"])
+        ctx_payments = list(resp.context["dt_page_obj"].object_list)
         pks = [p.pk for p in ctx_payments]
         assert payment.pk in pks
         assert other_payment.pk not in pks

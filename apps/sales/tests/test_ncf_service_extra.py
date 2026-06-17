@@ -85,9 +85,9 @@ class TestNCFMarkOverdueBulk:
     def test_returns_count_of_updated(self):
         customer = CustomerFactory()
         org = customer.organization
-        # Create 3 overdue invoices
+        # Create 3 overdue invoices (NCFSequence is unique per org+ncf_type — create once)
+        NCFSequenceFactory(organization=org, ncf_type=31)
         for _ in range(3):
-            NCFSequenceFactory(organization=org, ncf_type=31)
             inv = SalesDocumentFactory(
                 organization=org,
                 customer=customer,
@@ -151,12 +151,25 @@ class TestNCFReopen:
     def test_raises_for_credit_note(self):
         customer = CustomerFactory()
         org = customer.organization
+        # Create a parent CONFIRMED invoice so the credit note can reference it
+        parent = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            doc_type=SalesDocument.DocType.INVOICE,
+            ncf_type=31,
+            status=SalesDocument.Status.CONFIRMED,
+        )
+        # Set encf directly — bypasses full_clean so we don't need the full NCF flow
+        SalesDocument.objects.filter(pk=parent.pk).update(encf="E310000000001")
+        parent.refresh_from_db()
+
         credit_note = SalesDocumentFactory(
             organization=org,
             customer=customer,
             doc_type=SalesDocument.DocType.INVOICE,
-            ncf_type=34,  # Nota de Crédito
+            ncf_type=34,  # Nota de Crédito (e-CF)
             status=SalesDocument.Status.PAID,
+            encf_modified=parent,
         )
 
         with pytest.raises(ValueError):

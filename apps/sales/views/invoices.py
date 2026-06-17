@@ -560,6 +560,12 @@ class NCFSequenceDeleteView(ERPBaseViewMixin, View):
     def post(self, request, pk):
         seq = get_object_or_404(NCFSequence, pk=pk, organization=request.organization)
         label = seq.get_ncf_type_display()
+        if seq.current_seq > 0:
+            messages.error(
+                request,
+                _(f"No se puede eliminar la secuencia «{label}» porque ya tiene NCF emitidos."),
+            )
+            return redirect("sales:ncf_sequences")
         try:
             seq.delete()
         except ValidationError as exc:
