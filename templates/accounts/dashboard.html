@@ -271,6 +271,7 @@
 {{ chart_aging_labels|json_script:"chart-aging-labels" }}
 {{ chart_ar_aging|json_script:"chart-ar-aging" }}
 {{ chart_ap_aging|json_script:"chart-ap-aging" }}
+<script src="{% static 'js/dashboard.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {

@@ -143,3 +143,14 @@ window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
 {% include "sales/partials/item_js.html" %}
 
 {% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
+<script src="{% static 'js/document-form.js' %}"></script>
+<script src="{% static 'js/picker-base.js' %}"></script>
+<script src="{% static 'js/item-picker.js' %}"></script>
+<script src="{% static 'js/customer-picker.js' %}"></script>
+<script src="{% static 'js/picker-keyboard.js' %}"></script>
+{% endblock %}

@@ -52,27 +52,16 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-{% block extra_js %}{% endblock %}
-<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
-<script src="{% static 'js/init-tomselect.js' %}"></script>
 <script src="{% static 'js/core.js' %}"></script>
 <script src="{% static 'js/shell.js' %}"></script>
-<script src="{% static 'js/datatable.js' %}"></script>
 <script src="{% static 'js/alpine-components.js' %}"></script>
-<script src="{% static 'js/document-form.js' %}"></script>
-<script src="{% static 'js/picker-base.js' %}"></script>
-<script src="{% static 'js/item-picker.js' %}"></script>
-<script src="{% static 'js/customer-picker.js' %}"></script>
-<script src="{% static 'js/supplier-picker.js' %}"></script>
-<script src="{% static 'js/picker-keyboard.js' %}"></script>
-<script src="{% static 'js/payment-form.js' %}"></script>
 <script src="{% static 'js/modals.js' %}"></script>
-<script src="{% static 'js/dashboard.js' %}"></script>
 {% if user.is_authenticated %}
 <script id="session-timeout-config" type="application/json">{"expiresAt":"{{ request.session_expires_at|date:'c'|escapejs }}","expiryReason":"{{ request.session_expiry_reason|escapejs }}","serverNow":"{{ request.session_server_now|date:'c'|escapejs }}","warningSeconds":{{ request.session_warning_seconds }},"keepaliveUrl":"{% url 'accounts:session_keepalive' %}","loginUrl":"{% url 'account_login' %}"}</script>
 <script src="{% static 'js/session-timeout.js' %}"></script>
 {% endif %}
-<script src="{% static 'js/app.js' %}"></script>
 <script src="{% static 'js/date-range.js' %}"></script>
+{% block extra_js %}{% endblock %}
+<script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

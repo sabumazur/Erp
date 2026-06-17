@@ -40,6 +40,8 @@
 {% endblock %}
 
 {% block extra_js %}
+{% load static %}
+<script src="{% static 'js/datatable.js' %}"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   itemAutoCodeHint: "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}",

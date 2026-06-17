@@ -85,3 +85,12 @@
 {% include "sales/partials/item_js.html" %}
 
 {% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
+<script src="{% static 'js/payment-form.js' %}"></script>
+<script src="{% static 'js/picker-base.js' %}"></script>
+<script src="{% static 'js/customer-picker.js' %}"></script>
+{% endblock %}
