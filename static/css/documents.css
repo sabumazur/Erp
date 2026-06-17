@@ -384,7 +384,7 @@
 }
 
 .doc-items-table .table th {
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -649,7 +649,7 @@ tr.dt-row-selected:hover > td {
 /* ── Status badge refinement ────────────────────────────────── */
 
 .badge.status-badge {
-  font-size: 0.62rem !important;
+  font-size: 0.6875rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.07em;
   text-transform: uppercase;
