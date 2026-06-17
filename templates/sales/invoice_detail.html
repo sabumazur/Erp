@@ -208,13 +208,7 @@
             <td class="text-end font-monospace">{{ item.quantity|floatformat:"-4" }}</td>
             <td class="text-end font-monospace">{{ item.unit_price|floatformat:2|intcomma }}</td>
             <td class="text-center">
-              {% if item.itbis_rate == 'RATE_18' %}
-                <span class="badge-soft badge-overdue">{{ item.get_itbis_rate_display }}</span>
-              {% elif item.itbis_rate == 'RATE_16' %}
-                <span class="badge-soft badge-confirmed">{{ item.get_itbis_rate_display }}</span>
-              {% else %}
-                <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
-              {% endif %}
+              <span class="badge-soft badge-default">{{ item.get_itbis_rate_display }}</span>
             </td>
             <td class="text-end font-monospace">{{ item.line_total|floatformat:2|intcomma }}</td>
             <td class="text-end font-monospace fw-semibold">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
