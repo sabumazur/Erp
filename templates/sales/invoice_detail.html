@@ -6,7 +6,7 @@
 {% block content %}
 
 <div class="app-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="d-flex align-items-center gap-3">
     <a href="{% url 'sales:invoice_list' %}"
        class="btn btn-outline-secondary btn-sm btn-icon"
        aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
@@ -385,7 +385,7 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ invoice.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizada" %}</span>
@@ -401,7 +401,7 @@
 {% if invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
 <div class="modal fade" id="payModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+    <div class="modal-content border-0 rounded-3 overflow-hidden">
       <form method="post" action="{% url 'sales:invoice_pay' invoice.pk %}">
         {% csrf_token %}
         <div class="modal-header">
@@ -413,7 +413,7 @@
         <div class="modal-body">
           {% crispy payment_form %}
         </div>
-        <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
+        <div class="modal-footer bg-light">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
           <button type="submit" class="btn btn-sm btn-brand">
             <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
