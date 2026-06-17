@@ -520,9 +520,10 @@
 /* Ribbon buttons */
 .dt-ribbon .btn {
   font-size: 0.8rem;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border-radius: 4px;
   white-space: nowrap;
+  min-height: 32px;
 }
 
 .dt-ribbon .btn i {

@@ -273,7 +273,7 @@ body.sidebar-collapsed #sidebar {
 #subnav {
   display: flex;
   align-items: stretch;
-  height: 40px;
+  height: 44px;
   background: #f4f6fb;
   border-bottom: 1px solid #e9ecef;
   padding: 0 20px;
