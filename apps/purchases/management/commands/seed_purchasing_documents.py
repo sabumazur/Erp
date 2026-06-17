@@ -26,11 +26,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.accounts.models import Organization
+from apps.core.models import DocumentSequence
 from apps.items.models import Item
 from apps.purchases.models import (
     PurchaseDocument,
     PurchaseDocumentItem,
-    PurchaseSequence,
     Supplier,
     SupplierPayment,
 )
@@ -236,10 +236,11 @@ class Command(BaseCommand):
         if options["clear"]:
             self._clear(org)
 
-        # Ensure PurchaseSequence exists so confirm() doesn't start from 1
-        PurchaseSequence.objects.get_or_create(
+        # Ensure DocumentSequence row exists for PURCHASE_ORDER so confirm() works
+        DocumentSequence.objects.get_or_create(
             organization=org,
-            defaults={"prefix": "OC", "next_value": 1, "padding": 5},
+            doc_type="PURCHASE_ORDER",
+            defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False},
         )
 
         payment_terms = list(PaymentTerm.objects.all())
@@ -273,7 +274,7 @@ class Command(BaseCommand):
             organization=org,
             item_type=Item.ItemType.PURCHASE,
         ).delete()
-        PurchaseSequence.objects.filter(organization=org).delete()
+        DocumentSequence.objects.filter(organization=org, doc_type="PURCHASE_ORDER").delete()
         self.stdout.write("  Done.\n")
 
     # ── Purchase Items ────────────────────────────────────────────────────────

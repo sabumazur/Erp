@@ -65,6 +65,8 @@ MyModel.objects.for_org(request.organization)
 
 `ERPBaseModel` = `TimeStampedModel` + `SoftDeleteModel`, UUID PK. All entity models inherit it.
 
+**`DocumentSequence`** — unified auto-increment counter for non-fiscal documents (does NOT inherit `ERPBaseModel` — infrastructure, not business entity). One row per `(organization, doc_type)`. Call `DocumentSequence.generate(org, doc_type, *, defaults={})` from services; pass `defaults` so first-use `get_or_create` sets the correct `prefix`/`include_year`/`padding`. Doc types: `"QUOTATION"` (COT, year), `"SALE_ORDER"` (OV, year), `"PURCHASE_ORDER"` (OC, no year).
+
 **Soft-delete behaviour:**
 - `model.delete()` sets `deleted_at`; **not** emit `pre_delete`/`post_delete`. Do guardian cleanup manually before `delete()`.
 - `model.hard_delete()` performs real SQL DELETE.
@@ -83,6 +85,7 @@ MyModel.objects.for_org(request.organization)
 - `Membership.Role` hierarchy: `OWNER` > `ADMIN` > `MEMBER` > `VIEWER`. `membership.is_admin` returns `True` for OWNER and ADMIN.
 - `Team.modules` (M2M to `core.Module`) gates module access. Empty `modules` = unrestricted.
 - **Org creation restricted to `is_staff`.** `CreateOrganizationView` checks `is_staff` in `dispatch`; non-staff see no "Crear organización" in navbar. Uses `StaffCreateOrganizationForm`.
+- **Signup invitation-only.** `CustomSignupForm.clean_email()` blocks registration unless the email has a pending non-expired `Invitation`. Raises `"El registro es solo por invitación."` Otherwise allauth signup is open by default.
 - **Account adapter** (`apps/accounts/adapter.py`) — `AccountAdapter(DefaultAccountAdapter)` suppresses allauth's built-in login/logout flash messages (`account/messages/logged_in.txt`, `account/messages/logged_out.txt`). Wired via `ACCOUNT_ADAPTER = "apps.accounts.adapter.AccountAdapter"` in settings.
 
 ### View base class
@@ -114,12 +117,20 @@ SalesDocument.objects       # all doc_types (default)
 
 - `NCFService` — confirms invoices, assigns e-NCF atomically via `NCFSequence.generate()` (`SELECT FOR UPDATE`). Dev fallback: fake "B"-series NCF.
 - `QuotationService` — DRAFT → CONFIRMED → SENT → ACCEPTED/REJECTED/EXPIRED → CONVERTED.
-- `SaleOrderService` — DRAFT → CONFIRMED → DELIVERED → INVOICED; `consolidate_and_invoice()` batch-invoices DELIVERED orders for customer/period.
+- `SaleOrderService` — DRAFT → CONFIRMED → DELIVERED → INVOICED; `consolidate_and_invoice()` batch-invoices DRAFT orders for a customer: groups lines by catalog `Item` (aggregates quantities with `Sum`), skips free-text lines. Caller must pass DRAFT orders only.
 - `PaymentService` — creates `Payment` + `PaymentAllocation` rows atomically; auto-marks invoices PAID when fully covered; reversal on `delete()`.
 
 `InvoiceItem.save()` auto-calls `compute()` → `line_total`, `itbis_amount`, `line_total_with_itbis`. After add/remove items call `invoice.recompute_totals()`.
 
-Dominican fiscal IDs in `NCFSequence` (one active per org+NCF type). Non-fiscal (quotations/sale orders) use `DocumentSequence`.
+**`suspend_recompute(document)`** — context manager in `apps/sales/signals.py`. Suspends per-item `recompute_totals()` calls via thread-local flag during bulk formset saves. Wrap formset `.save()` inside it and call `document.recompute_totals()` once on exit. Prevents N+1 recompute on bulk line-item creates.
+
+**`SalesDocument` queryset annotations** (call on any queryset before filtering):
+- `.with_signed_totals()` — annotates invoices with sign-adjusted amounts (credit/debit notes negate).
+- `.with_aging()` — annotates `aging_bucket_db` (`current`/`1-30`/`31-60`/`61-90`/`90+`) based on `due_date` vs today. Read via `document.aging_bucket` property; human label via `document.aging_bucket_label`.
+
+**Materialized view** `sales_customer_revenue_mv` (migration 0032) — aggregates confirmed invoice revenue per customer. Refreshed concurrently (`REFRESH MATERIALIZED VIEW CONCURRENTLY`) via `transaction.on_commit()` signal after each invoice confirm. Manual refresh: `python manage.py refresh_revenue_mv`.
+
+Dominican fiscal IDs in `NCFSequence` (one active per org+NCF type). Non-fiscal (quotations/sale orders/purchase orders) use `DocumentSequence` from `apps/core/models.py`.
 
 **NCF series:** `NCFType` covers two series — physical (B) and electronic (E):
 
@@ -323,6 +334,10 @@ Inline helpers used by the invoice/quotation/sale-order create/edit forms via HT
 
 `ItemQuickCreateForm` (`apps/sales/forms.py`) — minimal item creation (name, unit_price, itbis_rate) scoped to org. Used from item picker modal without leaving the document form.
 
+### Shared picker base (`static/js/picker-base.js`)
+
+All document pickers (items, customers, suppliers) are built via `createPicker(cfg)` factory. Config keys: `modalId`, `searchInputId`, `quickCreateUrl`, `apply(row)` callback. Returns `{ open, select, highlight, refresh, showSearch, showCreate }`. Old separate `initItemModal()` / `initModuleModal()` etc. replaced by `initEditableModals()` which reads a declarative `EDITABLE_MODALS` array. When adding a new picker, define a config object and call `createPicker(cfg)` — do not clone the old per-picker pattern.
+
 ### Document forms UI (`static/js/document-form.js`, `apps/core/layout.py`)
 
 All invoice/quotation/sale-order/payment create+edit forms share `static/js/document-form.js`. Exposes on `window`: `itemRow` (Alpine row factory), `deleteRow`, `recalcGrandTotal`, `addDocumentLine`, `initInvoiceItemFormset`, `initInvoiceItemHtmx`, `initCustomerDefaults`, `initIssueDateDeliverySync`, `initHeaderCardCollapse`. Line totals + grand totals (`grand-subtotal`, `grand-itbis18`, `grand-itbis16`, `grand-total`) recompute client-side; ITBIS split by rate (`RATE_18`/`RATE_16`). New lines cloned from `#empty-item-row` template, formset `TOTAL_FORMS` bumped, Alpine + TomSelect re-init.
@@ -405,13 +420,13 @@ Module slug `"purchasing"`. URL namespace `purchases`. Registered in `config/url
   - Scoped managers: `PurchaseDocument.purchase_orders`, `PurchaseDocument.supplier_invoices`, `PurchaseDocument.objects` (all), `PurchaseDocument.all_objects` (bypasses soft-delete)
   - `recompute_totals()` sums `PurchaseDocumentItem` rows into `subtotal`, `itbis_18`, `itbis_16`, `total`
 - **`PurchaseDocumentItem`** — ITBIS rates: `EXEMPT`/`RATE_0`/`RATE_16`/`RATE_18`. `save()` calls `compute()` → `line_total`, `itbis_amount`, `line_total_with_itbis`. FK to `items.Item` optional (free-text lines allowed).
-- **`PurchaseSequence`** — auto-numbering for purchase orders, `SELECT FOR UPDATE`, prefix `"OC"`, default 5-digit padding. `generate(org)` returns `"OC-00001"` style.
+- **`DocumentSequence`** (`apps/core/models.py`) — unified auto-numbering for all non-fiscal documents. One row per `(organization, doc_type)`. Fields: `prefix`, `current_seq`, `padding`, `include_year`. `generate(org, doc_type, *, defaults={})` uses `SELECT FOR UPDATE` + `get_or_create`. Format: `PREFIX-YYYY-NNNN` when `include_year=True` (COT/OV), `PREFIX-NNNNN` when `False` (OC). Replaces the former per-app `sales.DocumentSequence` and `purchases.PurchaseSequence`.
 - **`SupplierPayment`** + **`SupplierPaymentAllocation`** — same pattern as sales `Payment`/`PaymentAllocation`. `SupplierPayment.delete()` raises `ValueError` — always use `SupplierPaymentService.delete_payment()`.
 
 **Service classes** (`apps/purchases/services.py`) — all status transitions go through services:
 
 - **`PurchaseOrderService`**:
-  - `confirm(po)` — assigns `PurchaseSequence` number, DRAFT → CONFIRMED
+  - `confirm(po)` — assigns `DocumentSequence` number (`"OC-NNNNN"`), DRAFT → CONFIRMED
   - `receive_and_invoice(po)` — CONFIRMED → RECEIVED; auto-creates draft `SUPPLIER_INVOICE` copying all lines + setting `linked_purchase_order`; due date from supplier's payment term
   - `cancel(po)` — blocks if RECEIVED/already CANCELLED
 - **`SupplierInvoiceService`**:
@@ -464,7 +479,15 @@ Module slug `"purchasing"`. URL namespace `purchases`. Registered in `config/url
 | `PurchaseItemSearchView` | `purchases:purchase_item_search` | Item picker — PURCHASE+BOTH items only |
 | `PurchaseItemQuickCreateView` | `purchases:item_quick_create` | Quick-create purchase item; sets `item_type=PURCHASE` |
 
-Supplier picker uses `static/js/supplier-picker.js` + `purchases/partials/supplier_picker_modal.html`. Pattern mirrors the sales customer picker.
+Supplier picker uses `static/js/supplier-picker.js` + `purchases/partials/supplier_picker_modal.html`. Pattern mirrors the sales customer picker. Both use the shared `createPicker(cfg)` factory — see [Shared picker base](#shared-picker-base-staticjspicker-basejs).
+
+**Purchasing management commands:**
+
+```bash
+python manage.py seed_purchasing_documents          # Seed 50 items, 50 suppliers, 500 POs, 500 invoices (requires --org <slug>)
+python manage.py seed_purchasing_documents --clear  # Wipe then re-seed
+python manage.py seed_purchasing_documents --skip-payments
+```
 
 **Reports** (`apps/purchases/views/reports.py`, `admin_required = True`):
 
@@ -484,6 +507,14 @@ Report cache keys: `f"report_606:{org.pk}:..."`, `f"report_ap_aging:{org.pk}:...
 **Deletion pattern** additions:
 - `SupplierDeleteView` — blocked if has `PurchaseDocument` or `SupplierPayment`.
 - Purchase order/invoice delete — DRAFT only; raises `PermissionDenied` otherwise.
+
+### Unified report center (`apps/core/views_reports.py`)
+
+`ReportCenterView` (`core:reports`, staff-only) consolidates all sales + purchasing report links in one template (`templates/core/reports.html`). Sidebar links to `core:reports`. The old per-app `sales:reports` and `purchases:reports` index views are removed; their individual report views remain.
+
+### Customer service (`apps/sales/services.py`)
+
+`CustomerService.get_account_summary(customer, organization)` — returns dict: `invoices` (confirmed queryset), `totals` (subtotal/itbis/total), `balance` (outstanding), `aging` (bucket breakdown), `recent_payments`, `credit`. Used by `CustomerDetailView` context.
 
 ### CI / CD
 
@@ -538,3 +569,5 @@ Custom error pages: `templates/404.html` + `templates/500.html` (Bootstrap 5, no
 - `MESSAGE_TAGS` maps `ERROR` → `"danger"` to match Bootstrap 5 alert classes.
 - `ANONYMOUS_USER_NAME = None` (disables guardian anonymous user).
 - `django.contrib.humanize` installed (`{% load humanize %}` → `intcomma`, `naturaltime`, etc.).
+- **`BEHIND_PROXY`** (env var, default `False`) — set `True` when app is behind a reverse proxy (e.g. Cloudflare Tunnel). Enables `SECURE_PROXY_SSL_HEADER`, secure cookies, and `CSRF_TRUSTED_ORIGINS`. Do NOT combine with `SECURE_SSL_REDIRECT=True` (causes redirect loop). Use `BEHIND_PROXY=true` for Cloudflare Tunnel deployments.
+- **Date/time widgets** (`apps/core/widgets.py`) — `DateInput` (type="date"), `DateTimeInput` (type="datetime-local", format `%Y-%m-%dT%H:%M`), `TimeInput` (type="time"). Native browser pickers — no Flatpickr JS dependency.

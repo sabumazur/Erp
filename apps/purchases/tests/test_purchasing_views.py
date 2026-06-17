@@ -15,7 +15,8 @@ from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, OrganizationFactory, UserFactory
-from apps.purchases.models import PurchaseDocument, PurchaseSequence
+from apps.core.models import DocumentSequence
+from apps.purchases.models import PurchaseDocument
 from apps.purchases.services import PurchaseOrderService, SupplierInvoiceService
 from apps.purchases.tests.factories import (
     PurchaseDocumentFactory,
@@ -45,9 +46,10 @@ def _login(client, ms):
 
 
 def _ensure_sequence(org):
-    PurchaseSequence.objects.get_or_create(
+    DocumentSequence.objects.get_or_create(
         organization=org,
-        defaults={"prefix": "OC", "next_value": 1, "padding": 5},
+        doc_type="PURCHASE_ORDER",
+        defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False},
     )
 
 

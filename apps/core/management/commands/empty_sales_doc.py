@@ -27,9 +27,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        from apps.core.models import DocumentSequence
         from apps.sales.models import (
             SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
-            DocumentSequence, NCFSequence,
+            NCFSequence,
         )
 
         counts = {
@@ -67,7 +68,9 @@ class Command(BaseCommand):
             SalesDocument.all_objects.all().update(consolidated_into=None, encf_modified=None)
             SalesDocument.all_objects.all().delete()
 
-            doc_seqs_reset = DocumentSequence.objects.all().update(current_seq=0)
+            doc_seqs_reset = DocumentSequence.objects.filter(
+                doc_type__in=["QUOTATION", "SALE_ORDER"]
+            ).update(current_seq=0)
             ncf_seqs_reset = NCFSequence.objects.all().update(current_seq=0)
 
         self.stdout.write(

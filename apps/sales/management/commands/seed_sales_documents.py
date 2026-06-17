@@ -26,10 +26,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.accounts.models import Organization
+from apps.core.models import DocumentSequence
 from apps.items.models import Item
 from apps.sales.models import (
     Customer,
-    DocumentSequence,
     NCFSequence,
     NCFType,
     SalesDocument,
@@ -266,7 +266,9 @@ class Command(BaseCommand):
             Payment.all_objects.filter(organization=org).delete()
             SalesDocument.all_objects.filter(organization=org).delete()
             Customer.all_objects.filter(organization=org).delete()
-            DocumentSequence.objects.filter(organization=org).delete()
+            DocumentSequence.objects.filter(
+                organization=org, doc_type__in=["QUOTATION", "SALE_ORDER"]
+            ).delete()
             NCFSequence.objects.filter(organization=org).delete()
         self.stdout.write(self.style.SUCCESS(" done.\n"))
 

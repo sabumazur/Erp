@@ -199,6 +199,60 @@ class Notification(ERPBaseModel):
         return self.read_at is not None
 
 
+# ── DocumentSequence ─────────────────────────────────────────────────────────
+
+
+class DocumentSequence(models.Model):
+    """
+    Unified auto-increment counter for non-fiscal documents.
+    One row per (organization, doc_type).
+
+    - include_year=True  → PREFIX-YYYY-NNNN  (e.g. COT-2026-0001, OV-2026-0001)
+    - include_year=False → PREFIX-NNNNN      (e.g. OC-00001)
+    """
+
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        related_name="document_sequences",
+        verbose_name=_("organización"),
+    )
+    doc_type = models.CharField(max_length=30, verbose_name=_("tipo de documento"))
+    prefix = models.CharField(max_length=10, verbose_name=_("prefijo"))
+    current_seq = models.PositiveIntegerField(default=0, verbose_name=_("secuencia actual"))
+    padding = models.PositiveSmallIntegerField(default=4, verbose_name=_("dígitos"))
+    include_year = models.BooleanField(default=False, verbose_name=_("incluir año"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("secuencia de documento")
+        verbose_name_plural = _("secuencias de documentos")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "doc_type"],
+                name="unique_doc_sequence_per_org_doctype",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.organization} · {self.doc_type} · {self.current_seq:0{self.padding}d}"
+
+    @classmethod
+    def generate(cls, organization, doc_type: str, *, defaults: dict | None = None) -> str:
+        year = timezone.now().year
+        with transaction.atomic():
+            seq, _ = cls.objects.select_for_update().get_or_create(
+                organization=organization,
+                doc_type=doc_type,
+                defaults=defaults or {},
+            )
+            seq.current_seq += 1
+            seq.save(update_fields=["current_seq", "updated_at"])
+        n, pad = seq.current_seq, seq.padding
+        return f"{seq.prefix}-{year}-{n:0{pad}d}" if seq.include_year else f"{seq.prefix}-{n:0{pad}d}"
+
+
 # ── AbstractDocumentLineItem ──────────────────────────────────────────────────
 
 

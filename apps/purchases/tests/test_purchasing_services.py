@@ -14,10 +14,10 @@ from decimal import Decimal
 import pytest
 
 from apps.accounts.tests.factories import OrganizationFactory
+from apps.core.models import DocumentSequence
 from apps.purchases.models import (
     PurchaseDocument,
     PurchaseDocumentItem,
-    PurchaseSequence,
     SupplierPayment,
     SupplierPaymentAllocation,
 )
@@ -36,9 +36,10 @@ from apps.purchases.tests.factories import (
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def _ensure_sequence(org):
-    PurchaseSequence.objects.get_or_create(
+    DocumentSequence.objects.get_or_create(
         organization=org,
-        defaults={"prefix": "OC", "next_value": 1, "padding": 5},
+        doc_type="PURCHASE_ORDER",
+        defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False},
     )
 
 

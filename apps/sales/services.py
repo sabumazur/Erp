@@ -18,7 +18,8 @@ from django.db.models import Exists as _Exists, OuterRef as _OuterRef, Sum as _S
 from django.db.models.functions import Coalesce as _Coalesce
 from django.db.models import DecimalField as _DecimalField
 
-from .models import DocumentSequence, SalesDocument, SalesDocumentItem, NCFSequence, Payment, PaymentAllocation
+from apps.core.models import DocumentSequence
+from .models import SalesDocument, SalesDocumentItem, NCFSequence, Payment, PaymentAllocation
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +184,8 @@ class QuotationService:
             )
 
         doc_number = DocumentSequence.generate(
-            quotation.organization, DocumentSequence.DocType.QUOTATION
+            quotation.organization, "QUOTATION",
+            defaults={"prefix": "COT", "include_year": True, "padding": 4},
         )
         quotation.doc_number = doc_number
         quotation.status = SalesDocument.Status.CONFIRMED
@@ -328,7 +330,8 @@ class SaleOrderService:
             )
 
         doc_number = DocumentSequence.generate(
-            order.organization, DocumentSequence.DocType.SALE_ORDER
+            order.organization, "SALE_ORDER",
+            defaults={"prefix": "OV", "include_year": True, "padding": 4},
         )
         order.doc_number = doc_number
         order.status = SalesDocument.Status.CONFIRMED

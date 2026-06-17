@@ -121,38 +121,6 @@ class Supplier(ERPBaseModel):
         return super().delete(*args, **kwargs)
 
 
-# ── PurchaseSequence ──────────────────────────────────────────────────────────
-
-
-class PurchaseSequence(models.Model):
-    organization = models.OneToOneField(
-        "accounts.Organization",
-        on_delete=models.CASCADE,
-        related_name="purchase_sequence",
-        verbose_name=_("organización"),
-    )
-    prefix = models.CharField(max_length=5, default="OC", verbose_name=_("prefijo"))
-    next_value = models.PositiveIntegerField(default=1, verbose_name=_("próximo valor"))
-    padding = models.PositiveSmallIntegerField(default=5, verbose_name=_("dígitos"))
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = _("secuencia de órdenes de compra")
-        verbose_name_plural = _("secuencias de órdenes de compra")
-
-    def __str__(self):
-        return f"{self.organization} · {self.prefix}-{self.next_value:0{self.padding}d}"
-
-    @classmethod
-    def generate(cls, organization) -> str:
-        with transaction.atomic():
-            seq, _ = cls.objects.select_for_update().get_or_create(organization=organization)
-            number = seq.next_value
-            seq.next_value += 1
-            seq.save(update_fields=["next_value", "updated_at"])
-        return f"{seq.prefix}-{number:0{seq.padding}d}"
-
-
 # ── PurchaseDocument ──────────────────────────────────────────────────────────
 
 

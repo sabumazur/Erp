@@ -7,10 +7,10 @@ from django.db.models import DecimalField, Sum
 from django.db.models.functions import Coalesce
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.models import DocumentSequence
 from .models import (
     PurchaseDocument,
     PurchaseDocumentItem,
-    PurchaseSequence,
     SupplierPayment,
     SupplierPaymentAllocation,  # used in create_payment bulk-outstanding and delete_payment
 )
@@ -40,7 +40,10 @@ class PurchaseOrderService:
                 f"Solo se pueden confirmar órdenes en Borrador. "
                 f"Estado actual: {po.get_status_display()}."
             )
-        number = PurchaseSequence.generate(po.organization)
+        number = DocumentSequence.generate(
+            po.organization, "PURCHASE_ORDER",
+            defaults={"prefix": "OC", "include_year": False, "padding": 5},
+        )
         po.number = number
         po.status = PurchaseDocument.Status.CONFIRMED
         po.save(update_fields=["number", "status", "updated_at"])
