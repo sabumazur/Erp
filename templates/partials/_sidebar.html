@@ -212,4 +212,8 @@
 </aside>
 
 {# Mobile backdrop — clicking it closes the sidebar #}
-<div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+<button id="sidebar-backdrop"
+        type="button"
+        onclick="toggleSidebar()"
+        aria-label="{% trans 'Cerrar menú' %}"
+        tabindex="-1"></button>
