@@ -4,24 +4,6 @@
 {% block body %}
 <div class="auth-split">
 
-  {# ── Left branding panel ──────────────────────────────────── #}
-  <aside class="auth-brand d-none d-md-flex">
-    <a href="/" class="auth-brand-logo-link">
-      <img src="{% static 'img/sabsys-logo.png' %}" alt="SabSys" style="height:36px;width:auto;filter:brightness(0) invert(1);">
-    </a>
-    <div class="auth-brand-copy">
-      <p class="auth-brand-eyebrow">Sistema ERP</p>
-      <h2 class="auth-brand-headline">Facturación electrónica para empresas dominicanas.</h2>
-      <ul class="auth-brand-features">
-        <li><i class="bi bi-check2-circle" aria-hidden="true"></i>Comprobantes fiscales electrónicos (e-CF)</li>
-        <li><i class="bi bi-check2-circle" aria-hidden="true"></i>Reportes 606/607/608 para la DGII</li>
-        <li><i class="bi bi-check2-circle" aria-hidden="true"></i>Gestión de compras y proveedores</li>
-        <li><i class="bi bi-check2-circle" aria-hidden="true"></i>Control de clientes y pagos</li>
-      </ul>
-    </div>
-    <p class="auth-brand-foot">© {% now "Y" %} SabSys · <a href="https://mysabsys.com" target="_blank" rel="noopener" class="auth-brand-foot-link">mysabsys.com</a></p>
-  </aside>
-
   {# ── Form panel ──────────────────────────────────────────── #}
   <main class="auth-panel">
     <div class="auth-main">
@@ -40,92 +22,6 @@
 </div>
 
 <style>
-/* ── Left branding panel ────────────────────────────────────── */
-.auth-brand {
-  width: 400px;
-  min-width: 400px;
-  min-height: 100vh;
-  background: #1e2130;
-  flex-direction: column;
-  padding: 48px 40px;
-  gap: 32px;
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow: hidden;
-}
-
-.auth-brand-logo-link {
-  display: block;
-  text-decoration: none;
-}
-
-.auth-brand-copy {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 20px;
-}
-
-.auth-brand-eyebrow {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #5b9af5;
-  margin: 0;
-}
-
-.auth-brand-headline {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  margin: 0;
-  text-wrap: balance;
-}
-
-.auth-brand-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.auth-brand-features li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.875rem;
-  color: #9ba3bf;
-  line-height: 1.35;
-}
-
-.auth-brand-features i {
-  color: #5b9af5;
-  font-size: 1rem;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.auth-brand-foot {
-  font-size: 0.75rem;
-  color: #4a5570;
-  margin: 0;
-}
-
-.auth-brand-foot-link {
-  color: #5b9af5;
-  text-decoration: none;
-}
-
-.auth-brand-foot-link:hover { text-decoration: underline; }
-
 /* ── Auth split layout ─────────────────────────────────────── */
 .auth-split {
   display: flex;
