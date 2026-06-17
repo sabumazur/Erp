@@ -328,6 +328,7 @@ body.sidebar-collapsed #sidebar {
 #main-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 28px 28px;
 }
 
