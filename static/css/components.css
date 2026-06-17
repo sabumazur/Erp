@@ -317,7 +317,7 @@
   min-height: 74px;
   padding: 12px 14px;
   border: 1px solid #e5e7eb;
-  border-left: 3px solid #9ca3af;
+  border-top: 3px solid #9ca3af;
   border-radius: 8px;
   background: #fff;
   color: inherit;
@@ -383,7 +383,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-ar {
-  border-left-color: #3f6fd6;
+  border-top-color: #3f6fd6;
 }
 
 .db-kpi.is-ar .db-kpi-icon {
@@ -392,7 +392,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-ap {
-  border-left-color: #d97706;
+  border-top-color: #d97706;
 }
 
 .db-kpi.is-ap .db-kpi-icon {
@@ -401,7 +401,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-neg {
-  border-left-color: #b42318;
+  border-top-color: #b42318;
 }
 
 .db-kpi.is-neg .db-kpi-icon {
@@ -410,7 +410,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-pos {
-  border-left-color: #16a34a;
+  border-top-color: #16a34a;
 }
 
 .db-kpi.is-pos .db-kpi-icon {
@@ -419,7 +419,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-net {
-  border-left-color: #1e2130;
+  border-top-color: #1e2130;
 }
 
 .db-kpi.is-net .db-kpi-icon {
@@ -1176,9 +1176,8 @@ a.db-kpi:focus-visible {
 .kv-note {
   margin: 6px 0 14px;
   padding: 10px 13px;
-  background: #f8fafc;
-  border: 1px solid var(--hairline-soft);
-  border-left: 3px solid var(--brand-accent);
+  background: #eef3fc;
+  border: 1px solid rgba(63, 111, 214, 0.20);
   border-radius: 8px;
   font-size: .82rem;
   color: #475569;
