@@ -6,4 +6,4 @@ def test_base_title_puts_sabsys_before_page_title():
         Context({})
     )
 
-    assert "<title>SabSys — Clientes</title>" in html
+    assert "<title>SabSys - Clientes</title>" in html
