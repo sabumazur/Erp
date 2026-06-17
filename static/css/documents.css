@@ -680,6 +680,21 @@ tr.dt-row-selected:hover > td {
   flex-wrap: wrap;
 }
 
+.doc-action-overflow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.doc-action-more {
+  display: none;  /* visible only < 720px — see below */
+}
+
+@media (max-width: 719.98px) {
+  .doc-action-overflow { display: none; }
+  .doc-action-more { display: block; }
+}
+
 /* ── Status filter pills ────────────────────────────────────────────────────── */
 
 .dt-status-pills {

@@ -19,10 +19,8 @@
   </div>
   <div class="app-header-actions">
 
+    {# ── Primary action (one per status) ─── #}
     {% if invoice.status == "DRAFT" %}
-      <a href="{% url 'sales:invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
-      </a>
       <form method="post" action="{% url 'sales:invoice_confirm' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar y asignar e-NCF? Esta acción es irreversible." %}', {icon:'warning', color:'#10b981', ok:'Sí, confirmar'})">
@@ -31,16 +29,21 @@
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
-      <form method="post" action="{% url 'sales:invoice_delete' invoice.pk %}"
-            x-data
-            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
-          <i class="bi bi-trash" aria-hidden="true"></i>
-        </button>
-      </form>
+    {% elif invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
+      <button class="btn btn-sm btn-brand"
+              data-bs-toggle="modal" data-bs-target="#payModal">
+        <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
+      </button>
+    {% endif %}
 
-    {% elif invoice.status == "CONFIRMED" %}
+    {# ── Secondary actions ─── #}
+    {% if invoice.status == "DRAFT" %}
+      <a href="{% url 'sales:invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+      </a>
+    {% endif %}
+
+    {% if invoice.status == "CONFIRMED" %}
       <form method="post" action="{% url 'sales:invoice_send' invoice.pk %}">
         {% csrf_token %}
         <button class="btn btn-outline-secondary btn-sm">
@@ -49,36 +52,98 @@
       </form>
     {% endif %}
 
-    {% if invoice.status == "CONFIRMED" or invoice.status == "SENT" or invoice.status == "OVERDUE" %}
-      <button class="btn btn-sm btn-brand"
-              data-bs-toggle="modal" data-bs-target="#payModal">
-        <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
-      </button>
-    {% endif %}
-
     <a href="{% url 'sales:invoice_print' invoice.pk %}" target="_blank"
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
 
-    {% if invoice.encf and invoice.status != "DRAFT" %}
-      <a href="{% url 'sales:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
-      </a>
-      <a href="{% url 'sales:credit_note_create' invoice.pk %}" class="btn btn-outline-warning btn-sm">
-        <i class="bi bi-file-minus me-1"></i>{% trans "Nota de Crédito" %}
-      </a>
-    {% endif %}
+    {# ── Overflow (desktop) + "Más" dropdown (mobile) ─── #}
+    {% if invoice.status != "CANCELLED" %}
+    <div class="doc-action-row">
+      <div class="doc-action-overflow">
+        {% if invoice.encf and invoice.status != "DRAFT" %}
+          <a href="{% url 'sales:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </a>
+          {% if invoice.status != "PAID" %}
+          <a href="{% url 'sales:credit_note_create' invoice.pk %}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-file-minus me-1"></i>{% trans "Nota de Crédito" %}
+          </a>
+          {% endif %}
+        {% endif %}
 
-    {% if invoice.status != "PAID" and invoice.status != "CANCELLED" and invoice.status != "DRAFT" %}
-      <form method="post" action="{% url 'sales:invoice_cancel' invoice.pk %}"
-            x-data
-            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+        {% if invoice.status == "DRAFT" %}
+          <form method="post" action="{% url 'sales:invoice_delete' invoice.pk %}"
+                x-data
+                x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
+            </button>
+          </form>
+        {% endif %}
+
+        {% if invoice.status != "PAID" and invoice.status != "DRAFT" %}
+          <form method="post" action="{% url 'sales:invoice_cancel' invoice.pk %}"
+                x-data
+                x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+      {# "Más" dropdown — visible only < 720px via .doc-action-more CSS #}
+      <div class="dropdown doc-action-more">
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button" data-bs-toggle="dropdown"
+                aria-label="{% trans 'Más acciones' %}">
+          <i class="bi bi-three-dots"></i>
         </button>
-      </form>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          {% if invoice.encf and invoice.status != "DRAFT" %}
+          <li>
+            <a class="dropdown-item" href="{% url 'sales:invoice_pdf' invoice.pk %}">
+              <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+            </a>
+          </li>
+          {% if invoice.status != "PAID" %}
+          <li>
+            <a class="dropdown-item" href="{% url 'sales:credit_note_create' invoice.pk %}">
+              <i class="bi bi-file-minus me-2"></i>{% trans "Nota de Crédito" %}
+            </a>
+          </li>
+          {% endif %}
+          {% endif %}
+          {% if invoice.status == "DRAFT" %}
+          <li>
+            <form method="post" action="{% url 'sales:invoice_delete' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+          {% if invoice.status != "PAID" and invoice.status != "DRAFT" %}
+          <li>
+            <form method="post" action="{% url 'sales:invoice_cancel' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura? El e-NCF quedará registrado en el formato 608." %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-x-circle me-2"></i>{% trans "Anular" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
     {% endif %}
 
   </div>
