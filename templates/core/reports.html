@@ -268,9 +268,10 @@
         <div class="d-flex gap-2 align-items-end flex-wrap">
           <div class="rep-field">
             <label class="rep-field-label">Mes</label>
-            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Mes…">
+            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+              <option value="">Selecciona un mes…</option>
               {% for num, name in months %}
-              <option value="{{ num }}"{% if num == today.month %} selected{% endif %}>{{ name }}</option>
+              <option value="{{ num }}">{{ name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -299,9 +300,10 @@
         <div class="d-flex gap-2 align-items-end flex-wrap">
           <div class="rep-field">
             <label class="rep-field-label">Mes</label>
-            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Mes…">
+            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+              <option value="">Selecciona un mes…</option>
               {% for num, name in months %}
-              <option value="{{ num }}"{% if num == today.month %} selected{% endif %}>{{ name }}</option>
+              <option value="{{ num }}">{{ name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -428,4 +430,10 @@
 }
 </style>
 
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
 {% endblock %}
