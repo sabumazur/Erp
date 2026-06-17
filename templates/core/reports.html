@@ -4,429 +4,373 @@
 
 {% block content %}
 
-{% comment %}Page header{% endcomment %}
 <div class="d-flex flex-column mb-4">
   <h1 class="h3 mb-1">Centro de Reportes</h1>
   <p class="text-muted mb-0" style="font-size:.875rem">Informes operativos, cumplimiento DGII y exportaciones.</p>
 </div>
 
-{% comment %}─── Operational reports table ───{% endcomment %}
-<div class="d-flex align-items-center gap-2 mb-3">
-  <span class="text-muted fw-semibold text-uppercase"
-        style="font-size:.7rem;letter-spacing:.07em;white-space:nowrap">Informes operativos</span>
-  <hr class="flex-grow-1 m-0 opacity-25">
+{% comment %}─── Informes Operativos ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Informes Operativos</h2>
+
+{% if has_sales %}
+<p class="rep-subgroup-title">Cuentas por Cobrar</p>
+<div class="rep-grid mb-4">
+
+  <a href="{% url 'sales:report_collections' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Cobros del Período</strong>
+      <p class="rep-card-desc">Pagos recibidos en un rango de fechas agrupados por método de pago, con detalle por cliente.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_aging' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Antigüedad de Cuentas por Cobrar</strong>
+      <p class="rep-card-desc">Saldo pendiente de todos los clientes desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y +90 días.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_statement' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Estado de Cuenta del Cliente</strong>
+      <p class="rep-card-desc">Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo corriente con balance acumulado.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_invoices_by_customer' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-receipt" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Documentos de Ventas por Cliente</strong>
+      <p class="rep-card-desc">Listado de facturas emitidas a un cliente en un período: NCF, fechas, condición de pago, subtotal, ITBIS y total con estado.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_sales_period' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Ventas por Período</strong>
+      <p class="rep-card-desc">Facturación y cobros mes a mes para un año seleccionado, con el neto del período (facturado − cobrado).</p>
+    </div>
+  </a>
+
 </div>
+{% endif %}
 
-<div class="app-table-wrap mb-5">
-  <table class="table rep-table mb-0 align-middle">
-    <thead>
-      <tr>
-        <th>Informe</th>
-        <th class="d-none d-lg-table-cell">Descripción</th>
-        <th class="d-none d-md-table-cell">Módulo</th>
-        <th class="text-end">Acciones</th>
-      </tr>
-    </thead>
+{% if has_purchasing %}
+<p class="rep-subgroup-title{% if has_sales %} mt-2{% endif %}">Cuentas por Pagar</p>
+<div class="rep-grid mb-5">
 
-    {% comment %}Major group: Cuentas por Cobrar (sales){% endcomment %}
-    {% if has_sales %}
-    <tbody x-data="{ open: true }">
-      <tr class="rep-group rep-group-major" :class="{'is-collapsed': !open}" @click="open = !open" role="button" tabindex="0" @keydown.enter="open = !open">
-        <td colspan="4"><i class="bi bi-chevron-down rep-grp-chevron"></i><i class="bi bi-arrow-down-left-circle me-2 rep-grp-ico"></i>Cuentas por Cobrar</td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></span>
-            <span>Cobros del Período</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Pagos recibidos en un rango de fechas agrupados por método de pago, con detalle por cliente.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_collections' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></span>
-            <span>Antigüedad de Cuentas por Cobrar</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Saldo pendiente de todos los clientes desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y +90 días.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_aging' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></span>
-            <span>Estado de Cuenta del Cliente</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Movimientos de un cliente en un período: facturas emitidas, pagos recibidos y saldo corriente con balance acumulado.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_statement' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#E6F1FB"><i class="bi bi-receipt" style="color:#185FA5"></i></span>
-            <span>Documentos de Ventas por Cliente</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Listado de facturas emitidas a un cliente en un período: NCF, fechas, condición de pago, subtotal, ITBIS y total con estado.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_invoices_by_customer' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></span>
-            <span>Ventas por Período</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Facturación y cobros mes a mes para un año seleccionado, con el neto del período (facturado − cobrado).</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_sales_period' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-    </tbody>
-    {% endif %}
+  <a href="{% url 'purchases:report_payments' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Pagos a Proveedores</strong>
+      <p class="rep-card-desc">Pagos realizados a proveedores en un rango de fechas, agrupados por método de pago con detalle por proveedor.</p>
+    </div>
+  </a>
 
-    {% comment %}Major group: Cuentas por Pagar (purchases){% endcomment %}
-    {% if has_purchasing %}
-    <tbody x-data="{ open: true }">
-      <tr class="rep-group rep-group-major" :class="{'is-collapsed': !open}" @click="open = !open" role="button" tabindex="0" @keydown.enter="open = !open">
-        <td colspan="4"><i class="bi bi-chevron-down rep-grp-chevron"></i><i class="bi bi-arrow-up-right-circle me-2 rep-grp-ico"></i>Cuentas por Pagar</td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></span>
-            <span>Pagos a Proveedores</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Pagos realizados a proveedores en un rango de fechas, agrupados por método de pago con detalle por proveedor.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_payments' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></span>
-            <span>Antigüedad de Cuentas por Pagar</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Saldo pendiente con cada proveedor desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y +90 días.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_aging' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></span>
-            <span>Estado de Cuenta del Proveedor</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Movimientos de un proveedor en un período: facturas recibidas, pagos realizados y saldo acumulado.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_statement' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#E6F1FB"><i class="bi bi-receipt-cutoff" style="color:#185FA5"></i></span>
-            <span>Compras por Proveedor</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Facturas de proveedor agrupadas por proveedor en un período: cantidad, subtotal, ITBIS y total.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_by_supplier' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      <tr x-show="open">
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></span>
-            <span>Compras por Período</span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Facturación de compras y pagos a proveedores mes a mes para un año, con el neto del período (facturado − pagado).</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_spend_period' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-    </tbody>
-    {% endif %}
-  </table>
+  <a href="{% url 'purchases:report_aging' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Antigüedad de Cuentas por Pagar</strong>
+      <p class="rep-card-desc">Saldo pendiente con cada proveedor desglosado por período de vencimiento: corriente, 1–30, 31–60, 61–90 y +90 días.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_statement' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Estado de Cuenta del Proveedor</strong>
+      <p class="rep-card-desc">Movimientos de un proveedor en un período: facturas recibidas, pagos realizados y saldo acumulado.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_by_supplier' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-receipt-cutoff" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Compras por Proveedor</strong>
+      <p class="rep-card-desc">Facturas de proveedor agrupadas por proveedor en un período: cantidad, subtotal, ITBIS y total.</p>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_spend_period' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Compras por Período</strong>
+      <p class="rep-card-desc">Facturación de compras y pagos a proveedores mes a mes para un año, con el neto del período (facturado − pagado).</p>
+    </div>
+  </a>
+
 </div>
+{% endif %}
 
-{% comment %}─── Fiscal analysis reports ───{% endcomment %}
-<div class="d-flex align-items-center gap-2 mb-3">
-  <span class="text-muted fw-semibold text-uppercase"
-        style="font-size:.7rem;letter-spacing:.07em;white-space:nowrap">Reportes fiscales</span>
-  <hr class="flex-grow-1 m-0 opacity-25">
+{% endif %}
+
+{% comment %}─── Reportes Fiscales ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Reportes Fiscales</h2>
+<div class="rep-grid mb-5">
+
+  {% if has_sales %}
+  <a href="{% url 'sales:report_itbis' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Resumen de ITBIS</strong>
+      <p class="rep-card-desc">Desglose de base imponible e ITBIS por tasa (Exento, 16%, 18%) agrupado por mes o por día, para verificar la declaración mensual.</p>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_ncf_type' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-tags" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Ventas por Tipo de Comprobante</strong>
+      <p class="rep-card-desc">Totales facturados agrupados por tipo de NCF (B01 Crédito Fiscal, B02 Consumo, etc.) para un mes y año seleccionados.</p>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+  {% endif %}
+
+  {% if has_purchasing %}
+  <a href="{% url 'purchases:report_itbis' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Crédito ITBIS en Compras</strong>
+      <p class="rep-card-desc">Desglose de base imponible e ITBIS por tasa (Exento, 16%, 18%) en compras confirmadas. Para calcular el crédito fiscal a declarar.</p>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+  {% endif %}
+
 </div>
+{% endif %}
 
-<div class="app-table-wrap mb-4">
-  <table class="table rep-table mb-0 align-middle">
-    <thead>
-      <tr>
-        <th>Informe</th>
-        <th class="d-none d-lg-table-cell">Descripción</th>
-        <th class="d-none d-md-table-cell">Módulo</th>
-        <th class="text-end">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if has_sales %}
-      {% comment %}Resumen de ITBIS{% endcomment %}
-      <tr>
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></span>
-            <span>Resumen de ITBIS <span class="rep-badge">DGII · Obligatorio</span></span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Desglose de base imponible e ITBIS por tasa (Exento, 16%, 18%) agrupado por mes o por día, para verificar la declaración mensual.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_itbis' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
+{% comment %}─── Exportaciones DGII ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Exportaciones DGII</h2>
+<div class="rep-grid rep-grid--export mb-4">
 
-      {% comment %}Ventas por tipo de comprobante{% endcomment %}
-      <tr>
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#D1E7DD"><i class="bi bi-tags" style="color:#0A6640"></i></span>
-            <span>Ventas por Tipo de Comprobante <span class="rep-badge">DGII · Obligatorio</span></span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Totales facturados agrupados por tipo de NCF (B01 Crédito Fiscal, B02 Consumo, etc.) para un mes y año seleccionados.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-sales">Ventas</span></td>
-        <td class="text-end">
-          <a href="{% url 'sales:report_ncf_type' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      {% endif %}
-      {% if has_purchasing %}
-      {% comment %}Crédito ITBIS en compras{% endcomment %}
-      <tr>
-        <td>
-          <div class="rep-name">
-            <span class="report-icon-wrap" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></span>
-            <span>Crédito ITBIS en Compras <span class="rep-badge">DGII · Obligatorio</span></span>
-          </div>
-        </td>
-        <td class="d-none d-lg-table-cell text-muted small">Desglose de base imponible e ITBIS por tasa (Exento, 16%, 18%) en compras confirmadas. Útil para calcular el crédito fiscal a declarar.</td>
-        <td class="d-none d-md-table-cell"><span class="rep-mod rep-mod-purch">Compras</span></td>
-        <td class="text-end">
-          <a href="{% url 'purchases:report_itbis' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-right me-1"></i>Abrir</a>
-        </td>
-      </tr>
-      {% endif %}
-    </tbody>
-  </table>
-</div>
-
-{% comment %}─── DGII exports: 607 / 608 / 606 CSV ───{% endcomment %}
-<div class="d-flex align-items-center gap-2 mb-3">
-  <span class="text-muted fw-semibold text-uppercase"
-        style="font-size:.7rem;letter-spacing:.07em;white-space:nowrap">Exportaciones DGII</span>
-  <hr class="flex-grow-1 m-0 opacity-25">
-</div>
-
-<div class="rep-band mb-4">
-  <div class="rep-band-grid">
-
-    {% if has_sales %}
-    {% comment %}607 Ventas CSV{% endcomment %}
-    <form method="get" action="{% url 'sales:report_607' %}" class="rep-band-cell rep-band-export">
-      <div class="rep-band-icon" style="background:#DBEAFE">
-        <i class="bi bi-file-earmark-spreadsheet" style="color:#1D4ED8"></i>
-      </div>
-      <div class="flex-grow-1">
-        <p class="rep-band-label mb-2">607 Ventas CSV</p>
-        <div class="d-flex gap-2 align-items-end flex-wrap">
-          <div class="rep-field">
-            <label class="rep-field-label">Mes</label>
-            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
-              <option value="">Selecciona un mes…</option>
-              {% for num, name in months %}
-              <option value="{{ num }}">{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="rep-field rep-field-year">
-            <label class="rep-field-label">Año</label>
-            <input type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
-          </div>
-          <button type="submit" class="btn btn-sm rep-band-btn">
-            <i class="bi bi-download me-1"></i>Descargar
-          </button>
+  {% if has_sales %}
+  <form method="get" action="{% url 'sales:report_607' %}" class="rep-card rep-card--export">
+    <div class="rep-card-icon" style="background:#DBEAFE"><i class="bi bi-file-earmark-spreadsheet" style="color:#1D4ED8"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">607 Ventas CSV</strong>
+      <div class="rep-export-form">
+        <div class="rep-export-field rep-export-field--month">
+          <label class="rep-field-label" for="month-607">Mes</label>
+          <select id="month-607" name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+            <option value="">Selecciona un mes…</option>
+            {% for num, name in months %}
+            <option value="{{ num }}">{{ name }}</option>
+            {% endfor %}
+          </select>
         </div>
-      </div>
-    </form>
-
-    {% endif %}
-
-    {% if has_purchasing %}
-    {% comment %}606 Compras CSV{% endcomment %}
-    <form method="get" action="{% url 'purchases:report_606' %}" class="rep-band-cell rep-band-export">
-      <input type="hidden" name="format" value="csv">
-      <div class="rep-band-icon" style="background:#D1ECF1">
-        <i class="bi bi-file-earmark-arrow-down" style="color:#0C5460"></i>
-      </div>
-      <div class="flex-grow-1">
-        <p class="rep-band-label mb-2">606 Compras CSV</p>
-        <div class="d-flex gap-2 align-items-end flex-wrap">
-          <div class="rep-field">
-            <label class="rep-field-label">Mes</label>
-            <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
-              <option value="">Selecciona un mes…</option>
-              {% for num, name in months %}
-              <option value="{{ num }}">{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="rep-field rep-field-year">
-            <label class="rep-field-label">Año</label>
-            <input type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
-          </div>
-          <button type="submit" class="btn btn-sm rep-band-btn">
-            <i class="bi bi-download me-1"></i>Descargar
-          </button>
+        <div class="rep-export-field rep-export-field--year">
+          <label class="rep-field-label" for="year-607">Año</label>
+          <input id="year-607" type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
         </div>
+        <button type="submit" class="rep-export-btn">
+          <i class="bi bi-download me-1"></i>Descargar
+        </button>
       </div>
-    </form>
-    {% endif %}
+    </div>
+  </form>
+  {% endif %}
 
-  </div>
+  {% if has_purchasing %}
+  <form method="get" action="{% url 'purchases:report_606' %}" class="rep-card rep-card--export">
+    <input type="hidden" name="format" value="csv">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-file-earmark-arrow-down" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">606 Compras CSV</strong>
+      <div class="rep-export-form">
+        <div class="rep-export-field rep-export-field--month">
+          <label class="rep-field-label" for="month-606">Mes</label>
+          <select id="month-606" name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+            <option value="">Selecciona un mes…</option>
+            {% for num, name in months %}
+            <option value="{{ num }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="rep-export-field rep-export-field--year">
+          <label class="rep-field-label" for="year-606">Año</label>
+          <input id="year-606" type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
+        </div>
+        <button type="submit" class="rep-export-btn">
+          <i class="bi bi-download me-1"></i>Descargar
+        </button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
 </div>
+{% endif %}
 
 <style>
-/* Keep the shell from creating a second page scrollbar on this report hub. */
 #main-content { min-height: 0; overflow-x: hidden; }
 
-.report-icon-wrap {
-  width: 38px;
-  height: 38px;
+/* ── Section titles ── */
+.rep-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e2130;
+  margin: 0 0 1rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.rep-subgroup-title {
+  font-size: .8rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 .65rem;
+}
+
+/* ── Card grid ── */
+.rep-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: .85rem;
+}
+
+.rep-grid--export {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* ── Report card (link) ── */
+.rep-card {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  display: inline-flex;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out;
+}
+
+a.rep-card:hover {
+  box-shadow: 0 4px 14px rgba(30,33,48,.09);
+  border-color: #c4cfe6;
+  transform: translateY(-1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.rep-card:focus-visible {
+  outline: 2px solid #3f6fd6;
+  outline-offset: 2px;
+  border-color: #3f6fd6;
+}
+
+/* Export form card — no hover lift, cursor default */
+.rep-card--export { cursor: default; }
+
+/* ── Card parts ── */
+.rep-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.report-icon-wrap .bi { font-size: 1.15rem; }
 
-/* ── Fiscal band ── */
-.rep-band { min-width: 0;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 1px 2px rgba(16,24,40,.04);
-}
-.rep-band-grid {
+.rep-card-icon .bi { font-size: 1.15rem; }
+
+.rep-card-body {
   min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  align-items: start;
-  gap: 1.5rem;
+  flex: 1;
 }
-.rep-band-cell { display: flex; align-items: flex-start; gap: .85rem; min-width: 0; }
-.rep-band-cell > .flex-grow-1 { min-width: 0; }
-.rep-band-icon {
-  width: 44px; height: 44px; border-radius: 11px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+
+.rep-card-name {
+  display: block;
+  font-size: .875rem;
+  font-weight: 600;
+  color: #1e2130;
+  line-height: 1.3;
+  margin-bottom: .2rem;
 }
-.rep-band-icon .bi { font-size: 1.3rem; }
-.rep-band-label {
-  font-size: .8rem; font-weight: 600; color: #344054;
+
+.rep-card-desc {
+  font-size: .78rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.rep-band-sub { font-size: .72rem; color: #98a2b3; }
+
+.rep-card-badge {
+  display: inline-block;
+  margin-top: .4rem;
+  padding: .08rem .4rem;
+  background: #FFF3CD;
+  color: #856404;
+  border-radius: 4px;
+  font-size: .63rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Export card form area ── */
+.rep-export-form {
+  margin-top: .65rem;
+  display: flex;
+  gap: .45rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.rep-export-field { min-width: 0; }
+.rep-export-field--month { flex: 1 1 120px; }
+.rep-export-field--year  { flex: 0 1 80px; }
+
 .rep-field-label {
-  display: block; font-size: .68rem; font-weight: 600; color: #667085;
-  margin-bottom: .15rem; text-transform: uppercase; letter-spacing: .03em;
+  display: block;
+  font-size: .65rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: .15rem;
 }
-.rep-field { min-width: 0; flex: 1 1 150px; }
-.rep-field .form-select,
-.rep-field .form-control,
-.rep-field .ts-wrapper { width: 100%; min-width: 0; }
-.rep-field-year { flex: 0 1 92px; max-width: 92px; }
-.rep-band-btn {
-  background: var(--brand-ink, #1e2130); color: #fff; border: none;
-  font-weight: 500; white-space: nowrap;
-}
-.rep-band-btn:hover { background: var(--brand-ink-2, #2a3050); color: #fff; }
 
-/* ── Operational table ── */
-.rep-table thead th {
-  font-size: .7rem; text-transform: uppercase; letter-spacing: .05em;
-  color: #667085; font-weight: 600; border-bottom: 1px solid rgba(0,0,0,.08);
-  padding: .65rem 1rem;
-}
-.rep-table tbody td { padding: .7rem 1rem; vertical-align: middle; }
-.rep-table tbody tr:not(.rep-group):hover { background: #f8fafc; }
-.rep-group { cursor: pointer; user-select: none; }
-.rep-group td {
-  background: #f4f6fb; font-size: .68rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em; color: #475467;
-  padding: .4rem 1rem !important;
-}
-.rep-group:hover td { background: #eceff7; }
-.rep-grp-chevron {
-  font-size: .7rem; margin-right: .5rem; color: #98a2b3;
-  display: inline-block; transition: transform .18s ease;
-}
-.rep-group.is-collapsed .rep-grp-chevron { transform: rotate(-90deg); }
-.rep-group-major td {
-  background: #eef2fb; font-size: .8rem; color: #1e2130;
-  letter-spacing: .02em; padding: .6rem 1rem !important;
-  border-top: 2px solid #dbe2f3;
-}
-.rep-group-major:hover td { background: #e4eaf7; }
-.rep-grp-ico { font-size: .95rem; color: #5b6b8c; }
-.rep-name { display: flex; align-items: center; gap: .7rem; font-weight: 500; font-size: .875rem; min-width: 0; }
-.rep-name > span:last-child {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.rep-badge {
-  display: inline-block; margin-left: .4rem; padding: .1rem .45rem;
-  background: #FFF3CD; color: #856404; border-radius: 5px;
-  font-size: .65rem; font-weight: 600; vertical-align: middle; white-space: nowrap;
-}
-.rep-mod {
-  display: inline-block; padding: .12rem .5rem; border-radius: 6px;
-  font-size: .68rem; font-weight: 600; white-space: nowrap;
-}
-.rep-mod-sales { background: #E6F1FB; color: #185FA5; }
-.rep-mod-purch { background: #FEF3C7; color: #92400E; }
-.rep-table td.text-end { white-space: nowrap; }
+.rep-export-field .form-select,
+.rep-export-field .form-control,
+.rep-export-field .ts-wrapper { width: 100%; min-width: 0; }
 
-@media (max-width: 575.98px) {
-  .rep-band { padding: 1rem; }
-  .rep-band-cell { flex-direction: column; }
-  .rep-band-btn { width: 100%; }
+.rep-export-btn {
+  flex-shrink: 0;
+  background: #1e2130;
+  color: #fff;
+  border: none;
+  font-size: .78rem;
+  font-weight: 500;
+  padding: .36rem .8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1.5;
+  transition: background 120ms ease-out;
+}
+
+.rep-export-btn:hover { background: #2a3050; color: #fff; }
+.rep-export-btn:focus-visible { outline: 2px solid #3f6fd6; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rep-card,
+  .rep-export-btn { transition: none; }
 }
 </style>
 
