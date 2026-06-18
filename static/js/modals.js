@@ -172,17 +172,13 @@
     var custSel = document.querySelector("#consolidate-form #id_customer");
     if (!custSel || !window.htmx) return;
 
-    // #id_department is a TomSelect: swapping <option>s into the hidden native
-    // <select> won't update the widget, so destroy it before the swap and
-    // re-init afterwards so the new departments are actually selectable.
     function refreshDeptWidget(deptSel) {
       if (window.SabSysTom && deptSel.parentNode) {
         window.SabSysTom.init(deptSel.parentNode);
       }
     }
 
-    custSel.addEventListener("change", function () {
-      var pk = this.value;
+    function onCustomerChange(pk) {
       var deptSel = document.getElementById("id_department");
       if (!deptSel) return;
       if (deptSel.tomselect) deptSel.tomselect.destroy();
@@ -195,7 +191,15 @@
         deptSel.innerHTML = getConfig("allDepartmentsOption", '<option value="">-- Todos los departamentos --</option>');
         refreshDeptWidget(deptSel);
       }
-    });
+    }
+
+    // Prefer TomSelect's own event API — it fires reliably when the user picks
+    // a value via TomSelect's UI, where a native DOM "change" event may not fire.
+    if (custSel.tomselect) {
+      custSel.tomselect.on("change", function (value) { onCustomerChange(value); });
+    } else {
+      custSel.addEventListener("change", function () { onCustomerChange(this.value); });
+    }
   }
 
   window.confirmDeleteNCF = confirmDeleteNCF;
