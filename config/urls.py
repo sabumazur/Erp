@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.http import HttpResponse
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
 
 
 def health(request):
@@ -21,6 +21,9 @@ urlpatterns = [
 ]
 
 # Serve user-uploaded media files in all environments.
+# static() returns [] when DEBUG=False in Django 6+, so we register directly.
 # For local production this is acceptable; replace with a dedicated nginx
 # location block if the deployment grows beyond a few concurrent users.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += [
+    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+]
