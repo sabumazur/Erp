@@ -24,7 +24,9 @@ RUN addgroup --system app \
 COPY --from=builder /install /usr/local
 COPY --chown=app:app . .
 
-RUN chmod +x docker-entrypoint.sh
+RUN mkdir -p media/avatars media/signatures media/org_logos logs \
+    && chmod +x docker-entrypoint.sh \
+    && chown -R app:app /app/media /app/logs
 
 USER app
 
