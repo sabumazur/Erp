@@ -865,7 +865,7 @@ class AcceptInvitationView(View):
                 "status": "login_required",
                 "invitation": invitation,
                 "login_url": reverse("account_login") + f"?next={request.path}",
-                "signup_url": reverse("account_signup"),
+                "signup_url": reverse("account_signup") + f"?email={invitation.email}",
             })
 
         if request.user.email.lower() != invitation.email.lower():

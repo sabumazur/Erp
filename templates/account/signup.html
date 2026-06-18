@@ -7,6 +7,20 @@
 <style>[x-cloak]{display:none!important}</style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+(function () {
+  var email = new URLSearchParams(window.location.search).get('email');
+  if (!email) return;
+  var field = document.querySelector('input[name="email"]');
+  if (field && !field.value) {
+    field.value = email;
+    field.readOnly = true;
+  }
+})();
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="auth-card">
   <span class="auth-eyebrow">Invitación recibida</span>
