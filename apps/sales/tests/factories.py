@@ -42,7 +42,7 @@ class SalesDocumentFactory(DjangoModelFactory):
     customer = factory.SubFactory(CustomerFactory,
                                    organization=factory.SelfAttribute("..organization"))
     ncf_type = 31
-    issue_date = factory.LazyFunction(lambda: timezone.now().date())
+    issue_date = factory.LazyFunction(timezone.localdate)
     payment_condition = SalesDocument.PaymentCondition.CASH
     currency = SalesDocument.Currency.DOP
     status = SalesDocument.Status.DRAFT
