@@ -10,6 +10,7 @@ import pytest
 from django.core.cache import cache
 from django.template import Context, Template
 from django.urls import reverse
+from apps.items.models import Item
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFactory, OrganizationFactory
@@ -500,6 +501,25 @@ class TestItemQuickCreateView:
         )
         assert response.status_code == 422
 
+    def test_created_item_is_scoped_to_active_org(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        other_org = OrganizationFactory()
+        login(client, user)
+        set_active_org(client, org)
+        response = client.post(
+            reverse("sales:item_quick_create"),
+            {
+                "name": "Item de mi organización",
+                "unit": "UNIT",
+                "unit_price": "100.00",
+                "itbis_rate": "RATE_18",
+            },
+        )
+        assert response.status_code == 200
+        item = Item.objects.get(name="Item de mi organización")
+        assert item.organization == org
+        assert item.organization != other_org
+
 
 # -- Sale order form behavior --------------------------------------------------
 
@@ -742,8 +762,10 @@ class TestSaleOrderFormView:
 
         assert response.status_code == 200
         content = response.content.decode()
-        assert "issueInput.addEventListener('change'" in content
-        assert "deliveryInput.value = issueInput.value" in content
+        # The sync behavior lives in initIssueDateDeliverySync (document-form.js),
+        # which hooks these two inputs — the form must render both.
+        assert 'name="issue_date"' in content
+        assert 'name="delivery_date"' in content
 
 
 # -- Sale order email view -----------------------------------------------------
