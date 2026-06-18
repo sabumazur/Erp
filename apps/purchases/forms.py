@@ -10,7 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
-from apps.core.widgets import TomSelect, ItbisSelect, FlatpickrDateInput
+from apps.core.layout import optional_fields
+from apps.core.widgets import TomSelect, ItbisSelect, DateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
 from apps.sales.models import PaymentTerm
@@ -141,13 +142,6 @@ class SupplierForm(forms.ModelForm):
                 else:
                     cleaned_data["rnc_cedula"] = normalized
 
-            elif id_type in (Supplier.IdType.PASAPORTE, Supplier.IdType.EXTERIOR):
-                if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", rnc_cedula):
-                    self.add_error(
-                        "rnc_cedula",
-                        _("Identificación inválida (4–20 caracteres alfanuméricos)."),
-                    )
-
             normalized = cleaned_data.get("rnc_cedula") or ""
             if self._organization and normalized and "rnc_cedula" not in self.errors:
                 qs = Supplier.objects.filter(
@@ -267,9 +261,13 @@ class PurchaseOrderForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "expected_date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 2, "class": "form-control form-control-sm"}),
+            "issue_date": DateInput(),
+            "expected_date": DateInput(),
+            "notes": AutosizeTextarea(
+                attrs={
+                    "placeholder": _("Instrucciones, términos de entrega o referencias internas…")
+                }
+            ),
         }
 
     def __init__(self, *args, organization=None, **kwargs):
@@ -311,6 +309,8 @@ class PurchaseOrderForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-3"),
                 Column("expected_date", css_class="col-md-3"),
             ),
+            HTML('<hr class="my-3">'),
+            optional_fields(("notes", _("Añadir notas"))),
         )
 
 
@@ -330,9 +330,9 @@ class SupplierInvoiceForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "issue_date": FlatpickrDateInput(),
-            "due_date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1}),
+            "issue_date": DateInput(),
+            "due_date": DateInput(),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "currency": TomSelect(placeholder="Moneda…"),
         }
 
@@ -378,6 +378,8 @@ class SupplierInvoiceForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("due_date", css_class="col-md-4"),
             ),
+            HTML('<hr class="my-3">'),
+            optional_fields(("notes", _("Añadir notas"))),
         )
 
 
@@ -432,8 +434,8 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
         model = SupplierPayment
         fields = ["supplier", "date", "method", "reference", "notes"]
         widgets = {
-            "date": FlatpickrDateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1}),
+            "date": DateInput(),
+            "notes": AutosizeTextarea(attrs={"placeholder": _("Instrucciones o referencias internas…")}),
             "method": TomSelect(placeholder="Método…"),
         }
 
@@ -477,5 +479,6 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
                 Column("method", css_class="col-md-3"),
                 Column("reference", css_class="col-md-2"),
             ),
-            "notes",
+            HTML('<hr class="my-3">'),
+            optional_fields(("notes", _("Añadir notas"))),
         )

@@ -47,7 +47,7 @@
 </div>
 {% endif %}
 
-{% if customer %}
+{% if customer and not error %}
 
 {# ── Customer info block ──────────────────────────────────────────────────── #}
 <div class="customer-block no-print">
@@ -176,4 +176,9 @@
 
 {% endif %}
 
+{% endblock %}
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
 {% endblock %}

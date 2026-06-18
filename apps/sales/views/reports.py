@@ -2,6 +2,7 @@ import io
 from decimal import Decimal
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.cache import cache
 from django.db.models import Case, Count, DecimalField, F, Sum, When
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth
@@ -11,9 +12,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
+from apps.core.daterange import (
+    DATE_INVALID_MSG,
+    DATE_RANGE_ERROR_MSG,
+    DateRangeError,
+    parse_date_range,
+)
 from ..models import Customer, SalesDocument, SalesDocumentItem, NCFType, Payment
 
 _AGING_CSS = {
@@ -32,25 +39,10 @@ _MONTHS_ES = [
 ]
 
 
-class ReportIndexView(ERPBaseViewMixin, TemplateView):
-    template_name = "sales/reports.html"
-    required_module = "sales"
-    admin_required = True
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        from datetime import date
-        today = timezone.now().date()
-        ctx["today"] = today
-        ctx["months"] = _MONTHS_ES
-        next_month = today.month % 12 + 1
-        next_year = today.year + (1 if today.month == 12 else 0)
-        ctx["dgii_deadline"] = date(next_year, next_month, 15)
-        ctx["breadcrumbs"] = [
-            {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
-            {"label": _("Reportes de Facturación")},
-        ]
-        return ctx
+class ReportIndexView(RedirectView):
+    """Deprecated — sales reports merged into the unified core report center."""
+    permanent = False
+    pattern_name = "core:reports"
 
 
 class Report607View(ERPBaseViewMixin, View):
@@ -96,7 +88,7 @@ class Report607View(ERPBaseViewMixin, View):
         buf = io.StringIO()
         for inv in invoices:
             c = inv.customer
-            id_type_code = {"RNC": "1", "CED": "2", "PAS": "3", "EXT": "4"}.get(c.id_type, "")
+            id_type_code = {"RNC": "1", "CED": "2"}.get(c.id_type, "")
             buyer_id = c.rnc_cedula or ""
             buyer_type = id_type_code if buyer_id else ""
             encf_mod = inv.encf_modified.encf if inv.encf_modified else ""
@@ -179,7 +171,10 @@ class ReportAgingView(ERPBaseViewMixin, View):
 
             selected_customer = None
             if customer_id:
-                selected_customer = get_object_or_404(Customer, pk=customer_id, organization=org)
+                try:
+                    selected_customer = get_object_or_404(Customer, pk=customer_id, organization=org)
+                except (ValueError, TypeError, DjangoValidationError):
+                    selected_customer = None
 
             qs = SalesDocument.invoices.filter(
                 organization=org,
@@ -281,8 +276,7 @@ class ReportStatementView(ERPBaseViewMixin, View):
             if customer_id and date_from_str and date_to_str:
                 try:
                     customer = get_object_or_404(Customer, pk=customer_id, organization=org)
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     inv_before = (
                         SalesDocument.invoices.filter(
@@ -333,8 +327,10 @@ class ReportStatementView(ERPBaseViewMixin, View):
                         line["balance"] = balance
                     closing_balance = balance
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "customer": customer, "customer_id": customer_id,
@@ -477,36 +473,50 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
         from datetime import datetime as dt
         org = request.organization
         customers = Customer.objects.filter(organization=org).order_by("name")
-        customer_id   = request.GET.get("customer",  "").strip()
+        customer_ids  = [c.strip() for c in request.GET.getlist("customer") if c.strip()]
+        doc_type_ids  = [d.strip() for d in request.GET.getlist("doc_type") if d.strip()]
         date_from_str = request.GET.get("date_from", "").strip()
         date_to_str   = request.GET.get("date_to",   "").strip()
+
+        valid_doc_types = {c[0] for c in SalesDocument.DocType.choices}
+        doc_type_ids = [d for d in doc_type_ids if d in valid_doc_types]
 
         _cache_key = f"report_inv_by_customer:{org.pk}:{request.GET.urlencode()}"
         computed = cache.get(_cache_key)
 
         if computed is None:
             _zero = Decimal("0.00")
-            customer = None
+            selected_customers = []
             invoices = []
             totals = {"subtotal": _zero, "itbis_18": _zero, "total": _zero}
             error = None
+            ran = False
 
-            if customer_id and date_from_str and date_to_str:
+            if date_from_str and date_to_str:
+                ran = True
                 try:
-                    customer = get_object_or_404(Customer, pk=customer_id, organization=org)
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
-                    invoices = list(
-                        SalesDocument.invoices.filter(
-                            organization=org,
-                            customer=customer,
-                            issue_date__gte=d_from,
-                            issue_date__lte=d_to,
+                    if customer_ids:
+                        selected_customers = list(
+                            Customer.objects.filter(pk__in=customer_ids, organization=org).order_by("name")
                         )
+
+                    docs_qs = SalesDocument.objects.filter(
+                        organization=org,
+                        issue_date__gte=d_from,
+                        issue_date__lte=d_to,
+                    )
+                    if customer_ids:
+                        docs_qs = docs_qs.filter(customer__in=selected_customers)
+                    if doc_type_ids:
+                        docs_qs = docs_qs.filter(doc_type__in=doc_type_ids)
+                    invoices = list(
+                        docs_qs
                         .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+                        .select_related("customer")
                         .with_signed_totals()
-                        .order_by("issue_date", "created_at")
+                        .order_by("customer__name", "issue_date", "created_at")
                     )
 
                     for inv in invoices:
@@ -514,20 +524,28 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                         totals["itbis_18"] += inv.signed_itbis_18
                         totals["total"]    += inv.signed_total
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
+            customer = selected_customers[0] if len(selected_customers) == 1 else None
             computed = {
-                "customer": customer, "customer_id": customer_id,
+                "selected_customers": selected_customers,
+                "customer": customer,
+                "multi_customer": customer is None,
+                "ran": ran,
+                "customer_ids": customer_ids,
+                "doc_type_ids": doc_type_ids,
                 "date_from": date_from_str, "date_to": date_to_str,
                 "invoices": invoices, "totals": totals, "error": error,
                 "today": timezone.now().date(),
             }
-            if customer and not error:
+            if ran and not error:
                 cache.set(_cache_key, computed, timeout=600)
 
         return render(
-            request, "sales/report_invoices_by_customer.html",
+            request, "sales/report_salesdoc_by_customer.html",
             {
                 **self.get_context(
                     breadcrumbs=[
@@ -537,6 +555,7 @@ class ReportInvoicesByCustomerView(ERPBaseViewMixin, View):
                     ]
                 ),
                 "customers": customers,
+                "doc_types": SalesDocument.DocType.choices,
                 **computed,
             },
         )
@@ -565,8 +584,7 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
 
             if date_from_str and date_to_str:
                 try:
-                    d_from = dt.strptime(date_from_str, "%Y-%m-%d").date()
-                    d_to   = dt.strptime(date_to_str,   "%Y-%m-%d").date()
+                    d_from, d_to = parse_date_range(date_from_str, date_to_str)
 
                     payments = list(
                         Payment.objects.filter(
@@ -587,10 +605,14 @@ class ReportCollectionsView(ERPBaseViewMixin, View):
                         .order_by("method")
                     ]
 
-                    grand_total = sum(p.amount for p in payments)
+                    # REFACTOR SAL-001: derive grand_total from the already-aggregated
+                    # by_method data (≤6 rows) instead of iterating the full payment list.
+                    grand_total = sum(r["total"] for r in by_method)
 
+                except DateRangeError:
+                    error = DATE_RANGE_ERROR_MSG
                 except (ValueError, TypeError):
-                    error = _("Fechas inválidas.")
+                    error = DATE_INVALID_MSG
 
             computed = {
                 "date_from": date_from_str, "date_to": date_to_str,

@@ -1,7 +1,15 @@
 from .base import *
-from decouple import config
+from decouple import config, Csv
 
 DEBUG = True
+
+# Allow tunnel/proxy access in dev (e.g. Cloudflare Tunnel → mysabsys.com).
+# base.py already reads ALLOWED_HOSTS from env; this adds CSRF origin trust.
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv(), default="http://localhost:8000")
+
+BEHIND_PROXY = config("BEHIND_PROXY", cast=bool, default=False)
+if BEHIND_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 DATABASES = {
     "default": {

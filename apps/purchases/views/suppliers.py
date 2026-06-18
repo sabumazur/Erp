@@ -2,8 +2,6 @@ import json
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from datetime import date
-from django.db.models import Exists, OuterRef
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -70,22 +68,6 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if q:
             qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         ctx.update(self.apply_datatable(qs))
-        if not self.request.htmx:
-            today = date.today()
-            base = Supplier.objects.filter(organization=org)
-            has_invoice = PurchaseDocument.supplier_invoices.filter(supplier=OuterRef("pk"))
-            ctx["stats"] = [
-                {"label": _("Total proveedores"), "value": base.count(),
-                 "icon": "bi-truck",        "color": "primary"},
-                {"label": _("Activos"), "value": base.filter(is_active=True).count(),
-                 "icon": "bi-check-circle", "color": "success"},
-                {"label": _("Con facturas"), "value": base.filter(Exists(has_invoice)).count(),
-                 "icon": "bi-receipt",      "color": "info"},
-                {"label": _("Nuevos este mes"), "value": base.filter(
-                    created_at__year=today.year, created_at__month=today.month,
-                 ).count(),
-                 "icon": "bi-building-add", "color": "secondary"},
-            ]
         ctx["form"] = SupplierForm(organization=org)
         ctx["module"] = "supplier"
         ctx["breadcrumbs"] = [
@@ -170,20 +152,39 @@ class SupplierDetailView(ERPBaseViewMixin, View):
     required_module = "purchasing"
 
     def get(self, request, pk):
+        # REFACTOR PQ-01: replaced Python sum(inv.total for inv in invoices)
+        # with a single SQL aggregate — eliminates the full-table Python scan.
+        # REFACTOR PQ-02: invoices list now limited to most-recent 200 rows so
+        # the detail page never loads an unbounded queryset.
         from decimal import Decimal
-        supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
-        invoices = list(
-            PurchaseDocument.supplier_invoices.filter(
-                organization=request.organization, supplier=supplier
-            ).exclude(status=PurchaseDocument.Status.CANCELLED)
-            .order_by("-issue_date")
-        )
         from django.db.models import Sum
-        total_invoiced = sum((inv.total for inv in invoices), Decimal("0.00"))
+        supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
+
+        # Aggregate totals in SQL — one query, no Python accumulation.
+        agg = (
+            PurchaseDocument.supplier_invoices
+            .filter(organization=request.organization, supplier=supplier)
+            .exclude(status=PurchaseDocument.Status.CANCELLED)
+            .aggregate(total_invoiced=Sum("total"))
+        )
+        total_invoiced = agg["total_invoiced"] or Decimal("0.00")
+
         total_paid = SupplierPayment.objects.filter(
             supplier=supplier, organization=request.organization
         ).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
         balance = total_invoiced - total_paid
+
+        # Bounded invoice list — most recent 200; enough for display.
+        invoices = list(
+            PurchaseDocument.supplier_invoices
+            .filter(organization=request.organization, supplier=supplier)
+            .exclude(status=PurchaseDocument.Status.CANCELLED)
+            .select_related("supplier")
+            .only("id", "number", "supplier_ncf", "issue_date", "due_date",
+                  "total", "status", "supplier_id", "doc_type")
+            .order_by("-issue_date")[:200]
+        )
+
         recent_payments = list(
             SupplierPayment.objects.filter(supplier=supplier, organization=request.organization)
             .prefetch_related("allocations__supplier_invoice")

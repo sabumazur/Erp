@@ -1,5 +1,15 @@
 {% load i18n %}
 <div class="mb-3">
+  <label class="form-label small fw-semibold">{% trans "Estado" %}</label>
+  <select name="status" class="form-select form-select-sm">
+    <option value="">{% trans "Todos los estados" %}</option>
+    <option value="DRAFT" {% if request.GET.status == "DRAFT" %}selected{% endif %}>{% trans "Borrador" %}</option>
+    <option value="CONFIRMED" {% if request.GET.status == "CONFIRMED" %}selected{% endif %}>{% trans "Confirmada" %}</option>
+    <option value="PAID" {% if request.GET.status == "PAID" %}selected{% endif %}>{% trans "Pagada" %}</option>
+    <option value="CANCELLED" {% if request.GET.status == "CANCELLED" %}selected{% endif %}>{% trans "Anulada" %}</option>
+  </select>
+</div>
+<div class="mb-3">
   <label class="form-label small fw-semibold">{% trans "Proveedor" %}</label>
   <input type="text" name="supplier" class="form-control form-control-sm"
          value="{{ request.GET.supplier }}" placeholder="{% trans "Nombre del proveedor…" %}">

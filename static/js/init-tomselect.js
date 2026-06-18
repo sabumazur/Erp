@@ -21,15 +21,18 @@
       var opts = Array.prototype.map.call(el.options, function (o) {
         return { value: o.value, text: o.text, rate: o.dataset.rate || "", disabled: o.disabled };
       });
+      var plugins = ["dropdown_input"];
+      if (el.multiple) plugins.push("remove_button");
       new TomSelect(el, {
         options: opts,
-        items: el.value ? [el.value] : [],
+        items: Array.prototype.filter.call(el.options, function (o) { return o.selected; })
+          .map(function (o) { return o.value; }),
         valueField: "value",
         labelField: "text",
         searchField: ["text"],
         maxOptions: null,
         allowEmptyOption: true,
-        plugins: ["dropdown_input"],
+        plugins: plugins,
         dropdownParent: el.closest(".modal, dialog, .app-table-wrap") ? "body" : null,
         placeholder: el.dataset.placeholder || "Seleccione…",
         render: makeRenderers(),

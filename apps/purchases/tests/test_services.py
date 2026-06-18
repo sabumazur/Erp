@@ -5,8 +5,9 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
+from apps.core.models import DocumentSequence
 from apps.purchases.models import (
-    PurchaseDocument, PurchaseDocumentItem, PurchaseSequence,
+    PurchaseDocument, PurchaseDocumentItem,
     SupplierPayment, SupplierPaymentAllocation,
 )
 from apps.purchases.services import (
@@ -70,7 +71,7 @@ class TestPurchaseOrderService:
     def test_confirm_assigns_number(self):
         po = make_po_with_item()
         org = po.organization
-        PurchaseSequence.objects.create(organization=org, prefix="OC", next_value=1, padding=5)
+        DocumentSequence.objects.get_or_create(organization=org, doc_type="PURCHASE_ORDER", defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False})
         PurchaseOrderService.confirm(po)
         po.refresh_from_db()
         assert po.status == PurchaseDocument.Status.CONFIRMED
@@ -79,7 +80,7 @@ class TestPurchaseOrderService:
     def test_confirm_only_from_draft(self):
         po = make_po_with_item()
         org = po.organization
-        PurchaseSequence.objects.create(organization=org, prefix="OC", next_value=1, padding=5)
+        DocumentSequence.objects.get_or_create(organization=org, doc_type="PURCHASE_ORDER", defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False})
         PurchaseOrderService.confirm(po)
         with pytest.raises(ValueError):
             PurchaseOrderService.confirm(po)
@@ -93,7 +94,7 @@ class TestPurchaseOrderService:
     def test_cancel_confirmed(self):
         po = make_po_with_item()
         org = po.organization
-        PurchaseSequence.objects.create(organization=org, prefix="OC", next_value=1, padding=5)
+        DocumentSequence.objects.get_or_create(organization=org, doc_type="PURCHASE_ORDER", defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False})
         PurchaseOrderService.confirm(po)
         PurchaseOrderService.cancel(po)
         po.refresh_from_db()
@@ -102,7 +103,7 @@ class TestPurchaseOrderService:
     def test_receive_creates_supplier_invoice(self):
         po = make_po_with_item()
         org = po.organization
-        PurchaseSequence.objects.create(organization=org, prefix="OC", next_value=1, padding=5)
+        DocumentSequence.objects.get_or_create(organization=org, doc_type="PURCHASE_ORDER", defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False})
         PurchaseOrderService.confirm(po)
         po_returned, si = PurchaseOrderService.receive_and_invoice(po)
         po.refresh_from_db()
@@ -121,7 +122,7 @@ class TestPurchaseOrderService:
     def test_receive_updates_si_totals(self):
         po = make_po_with_item(unit_price=Decimal("500.00"))
         org = po.organization
-        PurchaseSequence.objects.create(organization=org, prefix="OC", next_value=1, padding=5)
+        DocumentSequence.objects.get_or_create(organization=org, doc_type="PURCHASE_ORDER", defaults={"prefix": "OC", "current_seq": 0, "padding": 5, "include_year": False})
         PurchaseOrderService.confirm(po)
         _, si = PurchaseOrderService.receive_and_invoice(po)
         si.refresh_from_db()

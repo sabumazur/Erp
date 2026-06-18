@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Sum
+from django.db.models import Case, CharField, Count, Sum, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -86,15 +86,28 @@ class ERPBaseViewMixin(LoginRequiredMixin):
 
         return super().dispatch(request, *args, **kwargs)
 
+    def _user_memberships(self):
+        """Materialize the sidebar membership list once per request.
+
+        The result is cached on the request object so multiple context builds
+        within the same request (e.g. get_context_data + a nested get_context)
+        reuse a single query instead of re-issuing it each time.
+        """
+        cached = getattr(self.request, "_cached_user_memberships", None)
+        if cached is None:
+            cached = list(
+                self.request.user.memberships
+                .select_related("organization")
+                .order_by("created_at")
+            )
+            self.request._cached_user_memberships = cached
+        return cached
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["organization"] = self.request.organization
         ctx["membership"] = self.request.membership
-        ctx["user_memberships"] = (
-            self.request.user.memberships
-            .select_related("organization")
-            .order_by("created_at")
-        )
+        ctx["user_memberships"] = self._user_memberships()
         return ctx
 
     def get_context(self, **kwargs):
@@ -111,11 +124,7 @@ class ERPBaseViewMixin(LoginRequiredMixin):
         return {
             "organization": self.request.organization,
             "membership": self.request.membership,
-            "user_memberships": (
-                self.request.user.memberships
-                .select_related("organization")
-                .order_by("created_at")
-            ),
+            "user_memberships": self._user_memberships(),
             **kwargs,
         }
 
@@ -137,12 +146,26 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["breadcrumbs"] = [{"label": _("Dashboard")}]
+        ctx["breadcrumbs"] = [{"label": _("Dashboard"), "url": None}]
         ctx["today"] = timezone.localdate()
+        hour = timezone.localtime(timezone.now()).hour
+        if hour < 12:
+            ctx["dashboard_greeting"] = _("Buen día")
+        elif hour < 18:
+            ctx["dashboard_greeting"] = _("Buenas tardes")
+        else:
+            ctx["dashboard_greeting"] = _("Buenas noches")
+        first_name = (self.request.user.first_name or "").strip()
+        if not first_name:
+            first_name = self.request.user.email.split("@", 1)[0]
+        ctx["dashboard_first_name"] = first_name
 
         org = self.request.organization
         ctx["has_sales_access"] = bool(
             org and can_access_module(self.request.membership, "sales")
+        )
+        ctx["has_purchasing_access"] = bool(
+            org and can_access_module(self.request.membership, "purchasing")
         )
         if not org or not ctx["has_sales_access"]:
             return ctx
@@ -180,6 +203,7 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         cached = cache.get(_cache_key)
         if cached is not None:
             ctx.update(cached)
+            self._build_dashboard_context(ctx)
             return ctx
 
         month_start = today.replace(day=1)
@@ -277,9 +301,28 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             .annotate(total=Sum("amount"))
         }
 
+        from apps.purchases.models import PurchaseDocument, SupplierPayment
+
+        purch_by_month = {
+            row["month"]: float(row["total"])
+            for row in PurchaseDocument.supplier_invoices.filter(
+                organization=org,
+                deleted_at__isnull=True,
+                issue_date__gte=six_months_ago,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            )
+            .annotate(month=TruncMonth("issue_date"))
+            .values("month")
+            .annotate(total=Sum("total"))
+        }
+
         chart_months = [f"{_MONTH_ES[m.month - 1]} {m.year}" for m in months_list]
         chart_invoiced = [inv_by_month.get(m, 0.0) for m in months_list]
         chart_collected = [pay_by_month.get(m, 0.0) for m in months_list]
+        chart_purchased = [purch_by_month.get(m, 0.0) for m in months_list]
 
         _STATUS_LABELS = {
             SalesDocument.Status.CONFIRMED: "Confirmada",
@@ -306,58 +349,126 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
         chart_status_counts = [status_counts_qs[s] for s in ordered_statuses]
         chart_status_colors = [_STATUS_COLORS[s] for s in ordered_statuses]
 
-        _CUSTOMER_COLORS = [
-            "rgba(13,110,253,0.8)",
-            "rgba(25,135,84,0.8)",
-            "rgba(255,193,7,0.8)",
-            "rgba(220,53,69,0.8)",
-            "rgba(13,202,240,0.8)",
-            "rgba(111,66,193,0.8)",
-        ]
+        # ── AR vs AP aging + accounts-payable summary ───────────────────────
+        _AGING_KEYS = ["current", "1_30", "31_60", "61_90", "90_plus"]
+        chart_aging_labels = ["Corriente", "1–30", "31–60", "61–90", "+90"]
 
-        _inv_status_filter = [
-            SalesDocument.Status.CONFIRMED,
-            SalesDocument.Status.SENT,
-            SalesDocument.Status.PAID,
-            SalesDocument.Status.OVERDUE,
-        ]
+        _unpaid = _inv.filter(
+            status__in=[
+                SalesDocument.Status.CONFIRMED,
+                SalesDocument.Status.SENT,
+                SalesDocument.Status.OVERDUE,
+            ],
+        ).with_aging()
+        ar_aging_map = {
+            row["aging_bucket_db"]: float(row["t"] or 0)
+            for row in _unpaid.values("aging_bucket_db").annotate(t=Sum("signed_total"))
+        }
+        chart_ar_aging = [ar_aging_map.get(k, 0.0) for k in _AGING_KEYS]
 
-        top_customers = list(
-            _inv.filter(issue_date__gte=six_months_ago, status__in=_inv_status_filter)
-            .values("customer__id", "customer__name")
-            .annotate(total=Sum("signed_total"))
-            .order_by("-total")[:6]
+        # AP aging via a single grouped aggregate (mirrors AR with_aging above)
+        _ap_unpaid = PurchaseDocument.supplier_invoices.filter(
+            organization=org,
+            deleted_at__isnull=True,
+            status=PurchaseDocument.Status.CONFIRMED,
+            due_date__isnull=False,
+        ).annotate(
+            aging_bucket_db=Case(
+                When(due_date__gte=today, then=Value("current")),
+                When(due_date__gte=today - timedelta(days=30), then=Value("1_30")),
+                When(due_date__gte=today - timedelta(days=60), then=Value("31_60")),
+                When(due_date__gte=today - timedelta(days=90), then=Value("61_90")),
+                default=Value("90_plus"),
+                output_field=CharField(max_length=10),
+            )
+        )
+        ap_aging_map = {
+            row["aging_bucket_db"]: (row["t"] or _zero)
+            for row in _ap_unpaid.values("aging_bucket_db").annotate(t=Sum("total"))
+        }
+        ap_outstanding = sum(ap_aging_map.values(), _zero)
+        chart_ap_aging = [float(ap_aging_map.get(k, _zero)) for k in _AGING_KEYS]
+        ap_overdue = float(
+            sum(
+                (ap_aging_map.get(k, _zero) for k in ("1_30", "31_60", "61_90", "90_plus")),
+                _zero,
+            )
         )
 
-        if top_customers:
-            top_ids = [c["customer__id"] for c in top_customers]
+        net_position = outstanding - ap_outstanding
 
-            cust_monthly = (
-                _inv.filter(
-                    issue_date__gte=six_months_ago,
-                    status__in=_inv_status_filter,
-                    customer__id__in=top_ids,
-                )
-                .annotate(month=TruncMonth("issue_date"))
-                .values("customer__id", "month")
-                .annotate(total=Sum("signed_total"))
-            )
+        month_purchased = (
+            PurchaseDocument.supplier_invoices.filter(
+                organization=org,
+                deleted_at__isnull=True,
+                issue_date__gte=month_start,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            ).aggregate(t=Sum("total"))["t"] or _zero
+        )
 
-            cust_data = {cid: {} for cid in top_ids}
-            for row in cust_monthly:
-                cust_data[row["customer__id"]][row["month"]] = float(row["total"])
+        month_supplier_paid = (
+            SupplierPayment.objects.for_org(org)
+            .filter(date__gte=month_start)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
 
-            chart_customer_datasets = [
-                {
-                    "label": c["customer__name"],
-                    "data": [cust_data[c["customer__id"]].get(m, 0.0) for m in months_list],
-                    "backgroundColor": _CUSTOMER_COLORS[i % len(_CUSTOMER_COLORS)],
-                    "borderRadius": 3,
-                }
-                for i, c in enumerate(top_customers)
-            ]
+        pending_purchase_orders = PurchaseDocument.purchase_orders.filter(
+            organization=org,
+            status__in=[
+                PurchaseDocument.Status.DRAFT,
+                PurchaseDocument.Status.CONFIRMED,
+            ],
+        ).count()
+
+        # ── Open-invoice counts (for cash band sub-captions) ──
+        ar_open_count = SalesDocument.invoices.filter(
+            organization=org, deleted_at__isnull=True,
+            status__in=[SalesDocument.Status.SENT, SalesDocument.Status.OVERDUE],
+        ).count()
+
+        ap_open_count = PurchaseDocument.supplier_invoices.filter(
+            organization=org, deleted_at__isnull=True,
+            status__in=[PurchaseDocument.Status.CONFIRMED],
+        ).count()
+
+        # ── Previous-month flow figures (for MoM deltas) ──
+        if month_start.month == 1:
+            prev_start = month_start.replace(year=month_start.year - 1, month=12)
         else:
-            chart_customer_datasets = []
+            prev_start = month_start.replace(month=month_start.month - 1)
+        prev_end = month_start
+
+        prev_invoiced = (
+            _inv.filter(
+                issue_date__gte=prev_start, issue_date__lt=prev_end,
+                status__in=[
+                    SalesDocument.Status.CONFIRMED,
+                    SalesDocument.Status.SENT,
+                    SalesDocument.Status.PAID,
+                    SalesDocument.Status.OVERDUE,
+                ],
+            ).aggregate(t=Sum("signed_total"))["t"] or _zero
+        )
+
+        prev_collected = (
+            Payment.objects.for_org(org)
+            .filter(date__gte=prev_start, date__lt=prev_end)
+            .aggregate(t=Sum("amount"))["t"] or _zero
+        )
+
+        prev_purchased = (
+            PurchaseDocument.supplier_invoices.filter(
+                organization=org, deleted_at__isnull=True,
+                issue_date__gte=prev_start, issue_date__lt=prev_end,
+                status__in=[
+                    PurchaseDocument.Status.CONFIRMED,
+                    PurchaseDocument.Status.PAID,
+                ],
+            ).aggregate(t=Sum("total"))["t"] or _zero
+        )
 
         computed = {
             "month_invoiced": month_invoiced,
@@ -368,17 +479,102 @@ class DashboardView(ERPBaseViewMixin, TemplateView):
             "pending_quotations": pending_quotations,
             "pending_sale_orders": pending_sale_orders,
             "overdue_count": overdue_count,
+            "ap_outstanding": ap_outstanding,
+            "ap_overdue": ap_overdue,
+            "net_position": net_position,
+            "month_purchased": month_purchased,
+            "month_supplier_paid": month_supplier_paid,
+            "pending_purchase_orders": pending_purchase_orders,
             "chart_months": chart_months,
             "chart_invoiced": chart_invoiced,
             "chart_collected": chart_collected,
+            "chart_purchased": chart_purchased,
             "chart_status_labels": chart_status_labels,
             "chart_status_counts": chart_status_counts,
             "chart_status_colors": chart_status_colors,
-            "chart_customer_datasets": chart_customer_datasets,
+            "chart_aging_labels": chart_aging_labels,
+            "chart_ar_aging": chart_ar_aging,
+            "chart_ap_aging": chart_ap_aging,
+            "ar_open_count": ar_open_count,
+            "ap_open_count": ap_open_count,
+            "prev_invoiced": prev_invoiced,
+            "prev_collected": prev_collected,
+            "prev_purchased": prev_purchased,
         }
         cache.set(_cache_key, computed, timeout=900)
         ctx.update(computed)
+        self._build_dashboard_context(ctx)
         return ctx
+
+    @staticmethod
+    def _build_dashboard_context(ctx):
+        """Package cached primitives into the 3-tier dashboard structures.
+        Built per-request so the cache stores only primitives (no pickled
+        translations / URLs)."""
+
+        def money0(v):
+            return "{:,.0f}".format(v or 0)
+
+        def delta(curr, prev):
+            """Return ('8.4%', up_bool) or (None, True) when prev is 0/None."""
+            curr = curr or 0
+            prev = prev or 0
+            if not prev:
+                return None, True
+            pct = (curr - prev) / prev * 100
+            return f"{abs(pct):.1f}%", pct >= 0
+
+        has_purchasing = ctx.get("has_purchasing_access")
+
+        # ── Tier 1 · cash band scalars ──
+        net = ctx.get("net_position") or 0
+        ctx["net_position_delta"] = None
+        ctx["net_position_up"] = net >= 0
+        ctx["ar_outstanding"] = ctx.get("outstanding")
+
+        # ── Tier 2 · flow stats ──
+        di, di_up = delta(ctx.get("month_invoiced"), ctx.get("prev_invoiced"))
+        dc, dc_up = delta(ctx.get("month_collected"), ctx.get("prev_collected"))
+        flow = [
+            {"label": _("Facturado"), "value": ctx.get("month_invoiced"),
+             "delta": di, "delta_up": di_up,
+             "foot": _("vs. RD$ %(p)s el mes pasado") % {"p": money0(ctx.get("prev_invoiced"))}},
+            {"label": _("Cobrado"), "value": ctx.get("month_collected"),
+             "delta": dc, "delta_up": dc_up,
+             "foot": _("%(p)s%% de lo facturado") % {
+                 "p": int((ctx.get("month_collected") or 0) /
+                          (ctx.get("month_invoiced") or 1) * 100)}},
+        ]
+        if has_purchasing:
+            dp, dp_up = delta(ctx.get("month_purchased"), ctx.get("prev_purchased"))
+            flow.append({"label": _("Comprado"), "value": ctx.get("month_purchased"),
+                         "delta": dp, "delta_up": dp_up,
+                         "foot": _("vs. RD$ %(p)s el mes pasado") % {"p": money0(ctx.get("prev_purchased"))}})
+        ctx["flow_stats"] = flow
+
+        # ── Tier 3 · worklist chips ──
+        work = [
+            {"label": _("Cotizaciones activas"), "icon": "bi-file-earmark-text",
+             "count": ctx.get("pending_quotations") or 0,
+             "href": reverse("sales:quotation_list")},
+            {"label": _("Órdenes de venta"), "icon": "bi-cart",
+             "count": ctx.get("pending_sale_orders") or 0,
+             "href": reverse("sales:sale_order_list")},
+        ]
+        if has_purchasing:
+            work.append({"label": _("Órdenes de compra"), "icon": "bi-clipboard-check",
+                         "count": ctx.get("pending_purchase_orders") or 0,
+                         "href": reverse("purchases:po_list")})
+            if ctx.get("ap_overdue"):
+                work.append({"label": _("Vencido proveedores"), "icon": "bi-exclamation-triangle",
+                             "count": "RD$" + money0(ctx.get("ap_overdue")),
+                             "href": reverse("purchases:supplier_invoice_list"),
+                             "risk": True})
+        else:
+            work.append({"label": _("Clientes"), "icon": "bi-people",
+                         "count": ctx.get("customer_count") or 0,
+                         "href": reverse("sales:customer_list")})
+        ctx["worklist"] = work
 
 
 class ProfileView(ERPBaseViewMixin, UpdateView):

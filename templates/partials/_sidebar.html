@@ -86,8 +86,8 @@
         </a>
       </li>
       <li>
-        <a href="{% url 'sales:reports' %}"
-           class="sidebar-nav-link {% nav_active 'sales:reports' 'sales:report_607' 'sales:report_608' 'sales:report_aging' 'sales:report_statement' 'sales:report_sales_period' 'sales:report_invoices_by_customer' 'sales:report_collections' 'sales:report_itbis' 'sales:report_ncf_type' %}">
+        <a href="{% url 'core:reports' %}"
+           class="sidebar-nav-link {% nav_active 'core:reports' 'sales:reports' 'sales:report_607' 'sales:report_608' 'sales:report_aging' 'sales:report_statement' 'sales:report_sales_period' 'sales:report_invoices_by_customer' 'sales:report_collections' 'sales:report_itbis' 'sales:report_ncf_type' %}">
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span>{% trans "Reportes" %}</span>
         </a>
@@ -131,8 +131,8 @@
       </li>
       {% if membership.is_admin %}
       <li>
-        <a href="{% url 'purchases:reports' %}"
-           class="sidebar-nav-link {% nav_active 'purchases:reports' 'purchases:report_606' 'purchases:report_aging' 'purchases:report_statement' 'purchases:report_spend_period' 'purchases:report_by_supplier' 'purchases:report_payments' 'purchases:report_itbis' %}">
+        <a href="{% url 'core:reports' %}"
+           class="sidebar-nav-link {% nav_active 'core:reports' 'purchases:reports' 'purchases:report_606' 'purchases:report_aging' 'purchases:report_statement' 'purchases:report_spend_period' 'purchases:report_by_supplier' 'purchases:report_payments' 'purchases:report_itbis' %}">
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span>{% trans "Reportes" %}</span>
         </a>
@@ -140,23 +140,6 @@
       {% endif %}
     </ul>
     {% endif %}
-
-    {# ── Coming soon modules (greyed out placeholders) ───────── #}
-    <div class="sidebar-section-label">{% trans "Próximamente" %}</div>
-    <ul class="sidebar-nav">
-      <li>
-        <span class="sidebar-nav-link sidebar-nav-link--disabled">
-          <i class="bi bi-boxes"></i>
-          <span>{% trans "Inventario" %}</span>
-        </span>
-      </li>
-      <li>
-        <span class="sidebar-nav-link sidebar-nav-link--disabled">
-          <i class="bi bi-person-vcard-fill"></i>
-          <span>{% trans "Recursos Humanos" %}</span>
-        </span>
-      </li>
-    </ul>
 
     {# ── Organización (admin only) ──────────────────────────── #}
     {% if membership.is_admin %}
@@ -212,4 +195,8 @@
 </aside>
 
 {# Mobile backdrop — clicking it closes the sidebar #}
-<div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+<button id="sidebar-backdrop"
+        type="button"
+        onclick="toggleSidebar()"
+        aria-label="{% trans 'Cerrar menú' %}"
+        tabindex="-1"></button>

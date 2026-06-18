@@ -23,7 +23,13 @@
             <h6 class="picker-title mb-0" id="customerPickerModalLabel">
               {% trans "Seleccionar cliente" %}
             </h6>
-            <p class="picker-sub">{% trans "Elige un cliente existente o crea uno nuevo." %}</p>
+            <p class="picker-sub">
+              {% if customer_picker_allow_create == False %}
+                {% trans "Elige un cliente existente." %}
+              {% else %}
+                {% trans "Elige un cliente existente o crea uno nuevo." %}
+              {% endif %}
+            </p>
           </div>
           {% if customer_count %}
           <span class="picker-count me-2">
@@ -42,7 +48,7 @@
                    class="picker-search-input"
                    placeholder="{% trans 'Nombre, RNC o cédula…' %}"
                    autocomplete="off"
-                   hx-get="{% url 'sales:customer_search' %}"
+                   hx-get="{% url 'sales:customer_search' %}{% if customer_picker_allow_create == False %}?allow_create=0{% endif %}"
                    hx-trigger="input changed delay:300ms, load"
                    hx-target="#customer-picker-tbody"
                    name="q">
@@ -77,16 +83,19 @@
             <button type="button" class="picker-btn-ghost" data-bs-dismiss="modal">
               {% trans "Cancelar" %}
             </button>
-            <button type="button" class="btn btn-sm btn-brand"
-                    onclick="customerPickerShowCreate()">
-              <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
-            </button>
+            {% if customer_picker_allow_create != False %}
+              <button type="button" class="btn btn-sm btn-brand"
+                      onclick="customerPickerShowCreate()">
+                <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo cliente" %}
+              </button>
+            {% endif %}
           </div>
         </div>
 
       </div>{# end search panel #}
 
       {# ── Quick-create panel ── #}
+      {% if customer_picker_allow_create != False %}
       <div id="customer-picker-create-panel" class="d-none">
 
         <div class="picker-head d-flex align-items-start">
@@ -112,15 +121,13 @@
                 <select class="form-select form-select-sm" id="qc-id-type">
                   <option value="RNC">RNC</option>
                   <option value="CED">{% trans "Cédula" %}</option>
-                  <option value="PAS">{% trans "Pasaporte" %}</option>
-                  <option value="EXT">{% trans "Ext." %}</option>
                 </select>
                 <div class="invalid-feedback d-block" id="qc-id-type-error"></div>
               </div>
               <div class="col-12 col-sm-7">
                 <label class="form-label fw-semibold" for="qc-rnc">{% trans "RNC / Cédula" %} <span class="text-danger">*</span></label>
                 <input type="text" class="form-control form-control-sm" id="qc-rnc"
-                       placeholder="{% trans '9 dígitos (RNC)…' %}">
+                       placeholder="{% trans '9 dígitos (RNC) · 11 (Cédula)' %}">
                 <div class="invalid-feedback d-block" id="qc-rnc-error"></div>
               </div>
             </div>
@@ -147,6 +154,7 @@
         </div>
 
       </div>{# end create panel #}
+      {% endif %}
 
     </div>
   </div>

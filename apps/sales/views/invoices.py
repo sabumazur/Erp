@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,6 +25,7 @@ from ..forms import (
 from ..models import SalesDocument, SalesDocumentItem, NCFSequence, Payment
 from ..email import send_invoice_email, _signature_url
 from ..services import NCFService, PaymentService
+from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
@@ -56,26 +58,25 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         org = self.request.organization
-        qs = SalesDocument.invoices.filter(organization=org).select_related("customer")
+        # Fix Q1: .only() avoids fetching wide columns (xml_content, notes,
+        # terms, dgii_track_id, etc.) that are not rendered in the list row.
+        # ncf_type is required by with_signed_totals(); doc_type/encf by
+        # display_number; customer_id by select_related join.
+        qs = (
+            SalesDocument.invoices.filter(organization=org)
+            .select_related("customer")
+            .only(
+                "id", "encf", "doc_number", "doc_type", "ncf_type",
+                "issue_date", "due_date", "total", "status", "customer_id",
+            )
+        )
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["encf"])
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         org_qs = SalesDocument.invoices.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "SENT",      "label": _("Enviada"),    "color": "#06b6d4",
-             "count": org_qs.filter(status="SENT").count()},
-            {"value": "OVERDUE",   "label": _("Vencida"),    "color": "#ef4444",
-             "count": org_qs.filter(status="OVERDUE").count()},
-            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981",
-             "count": org_qs.filter(status="PAID").count()},
-        ]
-        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
+        ctx.update(self.apply_datatable(f.qs))
 
         if not self.request.htmx:
             today = date.today()
@@ -87,12 +88,12 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                  "icon": "bi-receipt", "color": "primary"},
                 {"label": _("Facturado este mes"),
                  "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "success"},
+                 "icon": "bi-cash-stack", "color": "success", "currency": "RD$"},
                 {"label": _("Por cobrar"),
                  "value": "{:,.2f}".format(
                      org_qs.filter(status__in=["CONFIRMED", "SENT", "OVERDUE"])
                      .aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-hourglass-split", "color": "warning"},
+                 "icon": "bi-hourglass-split", "color": "warning", "currency": "RD$"},
                 {"label": _("Vencidas"), "value": org_qs.filter(status="OVERDUE").count(),
                  "icon": "bi-exclamation-circle", "color": "danger"},
             ]
@@ -159,12 +160,14 @@ class InvoiceCreateView(ERPBaseViewMixin, TemplateView):
         form = InvoiceForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            invoice = form.save(commit=False)
-            invoice.organization = request.organization
-            invoice.doc_type = SalesDocument.DocType.INVOICE
-            invoice.save()
-            formset.instance = invoice
-            formset.save()
+            with transaction.atomic():
+                invoice = form.save(commit=False)
+                invoice.organization = request.organization
+                invoice.doc_type = SalesDocument.DocType.INVOICE
+                invoice.save()
+                formset.instance = invoice
+                with suspend_recompute(invoice):
+                    formset.save()
             messages.success(request, _("Factura creada como borrador."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data()
@@ -206,8 +209,10 @@ class InvoiceUpdateView(ERPBaseViewMixin, TemplateView):
         form = InvoiceForm(organization=request.organization, data=request.POST, instance=invoice)
         formset = InvoiceItemFormSet(request.POST, instance=invoice, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            form.save()
-            formset.save()
+            with transaction.atomic():
+                form.save()
+                with suspend_recompute(invoice):
+                    formset.save()
             messages.success(request, _("Factura actualizada."))
             return redirect("sales:invoice_detail", pk=invoice.pk)
         ctx = self.get_context_data(form=form, formset=formset, invoice=invoice)
@@ -370,10 +375,12 @@ class CreditNoteCreateView(ERPBaseViewMixin, TemplateView):
         form = CreditNoteForm(request.POST, instance=note)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            note = form.save(commit=False)
-            note.save()
-            formset.instance = note
-            formset.save()
+            with transaction.atomic():
+                note = form.save(commit=False)
+                note.save()
+                formset.instance = note
+                with suspend_recompute(note):
+                    formset.save()
             messages.success(request, _("Nota de Crédito/Débito creada como borrador."))
             return redirect("sales:invoice_detail", pk=note.pk)
         ctx = self.get_context_data(form=form, formset=formset, original=original)
@@ -406,7 +413,7 @@ class InvoicePDFView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            SalesDocument.objects.select_related("customer", "organization"),
+            SalesDocument.objects.select_related("customer", "organization").prefetch_related("items"),
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         if invoice.status == SalesDocument.Status.DRAFT:
@@ -445,7 +452,7 @@ class InvoicePrintView(ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         invoice = get_object_or_404(
-            SalesDocument.objects.select_related("customer", "organization"),
+            SalesDocument.objects.select_related("customer", "organization").prefetch_related("items"),
             pk=pk, organization=request.organization, doc_type=SalesDocument.DocType.INVOICE,
         )
         return render(
@@ -553,6 +560,12 @@ class NCFSequenceDeleteView(ERPBaseViewMixin, View):
     def post(self, request, pk):
         seq = get_object_or_404(NCFSequence, pk=pk, organization=request.organization)
         label = seq.get_ncf_type_display()
+        if seq.current_seq > 0:
+            messages.error(
+                request,
+                _(f"No se puede eliminar la secuencia «{label}» porque ya tiene NCF emitidos."),
+            )
+            return redirect("sales:ncf_sequences")
         try:
             seq.delete()
         except ValidationError as exc:

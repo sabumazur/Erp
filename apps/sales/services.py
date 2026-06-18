@@ -14,11 +14,12 @@ from django.utils.translation import gettext_lazy as _
 
 from decimal import Decimal as _Decimal
 
-from django.db.models import Sum as _Sum
+from django.db.models import Exists as _Exists, OuterRef as _OuterRef, Sum as _Sum
 from django.db.models.functions import Coalesce as _Coalesce
 from django.db.models import DecimalField as _DecimalField
 
-from .models import DocumentSequence, SalesDocument, SalesDocumentItem, NCFSequence, Payment, PaymentAllocation
+from apps.core.models import DocumentSequence
+from .models import SalesDocument, SalesDocumentItem, NCFSequence, Payment, PaymentAllocation
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +184,8 @@ class QuotationService:
             )
 
         doc_number = DocumentSequence.generate(
-            quotation.organization, DocumentSequence.DocType.QUOTATION
+            quotation.organization, "QUOTATION",
+            defaults={"prefix": "COT", "include_year": True, "padding": 4},
         )
         quotation.doc_number = doc_number
         quotation.status = SalesDocument.Status.CONFIRMED
@@ -262,9 +264,12 @@ class QuotationService:
             status=SalesDocument.Status.DRAFT,
         )
 
-        # Copy line items
-        for item in quotation.items.all():
-            SalesDocumentItem.objects.create(
+        # REFACTOR SAL-003: bulk_create all line items in 1 INSERT instead of N.
+        # bulk_create bypasses the post_save signal, so recompute_totals() is
+        # called once explicitly. quotation.items is already prefetch_related
+        # by the caller (get_object_or_404 with prefetch_related("items")).
+        SalesDocumentItem.objects.bulk_create([
+            SalesDocumentItem(
                 document=invoice,
                 item=item.item,
                 description=item.description,
@@ -272,6 +277,9 @@ class QuotationService:
                 unit_price=item.unit_price,
                 itbis_rate=item.itbis_rate,
             )
+            for item in quotation.items.all()
+        ])
+        invoice.recompute_totals()
 
         # Mark quotation as converted
         quotation.status = SalesDocument.Status.CONVERTED
@@ -322,7 +330,8 @@ class SaleOrderService:
             )
 
         doc_number = DocumentSequence.generate(
-            order.organization, DocumentSequence.DocType.SALE_ORDER
+            order.organization, "SALE_ORDER",
+            defaults={"prefix": "OV", "include_year": True, "padding": 4},
         )
         order.doc_number = doc_number
         order.status = SalesDocument.Status.CONFIRMED
@@ -371,14 +380,16 @@ class SaleOrderService:
         department=None,
     ) -> SalesDocument:
         """
-        Consolidate all DELIVERED sale orders for a customer within a date range
+        Consolidate all DRAFT sale orders for a customer within a date range
         into a single new DRAFT Invoice.
 
-        Each sale order becomes one invoice line:
-          description = "Entrega {doc_number} – {delivery_date}"
-          quantity    = 1
-          unit_price  = order.subtotal  (pre-ITBIS)
-          itbis_rate  = dominant rate from the order's items (or EXEMPT if mixed)
+        One invoice line is created per unique catalog Item across all orders:
+          description = item.name
+          quantity    = sum of quantities for that item across all orders
+          unit_price  = item.unit_price  (from Item model)
+          itbis_rate  = item.itbis_rate  (from Item model)
+
+        Free-text lines (no linked Item) are skipped.
 
         If `department` is given, only orders assigned to that department are
         included. Pass None to include all departments.
@@ -386,7 +397,7 @@ class SaleOrderService:
         The new Invoice is returned in DRAFT status so the user can review it
         and then call NCFService.confirm() to assign the e-NCF.
 
-        Raises ValueError if no eligible orders are found.
+        Raises ValueError if no eligible orders are found or no catalog items exist.
         """
         if customer.organization_id != organization.pk:
             raise ValueError(_("El cliente no pertenece a esta organizacion."))
@@ -396,23 +407,27 @@ class SaleOrderService:
         ):
             raise ValueError(_("El departamento no pertenece al cliente y organizacion indicados."))
 
+        has_items = _Exists(
+            SalesDocumentItem.objects.filter(document=_OuterRef("pk"))
+        )
         qs = (
             SalesDocument.sale_orders
+            .select_for_update()
             .select_related("customer")
-            .prefetch_related("items")
             .filter(
                 organization=organization,
                 customer=customer,
-                status=SalesDocument.Status.DELIVERED,
+                status=SalesDocument.Status.DRAFT,
                 consolidated_into__isnull=True,
-                delivery_date__gte=period_start,
-                delivery_date__lte=period_end,
+                issue_date__gte=period_start,
+                issue_date__lte=period_end,
             )
+            .filter(has_items)
         )
         if department is not None:
             qs = qs.filter(department=department)
 
-        orders = list(qs.order_by("delivery_date", "doc_number"))
+        orders = list(qs.order_by("issue_date", "doc_number"))
 
         if not orders:
             scope = (
@@ -421,8 +436,22 @@ class SaleOrderService:
                 else _("para este cliente")
             )
             raise ValueError(
-                _("No hay órdenes de venta entregadas pendientes de facturar "
+                _("No hay órdenes de venta pendientes de facturar "
                   "%(scope)s en el período indicado.") % {"scope": scope}
+            )
+
+        # Aggregate quantities per catalog Item across all orders
+        item_agg = list(
+            SalesDocumentItem.objects
+            .filter(document__in=orders, item__isnull=False)
+            .values('item_id', 'item__name', 'item__unit_price', 'item__itbis_rate')
+            .annotate(total_qty=_Sum('quantity'))
+            .order_by('item__name')
+        )
+
+        if not item_agg:
+            raise ValueError(
+                _("Las órdenes seleccionadas no contienen artículos de catálogo para facturar.")
             )
 
         # Use the currency/exchange_rate of the first order (all should match)
@@ -445,22 +474,17 @@ class SaleOrderService:
             status=SalesDocument.Status.DRAFT,
         )
 
-        for order in orders:
-            # Determine the dominant ITBIS rate for this order's items
-            rates = [item.itbis_rate for item in order.items.all()]
-            dominant_rate = _dominant_itbis_rate(rates)
-
-            date_str = order.delivery_date.strftime("%d/%m/%Y") if order.delivery_date else ""
-            ref = order.doc_number or str(order.pk)[:8]
-
+        for row in item_agg:
             SalesDocumentItem.objects.create(
                 document=invoice,
-                description=f"Entrega {ref} – {date_str}",
-                quantity=1,
-                unit_price=order.subtotal,
-                itbis_rate=dominant_rate,
+                item_id=row['item_id'],
+                description=row['item__name'],
+                quantity=row['total_qty'],
+                unit_price=row['item__unit_price'],
+                itbis_rate=row['item__itbis_rate'],
             )
 
+        for order in orders:
             order.consolidated_into = invoice
             order.status = SalesDocument.Status.INVOICED
             order.save(update_fields=["consolidated_into", "status", "updated_at"])
@@ -648,6 +672,82 @@ class PaymentService:
                         "reopen skipped for invoice %s after deleting payment %s: %s",
                         inv_pk, payment.pk, exc,
                     )
+
+
+# ── CustomerService ───────────────────────────────────────────────────────────
+
+class CustomerService:
+    """Read-only account summary for the customer detail page."""
+
+    @staticmethod
+    def get_account_summary(customer, organization) -> dict:
+        """
+        Return balance, aging breakdown, and recent payments for a customer.
+
+        Keys returned match the template context in CustomerDetailView:
+          invoices, total_invoiced, total_paid, balance, overdue,
+          aging_breakdown, recent_payments, credit_available
+        """
+        from decimal import Decimal
+        from django.db.models import DecimalField, Sum
+        from django.db.models.functions import Coalesce
+        from .models import Payment  # avoid circular at module level
+
+        _zero = Decimal("0.00")
+        _dec_field = DecimalField(max_digits=14, decimal_places=2)
+
+        invoices = list(
+            SalesDocument.invoices.filter(organization=organization, customer=customer)
+            .exclude(status__in=[SalesDocument.Status.DRAFT, SalesDocument.Status.CANCELLED])
+            .with_signed_totals()
+            .annotate(
+                paid_amount=Coalesce(Sum("allocations__amount"), _zero, output_field=_dec_field)
+            )
+            .select_related("customer")
+            .order_by("-issue_date")
+        )
+
+        for inv in invoices:
+            inv.line_balance = inv.signed_total - inv.paid_amount
+
+        total_invoiced = sum((inv.signed_total for inv in invoices), _zero)
+        total_paid = sum((inv.paid_amount for inv in invoices), _zero)
+        balance = total_invoiced - total_paid
+        overdue = sum(
+            inv.line_balance for inv in invoices if inv.status == SalesDocument.Status.OVERDUE
+        )
+
+        _aging = {b: _zero for b in SalesDocument.AgingBucket.values}
+        for inv in invoices:
+            if inv.line_balance > _zero:
+                _aging[inv.aging_bucket] += inv.line_balance
+        aging_breakdown = [
+            {"label": SalesDocument.AgingBucket(b).label, "amount": _aging[b], "bucket": b}
+            for b in SalesDocument.AgingBucket.values
+        ]
+
+        recent_payments = list(
+            Payment.objects.filter(customer=customer, organization=organization)
+            .prefetch_related("allocations__invoice")
+            .order_by("-date", "-created_at")[:30]
+        )
+
+        credit_available = (
+            (customer.credit_limit - balance)
+            if customer.credit_limit is not None
+            else None
+        )
+
+        return {
+            "invoices": invoices,
+            "total_invoiced": total_invoiced,
+            "total_paid": total_paid,
+            "balance": balance,
+            "overdue": overdue,
+            "aging_breakdown": aging_breakdown,
+            "recent_payments": recent_payments,
+            "credit_available": credit_available,
+        }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

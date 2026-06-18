@@ -20,14 +20,22 @@
     modal.addEventListener("hidden.bs.modal", restore);
   }
 
-  function initItemModal() {
-    initTemplateModal("itemModal", "item-modal-body", "item-blank-tpl", "itemModalLabel", "itemCreateTitle", true);
-    document.body.addEventListener("htmx:afterSwap", function (e) {
-      if (e.detail.target && e.detail.target.id === "item-modal-body") {
-        var title = document.getElementById("itemModalLabel");
-        if (title) title.textContent = getConfig("itemEditTitle", title.textContent);
-        if (typeof Alpine !== "undefined") Alpine.initTree(e.detail.target);
-      }
+  var EDITABLE_MODALS = [
+    { modal: "itemModal",        body: "item-modal-body",         template: "item-blank-tpl",         titleId: "itemModalLabel",        createKey: "itemCreateTitle",        editKey: "itemEditTitle",        alpine: true  },
+    { modal: "moduleModal",      body: "module-modal-body",       template: "module-blank-tpl",       titleId: "moduleModalLabel",      createKey: "moduleCreateTitle",      editKey: "moduleEditTitle",      alpine: false },
+    { modal: "paymentTermModal", body: "payment-term-modal-body", template: "payment-term-blank-tpl", titleId: "paymentTermModalLabel", createKey: "paymentTermCreateTitle", editKey: "paymentTermEditTitle", alpine: false },
+  ];
+
+  function initEditableModals() {
+    EDITABLE_MODALS.forEach(function (m) {
+      initTemplateModal(m.modal, m.body, m.template, m.titleId, m.createKey, m.alpine);
+      document.body.addEventListener("htmx:afterSwap", function (e) {
+        if (e.detail.target && e.detail.target.id === m.body) {
+          var title = document.getElementById(m.titleId);
+          if (title && m.editKey) title.textContent = getConfig(m.editKey, title.textContent);
+          if (m.alpine && typeof Alpine !== "undefined") Alpine.initTree(e.detail.target);
+        }
+      });
     });
   }
 
@@ -130,26 +138,6 @@
     });
   }
 
-  function initModuleModal() {
-    initTemplateModal("moduleModal", "module-modal-body", "module-blank-tpl", "moduleModalLabel", "moduleCreateTitle", false);
-    document.body.addEventListener("htmx:afterSwap", function (e) {
-      if (e.detail.target && e.detail.target.id === "module-modal-body") {
-        var title = document.getElementById("moduleModalLabel");
-        if (title) title.textContent = getConfig("moduleEditTitle", title.textContent);
-      }
-    });
-  }
-
-  function initPaymentTermModal() {
-    initTemplateModal("paymentTermModal", "payment-term-modal-body", "payment-term-blank-tpl", "paymentTermModalLabel", "paymentTermCreateTitle", false);
-    document.body.addEventListener("htmx:afterSwap", function (e) {
-      if (e.detail.target && e.detail.target.id === "payment-term-modal-body") {
-        var title = document.getElementById("paymentTermModalLabel");
-        if (title) title.textContent = getConfig("paymentTermEditTitle", title.textContent);
-      }
-    });
-  }
-
   function initNcfModal() {
     initTemplateModal("ncfSequenceModal", "ncf-modal-body", "ncf-blank-tpl", "", "", false);
   }
@@ -183,27 +171,36 @@
   function initConsolidateForm() {
     var custSel = document.querySelector("#consolidate-form #id_customer");
     if (!custSel || !window.htmx) return;
+
+    // #id_department is a TomSelect: swapping <option>s into the hidden native
+    // <select> won't update the widget, so destroy it before the swap and
+    // re-init afterwards so the new departments are actually selectable.
+    function refreshDeptWidget(deptSel) {
+      if (window.SabSysTom && deptSel.parentNode) {
+        window.SabSysTom.init(deptSel.parentNode);
+      }
+    }
+
     custSel.addEventListener("change", function () {
       var pk = this.value;
       var deptSel = document.getElementById("id_department");
       if (!deptSel) return;
-      deptSel.value = "";
+      if (deptSel.tomselect) deptSel.tomselect.destroy();
       if (pk) {
         htmx.ajax("GET", (window.DEPARTMENTS_FOR_CUSTOMER_URL || "") + "?customer=" + encodeURIComponent(pk), {
           target: "#id_department",
           swap: "innerHTML",
-        });
+        }).then(function () { refreshDeptWidget(deptSel); });
       } else {
         deptSel.innerHTML = getConfig("allDepartmentsOption", '<option value="">-- Todos los departamentos --</option>');
+        refreshDeptWidget(deptSel);
       }
     });
   }
 
   window.confirmDeleteNCF = confirmDeleteNCF;
-  window.initItemModal = initItemModal;
+  window.initEditableModals = initEditableModals;
   window.initCustomerList = initCustomerList;
-  window.initModuleModal = initModuleModal;
-  window.initPaymentTermModal = initPaymentTermModal;
   window.initNcfModal = initNcfModal;
   window.initDeptModalClose = initDeptModalClose;
   window.initConsolidateForm = initConsolidateForm;

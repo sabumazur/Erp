@@ -29,7 +29,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         DTColumn("item_type",  _("Tipo"),     sortable=True),
         DTColumn("unit",       _("Unidad"),   sortable=False),
         DTColumn("unit_price", _("P. Venta"), sortable=True,  numeric=True),
-        DTColumn("cost_price", _("P. Costo"), sortable=True,  numeric=True, visible=False),
+        DTColumn("cost_price", _("P. Costo"), sortable=True,  numeric=True),
         DTColumn("itbis_rate", _("ITBIS"),    sortable=False),
         DTColumn("is_active",  _("Estado"),   sortable=True),
     ]
@@ -40,6 +40,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_filter_template = "items/partials/item_filters.html"
     dt_ribbon_template = "items/partials/item_ribbon.html"
     dt_search_placeholder = _("Nombre o código…")
+    dt_id = "items-v2"
 
     @classmethod
     def columns_for(cls, request):

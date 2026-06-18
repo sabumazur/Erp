@@ -7,10 +7,12 @@ from .views_modules import (
     ModuleToggleView,
     ModuleDeleteView,
 )
+from .views_reports import ReportCenterView
 
 app_name = "core"
 
 urlpatterns = [
+    path("reports/",                  ReportCenterView.as_view(), name="reports"),
     path("modules/",                  ModuleListView.as_view(),   name="module_list"),
     path("modules/<int:pk>/",         ModuleDetailView.as_view(), name="module_detail"),
     path("modules/<int:pk>/edit/",    ModuleUpdateView.as_view(), name="module_edit"),

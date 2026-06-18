@@ -3,16 +3,27 @@ Tests for invoice views — status transitions, permission guards, DGII rules.
 """
 import json
 from decimal import Decimal
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from django.core.cache import cache
+from django.template import Context, Template
 from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, TeamFactory, UserFactory, OrganizationFactory
 from apps.core.models import Module
 from apps.items.tests.factories import ItemFactory
-from apps.sales.forms import CustomerForm, InvoiceItemForm, SaleOrderForm
+from apps.sales.forms import (
+    CreditNoteForm,
+    CustomerForm,
+    InvoiceForm,
+    InvoiceItemForm,
+    PaymentHeaderForm,
+    QuotationForm,
+    SaleOrderForm,
+)
 from apps.sales.models import CustomerDepartment, SalesDocument
 from apps.sales.services import NCFService
 from apps.sales.tests.factories import (
@@ -38,6 +49,12 @@ def set_active_org(client, org):
     session = client.session
     session["active_org_slug"] = org.slug
     session.save()
+
+
+def render_crispy_form(form):
+    return Template("{% load crispy_forms_tags %}{% crispy form %}").render(
+        Context({"form": form})
+    )
 
 
 # ── Customer views ────────────────────────────────────────────────────────────
@@ -73,6 +90,24 @@ class TestCustomerViews:
         assert attrs["hx-include"] == "closest form"
         assert attrs["hx-target"] == "#rnc-lookup-result"
         assert attrs["hx-indicator"] == "#rnc-lookup-spinner"
+
+    def test_customer_form_id_type_choices_are_only_rnc_and_cedula(self):
+        form = CustomerForm()
+
+        assert list(form.fields["id_type"].choices) == [
+            ("RNC", "RNC"),
+            ("CED", "Cédula"),
+        ]
+
+    def test_customer_picker_quick_create_offers_only_rnc_and_cedula(self):
+        source = Path("templates/sales/partials/customer_picker_modal.html").read_text(
+            encoding="utf-8"
+        )
+
+        assert 'option value="RNC"' in source
+        assert 'option value="CED"' in source
+        assert 'option value="PAS"' not in source
+        assert 'option value="EXT"' not in source
 
     def test_edit_htmx_get_returns_full_page_not_partial(self, client):
         """After removing HTMX modal, an HTMX GET must return the full page (200)."""
@@ -486,6 +521,141 @@ class TestSaleOrderFormView:
         assert "hx-get" not in attrs
         assert "hx-target" not in attrs
 
+    def test_payment_header_customer_uses_picker_and_outstanding_invoice_htmx(self):
+        form = PaymentHeaderForm(organization=OrganizationFactory())
+
+        html = render_crispy_form(form)
+        attrs = form.fields["customer"].widget.attrs
+
+        assert attrs["id"] == "id_customer"
+        assert attrs["hx-get"] == reverse("sales:payment_outstanding_invoices")
+        assert attrs["hx-trigger"] == "change"
+        assert attrs["hx-target"] == "#allocation-tbody"
+        assert attrs["hx-swap"] == "innerHTML"
+        assert attrs["hx-include"] == "this"
+        assert 'type="hidden"' in html
+        assert 'id="customer-display-text"' in html
+        assert "openCustomerPicker()" in html
+        assert '<select name="customer"' not in html
+
+    @pytest.mark.parametrize(
+        ("form_cls", "expected"),
+        [
+            (
+                InvoiceForm,
+                [
+                    ("opt-terms-wrap", "Añadir términos"),
+                    ("opt-notes-wrap", "Añadir notas"),
+                ],
+            ),
+            (
+                QuotationForm,
+                [
+                    ("opt-terms-wrap", "Añadir términos"),
+                    ("opt-notes-wrap", "Añadir notas"),
+                ],
+            ),
+            (
+                SaleOrderForm,
+                [("opt-notes-wrap", "Añadir notas")],
+            ),
+            (
+                CreditNoteForm,
+                [
+                    ("opt-terms-wrap", "Añadir términos"),
+                    ("opt-notes-wrap", "Añadir notas"),
+                ],
+            ),
+            (
+                PaymentHeaderForm,
+                [("opt-notes-wrap", "Añadir notas")],
+            ),
+        ],
+    )
+    def test_document_optional_fields_render_as_header_chips(self, form_cls, expected):
+        kwargs = {}
+        if form_cls is not CreditNoteForm:
+            kwargs["organization"] = OrganizationFactory()
+        form = form_cls(**kwargs)
+
+        html = render_crispy_form(form)
+
+        assert html.count('id="opt-add-row"') == 1
+        assert html.count("doc-optfields") >= 1
+        for target, label in expected:
+            assert f'data-target="{target}"' in html
+            assert f'id="{target}"' in html
+            assert label in html
+
+    @pytest.mark.parametrize(
+        "template_path",
+        [
+            "templates/sales/invoice_form.html",
+            "templates/sales/sale_order_form.html",
+        ],
+    )
+    def test_sales_document_templates_remove_legacy_notes_accordion(self, template_path):
+        source = Path(template_path).read_text(encoding="utf-8")
+
+        assert "doc-notes-acc" not in source
+        assert "doc-bottom-grid mb-3" not in source
+        assert 'class="d-flex justify-content-end mb-3"' in source
+        assert 'class="doc-totals-card"' in source
+        assert 'style="width:360px"' not in source
+        for total_id in [
+            "grand-subtotal",
+            "grand-itbis18",
+            "grand-itbis16",
+            "grand-total",
+        ]:
+            assert total_id in source
+
+    def test_payment_form_template_loads_optional_fields_script(self):
+        source = Path("templates/sales/payment_form.html").read_text(encoding="utf-8")
+
+        assert "sales/partials/item_js.html" in source
+
+    def test_payment_form_template_uses_doc_chrome(self):
+        source = Path("templates/sales/payment_form.html").read_text(encoding="utf-8")
+
+        assert "kv-card" not in source
+        assert 'class="app-table-wrap doc-order-card mb-3"' in source
+        assert 'class="app-table-wrap doc-lines-card mb-3"' in source
+
+    def test_payment_create_uses_existing_customer_picker_without_quick_create(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        response = client.get(reverse("sales:payment_create"))
+        content = response.content.decode()
+
+        assert response.status_code == 200
+        assert 'id="customerPickerModal"' in content
+        assert 'id="customer-display-text"' in content
+        assert 'id="id_customer"' in content
+        assert 'allow_create=0' in content
+        assert '<select name="customer"' not in content
+        assert "CUSTOMER_QUICK_CREATE_URL" not in content
+        assert "Nuevo cliente" not in content
+        assert "Crear y seleccionar" not in content
+
+    def test_customer_picker_empty_state_hides_create_link_when_disabled(self, client):
+        user, org, _ = make_member(Membership.Role.ADMIN)
+        login(client, user)
+        set_active_org(client, org)
+
+        disabled = client.get(
+            reverse("sales:customer_search"),
+            {"q": "cliente-inexistente", "allow_create": "0"},
+        )
+        default = client.get(reverse("sales:customer_search"), {"q": "cliente-inexistente"})
+
+        assert disabled.status_code == 200
+        assert "No se encontraron clientes" in disabled.content.decode()
+        assert "Crear uno nuevo" not in disabled.content.decode()
+        assert "Crear uno nuevo" in default.content.decode()
+
     def test_department_options_are_scoped_to_selected_customer(self, client):
         user, org, _ = make_member()
         login(client, user)
@@ -523,6 +693,37 @@ class TestSaleOrderFormView:
         assert "Sucursal Sur" not in content
         assert "Sucursal Inactiva" not in content
 
+    def test_sale_order_department_field_is_disabled_without_customer_departments(self):
+        org = OrganizationFactory()
+        customer = CustomerFactory(organization=org)
+
+        blank_form = SaleOrderForm(organization=org)
+        customer_form = SaleOrderForm(data={"customer": customer.pk}, organization=org)
+
+        assert blank_form.fields["department"].widget.attrs["disabled"] == "disabled"
+        assert customer_form.fields["department"].widget.attrs["disabled"] == "disabled"
+
+    def test_sale_order_department_field_is_enabled_for_customer_with_departments(self):
+        org = OrganizationFactory()
+        customer = CustomerFactory(organization=org)
+        CustomerDepartment.objects.create(
+            organization=org,
+            customer=customer,
+            name="Sucursal Norte",
+            is_active=True,
+        )
+
+        form = SaleOrderForm(data={"customer": customer.pk}, organization=org)
+
+        assert "disabled" not in form.fields["department"].widget.attrs
+
+    def test_sale_order_template_disables_department_until_customer_has_options(self):
+        source = Path("templates/sales/sale_order_form.html").read_text(encoding="utf-8")
+
+        assert "setDepartmentDisabled(deptSel, true)" in source
+        assert "hasDepartmentOptions(deptSel)" in source
+        assert "setDepartmentDisabled(deptSel, !hasDepartmentOptions(deptSel))" in source
+
     @pytest.mark.parametrize("view_name", ["sale_order_create", "sale_order_edit"])
     def test_issue_date_change_updates_delivery_date_on_create_and_edit(self, client, view_name):
         user, org, _ = make_member()
@@ -545,10 +746,64 @@ class TestSaleOrderFormView:
         assert "deliveryInput.value = issueInput.value" in content
 
 
+# -- Sale order email view -----------------------------------------------------
+
+@pytest.mark.django_db
+class TestSaleOrderEmailView:
+
+    def _order(self, org, *, with_item, email="customer@example.com"):
+        customer = CustomerFactory(organization=org, email=email)
+        order = SalesDocumentFactory(
+            organization=org,
+            customer=customer,
+            doc_type=SalesDocument.DocType.SALE_ORDER,
+            status=SalesDocument.Status.DRAFT,
+        )
+        if with_item:
+            SalesDocumentItemFactory(document=order, unit_price=Decimal("1000.00"))
+            order.recompute_totals()
+            order.refresh_from_db()
+        return order
+
+    def test_email_empty_order_blocked(self, client, mailoutbox):
+        user, org, _ = make_member()
+        order = self._order(org, with_item=False)
+        login(client, user)
+        set_active_org(client, org)
+
+        resp = client.post(reverse("sales:sale_order_email", kwargs={"pk": order.pk}))
+
+        assert resp.status_code == 302
+        assert resp.url == reverse("sales:sale_order_detail", kwargs={"pk": order.pk})
+        assert len(mailoutbox) == 0
+
+    def test_email_draft_with_items_sends(self, client, mailoutbox):
+        user, org, _ = make_member()
+        order = self._order(org, with_item=True)
+        login(client, user)
+        set_active_org(client, org)
+
+        with patch("apps.sales.views.sale_orders.send_sale_order_email", return_value=True) as send:
+            resp = client.post(reverse("sales:sale_order_email", kwargs={"pk": order.pk}))
+
+        assert resp.status_code == 302
+        send.assert_called_once()
+
+
 # -- Report views --------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestReportViews:
+
+    def test_report_index_template_contains_scroll_overflow_guards(self):
+        source = Path("templates/core/reports.html").read_text(encoding="utf-8")
+
+        assert "#main-content { min-height: 0; overflow-x: hidden; }" in source
+        assert "scrollbar-gutter" not in source
+        assert "min-width: 0;" in source
+        assert ".rep-card-body {" in source
+        assert ".rep-grid {" in source
+        assert ".rep-export-field { min-width: 0; }" in source
 
     def test_report_607_returns_txt(self, client):
         user, org, _ = make_member()

@@ -1,0 +1,323 @@
+/* ============================================================
+   SabSys ERP — dashboard-cash.css
+   Dashboard KPI hierarchy: cash band (T1) · flow stats (T2) · worklist (T3).
+   Append to static/css/dashboard.css OR load as its own file after it.
+   Reuses existing :root tokens from components.css — defines NO new tokens.
+   ============================================================ */
+
+/* ── Tier 1 · Cash position band ─────────────────────────────── */
+.db-cash {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .05), 0 2px 14px rgba(16, 24, 40, .04);
+  overflow: hidden;
+}
+
+.db-cash-net {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 300px;
+  padding: 18px 22px;
+  border-left: 4px solid var(--brand-ink);
+}
+
+.db-cash-eyebrow {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-cash-value {
+  margin-top: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.01em;
+}
+
+.db-cash-value .cur {
+  margin-right: 4px;
+  color: var(--muted-2);
+  font-size: .9rem;
+  font-weight: 600;
+  vertical-align: .32em;
+}
+
+.db-cash-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.db-cash-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+}
+
+.db-cash-sides {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.db-cash-side {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 18px 20px;
+  border-left: 1px solid var(--hairline-soft);
+}
+
+.db-cash-side-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.db-cash-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.db-cash-dot.ar { background: var(--brand-accent); }
+.db-cash-dot.ap { background: var(--warn); }
+
+.db-cash-side-label {
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-cash-side-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #1f2433;
+}
+
+.db-cash-side-value .cur {
+  margin-right: 3px;
+  color: var(--muted-2);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+.db-cash-side-sub {
+  color: var(--muted-2);
+  font-size: .66rem;
+}
+
+.db-cash-risk {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 200px;
+  padding: 18px 22px;
+  background: #fdeceb;
+  border-left: 1px solid #f6d4d1;
+  text-decoration: none;
+  transition: background .14s ease;
+}
+
+a.db-cash-risk:hover { background: #fbe1df; }
+
+.db-cash-risk-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--neg);
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.db-cash-risk-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.34rem;
+  font-weight: 800;
+  color: var(--neg);
+}
+
+.db-cash-risk-value .cur {
+  margin-right: 3px;
+  font-size: .7rem;
+  font-weight: 600;
+  opacity: .8;
+}
+
+.db-cash-risk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--neg);
+  font-size: .68rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.db-cash-risk-link:hover { text-decoration: underline; }
+
+/* Stack the band on small screens */
+@media (max-width: 991.98px) {
+  .db-cash { flex-direction: column; }
+  .db-cash-net,
+  .db-cash-risk { min-width: 0; }
+  .db-cash-net { border-left: 4px solid var(--brand-ink); border-bottom: 1px solid var(--hairline-soft); }
+  .db-cash-risk { border-left: 0; border-top: 1px solid #f6d4d1; }
+}
+
+/* ── Tier 2 · Flow stats with month-over-month delta ─────────── */
+.db-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.db-flow {
+  padding: 13px 15px;
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.db-flow-label {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-flow-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.db-flow-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.34rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.db-flow-value .cur {
+  margin-right: 3px;
+  color: var(--muted-2);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+.db-flow-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: .74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.db-flow-delta.up { color: var(--pos); background: #eaf7ef; }
+.db-flow-delta.down { color: var(--neg); background: #fdeceb; }
+
+.db-flow-foot {
+  margin-top: 5px;
+  color: var(--muted-2);
+  font-size: .66rem;
+}
+
+@media (max-width: 767.98px) {
+  .db-flow-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Tier 3 · Worklist navigation chips ──────────────────────── */
+.db-work {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.db-work-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 13px 8px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2433;
+  text-decoration: none;
+  transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+
+.db-work-chip:hover {
+  border-color: #d7dde6;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, .07);
+  transform: translateY(-1px);
+  color: #1f2433;
+}
+
+.db-work-chip:focus-visible {
+  outline: 2px solid #86b7fe;
+  outline-offset: 2px;
+}
+
+.db-work-ic {
+  display: inline-flex;
+  color: var(--muted);
+  font-size: .92rem;
+}
+
+.db-work-txt {
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.db-work-count {
+  min-width: 20px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--hairline-soft);
+  color: var(--brand-ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: .74rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.db-work-chip.risk .db-work-ic { color: var(--neg); }
+.db-work-chip.risk .db-work-count { background: #fdeceb; color: var(--neg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .db-work-chip { transition: none; }
+  .db-work-chip:hover { transform: none; }
+}

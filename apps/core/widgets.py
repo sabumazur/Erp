@@ -1,53 +1,54 @@
 from django import forms
 
 
-# ── Flatpickr date/time widgets ───────────────────────────────────────────────
+# ── Native date/time widgets ──────────────────────────────────────────────────
+# Browser-native pickers (type=date/datetime-local/time) styled by Bootstrap's
+# .form-control. The value must be pre-formatted to match the input type.
 
 
-class FlatpickrDateInput(forms.DateInput):
+class DateInput(forms.DateInput):
+    input_type = "date"
+
     def __init__(self, attrs=None, format="%Y-%m-%d"):
         super().__init__(attrs=attrs, format=format)
 
     def build_attrs(self, base_attrs, extra_attrs=None):
         attrs = super().build_attrs(base_attrs, extra_attrs)
-        attrs["type"] = "text"
-        attrs["autocomplete"] = "off"
         cls = attrs.get("class", "")
-        for needed in ("form-control", "js-flatpickr-date"):
-            if needed not in cls:
-                cls = f"{cls} {needed}".strip()
+        if "form-control" not in cls:
+            cls = f"{cls} form-control".strip()
         attrs["class"] = cls
         return attrs
 
 
-class FlatpickrDateTimeInput(forms.DateTimeInput):
-    def __init__(self, attrs=None, format="%Y-%m-%d %H:%M"):
+class DateTimeInput(forms.DateTimeInput):
+    # datetime-local needs the "T" separator; fields reusing this widget must set
+    # input_formats=["%Y-%m-%dT%H:%M"] so Django parses the posted value.
+    input_type = "datetime-local"
+
+    def __init__(self, attrs=None, format="%Y-%m-%dT%H:%M"):
         super().__init__(attrs=attrs, format=format)
 
     def build_attrs(self, base_attrs, extra_attrs=None):
         attrs = super().build_attrs(base_attrs, extra_attrs)
-        attrs["type"] = "text"
-        attrs["autocomplete"] = "off"
         cls = attrs.get("class", "")
-        for needed in ("form-control", "js-flatpickr-datetime"):
-            if needed not in cls:
-                cls = f"{cls} {needed}".strip()
+        if "form-control" not in cls:
+            cls = f"{cls} form-control".strip()
         attrs["class"] = cls
         return attrs
 
 
-class FlatpickrTimeInput(forms.TimeInput):
+class TimeInput(forms.TimeInput):
+    input_type = "time"
+
     def __init__(self, attrs=None, format="%H:%M"):
         super().__init__(attrs=attrs, format=format)
 
     def build_attrs(self, base_attrs, extra_attrs=None):
         attrs = super().build_attrs(base_attrs, extra_attrs)
-        attrs["type"] = "text"
-        attrs["autocomplete"] = "off"
         cls = attrs.get("class", "")
-        for needed in ("form-control", "js-flatpickr-time"):
-            if needed not in cls:
-                cls = f"{cls} {needed}".strip()
+        if "form-control" not in cls:
+            cls = f"{cls} form-control".strip()
         attrs["class"] = cls
         return attrs
 

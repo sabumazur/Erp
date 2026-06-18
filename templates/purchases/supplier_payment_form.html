@@ -11,20 +11,25 @@
     <p class="app-header-sub">{% trans "Pagos a Proveedores" %}</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-    </a>
+    <button type="submit" form="payment-form" class="btn btn-sm btn-brand" id="submit-btn" disabled>
+      <i class="bi bi-check-circle me-1"></i>{% trans "Registrar pago" %}
+    </button>
+    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 
 <form method="post" id="payment-form">
   {% csrf_token %}
 
-  <div class="app-table-wrap mb-3">
-    <div class="app-card-head">
-      {% trans "Datos del pago" %}
+  {# ── Card 1 · Datos del pago ──────────────────────────────────────────── #}
+  <div class="app-table-wrap doc-order-card mb-3">
+    <div class="app-card-head doc-order-card-head">
+      <span class="doc-order-card-title">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        {% trans "Datos del pago" %}
+      </span>
     </div>
-    <div class="p-3">
+    <div class="doc-order-card-body">
       {% if form.non_field_errors %}
         <div class="alert alert-danger py-2">
           {% for err in form.non_field_errors %}{{ err }}{% endfor %}
@@ -34,9 +39,10 @@
     </div>
   </div>
 
-  <div class="app-table-wrap mb-3">
-    <div class="app-card-head app-card-head--row">
-      <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280">{% trans "Facturas a cubrir" %}</span>
+  {# ── Card 2 · Facturas a cubrir ───────────────────────────────────────── #}
+  <div class="app-table-wrap doc-lines-card mb-3">
+    <div class="app-card-head doc-lines-head">
+      <span class="doc-lines-title">{% trans "Facturas a cubrir" %}</span>
       <span class="small text-muted">{% trans "Seleccione un proveedor para ver sus facturas pendientes." %}</span>
     </div>
     <div class="table-responsive">
@@ -74,18 +80,10 @@
     </div>
   </div>
 
-  <div class="form-sticky-bar">
-    <button type="submit" class="btn btn-sm btn-brand" id="submit-btn" disabled
-           >
-      <i class="bi bi-check-circle me-1"></i>{% trans "Registrar pago" %}
-    </button>
-    <a href="{% url 'purchases:supplier_payment_list' %}" class="btn btn-outline-secondary btn-sm">
-      {% trans "Cancelar" %}
-    </a>
-  </div>
 </form>
 
 {% include "purchases/partials/supplier_picker_modal.html" %}
+{% include "sales/partials/item_js.html" %}
 
 <script>
 window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}";
@@ -125,4 +123,13 @@ window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}"
 })();
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
+<script src="{% static 'js/payment-form.js' %}"></script>
+<script src="{% static 'js/picker-base.js' %}"></script>
+<script src="{% static 'js/supplier-picker.js' %}"></script>
 {% endblock %}

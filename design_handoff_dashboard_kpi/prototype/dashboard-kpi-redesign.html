@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard KPI — Antes / Después</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  /* ── SabSys design tokens (from components.css :root) ── */
+  :root{
+    --brand-ink:#1e2130; --brand-ink-2:#2a3050; --brand-accent:#3f6fd6; --brand-soft:#eef3fc;
+    --pos:#16a34a; --neg:#b42318; --warn:#d97706;
+    --muted:#6b7280; --muted-2:#9ca3af; --hairline:#e5e7eb; --hairline-soft:#eef0f6;
+  }
+  body{ font-family:'Manrope',system-ui,-apple-system,sans-serif; }
+  .font-mono{ font-family:'IBM Plex Mono','Courier New',monospace; font-feature-settings:"tnum"; }
+
+  /* ── The dashboard "page" inside each artboard ── */
+  .db-page{ padding:22px 24px; background:#f6f7f9; min-height:100%; box-sizing:border-box; }
+  .db-app-header{ display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:14px; border-bottom:2px solid var(--brand-ink); margin-bottom:16px; }
+  .db-app-title{ font-size:1.32rem; font-weight:800; color:#111827; letter-spacing:-.01em; margin:0; }
+  .db-app-sub{ font-size:.78rem; color:var(--muted); margin:3px 0 0; }
+  .db-app-pill{ font-size:.72rem; color:var(--muted); border:1px solid var(--hairline); background:#fff; border-radius:7px; padding:5px 9px; white-space:nowrap; }
+
+  /* ── Section header (from dashboard.css) ── */
+  .db-section{ display:flex; align-items:center; gap:10px; margin:14px 0 8px; }
+  .db-section-label{ color:var(--muted); font-size:.66rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  .db-section-rule{ flex:1 1 auto; height:1px; background:var(--hairline); }
+  .db-section-note{ color:var(--muted-2); font-size:.68rem; white-space:nowrap; }
+
+  /* ── KPI card (verbatim from components.css) ── */
+  .db-kpi{ display:flex; align-items:center; gap:12px; min-height:74px; padding:12px 14px;
+    border:1px solid var(--hairline); border-left:3px solid #9ca3af; border-radius:8px; background:#fff;
+    box-shadow:0 1px 3px rgba(16,24,40,.05),0 2px 12px rgba(16,24,40,.03); }
+  .db-kpi-icon{ display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:38px; height:38px;
+    border-radius:8px; background:#f3f4f6; color:#6b7280; font-size:1.05rem; }
+  .db-kpi-body{ min-width:0; }
+  .db-kpi-value{ color:#111827; font-family:'IBM Plex Mono','Courier New',monospace; font-feature-settings:"tnum";
+    font-size:1.12rem; font-weight:700; line-height:1.15; }
+  .db-kpi-cur{ margin-right:2px; color:#9ca3af; font-size:.72rem; font-weight:600; }
+  .db-kpi-label{ margin-top:4px; color:#6b7280; font-size:.64rem; font-weight:800; letter-spacing:.05em; line-height:1.2; text-transform:uppercase; }
+  .db-kpi.is-ar{ border-left-color:#3f6fd6; } .db-kpi.is-ar .db-kpi-icon{ background:#eef3fc; color:#3f6fd6; }
+  .db-kpi.is-ap{ border-left-color:#d97706; } .db-kpi.is-ap .db-kpi-icon{ background:#fdf3e7; color:#d97706; }
+  .db-kpi.is-neg{ border-left-color:#b42318; } .db-kpi.is-neg .db-kpi-icon{ background:#fdeceb; color:#b42318; }
+  .db-kpi.is-pos{ border-left-color:#16a34a; } .db-kpi.is-pos .db-kpi-icon{ background:#eaf7ef; color:#16a34a; }
+  .db-kpi.is-net{ border-left-color:#1e2130; } .db-kpi.is-net .db-kpi-icon{ background:#eef0f6; color:#1e2130; }
+  .num-pos{ color:var(--pos)!important; } .num-neg{ color:var(--neg)!important; font-weight:600; }
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+
+  /* ── Panels + tables (from dashboard.css / components.css) ── */
+  .db-panel{ overflow:hidden; border:1px solid var(--hairline); border-radius:8px; background:#fff; box-shadow:0 1px 3px rgba(16,24,40,.045); height:100%; box-sizing:border-box; }
+  .db-panel-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px 9px; border-bottom:1px solid var(--hairline); background:#fbfcfe; }
+  .db-panel-title{ color:var(--muted); font-size:.7rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+  .db-panel-title .num{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; color:#111827; font-size:.92rem; margin-left:8px; letter-spacing:0; }
+  .db-panel-title .num .cur{ color:var(--muted-2); font-size:.66rem; }
+  .db-panel-sub{ padding:2px 8px; border-radius:999px; background:#f1f5f9; color:#9ca3af; font-size:.68rem; }
+  .db-panel-body{ padding:14px; }
+  .chart-box{ position:relative; }
+  .db-doc-link{ color:#1e2130; font-family:'IBM Plex Mono',monospace; font-size:.8rem; font-weight:700; text-decoration:none; }
+  .db-doc-link:hover{ color:#3f6fd6; }
+  .db-doc-link.is-danger{ color:#842029; }
+  .db-table-muted{ color:#6b7280; font-size:.83rem; } .db-table-text{ font-size:.83rem; }
+  .db-table-danger{ color:#dc2626; font-size:.83rem; } .db-table-success{ color:#16a34a; font-size:.83rem; }
+  .db-panel-overdue{ border-left:3px solid #dc2626; }
+  .db-panel-overdue .db-panel-title{ color:#dc2626; }
+
+  .app-table-wrap{ border:1px solid var(--hairline); border-radius:8px; background:#fff; }
+  .app-table-wrap table{ width:100%; border-collapse:collapse; font-size:.875rem; }
+  .app-table-wrap thead th{ background:#f9fafb; font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); border-bottom:1px solid var(--hairline); padding:.65rem .75rem; text-align:left; }
+  .app-table-wrap tbody td{ padding:.5rem .75rem; border-bottom:1px solid #f1f3f5; vertical-align:middle; }
+  .app-table-wrap tbody tr:nth-child(even){ background:#fafafa; }
+  .app-table-wrap tbody tr:last-child td{ border-bottom:none; }
+  .app-table-wrap tfoot td{ background:#f9fafb; border-top:2px solid var(--brand-ink); font-weight:700; padding:.55rem .75rem; }
+  .t-end{ text-align:right; } .mono{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-weight:600; }
+  .nowrap{ white-space:nowrap; }
+  .db-total-label{ font-size:.75rem; color:var(--muted); }
+
+  .badge-soft{ font-size:.72rem; font-weight:500; padding:.3em .65em; border-radius:6px; display:inline-block; }
+  .badge-confirmed{ background:#E6F1FB; color:#185FA5; }
+  .badge-sent{ background:#D1ECF1; color:#0C5460; }
+  .badge-paid{ background:#D1E7DD; color:#0A6640; }
+  .badge-overdue{ background:#F8D7DA; color:#842029; }
+  .badge-default{ background:#E9ECEF; color:#495057; }
+
+  /* ════════════════════════════════════════════════════════
+     PROPOSED redesign components
+     ════════════════════════════════════════════════════════ */
+  /* Tier 1 — Hero cash band */
+  .dbx-hero{ display:flex; align-items:stretch; gap:0; background:#fff; border:1px solid var(--hairline);
+    border-radius:10px; box-shadow:0 1px 3px rgba(16,24,40,.05),0 2px 14px rgba(16,24,40,.04); overflow:hidden; }
+  .dbx-hero-net{ display:flex; flex-direction:column; justify-content:center; padding:18px 22px; min-width:300px; border-left:4px solid var(--brand-ink); }
+  .dbx-eyebrow{ font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .dbx-net-value{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-size:2.1rem; font-weight:800; line-height:1.05; margin-top:6px; letter-spacing:-.01em; }
+  .dbx-net-value .cur{ font-size:.9rem; color:var(--muted-2); font-weight:600; margin-right:4px; vertical-align:.32em; }
+  .dbx-net-foot{ font-size:.7rem; color:var(--muted); margin-top:7px; display:flex; align-items:center; gap:6px; }
+  .dbx-trendpill{ display:inline-flex; align-items:center; gap:3px; font-weight:700; }
+  .dbx-hero-sides{ display:flex; flex:1 1 auto; }
+  .dbx-side{ flex:1 1 0; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:18px 20px; border-left:1px solid var(--hairline-soft); }
+  .dbx-side-top{ display:flex; align-items:center; gap:7px; }
+  .dbx-dot{ width:8px; height:8px; border-radius:999px; flex:0 0 auto; }
+  .dbx-dot.ar{ background:#3f6fd6; } .dbx-dot.ap{ background:#d97706; }
+  .dbx-side-label{ font-size:.64rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .dbx-side-value{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-size:1.18rem; font-weight:700; color:#1f2433; }
+  .dbx-side-value .cur{ font-size:.66rem; color:var(--muted-2); font-weight:600; margin-right:3px; }
+  .dbx-side-sub{ font-size:.66rem; color:var(--muted-2); }
+  .dbx-risk{ display:flex; flex-direction:column; justify-content:center; gap:4px; padding:18px 22px; min-width:200px; background:#fdeceb; border-left:1px solid #f6d4d1; text-decoration:none; }
+  .dbx-risk-top{ display:flex; align-items:center; gap:7px; color:var(--neg); font-size:.64rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+  .dbx-risk-value{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-size:1.34rem; font-weight:800; color:var(--neg); }
+  .dbx-risk-value .cur{ font-size:.7rem; font-weight:600; margin-right:3px; opacity:.8; }
+  .dbx-risk-link{ font-size:.68rem; color:var(--neg); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:3px; }
+  .dbx-risk-link:hover{ text-decoration:underline; }
+
+  /* Tier 2 — Flow stats with trend */
+  .dbx-stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .dbx-stat{ background:#fff; border:1px solid var(--hairline); border-radius:9px; padding:13px 15px; }
+  .dbx-stat-label{ font-size:.62rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .dbx-stat-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:6px; }
+  .dbx-stat-value{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-size:1.34rem; font-weight:700; color:#111827; }
+  .dbx-stat-value .cur{ font-size:.66rem; color:var(--muted-2); font-weight:600; margin-right:3px; }
+  .dbx-delta{ display:inline-flex; align-items:center; gap:2px; font-size:.74rem; font-weight:700; padding:2px 7px; border-radius:999px; white-space:nowrap; }
+  .dbx-delta.up{ color:var(--pos); background:#eaf7ef; } .dbx-delta.down{ color:var(--neg); background:#fdeceb; }
+  .dbx-stat-foot{ font-size:.66rem; color:var(--muted-2); margin-top:5px; }
+
+  /* Tier 3 — Worklist chips */
+  .dbx-work{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .dbx-chip{ display:inline-flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--hairline); border-radius:999px; padding:8px 13px 8px 11px; text-decoration:none; color:#1f2433; transition:border-color .14s, box-shadow .14s, transform .14s; }
+  .dbx-chip:hover{ border-color:#d7dde6; box-shadow:0 2px 8px rgba(16,24,40,.07); transform:translateY(-1px); }
+  .dbx-chip-ic{ color:var(--muted); font-size:.92rem; display:inline-flex; }
+  .dbx-chip-txt{ font-size:.78rem; font-weight:600; }
+  .dbx-chip-count{ font-family:'IBM Plex Mono',monospace; font-feature-settings:"tnum"; font-size:.74rem; font-weight:700; background:#eef0f6; color:var(--brand-ink); border-radius:999px; padding:1px 8px; min-width:20px; text-align:center; }
+  .dbx-chip.risk .dbx-chip-count{ background:#fdeceb; color:var(--neg); }
+  .dbx-chip.risk .dbx-chip-ic{ color:var(--neg); }
+
+  /* annotation captions */
+  .dbx-tier{ display:flex; align-items:center; gap:8px; margin:16px 0 7px; }
+  .dbx-tier-badge{ font-size:.58rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--brand-ink); border-radius:5px; padding:3px 7px; }
+  .dbx-tier-label{ font-size:.66rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .dbx-tier-note{ font-size:.68rem; color:var(--muted-2); white-space:nowrap; }
+  .dbx-tier-rule{ flex:1 1 auto; height:1px; background:var(--hairline); }
+  .anno{ font-size:.72rem; color:var(--muted); margin:9px 2px 0; line-height:1.5; display:flex; gap:7px; }
+  .anno .bi{ color:var(--brand-accent); margin-top:1px; }
+  .tag-cut{ color:var(--neg); font-weight:700; } .tag-keep{ color:var(--pos); font-weight:700; }
+
+  .row-2col{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .row-charts1{ display:grid; grid-template-columns:2fr 1fr; gap:8px; }
+  .mb12{ margin-bottom:12px; } .mt12{ margin-top:12px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── shared bits ── */
+function Kpi({variant, icon, cur, value, label, valueClass}){
+  return (
+    <div className={"db-kpi" + (variant ? " "+variant : "")}>
+      <span className="db-kpi-icon"><i className={"bi "+icon}></i></span>
+      <div className="db-kpi-body">
+        <div className={"db-kpi-value" + (valueClass ? " "+valueClass : "")}>
+          {cur && <span className="db-kpi-cur">{cur}</span>}{value}
+        </div>
+        <div className="db-kpi-label">{label}</div>
+      </div>
+    </div>
+  );
+}
+function Section({label, note}){
+  return (
+    <div className="db-section">
+      <span className="db-section-label">{label}</span>
+      <span className="db-section-rule"></span>
+      {note && <span className="db-section-note">{note}</span>}
+    </div>
+  );
+}
+function Tier({badge, label, note}){
+  return (
+    <div className="dbx-tier">
+      <span className="dbx-tier-badge">{badge}</span>
+      <span className="dbx-tier-label">{label}</span>
+      <span className="dbx-tier-rule"></span>
+      {note && <span className="dbx-tier-note">{note}</span>}
+    </div>
+  );
+}
+function AppHeader(){
+  return (
+    <div className="db-app-header">
+      <div>
+        <h1 className="db-app-title">Dashboard</h1>
+        <p className="db-app-sub"><i className="bi bi-building"></i>&nbsp; Distribuidora del Caribe · Junio 2026</p>
+      </div>
+      <span className="db-app-pill"><i className="bi bi-calendar3"></i>&nbsp; 07/06/2026</span>
+    </div>
+  );
+}
+
+/* ── reusable redesign zones ── */
+function HeroBand(){
+  return (
+    <div className="dbx-hero">
+      <div className="dbx-hero-net">
+        <span className="dbx-eyebrow">Posición neta</span>
+        <span className="dbx-net-value num-pos"><span className="cur">RD$</span>1,235,200</span>
+        <span className="dbx-net-foot">CxC − CxP &nbsp;·&nbsp;
+          <span className="dbx-trendpill num-pos"><i className="bi bi-arrow-up-short"></i>9.2% vs. mayo</span>
+        </span>
+      </div>
+      <div className="dbx-hero-sides">
+        <div className="dbx-side">
+          <div className="dbx-side-top"><span className="dbx-dot ar"></span><span className="dbx-side-label">Por cobrar</span></div>
+          <span className="dbx-side-value"><span className="cur">RD$</span>2,847,500</span>
+          <span className="dbx-side-sub">142 facturas abiertas</span>
+        </div>
+        <div className="dbx-side">
+          <div className="dbx-side-top"><span className="dbx-dot ap"></span><span className="dbx-side-label">Por pagar</span></div>
+          <span className="dbx-side-value"><span className="cur">RD$</span>1,612,300</span>
+          <span className="dbx-side-sub">38 facturas de proveedor</span>
+        </div>
+      </div>
+      <a className="dbx-risk" href="#">
+        <span className="dbx-risk-top"><i className="bi bi-exclamation-triangle-fill"></i> Vencido CxC · 7</span>
+        <span className="dbx-risk-value"><span className="cur">RD$</span>486,200</span>
+        <span className="dbx-risk-link">Cobrar ahora <i className="bi bi-arrow-right-short"></i></span>
+      </a>
+    </div>
+  );
+}
+function FlowStats(){
+  const stat = (label, value, dir, pct, foot) => (
+    <div className="dbx-stat">
+      <div className="dbx-stat-label">{label}</div>
+      <div className="dbx-stat-row">
+        <span className="dbx-stat-value"><span className="cur">RD$</span>{value}</span>
+        <span className={"dbx-delta "+dir}><i className={"bi bi-arrow-"+(dir==="up"?"up":"down")+"-short"}></i>{pct}</span>
+      </div>
+      <div className="dbx-stat-foot">{foot}</div>
+    </div>
+  );
+  return (
+    <div className="dbx-stat-grid">
+      {stat("Facturado","3,204,800","up","8.4%","vs. RD$ 2,956,100 en mayo")}
+      {stat("Cobrado","2,915,600","up","12.0%","91% de lo facturado")}
+      {stat("Comprado","1,742,900","down","3.1%","vs. RD$ 1,798,400 en mayo")}
+    </div>
+  );
+}
+function Worklist(){
+  return (
+    <div className="dbx-work">
+      <a className="dbx-chip" href="#"><span className="dbx-chip-ic"><i className="bi bi-file-earmark-text"></i></span><span className="dbx-chip-txt">Cotizaciones activas</span><span className="dbx-chip-count">12</span></a>
+      <a className="dbx-chip" href="#"><span className="dbx-chip-ic"><i className="bi bi-cart"></i></span><span className="dbx-chip-txt">Órdenes de venta</span><span className="dbx-chip-count">5</span></a>
+      <a className="dbx-chip" href="#"><span className="dbx-chip-ic"><i className="bi bi-clipboard-check"></i></span><span className="dbx-chip-txt">Órdenes de compra</span><span className="dbx-chip-count">3</span></a>
+      <a className="dbx-chip risk" href="#"><span className="dbx-chip-ic"><i className="bi bi-exclamation-triangle"></i></span><span className="dbx-chip-txt">Vencido proveedores</span><span className="dbx-chip-count">RD$92k</span></a>
+    </div>
+  );
+}
+
+/* ════ BEFORE — current 12-KPI stack ════ */
+function Before(){
+  return (
+    <div className="db-page" data-screen-label="Antes">
+      <AppHeader/>
+      <Section label="Administración" />
+      <div className="kpi-grid">
+        <Kpi variant="is-ar"  icon="bi-arrow-down-circle" cur="RD$" value="2,847,500" label="Por cobrar" />
+        <Kpi variant="is-ap"  icon="bi-arrow-up-circle"   cur="RD$" value="1,612,300" label="Por pagar" />
+        <Kpi variant="is-net" icon="bi-bank"              cur="RD$" value="1,235,200" label="Posición neta (CxC − CxP)" valueClass="num-pos" />
+        <Kpi variant="is-neg" icon="bi-exclamation-triangle" cur="RD$" value="486,200" label="Vencido CxC · 7" valueClass="num-neg" />
+      </div>
+      <Section label="Ventas" note="Mes actual" />
+      <div className="kpi-grid">
+        <Kpi icon="bi-receipt"            cur="RD$" value="3,204,800" label="Facturado" />
+        <Kpi variant="is-pos" icon="bi-cash-coin" cur="RD$" value="2,915,600" label="Cobrado" valueClass="num-pos" />
+        <Kpi icon="bi-file-earmark-text"  value="12" label="Cotizaciones activas" />
+        <Kpi icon="bi-cart"               value="5"  label="Órdenes pendientes" />
+      </div>
+      <Section label="Compras" note="Mes actual" />
+      <div className="kpi-grid">
+        <Kpi variant="is-ap"  icon="bi-bag"        cur="RD$" value="1,742,900" label="Comprado" />
+        <Kpi icon="bi-cash-stack"                  cur="RD$" value="1,488,000" label="Pagado a proveedores" />
+        <Kpi variant="is-neg" icon="bi-exclamation-triangle" cur="RD$" value="92,400" label="Vencido proveedores" valueClass="num-neg" />
+        <Kpi icon="bi-clipboard-check"             value="3"  label="Órdenes pendientes" />
+      </div>
+      <div className="anno"><i className="bi bi-exclamation-circle"></i>
+        <span><b>12 tiles, peso visual idéntico.</b> Una posición de caja crítica compite con un conteo de cotizaciones.
+        No hay punto de entrada, y <span className="tag-cut">Facturado / Cobrado / Comprado</span> repiten lo que ya dicen las gráficas de abajo.</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════ AFTER (zona KPI) — hierarchy ════ */
+function After(){
+  return (
+    <div className="db-page" data-screen-label="Después">
+      <AppHeader/>
+      <Tier badge="1 · Titular" label="Posición de caja" note="la pregunta: «¿cómo vamos?»" />
+      <HeroBand/>
+      <Tier badge="2 · Flujo" label="Este mes" note="cada número trae su variación" />
+      <FlowStats/>
+      <Tier badge="3 · Pendientes" label="Requiere acción" note="conteos = navegación, no métricas" />
+      <Worklist/>
+      <div className="anno"><i className="bi bi-check-circle"></i>
+        <span><b>12 → 1 titular + 3 + 4 chips.</b> Un punto de entrada claro, <span className="tag-keep">tendencia</span> en lugar de más tiles,
+        y <span className="tag-keep">Pagado a proveedores</span> se mueve a la gráfica «Facturado vs Comprado» que ya lo contiene.</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════ FULL reflowed dashboard ════ */
+const C = { ink:'#1e2130', accent:'#3f6fd6', warn:'#d97706', pos:'#16a34a', neg:'#b42318', grid:'#eef0f3', muted:'#9ca3af' };
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun'];
+
+function useCharts(){
+  const bar=useRef(), donut=useRef(), line=useRef(), aging=useRef();
+  useEffect(()=>{
+    if(!window.Chart) return;
+    Chart.defaults.font.family = "'Manrope', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#6b7280';
+    const baseScale = {
+      x:{ grid:{display:false}, border:{display:false} },
+      y:{ grid:{color:C.grid}, border:{display:false}, ticks:{callback:v=> (v/1000000)+'M'} }
+    };
+    const legend = { position:'bottom', labels:{boxWidth:9, boxHeight:9, usePointStyle:true, pointStyle:'circle', padding:14, font:{size:10.5}} };
+    const charts = [];
+    charts.push(new Chart(bar.current, { type:'bar', data:{ labels:MONTHS, datasets:[
+        { label:'Facturado', data:[2600000,2810000,2950000,3100000,2956000,3204800], backgroundColor:C.accent, borderRadius:3, maxBarThickness:18 },
+        { label:'Comprado', data:[1500000,1610000,1700000,1650000,1798000,1742900], backgroundColor:C.warn, borderRadius:3, maxBarThickness:18 },
+      ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend}, scales:baseScale }}));
+    charts.push(new Chart(donut.current, { type:'doughnut', data:{ labels:['Pagada','Enviada','Vencida','Borrador'],
+        datasets:[{ data:[64,22,7,9], backgroundColor:[C.pos,'#0C5460',C.neg,C.muted], borderWidth:2, borderColor:'#fff' }]},
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'66%', plugins:{legend} }}));
+    charts.push(new Chart(line.current, { type:'line', data:{ labels:MONTHS, datasets:[
+        { label:'Facturado', data:[2600000,2810000,2950000,3100000,2956000,3204800], borderColor:C.accent, backgroundColor:'rgba(63,111,214,.08)', fill:true, tension:.35, pointRadius:2.5, borderWidth:2 },
+        { label:'Cobrado', data:[2400000,2650000,2700000,2880000,2740000,2915600], borderColor:C.pos, backgroundColor:'rgba(22,163,74,.06)', fill:true, tension:.35, pointRadius:2.5, borderWidth:2 },
+      ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend}, scales:baseScale }}));
+    charts.push(new Chart(aging.current, { type:'bar', data:{ labels:['0–30','31–60','61–90','+90'], datasets:[
+        { label:'Por cobrar', data:[1820000,540000,300000,187500], backgroundColor:C.accent, borderRadius:3, maxBarThickness:22 },
+        { label:'Por pagar', data:[1100000,360000,110000,42300], backgroundColor:C.warn, borderRadius:3, maxBarThickness:22 },
+      ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend}, scales:baseScale }}));
+    return ()=> charts.forEach(c=>c.destroy());
+  },[]);
+  return { bar, donut, line, aging };
+}
+
+function StatusBadge({status}){
+  const map={ PAID:['badge-paid','Pagada'], SENT:['badge-sent','Enviada'], OVERDUE:['badge-overdue','Vencida'], CONFIRMED:['badge-confirmed','Confirmada'], DRAFT:['badge-default','Borrador'] };
+  const [cls,txt]=map[status]||map.DRAFT;
+  return <span className={"badge-soft "+cls}>{txt}</span>;
+}
+
+function FullDashboard(){
+  const ch = useCharts();
+  const invoices = [
+    ['B0100000148','Ferretería Hidalgo','03/06/2026','18/06/2026','SENT','184,500.00'],
+    ['B0100000147','Supermercado La Cadena','02/06/2026','17/06/2026','PAID','312,800.00'],
+    ['B0100000146','Constructora Reyes','30/05/2026','14/06/2026','OVERDUE','96,200.00'],
+    ['B0100000145','Distribuidora Peña','29/05/2026','28/06/2026','SENT','58,400.00'],
+    ['B0100000144','Hotel Bahía SRL','28/05/2026','12/06/2026','PAID','241,000.00'],
+  ];
+  const overdue = [
+    ['B0100000146','Constructora Reyes','17','96,200.00'],
+    ['B0100000131','Comercial Tavárez','24','142,800.00'],
+    ['B0100000122','Inversiones del Este','39','88,900.00'],
+    ['B0100000118','Almacenes Güey','52','158,300.00'],
+  ];
+  const payments = [
+    ['06/06/2026','Supermercado La Cadena','Transferencia','TRANSFER','312,800.00'],
+    ['05/06/2026','Hotel Bahía SRL','Efectivo','CASH','120,000.00'],
+    ['04/06/2026','Farmacia Núñez','Transferencia','TRANSFER','47,600.00'],
+    ['03/06/2026','Auto Repuestos JM','Cheque','OTHER','85,400.00'],
+  ];
+  const payBadge = (m)=> m==='TRANSFER' ? 'badge-sent' : m==='CASH' ? 'badge-paid' : 'badge-default';
+  return (
+    <div className="db-page" data-screen-label="Después · Completo">
+      <AppHeader/>
+
+      <Tier badge="1 · Titular" label="Posición de caja" note="la pregunta: «¿cómo vamos?»" />
+      <HeroBand/>
+      <Tier badge="2 · Flujo" label="Este mes" note="cada número trae su variación" />
+      <FlowStats/>
+      <Tier badge="3 · Pendientes" label="Requiere acción" note="conteos = navegación, no métricas" />
+      <Worklist/>
+
+      {/* Charts row 1 — month figures now live in the chart headers */}
+      <div className="row-charts1 mt12">
+        <div className="db-panel">
+          <div className="db-panel-header">
+            <span className="db-panel-title">Facturado vs Comprado
+              <span className="num"><span className="cur">RD$ </span>3.20M · 1.74M</span>
+            </span>
+            <span className="db-panel-sub">Últimos 6 meses</span>
+          </div>
+          <div className="db-panel-body"><div className="chart-box" style={{height:'210px'}}><canvas ref={ch.bar}></canvas></div></div>
+        </div>
+        <div className="db-panel">
+          <div className="db-panel-header"><span className="db-panel-title">Estado de facturas</span></div>
+          <div className="db-panel-body"><div className="chart-box" style={{height:'210px'}}><canvas ref={ch.donut}></canvas></div></div>
+        </div>
+      </div>
+
+      {/* Charts row 2 */}
+      <div className="row-2col mt12">
+        <div className="db-panel">
+          <div className="db-panel-header">
+            <span className="db-panel-title">Facturación vs Cobros</span>
+            <span className="db-panel-sub">Últimos 6 meses</span>
+          </div>
+          <div className="db-panel-body"><div className="chart-box" style={{height:'200px'}}><canvas ref={ch.line}></canvas></div></div>
+        </div>
+        <div className="db-panel">
+          <div className="db-panel-header">
+            <span className="db-panel-title">Cartera por antigüedad</span>
+            <span className="db-panel-sub">CxC vs CxP</span>
+          </div>
+          <div className="db-panel-body"><div className="chart-box" style={{height:'200px'}}><canvas ref={ch.aging}></canvas></div></div>
+        </div>
+      </div>
+
+      {/* Recent invoices */}
+      <div className="app-table-wrap mt12">
+        <div className="db-panel-header">
+          <span className="db-panel-title">Facturas recientes</span>
+          <span className="db-panel-sub">Ver todas →</span>
+        </div>
+        <table>
+          <thead><tr><th>N° Factura</th><th>Cliente</th><th>Emisión</th><th>Vence</th><th>Estado</th><th className="t-end">Total</th></tr></thead>
+          <tbody>
+            {invoices.map((r,i)=>(
+              <tr key={i}>
+                <td><a className={"db-doc-link"+(r[4]==='OVERDUE'?' is-danger':'')} href="#">{r[0]}</a></td>
+                <td className="db-table-text">{r[1]}</td>
+                <td className="db-table-muted nowrap">{r[2]}</td>
+                <td className={"nowrap "+(r[4]==='OVERDUE'?'db-table-danger':'db-table-muted')}>{r[3]}</td>
+                <td><StatusBadge status={r[4]}/></td>
+                <td className="t-end mono">{r[5]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Overdue + payments */}
+      <div className="row-2col mt12">
+        <div className="app-table-wrap db-panel-overdue">
+          <div className="db-panel-header"><span className="db-panel-title"><i className="bi bi-exclamation-circle"></i> Facturas vencidas</span></div>
+          <table>
+            <thead><tr><th>Factura</th><th>Cliente</th><th className="t-end">Días</th><th className="t-end">Total</th></tr></thead>
+            <tbody>
+              {overdue.map((r,i)=>(
+                <tr key={i}>
+                  <td><a className="db-doc-link is-danger" href="#">{r[0]}</a></td>
+                  <td className="db-table-muted">{r[1]}</td>
+                  <td className="t-end mono db-table-danger">{r[2]}</td>
+                  <td className="t-end mono db-table-danger">{r[3]}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><td colSpan="3" className="t-end db-total-label">Total vencido</td><td className="t-end mono num-neg">486,200.00</td></tr></tfoot>
+          </table>
+        </div>
+        <div className="app-table-wrap">
+          <div className="db-panel-header"><span className="db-panel-title">Pagos recientes</span><span className="db-panel-sub">Ver todos →</span></div>
+          <table>
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Método</th><th className="t-end">Monto</th></tr></thead>
+            <tbody>
+              {payments.map((r,i)=>(
+                <tr key={i}>
+                  <td className="db-table-muted nowrap">{r[0]}</td>
+                  <td className="db-table-text">{r[1]}</td>
+                  <td><span className={"badge-soft "+payBadge(r[3])}>{r[2]}</span></td>
+                  <td className="t-end mono db-table-success">{r[4]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="anno mt12"><i className="bi bi-arrows-collapse"></i>
+        <span><b>Above-the-fold recuperado.</b> Con la zona KPI comprimida a un titular + 3 + chips, las gráficas y la lista de vencidos —
+        lo accionable — suben sin hacer scroll. El total de tiles cayó de 12 a 4 monitoreables.</span>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  return (
+    <DesignCanvas>
+      <DCSection id="kpi" title="Zona KPI · Antes / Después" subtitle="Reestructurar 12 tiles planos en una jerarquía de 3 niveles">
+        <DCArtboard id="before" label="Antes · 12 KPIs planos" width={1180} height={560}><Before/></DCArtboard>
+        <DCArtboard id="after"  label="Después · Jerarquía 1·2·3" width={1180} height={600}><After/></DCArtboard>
+      </DCSection>
+      <DCSection id="full" title="Dashboard completo reflujado" subtitle="La misma jerarquía aplicada arriba — gráficas y tablas suben above-the-fold">
+        <DCArtboard id="full-db" label="Después · Dashboard completo" width={1180} height={1480}><FullDashboard/></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

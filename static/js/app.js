@@ -19,28 +19,27 @@
     initAutoPrint();
     if (typeof initSessionTimeout === "function") initSessionTimeout();
 
-    // Datatable
-    initDatatableFilters();
+    // Datatable (loaded per-page on list views)
+    if (typeof initDatatableFilters === "function") initDatatableFilters();
 
-    // Document forms
-    initInvoiceItemFormset();
-    initInvoiceItemHtmx();
-    initCustomerDefaults();
-    initIssueDateDeliverySync();
+    // Document forms (loaded per-page on form views)
+    if (typeof initInvoiceItemFormset === "function") initInvoiceItemFormset();
+    if (typeof initInvoiceItemHtmx === "function") initInvoiceItemHtmx();
+    if (typeof initCustomerDefaults === "function") initCustomerDefaults();
+    if (typeof initIssueDateDeliverySync === "function") initIssueDateDeliverySync();
+    if (typeof initHeaderCardCollapse === "function") initHeaderCardCollapse();
 
-    // Payment
-    initPaymentForm();
+    // Payment (loaded per-page on payment forms)
+    if (typeof initPaymentForm === "function") initPaymentForm();
 
     // Modals
-    initItemModal();
-    initModuleModal();
-    initPaymentTermModal();
+    initEditableModals();
     initCustomerList();
     initNcfModal();
     initDeptModalClose();
     initConsolidateForm();
 
-    // Dashboard
-    initDashboardCharts();
+    // Dashboard (loaded per-page on dashboard)
+    if (typeof initDashboardCharts === "function") initDashboardCharts();
   });
 })();

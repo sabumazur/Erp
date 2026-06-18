@@ -6,16 +6,32 @@
     <div class="col-md-4">
       <label class="form-label small fw-semibold">Cliente</label>
       <select name="customer" class="form-select form-select-sm"
+              {% if customer_multiple %}multiple{% endif %}
               data-tom="" data-placeholder="{% if customer_required %}— Seleccionar —{% else %}— Todos los clientes —{% endif %}"
         {% if customer_required %}required
         oninvalid="this.setCustomValidity('Debe seleccionar un cliente.')"
         onchange="this.setCustomValidity('')"{% endif %}>
-        <option value="">{% if customer_required %}— Seleccionar —{% else %}— Todos los clientes —{% endif %}</option>
+        {% if not customer_multiple %}<option value="">{% if customer_required %}— Seleccionar —{% else %}— Todos los clientes —{% endif %}</option>{% endif %}
         {% for c in customers %}
-        <option value="{{ c.pk }}"{% if c.pk|stringformat:"s" == customer_id %} selected{% endif %}>{{ c.name }}</option>
+        <option value="{{ c.pk }}"{% if customer_multiple %}{% if c.pk|stringformat:"s" in customer_ids %} selected{% endif %}{% else %}{% if c.pk|stringformat:"s" == customer_id %} selected{% endif %}{% endif %}>{{ c.name }}</option>
         {% endfor %}
       </select>
     </div>
+    {% endif %}
+
+    {% if show_doc_type %}
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Tipo de documento</label>
+      <select name="doc_type" class="form-select form-select-sm"
+              {% if doc_type_multiple %}multiple{% endif %}
+              data-tom="" data-placeholder="— Todos —">
+        {% if not doc_type_multiple %}<option value="">— Todos —</option>{% endif %}
+        {% for value, label in doc_types %}
+        <option value="{{ value }}"{% if doc_type_multiple %}{% if value in doc_type_ids %} selected{% endif %}{% else %}{% if value == doc_type_id %} selected{% endif %}{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="w-100"></div>
     {% endif %}
 
     {% if show_dates %}
@@ -28,7 +44,7 @@
     </div>
     <div class="col-md-3">
       <label class="form-label small fw-semibold">Hasta</label>
-      <input type="date" name="date_to" value="{{ date_to }}"
+      <input type="date" name="date_to" value="{{ date_to }}" min="{{ date_from }}"
              class="form-control form-control-sm" required
              oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
              oninput="this.setCustomValidity('')">

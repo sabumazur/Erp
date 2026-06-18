@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from apps.accounts.tests.factories import TeamFactory
 from apps.core.models import Module
+from apps.purchases.models import PurchaseDocument
+from apps.purchases.tests.factories import PurchaseDocumentFactory
 from apps.sales.models import SalesDocument
 from apps.sales.tests.factories import (
     CustomerFactory,
@@ -76,6 +78,39 @@ def _prev_month_date():
 
 @pytest.mark.django_db
 class TestDashboardKPIs:
+
+    def test_dashboard_loads_dedicated_stylesheet(self, client, owner_membership):
+        response = _dashboard(client, owner_membership)
+        content = response.content.decode()
+
+        assert 'href="/static/css/dashboard.css"' in content
+        assert ".db-kpi {" not in content
+
+    def test_dashboard_renders_dismissible_welcome_banner(self, client, owner_membership):
+        owner_membership.user.first_name = "Ana"
+        owner_membership.user.save(update_fields=["first_name", "updated_at"])
+
+        response = _dashboard(client, owner_membership)
+        content = response.content.decode()
+
+        assert 'class="db-welcome"' in content
+        assert "Ana" in content
+        assert "data-dashboard-welcome-close" in content
+        assert response.context["dashboard_greeting"] in {
+            "Buen día",
+            "Buenas tardes",
+            "Buenas noches",
+        }
+
+    def test_dashboard_welcome_name_falls_back_to_email_local_part(self, client, owner_membership):
+        owner_membership.user.first_name = ""
+        owner_membership.user.email = "ana.admin@example.com"
+        owner_membership.user.save(update_fields=["first_name", "email", "updated_at"])
+
+        response = _dashboard(client, owner_membership)
+
+        assert response.context["dashboard_first_name"] == "ana.admin"
+        assert "ana.admin" in response.content.decode()
 
     def test_month_invoiced_includes_confirmed(self, client, owner_membership):
         org = owner_membership.organization
@@ -225,6 +260,21 @@ class TestDashboardCounts:
         ctx = _dashboard(client, owner_membership).context
         assert ctx["pending_sale_orders"] == 2
 
+    def test_pending_purchase_orders_counts_draft_and_confirmed(self, client, owner_membership):
+        org = owner_membership.organization
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.DRAFT)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.CONFIRMED)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.RECEIVED)
+        PurchaseDocumentFactory(organization=org, status=PurchaseDocument.Status.CANCELLED)
+
+        ctx = _dashboard(client, owner_membership).context
+
+        assert ctx["pending_purchase_orders"] == 2
+        assert any(
+            "Órdenes de compra" in str(chip["label"]) and chip["count"] == 2
+            for chip in ctx["worklist"]
+        )
+
     def test_counts_zero_when_empty_org(self, client, owner_membership):
         ctx = _dashboard(client, owner_membership).context
         assert ctx["customer_count"] == 0
@@ -340,25 +390,28 @@ class TestDashboardCharts:
         assert len(ctx["chart_status_counts"]) == 2
         assert sum(ctx["chart_status_counts"]) == 2
 
-    def test_customer_datasets_empty_when_no_invoices(self, client, owner_membership):
+    def test_ar_aging_zero_when_no_invoices(self, client, owner_membership):
         ctx = _dashboard(client, owner_membership).context
-        assert ctx["chart_customer_datasets"] == []
+        assert ctx["chart_ar_aging"] == [0.0, 0.0, 0.0, 0.0, 0.0]
+        assert ctx["chart_aging_labels"] == ["Corriente", "1–30", "31–60", "61–90", "+90"]
 
-    def test_customer_datasets_capped_at_6(self, client, owner_membership):
+    def test_ar_aging_current_bucket_for_not_due_invoice(self, client, owner_membership):
         org = owner_membership.organization
-        for _ in range(8):
-            _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
+        future = timezone.localdate() + timedelta(days=15)
+        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"), due_date=future)
         ctx = _dashboard(client, owner_membership).context
-        assert len(ctx["chart_customer_datasets"]) <= 6
+        # five buckets: current, 1-30, 31-60, 61-90, 90+
+        assert len(ctx["chart_ar_aging"]) == 5
+        assert ctx["chart_ar_aging"][0] == 1000.0
+        assert sum(ctx["chart_ar_aging"][1:]) == 0.0
 
-    def test_customer_datasets_have_monthly_data(self, client, owner_membership):
+    def test_ar_aging_overdue_lands_in_past_bucket(self, client, owner_membership):
         org = owner_membership.organization
-        _make_invoice(org, SalesDocument.Status.CONFIRMED, Decimal("1000.00"))
+        past = timezone.localdate() - timedelta(days=45)
+        _make_invoice(org, SalesDocument.Status.OVERDUE, Decimal("2000.00"), due_date=past)
         ctx = _dashboard(client, owner_membership).context
-        dataset = ctx["chart_customer_datasets"][0]
-        assert "label" in dataset
-        assert "data" in dataset
-        assert len(dataset["data"]) == 6
+        # 45 days overdue → 31–60 bucket (index 2)
+        assert ctx["chart_ar_aging"][2] == 2000.0
 
 
 # ── Edge cases ─────────────────────────────────────────────────────────────────

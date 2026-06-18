@@ -74,7 +74,7 @@ body.sidebar-collapsed #sidebar {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5c6480;
+  color: #8892b0;
   padding: 18px 20px 6px;
   white-space: nowrap;
 }
@@ -123,12 +123,6 @@ body.sidebar-collapsed #sidebar {
 .sidebar-nav-sub .sidebar-nav-link {
   padding-left: 48px;
   font-size: 0.84rem;
-}
-
-.sidebar-nav-link--disabled {
-  opacity: .4;
-  cursor: default;
-  pointer-events: none;
 }
 
 .dropdown-toggle-no-caret::after { display: none; }
@@ -273,7 +267,7 @@ body.sidebar-collapsed #sidebar {
 #subnav {
   display: flex;
   align-items: stretch;
-  height: 40px;
+  height: 44px;
   background: #f4f6fb;
   border-bottom: 1px solid #e9ecef;
   padding: 0 20px;
@@ -328,6 +322,7 @@ body.sidebar-collapsed #sidebar {
 #main-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 28px 28px;
 }
 

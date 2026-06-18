@@ -6,7 +6,6 @@ Dominican Republic fiscal ID length validators.
 Supported types:
   - RNC  (Registro Nacional del Contribuyente) — 9 digits, companies
   - Cédula (Cédula de Identidad y Electoral)   — 11 digits, individuals
-  - Pasaporte / Exterior                        — length check only
 
 Usage (as Django field validators):
     from apps.sales.validators import validate_rnc_cedula
@@ -51,7 +50,6 @@ def validate_rnc_cedula(value: str, id_type: str = None):
     Determines type by digit count if id_type is not supplied:
       9 digits  → RNC
       11 digits → Cédula
-      other     → skip digit-only format checks (Pasaporte / Exterior)
 
     Raises ValidationError on length failure. This app does not enforce local
     RNC/Cédula check-digit or repeated-digit validation.
@@ -71,10 +69,6 @@ def validate_rnc_cedula(value: str, id_type: str = None):
         ok, msg = validate_cedula(value)
         if not ok:
             raise ValidationError(msg)
-
-    elif id_type in ("PAS", "EXT"):
-        # Passport / foreign ID — no digit-only format check.
-        pass
 
     else:
         # Ambiguous length — just warn about format

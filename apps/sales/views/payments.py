@@ -51,7 +51,7 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         qs = (
             Payment.objects.filter(organization=org)
             .select_related("customer")
-            .prefetch_related("allocations__invoice")
+            .prefetch_related("allocations__invoice__customer")
         )
         q = self.request.GET.get("q", "").strip()
         if q:
@@ -69,10 +69,10 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
                  "icon": "bi-cash-coin", "color": "primary"},
                 {"label": _("Cobrado este mes"),
                  "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "success"},
+                 "icon": "bi-cash-stack", "color": "success", "currency": "RD$"},
                 {"label": _("Total cobrado"),
                  "value": "{:,.2f}".format(base.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-wallet2", "color": "info"},
+                 "icon": "bi-wallet2", "color": "info", "currency": "RD$"},
                 {"label": _("Pagos este mes"), "value": month_qs.count(),
                  "icon": "bi-calendar-check", "color": "secondary"},
             ]
@@ -154,7 +154,7 @@ class PaymentDetailView(HistoryMixin, ERPBaseViewMixin, View):
 
     def get(self, request, pk):
         payment = get_object_or_404(
-            Payment.objects.select_related("customer", "organization").prefetch_related("allocations__invoice"),
+            Payment.objects.select_related("customer", "organization").prefetch_related("allocations__invoice__customer"),
             pk=pk, organization=request.organization,
         )
         return render(

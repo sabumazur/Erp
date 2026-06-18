@@ -108,6 +108,14 @@
     } else {
       document.body.classList.toggle("sidebar-open");
     }
+
+    // Update aria-expanded on sidebar toggle button
+    var btn = document.getElementById('sidebar-toggle-btn');
+    if (btn) {
+      var isOpen = document.body.classList.contains('sidebar-open') ||
+                   !document.body.classList.contains('sidebar-collapsed');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
   }
 
   function initSidebarState() {

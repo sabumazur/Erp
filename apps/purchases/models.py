@@ -6,6 +6,7 @@ from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -19,8 +20,6 @@ class Supplier(ERPBaseModel):
     class IdType(models.TextChoices):
         RNC = "RNC", _("RNC")
         CEDULA = "CED", _("Cédula")
-        PASAPORTE = "PAS", _("Pasaporte")
-        EXTERIOR = "EXT", _("Identificación extranjera")
 
     organization = models.ForeignKey(
         "accounts.Organization",
@@ -78,7 +77,11 @@ class Supplier(ERPBaseModel):
                 fields=["organization", "rnc_cedula"],
                 condition=models.Q(deleted_at__isnull=True) & ~models.Q(rnc_cedula=""),
                 name="unique_active_supplier_rnc_cedula_per_org",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(id_type__in=["RNC", "CED"]),
+                name="supplier_id_type_rnc_or_cedula",
+            ),
         ]
 
     def __str__(self):
@@ -86,6 +89,10 @@ class Supplier(ERPBaseModel):
 
     def clean(self):
         super().clean()
+        if self.id_type not in (self.IdType.RNC, self.IdType.CEDULA):
+            raise ValidationError(
+                {"id_type": _("El tipo de identificación debe ser RNC o Cédula.")}
+            )
         if not self.rnc_cedula:
             return
 
@@ -103,11 +110,6 @@ class Supplier(ERPBaseModel):
                     "rnc_cedula": _("La Cédula debe tener exactamente 11 dígitos numéricos.")
                 })
             self.rnc_cedula = normalized
-        elif self.id_type in (self.IdType.PASAPORTE, self.IdType.EXTERIOR):
-            if not re.fullmatch(r"[A-Za-z0-9\-]{4,20}", self.rnc_cedula):
-                raise ValidationError({
-                    "rnc_cedula": _("Identificación inválida (4–20 caracteres alfanuméricos).")
-                })
 
     def delete(self, *args, **kwargs):
         has_documents = PurchaseDocument.objects.filter(supplier=self).exists()
@@ -117,38 +119,6 @@ class Supplier(ERPBaseModel):
                 f"No se puede eliminar «{self.name}» porque tiene documentos o pagos asociados."
             )
         return super().delete(*args, **kwargs)
-
-
-# ── PurchaseSequence ──────────────────────────────────────────────────────────
-
-
-class PurchaseSequence(models.Model):
-    organization = models.OneToOneField(
-        "accounts.Organization",
-        on_delete=models.CASCADE,
-        related_name="purchase_sequence",
-        verbose_name=_("organización"),
-    )
-    prefix = models.CharField(max_length=5, default="OC", verbose_name=_("prefijo"))
-    next_value = models.PositiveIntegerField(default=1, verbose_name=_("próximo valor"))
-    padding = models.PositiveSmallIntegerField(default=5, verbose_name=_("dígitos"))
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = _("secuencia de órdenes de compra")
-        verbose_name_plural = _("secuencias de órdenes de compra")
-
-    def __str__(self):
-        return f"{self.organization} · {self.prefix}-{self.next_value:0{self.padding}d}"
-
-    @classmethod
-    def generate(cls, organization) -> str:
-        with transaction.atomic():
-            seq, _ = cls.objects.select_for_update().get_or_create(organization=organization)
-            number = seq.next_value
-            seq.next_value += 1
-            seq.save(update_fields=["next_value", "updated_at"])
-        return f"{seq.prefix}-{number:0{seq.padding}d}"
 
 
 # ── PurchaseDocument ──────────────────────────────────────────────────────────
@@ -307,6 +277,14 @@ class PurchaseDocument(ERPBaseModel):
                 fields=["organization", "doc_type", "status"],
                 name="pur_org_doctype_status_idx",
             ),
+            models.Index(
+                fields=["organization", "supplier"],
+                name="pur_org_supplier_idx",
+            ),
+            models.Index(
+                fields=["organization", "doc_type", "status", "issue_date"],
+                name="pur_org_dt_status_date_idx",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -338,16 +316,21 @@ class PurchaseDocument(ERPBaseModel):
         return self.itbis_18 + self.itbis_16
 
     def recompute_totals(self):
-        items = self.items.all()
-        subtotal = sum(i.line_total for i in items)
-        itbis_18 = sum(
-            i.itbis_amount for i in items
-            if i.itbis_rate == PurchaseDocumentItem.ITBISRate.RATE_18
+        _zero = Decimal("0.00")
+        agg = self.items.aggregate(
+            subtotal=Sum("line_total"),
+            itbis_18=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=PurchaseDocumentItem.ITBISRate.RATE_18),
+            ),
+            itbis_16=Sum(
+                "itbis_amount",
+                filter=Q(itbis_rate=PurchaseDocumentItem.ITBISRate.RATE_16),
+            ),
         )
-        itbis_16 = sum(
-            i.itbis_amount for i in items
-            if i.itbis_rate == PurchaseDocumentItem.ITBISRate.RATE_16
-        )
+        subtotal = agg["subtotal"] or _zero
+        itbis_18 = agg["itbis_18"] or _zero
+        itbis_16 = agg["itbis_16"] or _zero
         self.subtotal = subtotal
         self.itbis_18 = itbis_18
         self.itbis_16 = itbis_16
@@ -392,6 +375,12 @@ class PurchaseDocumentItem(AbstractDocumentLineItem):
         verbose_name = _("línea de compra")
         verbose_name_plural = _("líneas de compra")
         ordering = ["pk"]
+        indexes = [
+            models.Index(
+                fields=["purchase_document", "itbis_rate"],
+                name="pur_item_doc_itbis_idx",
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(quantity__gt=0),
@@ -456,6 +445,16 @@ class SupplierPayment(ERPBaseModel):
         verbose_name = _("pago a proveedor")
         verbose_name_plural = _("pagos a proveedores")
         ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["organization", "supplier", "date"],
+                name="suppay_org_supplier_date_idx",
+            ),
+            models.Index(
+                fields=["organization", "date"],
+                name="suppay_org_date_idx",
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0),

@@ -29,20 +29,25 @@
 </div>
 
 {% if smart_buttons %}
-<div class="d-flex gap-2 mb-3 flex-wrap">
-  <a href="{{ smart_buttons.detail_url }}" class="text-decoration-none">
-    <div class="app-table-wrap px-3 py-2 text-center" style="min-width:80px;cursor:pointer">
-      <div class="fw-bold lh-1 mb-1" style="font-size:1.25rem;color:#1e2130">{{ smart_buttons.invoice_count }}</div>
-      <div class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">{% trans "Facturas" %}</div>
-    </div>
-  </a>
-  <a href="{{ smart_buttons.detail_url }}" class="text-decoration-none">
-    <div class="app-table-wrap px-3 py-2 text-center" style="min-width:80px;cursor:pointer">
-      <div class="fw-bold lh-1 mb-1" style="font-size:1.25rem;color:#1e2130">{{ smart_buttons.payment_count }}</div>
-      <div class="text-muted" style="font-size:.65rem;text-transform:uppercase;letter-spacing:.04em">{% trans "Pagos" %}</div>
-    </div>
-  </a>
-
+<div class="row g-2 mb-3">
+  <div class="col-auto">
+    <a href="{{ smart_buttons.detail_url }}" class="db-kpi is-ar" style="min-width:120px;text-decoration:none">
+      <span class="db-kpi-icon"><i class="bi bi-receipt"></i></span>
+      <div class="db-kpi-body">
+        <div class="db-kpi-value">{{ smart_buttons.invoice_count }}</div>
+        <div class="db-kpi-label">{% trans "Facturas" %}</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-auto">
+    <a href="{{ smart_buttons.detail_url }}" class="db-kpi is-pos" style="min-width:120px;text-decoration:none">
+      <span class="db-kpi-icon"><i class="bi bi-cash-stack"></i></span>
+      <div class="db-kpi-body">
+        <div class="db-kpi-value">{{ smart_buttons.payment_count }}</div>
+        <div class="db-kpi-label">{% trans "Pagos" %}</div>
+      </div>
+    </a>
+  </div>
 </div>
 {% endif %}
 
@@ -149,7 +154,7 @@
 
   </div>
 
-  <div class="form-sticky-bar">
+  <div class="app-form-bar">
     <button type="submit" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
     </button>

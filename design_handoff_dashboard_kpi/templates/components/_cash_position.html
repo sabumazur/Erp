@@ -1,0 +1,53 @@
+{% load i18n humanize %}
+{% comment %}
+  Tier 1 — Cash position band. Replaces the four "Administración" db-kpi tiles.
+  Required context:
+    net_position        Decimal   CxC − CxP (signed)
+    net_position_delta  str|None  e.g. "9.2% vs. mayo" (already formatted); omit to hide
+    net_position_up     bool      True → green arrow-up, False → red arrow-down
+    ar_outstanding      Decimal   total receivable
+    ar_open_count       int       open customer invoices
+    ap_outstanding      Decimal   total payable
+    ap_open_count       int       open supplier invoices
+    overdue_total       Decimal   overdue receivable
+    overdue_count       int       # overdue customer invoices
+  URLs assumed: sales:invoice_list (+ ?status=OVERDUE), purchases:supplier_invoice_list
+{% endcomment %}
+<div class="db-cash mb-3">
+  <div class="db-cash-net">
+    <span class="db-cash-eyebrow">{% trans "Posición neta" %}</span>
+    <span class="db-cash-value {% if net_position < 0 %}num-neg{% else %}num-pos{% endif %}">
+      <span class="cur">RD$</span>{{ net_position|floatformat:0|intcomma }}
+    </span>
+    <span class="db-cash-foot">
+      {% trans "CxC − CxP" %}
+      {% if net_position_delta %}
+        ·
+        <span class="db-cash-trend {% if net_position_up %}num-pos{% else %}num-neg{% endif %}">
+          <i class="bi bi-arrow-{% if net_position_up %}up{% else %}down{% endif %}-short"></i>{{ net_position_delta }}
+        </span>
+      {% endif %}
+    </span>
+  </div>
+
+  <div class="db-cash-sides">
+    <a class="db-cash-side text-decoration-none" href="{% url 'sales:invoice_list' %}">
+      <div class="db-cash-side-top"><span class="db-cash-dot ar"></span><span class="db-cash-side-label">{% trans "Por cobrar" %}</span></div>
+      <span class="db-cash-side-value"><span class="cur">RD$</span>{{ ar_outstanding|floatformat:0|intcomma }}</span>
+      <span class="db-cash-side-sub">{% blocktrans count n=ar_open_count %}{{ n }} factura abierta{% plural %}{{ n }} facturas abiertas{% endblocktrans %}</span>
+    </a>
+    <a class="db-cash-side text-decoration-none" href="{% url 'purchases:supplier_invoice_list' %}">
+      <div class="db-cash-side-top"><span class="db-cash-dot ap"></span><span class="db-cash-side-label">{% trans "Por pagar" %}</span></div>
+      <span class="db-cash-side-value"><span class="cur">RD$</span>{{ ap_outstanding|floatformat:0|intcomma }}</span>
+      <span class="db-cash-side-sub">{% blocktrans count n=ap_open_count %}{{ n }} factura de proveedor{% plural %}{{ n }} facturas de proveedor{% endblocktrans %}</span>
+    </a>
+  </div>
+
+  {% if overdue_total %}
+  <a class="db-cash-risk" href="{% url 'sales:invoice_list' %}?status=OVERDUE">
+    <span class="db-cash-risk-top"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Vencido CxC" %} · {{ overdue_count }}</span>
+    <span class="db-cash-risk-value"><span class="cur">RD$</span>{{ overdue_total|floatformat:0|intcomma }}</span>
+    <span class="db-cash-risk-link">{% trans "Cobrar ahora" %} <i class="bi bi-arrow-right-short"></i></span>
+  </a>
+  {% endif %}
+</div>

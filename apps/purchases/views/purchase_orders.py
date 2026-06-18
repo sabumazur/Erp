@@ -1,6 +1,7 @@
 from datetime import date
 
-from django.db.models import Sum
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -52,30 +53,38 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         status_filter = self.request.GET.get("status", "")
         if status_filter:
             qs = qs.filter(status=status_filter)
-        org_qs = PurchaseDocument.purchase_orders.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "RECEIVED",  "label": _("Recibida"),   "color": "#10b981",
-             "count": org_qs.filter(status="RECEIVED").count()},
-            {"value": "CANCELLED", "label": _("Anulada"),    "color": "#ef4444",
-             "count": org_qs.filter(status="CANCELLED").count()},
-        ]
-        ctx.update(self.apply_datatable(qs, status_pills=status_pills))
+        ctx.update(self.apply_datatable(qs))
         if not self.request.htmx:
+            # REFACTOR PQ-10: 4 separate queries → 1 conditional aggregation.
+            from django.db.models import DecimalField, Count, Value
+            _DEC = DecimalField(max_digits=14, decimal_places=2)
+            stats_agg = (
+                PurchaseDocument.purchase_orders
+                .filter(organization=org)
+                .aggregate(
+                    total_count=Count("id"),
+                    confirmed_count=Count("id", filter=Q(status="CONFIRMED")),
+                    received_count=Count("id", filter=Q(status="RECEIVED")),
+                    confirmed_total=Coalesce(
+                        Sum("total", filter=Q(status="CONFIRMED")),
+                        Value(0, output_field=_DEC),
+                        output_field=_DEC,
+                    ),
+                )
+            )
             ctx["stats"] = [
-                {"label": _("Total órdenes"), "value": org_qs.count(),
+                {"label": _("Total órdenes"),
+                 "value": stats_agg["total_count"],
                  "icon": "bi-cart",            "color": "primary"},
-                {"label": _("Por recibir"), "value": org_qs.filter(status="CONFIRMED").count(),
+                {"label": _("Por recibir"),
+                 "value": stats_agg["confirmed_count"],
                  "icon": "bi-hourglass-split", "color": "warning"},
-                {"label": _("Recibidas"), "value": org_qs.filter(status="RECEIVED").count(),
+                {"label": _("Recibidas"),
+                 "value": stats_agg["received_count"],
                  "icon": "bi-check2-circle",   "color": "success"},
                 {"label": _("Valor pendiente"),
-                 "value": "{:,.2f}".format(
-                     org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack",      "color": "info"},
+                 "value": "{:,.2f}".format(stats_agg["confirmed_total"] or 0),
+                 "icon": "bi-cash-stack",      "color": "info", "currency": "RD$"},
             ]
         ctx["module"] = "purchase-order"
         ctx["breadcrumbs"] = [
@@ -140,7 +149,7 @@ class PurchaseOrderDetailView(ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["module"] = "purchase-order"
         o = self.object
         ctx["breadcrumbs"] = [
@@ -285,8 +294,11 @@ class PurchaseOrderCloneView(ERPBaseViewMixin, View):
             exchange_rate=source.exchange_rate,
             notes=source.notes,
         )
-        for line in source.items.all():
-            PurchaseDocumentItem.objects.create(
+        # REFACTOR PQ-001: bulk_create all line items in 1 INSERT instead of N.
+        # No post_save signal on PurchaseDocumentItem; recompute_totals() called
+        # once below as before.
+        PurchaseDocumentItem.objects.bulk_create([
+            PurchaseDocumentItem(
                 purchase_document=new_po,
                 item=line.item,
                 description=line.description,
@@ -294,6 +306,8 @@ class PurchaseOrderCloneView(ERPBaseViewMixin, View):
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
+            for line in source.items.all()
+        ])
         new_po.recompute_totals()
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
         return redirect("purchases:po_edit", pk=new_po.pk)

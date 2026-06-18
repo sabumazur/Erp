@@ -10,13 +10,6 @@
     <h1 class="app-header-title">{% trans "Módulos" %}</h1>
     <p class="app-header-sub">{% trans "Registro del sistema" %}</p>
   </div>
-  <div class="app-header-actions">
-    <button type="button" class="btn btn-sm no-print btn-brand"
-           
-            data-bs-toggle="modal" data-bs-target="#moduleModal">
-      <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo módulo" %}
-    </button>
-  </div>
 </div>
 
 <div class="dt-slate">
@@ -44,6 +37,8 @@
 {% endblock %}
 
 {% block extra_js %}
+{% load static %}
+<script src="{% static 'js/datatable.js' %}"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   moduleCreateTitle: "{% trans 'Nuevo módulo' %}",

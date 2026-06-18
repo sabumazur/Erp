@@ -79,8 +79,12 @@ class CustomerSearchView(ERPBaseViewMixin, View):
                 Q(name__icontains=q) | Q(rnc_cedula__icontains=q)
             )
         customers = qs[:25]
+        allow_create = request.GET.get("allow_create") != "0"
         return _render(request, "sales/partials/customer_picker_results.html",
-                       {"customers": customers})
+                       {
+                           "customers": customers,
+                           "customer_picker_allow_create": allow_create,
+                       })
 
 
 class CustomerQuickCreateView(ERPBaseViewMixin, View):

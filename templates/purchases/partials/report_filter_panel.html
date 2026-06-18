@@ -28,7 +28,7 @@
     </div>
     <div class="col-md-3">
       <label class="form-label small fw-semibold">Hasta</label>
-      <input type="date" name="date_to" value="{{ date_to }}"
+      <input type="date" name="date_to" value="{{ date_to }}" min="{{ date_from }}"
              class="form-control form-control-sm" required
              oninvalid="this.setCustomValidity('Este campo es obligatorio.')"
              oninput="this.setCustomValidity('')">

@@ -1,14 +1,22 @@
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.template import Context, Template
 from django.urls import reverse
 
 from apps.accounts.models import Membership
 from apps.accounts.tests.factories import MembershipFactory, OrganizationFactory, UserFactory
 from apps.items.models import Item
 from apps.items.tests.factories import ItemFactory
-from apps.purchases.forms import PurchaseDocumentItemForm, PurchaseOrderForm, SupplierForm
+from apps.purchases.forms import (
+    PurchaseDocumentItemForm,
+    PurchaseOrderForm,
+    SupplierForm,
+    SupplierInvoiceForm,
+    SupplierPaymentHeaderForm,
+)
 from apps.purchases.models import PurchaseDocument
 from apps.purchases.tests.factories import PurchaseDocumentFactory, SupplierFactory
 
@@ -28,6 +36,12 @@ def set_active_org(client, org):
     session = client.session
     session["active_org_slug"] = org.slug
     session.save()
+
+
+def render_crispy_form(form):
+    return Template("{% load crispy_forms_tags %}{% crispy form %}").render(
+        Context({"form": form})
+    )
 
 
 @pytest.mark.django_db
@@ -118,6 +132,59 @@ class TestPurchaseOrderForm:
         assert "currency" not in form.fields
         assert "exchange_rate" not in form.fields
 
+    @pytest.mark.parametrize(
+        "form_cls",
+        [PurchaseOrderForm, SupplierInvoiceForm, SupplierPaymentHeaderForm],
+    )
+    def test_purchase_document_optional_notes_render_as_header_chip(self, form_cls):
+        form = form_cls(organization=OrganizationFactory())
+
+        html = render_crispy_form(form)
+
+        assert html.count('id="opt-add-row"') == 1
+        assert 'data-target="opt-notes-wrap"' in html
+        assert 'id="opt-notes-wrap"' in html
+        assert "Añadir notas" in html
+        assert "doc-optfields-grid--single" in html
+
+    @pytest.mark.parametrize(
+        "template_path",
+        [
+            "templates/purchases/purchase_order_form.html",
+            "templates/purchases/supplier_invoice_form.html",
+        ],
+    )
+    def test_purchase_document_templates_remove_legacy_notes_accordion(self, template_path):
+        source = Path(template_path).read_text(encoding="utf-8")
+
+        assert "doc-notes-acc" not in source
+        assert "doc-bottom-grid mb-3" not in source
+        assert 'class="d-flex justify-content-end mb-3"' in source
+        assert 'class="doc-totals-card" style="width:360px"' in source
+        for total_id in [
+            "grand-subtotal",
+            "grand-itbis18",
+            "grand-itbis16",
+            "grand-total",
+        ]:
+            assert total_id in source
+
+    def test_supplier_payment_form_template_loads_optional_fields_script(self):
+        source = Path("templates/purchases/supplier_payment_form.html").read_text(
+            encoding="utf-8"
+        )
+
+        assert "sales/partials/item_js.html" in source
+
+    def test_supplier_payment_form_template_uses_doc_chrome(self):
+        source = Path("templates/purchases/supplier_payment_form.html").read_text(
+            encoding="utf-8"
+        )
+
+        assert "kv-card" not in source
+        assert 'class="app-table-wrap doc-order-card mb-3"' in source
+        assert 'class="app-table-wrap doc-lines-card mb-3"' in source
+
     def test_purchase_order_create_starts_with_one_item_row(self, client):
         user, org, _ = make_member(Membership.Role.ADMIN)
         login(client, user)
@@ -192,6 +259,24 @@ class TestSupplierForm:
         assert attrs["hx-target"] == "#rnc-lookup-result"
         assert attrs["hx-indicator"] == "#rnc-lookup-spinner"
 
+    def test_supplier_form_id_type_choices_are_only_rnc_and_cedula(self):
+        form = SupplierForm(organization=OrganizationFactory())
+
+        assert list(form.fields["id_type"].choices) == [
+            ("RNC", "RNC"),
+            ("CED", "Cédula"),
+        ]
+
+    def test_supplier_picker_quick_create_offers_only_rnc_and_cedula(self):
+        source = Path("templates/purchases/partials/supplier_picker_modal.html").read_text(
+            encoding="utf-8"
+        )
+
+        assert 'option value="RNC"' in source
+        assert 'option value="CED"' in source
+        assert 'option value="PAS"' not in source
+        assert 'option value="EXT"' not in source
+
     def test_supplier_create_page_has_rnc_lookup_ui_and_swal_config(self, client):
         user, org, _ = make_member(Membership.Role.ADMIN)
         login(client, user)
@@ -253,6 +338,16 @@ class TestSupplierForm:
         supplier = SupplierFactory.build(
             organization=OrganizationFactory(),
             rnc_cedula="12345678",
+        )
+
+        with pytest.raises(ValidationError):
+            supplier.full_clean()
+
+    def test_supplier_model_rejects_unsupported_id_type(self):
+        supplier = SupplierFactory.build(
+            organization=OrganizationFactory(),
+            id_type="PAS",
+            rnc_cedula="AB123456",
         )
 
         with pytest.raises(ValidationError):

@@ -41,7 +41,7 @@
 </div>
 {% endif %}
 
-{% if supplier %}
+{% if supplier and not error %}
 
 <div class="customer-block no-print">
   <div class="customer-avatar">{{ supplier.name|slice:":2"|upper }}</div>
@@ -162,4 +162,9 @@
 
 {% endif %}
 
+{% endblock %}
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
 {% endblock %}

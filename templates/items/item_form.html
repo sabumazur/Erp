@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <div class="form-sticky-bar">
+      <div class="app-form-bar">
         <button type="submit" class="btn btn-sm btn-brand">
           <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
         </button>
@@ -51,6 +51,9 @@
 {% endblock %}
 
 {% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   itemAutoCodeHint: "{% trans 'Se generará automáticamente al guardar (ej. ART-0001).' %}",

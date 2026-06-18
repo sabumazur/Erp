@@ -1,6 +1,7 @@
 from datetime import date
 
-from django.db.models import Sum
+from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -52,34 +53,42 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         status_filter = self.request.GET.get("status", "")
         if status_filter:
             qs = qs.filter(status=status_filter)
-        org_qs = PurchaseDocument.supplier_invoices.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),   "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"), "color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "PAID",      "label": _("Pagada"),     "color": "#10b981",
-             "count": org_qs.filter(status="PAID").count()},
-            {"value": "CANCELLED", "label": _("Anulada"),    "color": "#ef4444",
-             "count": org_qs.filter(status="CANCELLED").count()},
-        ]
-        ctx.update(self.apply_datatable(qs, status_pills=status_pills))
+        ctx.update(self.apply_datatable(qs))
         if not self.request.htmx:
+            # REFACTOR PQ-11: 4 separate queries → 1 conditional aggregation.
             today = date.today()
-            month_qs = org_qs.filter(
-                issue_date__year=today.year, issue_date__month=today.month,
+            _DEC = DecimalField(max_digits=14, decimal_places=2)
+            stats_agg = (
+                PurchaseDocument.supplier_invoices
+                .filter(organization=org)
+                .aggregate(
+                    total_count=Count("id"),
+                    month_total=Coalesce(
+                        Sum("total", filter=Q(
+                            issue_date__year=today.year,
+                            issue_date__month=today.month,
+                        )),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    confirmed_total=Coalesce(
+                        Sum("total", filter=Q(status="CONFIRMED")),
+                        Value(0, output_field=_DEC), output_field=_DEC,
+                    ),
+                    paid_count=Count("id", filter=Q(status="PAID")),
+                )
             )
             ctx["stats"] = [
-                {"label": _("Total facturas"), "value": org_qs.count(),
+                {"label": _("Total facturas"),
+                 "value": stats_agg["total_count"],
                  "icon": "bi-receipt",          "color": "primary"},
                 {"label": _("Comprado este mes"),
-                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack",       "color": "success"},
+                 "value": "{:,.2f}".format(stats_agg["month_total"] or 0),
+                 "icon": "bi-cash-stack",       "color": "success", "currency": "RD$"},
                 {"label": _("Por pagar"),
-                 "value": "{:,.2f}".format(
-                     org_qs.filter(status="CONFIRMED").aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-hourglass-split",  "color": "warning"},
-                {"label": _("Pagadas"), "value": org_qs.filter(status="PAID").count(),
+                 "value": "{:,.2f}".format(stats_agg["confirmed_total"] or 0),
+                 "icon": "bi-hourglass-split",  "color": "warning", "currency": "RD$"},
+                {"label": _("Pagadas"),
+                 "value": stats_agg["paid_count"],
                  "icon": "bi-check2-circle",    "color": "info"},
             ]
         ctx["module"] = "supplier-invoice"
@@ -145,7 +154,7 @@ class SupplierInvoiceDetailView(ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["module"] = "supplier-invoice"
         inv = self.object
         ctx["breadcrumbs"] = [
@@ -294,8 +303,11 @@ class SupplierInvoiceCloneView(ERPBaseViewMixin, View):
             supplier_ncf_type="",
             supplier_rnc="",
         )
-        for line in source.items.all():
-            PurchaseDocumentItem.objects.create(
+        # REFACTOR PQ-002: bulk_create all line items in 1 INSERT instead of N.
+        # No post_save signal on PurchaseDocumentItem; recompute_totals() called
+        # once below as before.
+        PurchaseDocumentItem.objects.bulk_create([
+            PurchaseDocumentItem(
                 purchase_document=new_inv,
                 item=line.item,
                 description=line.description,
@@ -303,6 +315,8 @@ class SupplierInvoiceCloneView(ERPBaseViewMixin, View):
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
+            for line in source.items.all()
+        ])
         new_inv.recompute_totals()
         messages.success(request, _("Factura clonada correctamente. Ingrese el NCF del proveedor."))
         return redirect("purchases:supplier_invoice_edit", pk=new_inv.pk)

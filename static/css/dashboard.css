@@ -1,0 +1,546 @@
+.db-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.db-section-label {
+  color: #6b7280;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.db-section-rule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.db-section-note {
+  color: #9ca3af;
+  font-size: .68rem;
+  white-space: nowrap;
+}
+
+.db-welcome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  margin: -2px 0 12px;
+  padding: 9px 12px;
+  border: 1px solid #dbe6f4;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f8fbff 0%, #eef5ff 100%);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .03);
+}
+
+.db-welcome-mark {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #5b9af5;
+  box-shadow: 0 0 0 4px rgba(91, 154, 245, .13);
+}
+
+.db-welcome-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: #1e293b;
+  font-size: .86rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.db-welcome-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: .72rem;
+  transition: background-color .14s ease, color .14s ease;
+}
+
+.db-welcome-close:hover,
+.db-welcome-close:focus {
+  background: rgba(91, 154, 245, .12);
+  color: #1e2130;
+}
+
+.db-welcome-close:focus-visible {
+  outline: 2px solid #86b7fe;
+  outline-offset: 2px;
+}
+
+/* .db-kpi* rules live in components.css (shared, app-wide standard). */
+
+.db-panel {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .045);
+}
+
+.db-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fbfcfe;
+}
+
+.db-panel-title {
+  color: #6b7280;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.db-panel-sub {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #6b7280;
+  font-size: .68rem;
+}
+
+.db-panel-body {
+  padding: 14px;
+}
+
+.db-panel-action {
+  font-size: .7rem;
+}
+
+.db-panel-action-danger {
+  border: 1px solid #fecaca;
+  background: #fff5f5;
+  color: #dc2626;
+}
+
+.db-panel-action-danger:hover,
+.db-panel-action-danger:focus {
+  border-color: #fca5a5;
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.db-panel-overdue {
+  border-top: 3px solid #dc2626;
+}
+
+.db-panel-overdue .db-panel-title {
+  color: #dc2626;
+}
+
+.db-chart-main {
+  max-height: 240px;
+}
+
+.db-chart-status {
+  max-height: 210px;
+}
+
+.db-doc-link {
+  color: #1e2130;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: .8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.db-doc-link:hover {
+  color: #3f6fd6;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.db-doc-link.is-danger {
+  color: #842029;
+}
+
+.db-doc-link.is-danger:hover {
+  color: #dc2626;
+}
+
+.db-table-muted,
+.db-due-cell,
+.db-table-text,
+.db-table-danger,
+.db-table-success {
+  font-size: .83rem;
+}
+
+.db-table-muted,
+.db-due-cell {
+  color: #6b7280;
+}
+
+.db-due-cell.is-overdue,
+.db-table-danger {
+  color: #dc2626;
+}
+
+.db-table-success {
+  color: #16a34a;
+}
+
+.db-empty-state {
+  min-height: 58px;
+  padding: 14px 16px;
+  border: 1px solid #dfe5ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: .86rem;
+}
+
+.db-empty-state i {
+  color: #1e2130;
+}
+
+.db-total-label {
+  font-size: .75rem;
+}
+
+@media (max-width: 767.98px) {
+  .db-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* ============================================================
+   Dashboard KPI hierarchy: cash band (T1) · flow stats (T2) · worklist (T3).
+   Reuses existing :root tokens from components.css — defines NO new tokens.
+   ============================================================ */
+
+/* ── Tier 1 · Cash position band ─────────────────────────────── */
+.db-cash {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .05), 0 2px 14px rgba(16, 24, 40, .04);
+  overflow: hidden;
+}
+
+.db-cash-net {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 300px;
+  padding: 18px 22px;
+}
+
+.db-cash-eyebrow {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-cash-value {
+  margin-top: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.01em;
+}
+
+.db-cash-value .cur {
+  margin-right: 4px;
+  color: var(--muted-2);
+  font-size: .9rem;
+  font-weight: 600;
+  vertical-align: .32em;
+}
+
+.db-cash-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.db-cash-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+}
+
+.db-cash-sides {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.db-cash-side {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 18px 20px;
+  border-left: 1px solid var(--hairline-soft);
+}
+
+.db-cash-side-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.db-cash-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.db-cash-dot.ar { background: var(--brand-accent); }
+.db-cash-dot.ap { background: var(--warn); }
+
+.db-cash-side-label {
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-cash-side-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #1f2433;
+}
+
+.db-cash-side-value .cur {
+  margin-right: 3px;
+  color: var(--muted-2);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+.db-cash-side-sub {
+  color: var(--muted-2);
+  font-size: .66rem;
+}
+
+.db-cash-risk {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 200px;
+  padding: 18px 22px;
+  background: #fdeceb;
+  border-left: 1px solid #f6d4d1;
+  text-decoration: none;
+  transition: background .14s ease;
+}
+
+a.db-cash-risk:hover { background: #fbe1df; }
+
+.db-cash-risk-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--neg);
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.db-cash-risk-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.34rem;
+  font-weight: 800;
+  color: var(--neg);
+}
+
+.db-cash-risk-value .cur {
+  margin-right: 3px;
+  font-size: .7rem;
+  font-weight: 600;
+  opacity: .8;
+}
+
+.db-cash-risk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--neg);
+  font-size: .68rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.db-cash-risk-link:hover { text-decoration: underline; }
+
+@media (max-width: 991.98px) {
+  .db-cash { flex-direction: column; }
+  .db-cash-net,
+  .db-cash-risk { min-width: 0; }
+  .db-cash-net { border-bottom: 1px solid var(--hairline-soft); }
+  .db-cash-risk { border-left: 0; border-top: 1px solid #f6d4d1; }
+}
+
+/* ── Tier 2 · Flow stats with month-over-month delta ─────────── */
+.db-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.db-flow {
+  padding: 13px 15px;
+  border: 1px solid var(--hairline);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.db-flow-label {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.db-flow-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.db-flow-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: 1.34rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.db-flow-value .cur {
+  margin-right: 3px;
+  color: var(--muted-2);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+.db-flow-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: .74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.db-flow-delta.up { color: var(--pos); background: #eaf7ef; }
+.db-flow-delta.down { color: var(--neg); background: #fdeceb; }
+
+.db-flow-foot {
+  margin-top: 5px;
+  color: var(--muted-2);
+  font-size: .66rem;
+}
+
+@media (max-width: 767.98px) {
+  .db-flow-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Tier 3 · Worklist navigation chips ──────────────────────── */
+.db-work {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.db-work-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 13px 8px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: #fff;
+  color: #1f2433;
+  text-decoration: none;
+  transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+
+.db-work-chip:hover {
+  border-color: #d7dde6;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, .07);
+  transform: translateY(-1px);
+  color: #1f2433;
+}
+
+.db-work-chip:focus-visible {
+  outline: 2px solid #86b7fe;
+  outline-offset: 2px;
+}
+
+.db-work-ic {
+  display: inline-flex;
+  color: var(--muted);
+  font-size: .92rem;
+}
+
+.db-work-txt {
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.db-work-count {
+  min-width: 20px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--hairline-soft);
+  color: var(--brand-ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+  font-size: .74rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.db-work-chip.risk .db-work-ic { color: var(--neg); }
+.db-work-chip.risk .db-work-count { background: #fdeceb; color: var(--neg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .db-work-chip { transition: none; }
+  .db-work-chip:hover { transform: none; }
+}

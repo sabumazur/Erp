@@ -1,1 +1,4 @@
 {# Invoice item formset behavior now lives in static/js/app.js. #}
+{% load static i18n %}
+<script>window.OPT_REMOVE_LABEL = "{% trans 'Quitar' %}";</script>
+<script src="{% static 'js/optional-fields.js' %}"></script>

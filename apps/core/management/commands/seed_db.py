@@ -362,15 +362,21 @@ class Command(BaseCommand):
         return seqs  # 25: 20 active + 5 inactive
 
     def _seed_document_sequences(self, org):
-        from apps.sales.models import DocumentSequence
+        from apps.core.models import DocumentSequence
 
         seqs = []
-        for doc_type in [DocumentSequence.DocType.QUOTATION, DocumentSequence.DocType.SALE_ORDER]:
+        for doc_type, prefix, include_year in [
+            ("QUOTATION", "COT", True),
+            ("SALE_ORDER", "OV", True),
+        ]:
             seqs.append(
                 DocumentSequence.objects.create(
                     organization=org,
                     doc_type=doc_type,
+                    prefix=prefix,
                     current_seq=0,
+                    padding=4,
+                    include_year=include_year,
                 )
             )
         return seqs  # 2

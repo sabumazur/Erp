@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -17,6 +18,7 @@ from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate,
 from ..models import SalesDocument, SalesDocumentItem, CustomerDepartment
 from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
+from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
@@ -59,30 +61,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
-        org_qs = SalesDocument.sale_orders.filter(organization=org)
-        status_pills = [
-            {"value": "DRAFT",     "label": _("Borrador"),  "color": "#94a3b8",
-             "count": org_qs.filter(status="DRAFT").count()},
-            {"value": "CONFIRMED", "label": _("Confirmada"),"color": "#3b82f6",
-             "count": org_qs.filter(status="CONFIRMED").count()},
-            {"value": "DELIVERED", "label": _("Entregada"), "color": "#06b6d4",
-             "count": org_qs.filter(status="DELIVERED").count()},
-            {"value": "INVOICED",  "label": _("Facturada"), "color": "#10b981",
-             "count": org_qs.filter(status="INVOICED").count()},
-        ]
-        ctx.update(self.apply_datatable(f.qs, status_pills=status_pills))
-
-        if not self.request.htmx:
-            ctx["stats"] = [
-                {"label": _("Total órdenes"), "value": org_qs.count(),
-                 "icon": "bi-cart", "color": "primary"},
-                {"label": _("Por entregar"), "value": org_qs.filter(status="CONFIRMED").count(),
-                 "icon": "bi-truck", "color": "warning"},
-                {"label": _("Entregadas"), "value": org_qs.filter(status="DELIVERED").count(),
-                 "icon": "bi-box-seam", "color": "info"},
-                {"label": _("Facturadas"), "value": org_qs.filter(status="INVOICED").count(),
-                 "icon": "bi-receipt", "color": "success"},
-            ]
+        ctx.update(self.apply_datatable(f.qs))
 
         ctx["module"] = "sale-order"
         ctx["breadcrumbs"] = [
@@ -113,12 +92,14 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         form = SaleOrderForm(organization=request.organization, data=request.POST)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            order = form.save(commit=False)
-            order.organization = request.organization
-            order.doc_type = SalesDocument.DocType.SALE_ORDER
-            order.save()
-            formset.instance = order
-            formset.save()
+            with transaction.atomic():
+                order = form.save(commit=False)
+                order.organization = request.organization
+                order.doc_type = SalesDocument.DocType.SALE_ORDER
+                order.save()
+                formset.instance = order
+                with suspend_recompute(order):
+                    formset.save()
             messages.success(request, _("Orden de venta creada como borrador."))
             return redirect("sales:sale_order_detail", pk=order.pk)
         ctx = self.get_context_data()
@@ -141,7 +122,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["items"] = self.object.items.all()
+        ctx["items"] = self.object.items.select_related("item").all()
         ctx["deliver_form"] = SaleOrderDeliverForm()
         ctx["module"] = "sale-order"
         o = self.object
@@ -183,8 +164,10 @@ class SaleOrderUpdateView(ERPBaseViewMixin, TemplateView):
         form = SaleOrderForm(organization=request.organization, data=request.POST, instance=o)
         formset = InvoiceItemFormSet(request.POST, instance=o, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
-            form.save()
-            formset.save()
+            with transaction.atomic():
+                form.save()
+                with suspend_recompute(o):
+                    formset.save()
             messages.success(request, _("Orden de venta actualizada."))
             return redirect("sales:sale_order_detail", pk=o.pk)
         ctx = self.get_context_data(form=form, formset=formset, order=o)
@@ -274,6 +257,9 @@ class SaleOrderEmailView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
+        if not o.has_line_items:
+            messages.error(request, _("No se puede enviar una orden sin líneas. Agregue al menos un producto."))
+            return redirect("sales:sale_order_detail", pk=o.pk)
         try:
             sent = send_sale_order_email(o, request)
             if sent:
@@ -326,13 +312,15 @@ class SaleOrderConsolidateView(ERPBaseViewMixin, TemplateView):
                     SalesDocument.sale_orders.filter(
                         organization=request.organization,
                         customer_id=customer_id,
-                        status=SalesDocument.Status.DELIVERED,
+                        status=SalesDocument.Status.DRAFT,
                         consolidated_into__isnull=True,
-                        delivery_date__gte=p_start,
-                        delivery_date__lte=p_end,
+                        items__isnull=False,
+                        issue_date__gte=p_start,
+                        issue_date__lte=p_end,
                     )
                     .select_related("customer", "department")
-                    .order_by("delivery_date")
+                    .order_by("issue_date")
+                    .distinct()
                 )
                 if department_id:
                     qs = qs.filter(department_id=department_id)
@@ -393,8 +381,11 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
             notes=source.notes,
             terms=getattr(source, "terms", ""),
         )
-        for line in source.items.all():
-            SalesDocumentItem.objects.create(
+        # REFACTOR SAL-002: bulk_create all line items in 1 INSERT instead of N.
+        # bulk_create bypasses the post_save signal (recompute_totals), so we
+        # call recompute_totals() once explicitly after.
+        SalesDocumentItem.objects.bulk_create([
+            SalesDocumentItem(
                 document=new_order,
                 item=line.item,
                 description=line.description,
@@ -402,6 +393,9 @@ class SaleOrderCloneView(ERPBaseViewMixin, View):
                 unit_price=line.unit_price,
                 itbis_rate=line.itbis_rate,
             )
+            for line in source.items.all()
+        ])
+        new_order.recompute_totals()
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
         return redirect("sales:sale_order_edit", pk=new_order.pk)
 

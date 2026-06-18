@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.admin import ERPHistoryAdmin
 from .models import (
-    Customer, CustomerDepartment, DocumentSequence, SalesDocument, SalesDocumentItem,
+    Customer, CustomerDepartment, SalesDocument, SalesDocumentItem,
     NCFSequence, Payment, PaymentAllocation, PaymentTerm,
 )
 
@@ -83,13 +83,6 @@ class SalesDocumentAdmin(ERPHistoryAdmin):
             "classes": ("collapse",),
         }),
     )
-
-
-@admin.register(DocumentSequence)
-class DocumentSequenceAdmin(admin.ModelAdmin):
-    list_display   = ["organization", "doc_type", "current_seq", "updated_at"]
-    list_filter    = ["organization", "doc_type"]
-    readonly_fields = ["created_at", "updated_at"]
 
 
 @admin.register(NCFSequence)

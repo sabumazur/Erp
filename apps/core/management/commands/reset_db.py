@@ -62,10 +62,10 @@ class Command(BaseCommand):
     def _wipe(self):
         from apps.sales.models import (
             Customer, SalesDocument, SalesDocumentItem, Payment, PaymentAllocation,
-            PaymentTerm, NCFSequence, DocumentSequence, CustomerDepartment,
+            PaymentTerm, NCFSequence, CustomerDepartment,
         )
         from apps.items.models import Item, ItemCodeSequence
-        from apps.core.models import Module, Notification
+        from apps.core.models import DocumentSequence, Module, Notification
         from apps.accounts.models import User, Organization, Team, Membership, Invitation
 
         self.stdout.write("Wiping database...")

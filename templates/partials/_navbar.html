@@ -3,7 +3,12 @@
 <header id="topbar">
 
   {# ── Sidebar toggle ─────────────────────────────────────── #}
-  <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="{% trans 'Toggle sidebar' %}">
+  <button class="topbar-toggle"
+          id="sidebar-toggle-btn"
+          onclick="toggleSidebar()"
+          aria-label="{% trans 'Toggle sidebar' %}"
+          aria-expanded="false"
+          aria-controls="sidebar">
     <i class="bi bi-list"></i>
   </button>
 

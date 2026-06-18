@@ -1,69 +1,10 @@
 {% extends "base.html" %}
-{% load i18n humanize %}
+{% load static i18n humanize %}
 
 {% block title %}Dashboard — {{ organization.name }}{% endblock %}
 
 {% block extra_css %}
-<style>
-/* ── Panel (charts / stat pills) — same border system as app-table-wrap ── */
-.db-panel {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  overflow: hidden;
-}
-.db-panel-header {
-  padding: 10px 14px 9px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.db-panel-title {
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b7280;
-}
-.db-panel-sub {
-  font-size: .68rem;
-  color: #9ca3af;
-  background: #f9fafb;
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-.db-panel-body { padding: 14px; }
-
-/* ── Stat pill variant of app-metric-card ────────────────── */
-.app-metric-card.db-stat {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-align: left;
-  padding: 12px 14px;
-}
-.db-stat-icon {
-  font-size: 1.1rem;
-  color: #9ca3af;
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
-}
-.db-stat-link {
-  margin-left: auto;
-  font-size: .72rem;
-  color: #6b7280;
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.db-stat-link:hover { color: #374151; text-decoration: underline; }
-
-/* ── Overdue panel header accent ─────────────────────────── */
-.db-panel-overdue { border-left: 3px solid #dc2626; }
-.db-panel-overdue .db-panel-title { color: #dc2626; }
-</style>
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -81,74 +22,47 @@
   </div>
 </div>
 
-{% if has_sales_access %}
-{# ── KPI metric cards ── #}
-<div class="row g-2 mb-3">
-  <div class="col-sm-6 col-xl-3">
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ month_invoiced|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Facturado · Mes actual" %}</div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="app-metric-card">
-      <div class="app-metric-value num-pos">{{ month_collected|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Cobrado · Mes actual" %}</div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="app-metric-card">
-      <div class="app-metric-value" style="color:#111827">{{ outstanding|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">{% trans "Por cobrar" %}</div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="app-metric-card">
-      <div class="app-metric-value num-neg">{{ overdue_total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">
-        {% trans "Vencido" %}{% if overdue_count %} · {{ overdue_count }} {% trans "factura(s)" %}{% endif %}
-      </div>
-    </div>
-  </div>
+<div class="db-welcome" data-dashboard-welcome>
+  <span class="db-welcome-mark" aria-hidden="true"></span>
+  <span class="db-welcome-text">{{ dashboard_greeting }}, {{ dashboard_first_name }}</span>
+  <button class="db-welcome-close no-print" type="button" data-dashboard-welcome-close aria-label="{% trans 'Cerrar bienvenida' %}">
+    <i class="bi bi-x-lg"></i>
+  </button>
 </div>
 
-{# ── Stat pills ── #}
+{% if has_sales_access %}
+{% include "components/_cash_position.html" %}
+{% include "components/_flow_stats.html" %}
+{% include "components/_worklist.html" %}
+
+{# ── Facturado vs Comprado ── #}
 <div class="row g-2 mb-3">
-  <div class="col-sm-4">
-    <div class="app-metric-card db-stat">
-      <span class="db-stat-icon"><i class="bi bi-people"></i></span>
-      <div>
-        <div class="app-metric-value" style="text-align:left">{{ customer_count|intcomma }}</div>
-        <div class="app-metric-label" style="text-align:left">{% trans "Clientes" %}</div>
+  <div class="col-12 col-md-8">
+    <div class="db-panel h-100">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Facturado vs Comprado" %}</span>
+        <span class="db-panel-sub">{% trans "Últimos 6 meses" %}</span>
       </div>
-      <a href="{% url 'sales:customer_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
+      <div class="db-panel-body">
+        <canvas id="salesPurchasesChart" class="db-chart-main"></canvas>
+      </div>
     </div>
   </div>
-  <div class="col-sm-4">
-    <div class="app-metric-card db-stat">
-      <span class="db-stat-icon"><i class="bi bi-file-earmark-text"></i></span>
-      <div>
-        <div class="app-metric-value" style="text-align:left">{{ pending_quotations|intcomma }}</div>
-        <div class="app-metric-label" style="text-align:left">{% trans "Cotizaciones activas" %}</div>
+  <div class="col-12 col-md-4">
+    <div class="db-panel h-100 d-flex flex-column">
+      <div class="db-panel-header">
+        <span class="db-panel-title">{% trans "Estado de facturas" %}</span>
       </div>
-      <a href="{% url 'sales:quotation_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
-    </div>
-  </div>
-  <div class="col-sm-4">
-    <div class="app-metric-card db-stat">
-      <span class="db-stat-icon"><i class="bi bi-cart"></i></span>
-      <div>
-        <div class="app-metric-value" style="text-align:left">{{ pending_sale_orders|intcomma }}</div>
-        <div class="app-metric-label" style="text-align:left">{% trans "Órdenes pendientes" %}</div>
+      <div class="db-panel-body flex-grow-1 d-flex align-items-center justify-content-center">
+        <canvas id="statusChart" class="db-chart-status"></canvas>
       </div>
-      <a href="{% url 'sales:sale_order_list' %}" class="db-stat-link">{% trans "Ver" %} →</a>
     </div>
   </div>
 </div>
 
 {# ── Charts ── #}
 <div class="row g-2 mb-3">
-  <div class="col-lg-5">
+  <div class="col-12 col-md-6">
     <div class="db-panel h-100">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Facturación vs Cobros" %}</span>
@@ -159,24 +73,14 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-4">
+  <div class="col-12 col-md-6">
     <div class="db-panel h-100">
       <div class="db-panel-header">
-        <span class="db-panel-title">{% trans "Facturación por cliente" %}</span>
-        <span class="db-panel-sub">{% trans "Top 6 · 6 meses" %}</span>
+        <span class="db-panel-title">{% trans "Cartera por antigüedad" %}</span>
+        <span class="db-panel-sub">{% if has_purchasing_access %}{% trans "CxC vs CxP" %}{% else %}{% trans "CxC" %}{% endif %}</span>
       </div>
       <div class="db-panel-body">
-        <canvas id="customerChart"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3">
-    <div class="db-panel h-100 d-flex flex-column">
-      <div class="db-panel-header">
-        <span class="db-panel-title">{% trans "Estado de facturas" %}</span>
-      </div>
-      <div class="db-panel-body flex-grow-1 d-flex align-items-center justify-content-center">
-        <canvas id="statusChart" style="max-height:200px"></canvas>
+        <canvas id="arApAgingChart"></canvas>
       </div>
     </div>
   </div>
@@ -186,7 +90,7 @@
 <div class="app-table-wrap mb-3">
   <div class="db-panel-header">
     <span class="db-panel-title">{% trans "Facturas recientes" %}</span>
-    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todas" %} →</a>
+    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print db-panel-action">{% trans "Ver todas" %} →</a>
   </div>
   <table class="table table-hover mb-0">
     <thead>
@@ -203,12 +107,11 @@
       {% for inv in recent_invoices %}
       <tr>
         <td>
-          <a href="{% url 'sales:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#1e2130">{{ inv.display_number }}</a>
+          <a href="{% url 'sales:invoice_detail' inv.pk %}" class="db-doc-link">{{ inv.display_number }}</a>
         </td>
         <td>{{ inv.customer.name }}</td>
-        <td class="text-muted text-nowrap" style="font-size:.83rem">{{ inv.issue_date|date:"d/m/Y" }}</td>
-        <td class="text-nowrap {% if inv.status == 'OVERDUE' %}fw-semibold{% endif %}"
-            style="font-size:.83rem;{% if inv.status == 'OVERDUE' %}color:#dc2626{% else %}color:#6b7280{% endif %}">
+        <td class="db-table-muted text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
+        <td class="db-due-cell text-nowrap {% if inv.status == 'OVERDUE' %}is-overdue fw-semibold{% endif %}">
           {{ inv.due_date|date:"d/m/Y"|default:"—" }}
         </td>
         <td>
@@ -219,7 +122,7 @@
       {% empty %}
       <tr>
         <td colspan="6">
-          <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+          <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
             <i class="bi bi-info-circle"></i>{% trans "No hay facturas registradas." %}
           </div>
         </td>
@@ -236,7 +139,7 @@
       <div class="db-panel-header">
         <span class="db-panel-title"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Facturas vencidas" %}</span>
         {% if overdue_count > 6 %}
-        <a href="{% url 'sales:invoice_list' %}?status=OVERDUE" class="btn btn-sm no-print" style="font-size:.7rem;color:#dc2626;border:1px solid #fecaca;background:#fff5f5">{% trans "Ver todas" %} →</a>
+        <a href="{% url 'sales:invoice_list' %}?status=OVERDUE" class="btn btn-sm no-print db-panel-action db-panel-action-danger">{% trans "Ver todas" %} →</a>
         {% endif %}
       </div>
       <table class="table mb-0">
@@ -252,16 +155,16 @@
           {% for inv in overdue_invoices %}
           <tr>
             <td>
-              <a href="{% url 'sales:invoice_detail' inv.pk %}" class="text-decoration-none font-monospace fw-semibold" style="font-size:.8rem;color:#842029">{{ inv.display_number }}</a>
+              <a href="{% url 'sales:invoice_detail' inv.pk %}" class="db-doc-link is-danger">{{ inv.display_number }}</a>
             </td>
-            <td class="text-muted" style="font-size:.83rem">{{ inv.customer.name }}</td>
-            <td class="text-end fw-bold font-monospace" style="color:#dc2626;font-size:.83rem">{{ inv.days_overdue }}</td>
-            <td class="text-end font-monospace fw-semibold" style="color:#dc2626;font-size:.83rem">{{ inv.total|floatformat:2|intcomma }}</td>
+            <td class="db-table-muted">{{ inv.customer.name }}</td>
+            <td class="text-end fw-bold font-monospace db-table-danger">{{ inv.days_overdue }}</td>
+            <td class="text-end font-monospace fw-semibold db-table-danger">{{ inv.total|floatformat:2|intcomma }}</td>
           </tr>
           {% empty %}
           <tr>
             <td colspan="4">
-              <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+              <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
                 <i class="bi bi-check-circle"></i>{% trans "Sin facturas vencidas." %}
               </div>
             </td>
@@ -271,7 +174,7 @@
         {% if overdue_invoices %}
         <tfoot>
           <tr>
-            <td colspan="3" class="text-end text-muted" style="font-size:.75rem">{% trans "Total vencido" %}</td>
+            <td colspan="3" class="text-end text-muted db-total-label">{% trans "Total vencido" %}</td>
             <td class="text-end font-monospace num-neg">{{ overdue_total|floatformat:2|intcomma }}</td>
           </tr>
         </tfoot>
@@ -284,7 +187,7 @@
     <div class="app-table-wrap">
       <div class="db-panel-header">
         <span class="db-panel-title">{% trans "Pagos recientes" %}</span>
-        <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print" style="font-size:.7rem">{% trans "Ver todos" %} →</a>
+        <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print db-panel-action">{% trans "Ver todos" %} →</a>
       </div>
       <table class="table mb-0">
         <thead>
@@ -298,8 +201,8 @@
         <tbody>
           {% for pmt in recent_payments %}
           <tr>
-            <td class="text-muted text-nowrap" style="font-size:.83rem">{{ pmt.date|date:"d/m/Y" }}</td>
-            <td style="font-size:.83rem">
+            <td class="db-table-muted text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
+            <td class="db-table-text">
               <a href="{% url 'sales:customer_detail' pmt.customer.pk %}" class="text-decoration-none text-dark">{{ pmt.customer.name }}</a>
             </td>
             <td>
@@ -308,12 +211,12 @@
               {% else %}<span class="badge-soft badge-default">{{ pmt.get_method_display }}</span>
               {% endif %}
             </td>
-            <td class="text-end font-monospace fw-semibold" style="color:#16a34a;font-size:.83rem">{{ pmt.amount|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold db-table-success">{{ pmt.amount|floatformat:2|intcomma }}</td>
           </tr>
           {% empty %}
           <tr>
             <td colspan="4">
-              <div class="alert alert-info d-flex align-items-center gap-2 mb-0 my-2 mx-2">
+              <div class="db-empty-state d-flex align-items-center gap-2 my-2 mx-2">
                 <i class="bi bi-info-circle"></i>{% trans "Sin pagos recientes." %}
               </div>
             </td>
@@ -329,6 +232,34 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+(function () {
+  const banner = document.querySelector("[data-dashboard-welcome]");
+  if (!banner) return;
+
+  const key = "sabsys.dashboardWelcome.dismissed.{{ request.user.pk|escapejs }}";
+  let canPersist = true;
+  try {
+    if (window.localStorage.getItem(key) === "1") {
+      banner.hidden = true;
+    }
+  } catch (error) {
+    canPersist = false;
+  }
+
+  const closeButton = banner.querySelector("[data-dashboard-welcome-close]");
+  if (!closeButton) return;
+  closeButton.addEventListener("click", function () {
+    banner.hidden = true;
+    if (!canPersist) return;
+    try {
+      window.localStorage.setItem(key, "1");
+    } catch (error) {
+      // localStorage can be unavailable in private or restricted contexts.
+    }
+  });
+})();
+</script>
 {% if has_sales_access %}
 {{ chart_months|json_script:"chart-months" }}
 {{ chart_invoiced|json_script:"chart-invoiced" }}
@@ -336,14 +267,22 @@
 {{ chart_status_labels|json_script:"chart-status-labels" }}
 {{ chart_status_counts|json_script:"chart-status-counts" }}
 {{ chart_status_colors|json_script:"chart-status-colors" }}
-{{ chart_customer_datasets|json_script:"chart-customer-datasets" }}
+{{ chart_purchased|json_script:"chart-purchased" }}
+{{ chart_aging_labels|json_script:"chart-aging-labels" }}
+{{ chart_ar_aging|json_script:"chart-ar-aging" }}
+{{ chart_ap_aging|json_script:"chart-ap-aging" }}
+<script src="{% static 'js/dashboard.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   chartInvoicedLabel: "{% trans 'Facturado' %}",
   chartCollectedLabel: "{% trans 'Cobrado' %}",
-  chartNoInvoicesText: "{% trans 'Sin facturas registradas.' %}",
-  chartNoCustomerDataText: "{% trans 'Sin datos de clientes.' %}"
+  chartPurchasedLabel: "{% trans 'Comprado' %}",
+  chartARLabel: "{% trans 'Por cobrar' %}",
+  chartAPLabel: "{% trans 'Por pagar' %}",
+  chartStatusTotalLabel: "{% trans 'Facturas' %}",
+  hasPurchasingAccess: {{ has_purchasing_access|yesno:"true,false" }},
+  chartNoInvoicesText: "{% trans 'Sin facturas registradas.' %}"
 });
 </script>
 {% endif %}

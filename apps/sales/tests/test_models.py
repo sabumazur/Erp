@@ -87,6 +87,21 @@ class TestNCFConcurrency:
         assert len(results) == len(set(results)), "Duplicate e-NCFs generated!"
 
 
+# ── has_line_items property ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestHasLineItems:
+
+    def test_false_without_items(self):
+        doc = SalesDocumentFactory()
+        assert doc.has_line_items is False
+
+    def test_true_with_items(self):
+        doc = SalesDocumentFactory()
+        SalesDocumentItemFactory(document=doc)
+        assert doc.has_line_items is True
+
+
 # ── InvoiceItem signals ───────────────────────────────────────────────────────
 
 @pytest.mark.django_db
@@ -330,9 +345,20 @@ class TestCedulaValidator:
     def test_cedula_field_validator_passes_on_valid(self):
         validate_rnc_cedula("00113918205", id_type="CED")  # must not raise
 
-    def test_passport_skips_digit_only_format_validation(self):
-        # Passport/foreign IDs bypass RNC/Cédula digit-only format checks.
-        validate_rnc_cedula("AB123456", id_type="PAS")
+    def test_unsupported_id_type_is_rejected(self):
+        with pytest.raises(ValidationError):
+            validate_rnc_cedula("AB123456", id_type="PAS")
+
+    @pytest.mark.django_db
+    def test_customer_model_rejects_unsupported_id_type(self):
+        customer = CustomerFactory.build(
+            organization=OrganizationFactory(),
+            id_type="PAS",
+            rnc_cedula="AB123456",
+        )
+
+        with pytest.raises(ValidationError):
+            customer.full_clean()
 
     def test_auto_detect_rnc_by_length(self):
         """9-digit string auto-detected as RNC."""

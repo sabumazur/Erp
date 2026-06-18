@@ -1,6 +1,10 @@
 from unittest.mock import patch, MagicMock
 import pytest
-from apps.sales.tests.factories import SalesDocumentFactory, CustomerFactory
+from apps.sales.tests.factories import (
+    SalesDocumentFactory,
+    SalesDocumentItemFactory,
+    CustomerFactory,
+)
 from apps.accounts.tests.factories import OrganizationFactory
 from apps.sales.email import send_invoice_email, send_quotation_email, send_sale_order_email
 from apps.sales.models import SalesDocument
@@ -70,6 +74,7 @@ def test_sales_document_email_templates_render_with_shared_partials(
         doc_type=doc_type,
         status=status,
     )
+    SalesDocumentItemFactory(document=document)
     request = MagicMock()
 
     with patch(pdf_patch, return_value=None):
@@ -77,3 +82,21 @@ def test_sales_document_email_templates_render_with_shared_partials(
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].to == ["test@example.com"]
+
+
+@pytest.mark.django_db
+def test_send_sale_order_email_returns_false_when_no_items(mailoutbox):
+    org = OrganizationFactory()
+    customer = CustomerFactory(organization=org, email="test@example.com")
+    order = SalesDocumentFactory(
+        organization=org,
+        customer=customer,
+        doc_type=SalesDocument.DocType.SALE_ORDER,
+        status=SalesDocument.Status.DRAFT,
+    )
+    request = MagicMock()
+
+    with patch("apps.sales.email._sale_order_pdf_bytes", return_value=None):
+        assert send_sale_order_email(order, request) is False
+
+    assert len(mailoutbox) == 0

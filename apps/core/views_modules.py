@@ -43,6 +43,7 @@ class ModuleListView(ModuleStaffMixin, DataTableMixin, TemplateView):
     dt_url = "core:module_list"
     dt_row_template = "core/partials/module_row.html"
     dt_filter_template = "core/partials/module_filters.html"
+    dt_ribbon_template = "core/partials/module_ribbon.html"
     dt_search_placeholder = _("Nombre o slug…")
 
     @classmethod
@@ -55,6 +56,7 @@ class ModuleListView(ModuleStaffMixin, DataTableMixin, TemplateView):
             url=cls.dt_url,
             row_template=cls.dt_row_template,
             filter_template=cls.dt_filter_template,
+            ribbon_template=cls.dt_ribbon_template,
         )
         ctx["filter"] = f
         resp = render(request, "components/datatable/results.html", ctx)

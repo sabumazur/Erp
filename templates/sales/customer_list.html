@@ -12,8 +12,6 @@
   </div>
 </div>
 
-{% include "components/_kpi_cards.html" with stats=stats %}
-
 {# Refined Slate list skin — scoped to this wrapper only (static/css/slate-list.css). #}
 <div class="dt-slate">
   {% include "components/datatable/wrapper.html" %}
@@ -22,6 +20,10 @@
 {% endblock %}
 
 {% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
+<script src="{% static 'js/datatable.js' %}"></script>
 <script>
 window.SabSysConfig = Object.assign(window.SabSysConfig || {}, {
   departmentsTitle: "{% trans 'Departamentos' %}",

@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}SabSys{% endblock %} — SabSys</title>
+  <title>SabSys - {% block title %}{% trans "Inicio" %}{% endblock %}</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/sabsys-favicon-32x32-trprnt0.png' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,9 +22,9 @@
   <link href="{% static 'css/picker.css' %}" rel="stylesheet">
   <link href="{% static 'vendor/tom-select/tom-select.bootstrap5.css' %}" rel="stylesheet">
   <link href="{% static 'css/sabsys-tomselect.css' %}" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 
   <style>[x-cloak]{display:none!important}</style>
+  {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-light"{% if module %} data-module="{{ module }}"{% endif %}>
 
@@ -52,27 +52,16 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-{% block extra_js %}{% endblock %}
-<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
-<script src="{% static 'js/init-tomselect.js' %}"></script>
 <script src="{% static 'js/core.js' %}"></script>
 <script src="{% static 'js/shell.js' %}"></script>
-<script src="{% static 'js/datatable.js' %}"></script>
 <script src="{% static 'js/alpine-components.js' %}"></script>
-<script src="{% static 'js/document-form.js' %}"></script>
-<script src="{% static 'js/item-picker.js' %}"></script>
-<script src="{% static 'js/customer-picker.js' %}"></script>
-<script src="{% static 'js/supplier-picker.js' %}"></script>
-<script src="{% static 'js/picker-keyboard.js' %}"></script>
-<script src="{% static 'js/payment-form.js' %}"></script>
 <script src="{% static 'js/modals.js' %}"></script>
-<script src="{% static 'js/dashboard.js' %}"></script>
 {% if user.is_authenticated %}
 <script id="session-timeout-config" type="application/json">{"expiresAt":"{{ request.session_expires_at|date:'c'|escapejs }}","expiryReason":"{{ request.session_expiry_reason|escapejs }}","serverNow":"{{ request.session_server_now|date:'c'|escapejs }}","warningSeconds":{{ request.session_warning_seconds }},"keepaliveUrl":"{% url 'accounts:session_keepalive' %}","loginUrl":"{% url 'account_login' %}"}</script>
 <script src="{% static 'js/session-timeout.js' %}"></script>
 {% endif %}
+<script src="{% static 'js/date-range.js' %}"></script>
+{% block extra_js %}{% endblock %}
 <script src="{% static 'js/app.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
-<script src="{% static 'js/flatpickr-init.js' %}"></script>
 </body>
 </html>

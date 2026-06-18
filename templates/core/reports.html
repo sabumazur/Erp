@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Centro de Reportes{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-column mb-4">
+  <h1 class="h3 mb-1">Centro de Reportes</h1>
+  <p class="text-muted mb-0" style="font-size:.875rem">Informes operativos, cumplimiento DGII y exportaciones.</p>
+</div>
+
+{% comment %}─── Informes Operativos ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Informes Operativos</h2>
+
+{% if has_sales %}
+<p class="rep-subgroup-title">Cuentas por Cobrar</p>
+<div class="rep-grid mb-4">
+
+  <a href="{% url 'sales:report_collections' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Cobros del Período</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_aging' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Antigüedad de Cuentas por Cobrar</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_statement' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Estado de Cuenta del Cliente</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_invoices_by_customer' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-receipt" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Documentos de Ventas por Cliente</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_sales_period' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Ventas por Período</strong>
+    </div>
+  </a>
+
+</div>
+{% endif %}
+
+{% if has_purchasing %}
+<p class="rep-subgroup-title{% if has_sales %} mt-2{% endif %}">Cuentas por Pagar</p>
+<div class="rep-grid mb-5">
+
+  <a href="{% url 'purchases:report_payments' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-cash-stack" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Pagos a Proveedores</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_aging' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#FFF3CD"><i class="bi bi-clock-history" style="color:#997404"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Antigüedad de Cuentas por Pagar</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_statement' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-person-lines-fill" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Estado de Cuenta del Proveedor</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_by_supplier' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#E6F1FB"><i class="bi bi-receipt-cutoff" style="color:#185FA5"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Compras por Proveedor</strong>
+    </div>
+  </a>
+
+  <a href="{% url 'purchases:report_spend_period' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-bar-chart-line" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Compras por Período</strong>
+    </div>
+  </a>
+
+</div>
+{% endif %}
+
+{% endif %}
+
+{% comment %}─── Reportes Fiscales ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Reportes Fiscales</h2>
+<div class="rep-grid mb-5">
+
+  {% if has_sales %}
+  <a href="{% url 'sales:report_itbis' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Resumen de ITBIS</strong>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+
+  <a href="{% url 'sales:report_ncf_type' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#D1E7DD"><i class="bi bi-tags" style="color:#0A6640"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Ventas por Tipo de Comprobante</strong>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+  {% endif %}
+
+  {% if has_purchasing %}
+  <a href="{% url 'purchases:report_itbis' %}" class="rep-card">
+    <div class="rep-card-icon" style="background:#F8D7DA"><i class="bi bi-percent" style="color:#842029"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">Crédito ITBIS en Compras</strong>
+      <span class="rep-card-badge">DGII · Obligatorio</span>
+    </div>
+  </a>
+  {% endif %}
+
+</div>
+{% endif %}
+
+{% comment %}─── Exportaciones DGII ───{% endcomment %}
+{% if has_sales or has_purchasing %}
+<h2 class="rep-section-title">Exportaciones DGII</h2>
+<div class="rep-grid rep-grid--export mb-4">
+
+  {% if has_sales %}
+  <form method="get" action="{% url 'sales:report_607' %}" class="rep-card rep-card--export">
+    <div class="rep-card-icon" style="background:#DBEAFE"><i class="bi bi-file-earmark-spreadsheet" style="color:#1D4ED8"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">607 Ventas CSV</strong>
+      <div class="rep-export-form">
+        <div class="rep-export-field rep-export-field--month">
+          <label class="rep-field-label" for="month-607">Mes</label>
+          <select id="month-607" name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+            <option value="">Selecciona un mes…</option>
+            {% for num, name in months %}
+            <option value="{{ num }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="rep-export-field rep-export-field--year">
+          <label class="rep-field-label" for="year-607">Año</label>
+          <input id="year-607" type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
+        </div>
+        <button type="submit" class="rep-export-btn">
+          <i class="bi bi-download me-1"></i>Descargar
+        </button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if has_purchasing %}
+  <form method="get" action="{% url 'purchases:report_606' %}" class="rep-card rep-card--export">
+    <input type="hidden" name="format" value="csv">
+    <div class="rep-card-icon" style="background:#D1ECF1"><i class="bi bi-file-earmark-arrow-down" style="color:#0C5460"></i></div>
+    <div class="rep-card-body">
+      <strong class="rep-card-name">606 Compras CSV</strong>
+      <div class="rep-export-form">
+        <div class="rep-export-field rep-export-field--month">
+          <label class="rep-field-label" for="month-606">Mes</label>
+          <select id="month-606" name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Selecciona un mes…" required>
+            <option value="">Selecciona un mes…</option>
+            {% for num, name in months %}
+            <option value="{{ num }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="rep-export-field rep-export-field--year">
+          <label class="rep-field-label" for="year-606">Año</label>
+          <input id="year-606" type="number" name="year" value="{{ today.year }}" min="2020" class="form-control form-control-sm">
+        </div>
+        <button type="submit" class="rep-export-btn">
+          <i class="bi bi-download me-1"></i>Descargar
+        </button>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+{% endif %}
+
+<style>
+#main-content { min-height: 0; overflow-x: hidden; }
+
+/* ── Section titles ── */
+.rep-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e2130;
+  margin: 0 0 1rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.rep-subgroup-title {
+  font-size: .8rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 .65rem;
+}
+
+/* ── Card grid ── */
+.rep-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: .85rem;
+}
+
+.rep-grid--export {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* ── Report card (link) ── */
+.rep-card {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out;
+}
+
+a.rep-card:hover {
+  box-shadow: 0 4px 14px rgba(30,33,48,.09);
+  border-color: #c4cfe6;
+  transform: translateY(-1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.rep-card:focus-visible {
+  outline: 2px solid #3f6fd6;
+  outline-offset: 2px;
+  border-color: #3f6fd6;
+}
+
+/* Export form card — no hover lift, cursor default, top-align body */
+.rep-card--export { cursor: default; align-items: flex-start; }
+
+/* ── Card parts ── */
+.rep-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rep-card-icon .bi { font-size: 1.15rem; }
+
+.rep-card-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.rep-card-name {
+  display: block;
+  font-size: .875rem;
+  font-weight: 600;
+  color: #1e2130;
+  line-height: 1.3;
+  margin-bottom: 0;
+}
+
+.rep-card-badge {
+  display: inline-block;
+  margin-top: .4rem;
+  padding: .08rem .4rem;
+  background: #FFF3CD;
+  color: #856404;
+  border-radius: 4px;
+  font-size: .63rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Export card form area ── */
+.rep-export-form {
+  margin-top: .65rem;
+  display: flex;
+  gap: .45rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.rep-export-field { min-width: 0; }
+.rep-export-field--month { flex: 1 1 120px; }
+.rep-export-field--year  { flex: 0 1 80px; }
+
+.rep-field-label {
+  display: block;
+  font-size: .65rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: .15rem;
+}
+
+.rep-export-field .form-select,
+.rep-export-field .form-control,
+.rep-export-field .ts-wrapper { width: 100%; min-width: 0; }
+
+.rep-export-btn {
+  flex-shrink: 0;
+  background: #1e2130;
+  color: #fff;
+  border: none;
+  font-size: .78rem;
+  font-weight: 500;
+  padding: .36rem .8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1.5;
+  transition: background 120ms ease-out;
+}
+
+.rep-export-btn:hover { background: #2a3050; color: #fff; }
+.rep-export-btn:focus-visible { outline: 2px solid #3f6fd6; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rep-card,
+  .rep-export-btn { transition: none; }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/init-tomselect.js' %}"></script>
+{% endblock %}

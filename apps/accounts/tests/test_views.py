@@ -454,6 +454,26 @@ class TestAssignMemberTeamView:
         assert member_membership.team is None
 
 
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestDashboardView:
+    def test_dashboard_includes_breadcrumbs(self, client, user, org, owner_membership):
+        client.force_login(user)
+        session = client.session
+        session['active_org_slug'] = org.slug
+        session.save()
+
+        response = client.get(reverse('accounts:dashboard'))
+
+        assert response.status_code == 200
+        assert 'breadcrumbs' in response.context
+        crumbs = response.context['breadcrumbs']
+        assert len(crumbs) == 1
+        assert crumbs[0]['label'] == 'Dashboard'
+        assert crumbs[0]['url'] is None
+
+
 # ── Leave organization ────────────────────────────────────────────────────────
 
 @pytest.mark.django_db
