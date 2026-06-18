@@ -29,6 +29,9 @@ services:
     volumes:
       - media:/app/media
       - logs:/app/logs
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 volumes:
   postgres_data:

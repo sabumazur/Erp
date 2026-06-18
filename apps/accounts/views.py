@@ -800,8 +800,12 @@ class InviteMemberView(ERPBaseViewMixin, View):
             # Concurrent request already created a pending invitation.
             messages.warning(request, f"Ya existe una invitación pendiente para {email}.")
             return redirect("accounts:members")
-        send_invitation_email(invitation, request)
-        messages.success(request, f"Invitación enviada a {email}.")
+        try:
+            send_invitation_email(invitation, request)
+            messages.success(request, f"Invitación enviada a {email}.")
+        except Exception:
+            logger.exception("Failed to send invitation email for org %s to %s", request.organization.pk, email)
+            messages.warning(request, f"Invitación creada para {email}, pero el correo no pudo enviarse.")
         return redirect("accounts:members")
 
 
@@ -814,8 +818,12 @@ class ResendInvitationView(ERPBaseViewMixin, View):
         )
         invitation.expires_at = timezone.now() + timedelta(days=7)
         invitation.save(update_fields=["expires_at"])
-        send_invitation_email(invitation, request)
-        messages.success(request, f"Invitación reenviada a {invitation.email}.")
+        try:
+            send_invitation_email(invitation, request)
+            messages.success(request, f"Invitación reenviada a {invitation.email}.")
+        except Exception:
+            logger.exception("Failed to resend invitation email for org %s to %s", request.organization.pk, invitation.email)
+            messages.warning(request, f"No se pudo reenviar el correo a {invitation.email}. Intente de nuevo.")
         return redirect("accounts:members")
 
 

@@ -46,7 +46,7 @@ class CustomChangePasswordForm(ChangePasswordForm):
 class InvitationForm(forms.Form):
     email = forms.EmailField(
         label=_("Correo electrónico"),
-        widget=forms.EmailInput(attrs={"placeholder": "colega@ejemplo.com"}),
+        widget=forms.EmailInput(attrs={"placeholder": "colega@ejemplo.com", "class": "form-control", "style": "font-family:'IBM Plex Mono',monospace;font-size:.9rem;"}),
     )
     role = forms.ChoiceField(
         label=_("Rol"),
