@@ -29,9 +29,7 @@
             <button type="button" class="dropdown-item" data-action="edit"
                     hx-get="{% url 'core:module_edit' row.pk %}"
                     hx-target="#module-modal-body"
-                    hx-on::after-request="
-                      document.getElementById('moduleModalLabel').textContent = '{% trans "Editar módulo" %}';
-                      bootstrap.Modal.getOrCreateInstance('#moduleModal').show();">
+                    data-modal-open="#moduleModal">
               <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
             </button>
           </li>

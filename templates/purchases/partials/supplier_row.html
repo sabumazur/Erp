@@ -33,7 +33,7 @@
               <button type="button" class="dropdown-item" data-action="edit"
                       hx-get="{% url 'purchases:supplier_edit' row.pk %}"
                       hx-target="#supplier-modal-body"
-                      hx-on::after-request="bootstrap.Modal.getOrCreateInstance('#supplierModal').show();">
+                      data-modal-open="#supplierModal">
                 <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
               </button>
             </li>

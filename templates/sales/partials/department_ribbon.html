@@ -2,7 +2,8 @@
 <button type="button" class="btn btn-outline-secondary"
         hx-get="{% url 'sales:department_create' customer.pk %}"
         hx-target="#dept-modal-body"
-        hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Nuevo departamento" %}';
-                              bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
+        data-modal-open="#deptModal"
+        data-modal-title-id="deptModalTitle"
+        data-modal-title="{% trans 'Nuevo departamento' %}">
   <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{% trans "Nuevo" %}
 </button>

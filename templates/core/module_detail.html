@@ -19,9 +19,7 @@
     <button type="button" class="btn btn-outline-secondary btn-sm"
             hx-get="{% url 'core:module_edit' module.pk %}"
             hx-target="#module-modal-body"
-            hx-on::after-request="
-              document.getElementById('moduleModalLabel').textContent = '{% trans "Editar módulo" %}';
-              bootstrap.Modal.getOrCreateInstance('#moduleModal').show();">
+            data-modal-open="#moduleModal">
       <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
     </button>
     <form method="post" action="{% url 'core:module_toggle' module.pk %}"
