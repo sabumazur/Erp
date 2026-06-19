@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -160,7 +161,14 @@ class ModuleUpdateView(ModuleStaffMixin, View):
         if form.is_valid():
             form.save()
             if request.htmx:
-                return ModuleListView.refresh_table(request, _("Módulo actualizado correctamente."))
+                current_url = getattr(request.htmx, "current_url", "") or ""
+                current_path = urlparse(current_url).path.rstrip("/")
+                list_path = reverse("core:module_list").rstrip("/")
+                if current_path == list_path:
+                    return ModuleListView.refresh_table(request, _("Módulo actualizado correctamente."))
+                resp = HttpResponse(status=204)
+                resp["HX-Redirect"] = reverse("core:module_detail", args=[pk])
+                return resp
             messages.success(request, _("Módulo actualizado correctamente."))
             return redirect("core:module_detail", pk=module.pk)
 
