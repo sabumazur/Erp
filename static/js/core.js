@@ -77,6 +77,40 @@
     });
   });
 
+  // Declarative Bootstrap modal open/close driven by data attributes on HTMX triggers.
+  //
+  // Pattern A — open modal after HTMX load:
+  //   data-modal-open="#id"            target modal selector
+  //   data-modal-title-id="labelId"    (optional) element whose textContent to set
+  //   data-modal-title="text"          (optional) text to write into that element
+  //
+  // Pattern B — hide modal on successful form POST:
+  //   data-modal-close="#id"           target modal selector
+  //   data-modal-close-event="name"    (optional) custom event to fire on document.body after hide
+  document.addEventListener("htmx:afterRequest", function (evt) {
+    var elt = evt.detail.elt;
+    if (!elt || !evt.detail.successful) return;
+
+    var openTarget = elt.dataset.modalOpen;
+    if (openTarget) {
+      var titleId = elt.dataset.modalTitleId;
+      var titleText = elt.dataset.modalTitle;
+      if (titleId && titleText) {
+        var titleEl = document.getElementById(titleId);
+        if (titleEl) titleEl.textContent = titleText;
+      }
+      bootstrap.Modal.getOrCreateInstance(document.querySelector(openTarget)).show();
+    }
+
+    var closeTarget = elt.dataset.modalClose;
+    if (closeTarget) {
+      var inst = bootstrap.Modal.getInstance(document.querySelector(closeTarget));
+      if (inst) inst.hide();
+      var closeEvt = elt.dataset.modalCloseEvent;
+      if (closeEvt) htmx.trigger(document.body, closeEvt, {});
+    }
+  });
+
   window.SabSysCore = { getConfig: getConfig, ready: ready, parseJsonScript: parseJsonScript, escapeHtml: escapeHtml, formatMoney: formatMoney, setText: setText, getCsrfToken: getCsrfToken };
   window.getConfig = getConfig;
   window.parseJsonScript = parseJsonScript;

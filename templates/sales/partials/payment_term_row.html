@@ -10,9 +10,7 @@
             hx-get="{% url 'sales:payment_term_edit' row.pk %}"
             hx-target="#payment-term-modal-body"
             onclick="event.stopPropagation()"
-            hx-on::after-request="
-              document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
-              bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+            data-modal-open="#paymentTermModal">
       {{ row.name }}
     </button>
     <span class="dt-row-actions">
@@ -30,9 +28,7 @@
             <button type="button" class="dropdown-item" data-action="edit"
                     hx-get="{% url 'sales:payment_term_edit' row.pk %}"
                     hx-target="#payment-term-modal-body"
-                    hx-on::after-request="
-                      document.getElementById('paymentTermModalLabel').textContent = '{% trans "Editar término de pago" %}';
-                      bootstrap.Modal.getOrCreateInstance('#paymentTermModal').show();">
+                    data-modal-open="#paymentTermModal">
               <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
             </button>
           </li>

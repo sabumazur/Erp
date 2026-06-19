@@ -9,8 +9,9 @@
             hx-get="{% url 'sales:department_edit' customer.pk row.pk %}"
             hx-target="#dept-modal-body"
             onclick="event.stopPropagation()"
-            hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
-                                  bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
+            data-modal-open="#deptModal"
+            data-modal-title-id="deptModalTitle"
+            data-modal-title="{% trans 'Editar departamento' %}">
       {{ row.name }}
     </button>
     <span class="dt-row-actions">
@@ -29,8 +30,9 @@
             <button type="button" class="dropdown-item" data-action="edit"
                     hx-get="{% url 'sales:department_edit' customer.pk row.pk %}"
                     hx-target="#dept-modal-body"
-                    hx-on::after-request="document.getElementById('deptModalTitle').textContent='{% trans "Editar departamento" %}';
-                                          bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();">
+                    data-modal-open="#deptModal"
+                    data-modal-title-id="deptModalTitle"
+                    data-modal-title="{% trans 'Editar departamento' %}">
               <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
             </button>
           </li>
