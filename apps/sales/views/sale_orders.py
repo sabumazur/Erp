@@ -89,13 +89,12 @@ class SaleOrderCreateView(ERPBaseViewMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        form = SaleOrderForm(organization=request.organization, data=request.POST)
+        instance = SalesDocument(doc_type=SalesDocument.DocType.SALE_ORDER, organization=request.organization)
+        form = SaleOrderForm(organization=request.organization, data=request.POST, instance=instance)
         formset = InvoiceItemFormSet(request.POST, form_kwargs={"organization": request.organization})
         if form.is_valid() and formset.is_valid():
             with transaction.atomic():
                 order = form.save(commit=False)
-                order.organization = request.organization
-                order.doc_type = SalesDocument.DocType.SALE_ORDER
                 order.save()
                 formset.instance = order
                 with suspend_recompute(order):

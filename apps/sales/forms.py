@@ -447,9 +447,8 @@ class QuotationForm(forms.ModelForm):
             )
         self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
-        # Default valid_until = today + 30 days for new quotations
-        if not self.instance.pk:
-            self.fields["valid_until"].initial = date.today() + timedelta(days=30)
+        if self.instance._state.adding and not self.is_bound and "valid_until" not in self.initial:
+            self.initial["valid_until"] = date.today()
 
         self.helper = FormHelper()
         self.helper.form_tag = False

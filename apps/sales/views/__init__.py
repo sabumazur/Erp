@@ -41,6 +41,7 @@ from .quotations import (
     QuotationRejectView,
     QuotationConvertView,
     QuotationDeleteView,
+    QuotationCloneView,
     QuotationPrintView,
 )
 from .sale_orders import (

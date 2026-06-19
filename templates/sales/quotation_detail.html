@@ -22,6 +22,14 @@
        class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </a>
+    <form method="post" action="{% url 'sales:quotation_clone' quotation.pk %}"
+          x-data
+          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta cotización como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
+      </button>
+    </form>
 
     {% if quotation.status != "DRAFT" and quotation.status != "CANCELLED" %}
       <form method="post" action="{% url 'sales:quotation_email' quotation.pk %}">

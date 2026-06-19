@@ -36,6 +36,7 @@ from .views import (
     QuotationRejectView,
     QuotationConvertView,
     QuotationDeleteView,
+    QuotationCloneView,
     QuotationPrintView,
     # Sale Orders
     SaleOrderListView,
@@ -142,6 +143,7 @@ urlpatterns = [
     path("quotations/<uuid:pk>/reject/",           QuotationRejectView.as_view(),  name="quotation_reject"),
     path("quotations/<uuid:pk>/convert/",          QuotationConvertView.as_view(), name="quotation_convert"),
     path("quotations/<uuid:pk>/delete/",           QuotationDeleteView.as_view(),  name="quotation_delete"),
+    path("quotations/<uuid:pk>/clone/",            QuotationCloneView.as_view(),   name="quotation_clone"),
     path("quotations/<uuid:pk>/print/",            QuotationPrintView.as_view(),   name="quotation_print"),
 
     # ── Sale Orders ───────────────────────────────────────────────────────────

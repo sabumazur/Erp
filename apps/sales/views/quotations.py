@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,7 +13,7 @@ from apps.core.datatable import DTColumn, DataTableMixin
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet, InvoiceItemFormSetCreate
-from ..models import SalesDocument, NCFType
+from ..models import SalesDocument, SalesDocumentItem, NCFType
 from ..email import send_quotation_email, _signature_url
 from ..services import QuotationService
 from ..signals import suspend_recompute
@@ -292,6 +294,43 @@ class QuotationDeleteView(ERPBaseViewMixin, View):
         q.hard_delete()
         messages.success(request, _("Cotización eliminada."))
         return redirect("sales:quotation_list")
+
+
+class QuotationCloneView(ERPBaseViewMixin, View):
+    required_module = "sales"
+
+    def post(self, request, pk):
+        source = get_object_or_404(
+            SalesDocument.quotations.prefetch_related("items"),
+            pk=pk, organization=request.organization,
+        )
+        new_quotation = SalesDocument.objects.create(
+            organization=source.organization,
+            doc_type=SalesDocument.DocType.QUOTATION,
+            status=SalesDocument.Status.DRAFT,
+            customer=source.customer,
+            issue_date=date.today(),
+            valid_until=source.valid_until,
+            payment_condition=source.payment_condition,
+            currency=source.currency,
+            exchange_rate=source.exchange_rate,
+            notes=source.notes,
+            terms=source.terms,
+        )
+        SalesDocumentItem.objects.bulk_create([
+            SalesDocumentItem(
+                document=new_quotation,
+                item=line.item,
+                description=line.description,
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                itbis_rate=line.itbis_rate,
+            )
+            for line in source.items.all()
+        ])
+        new_quotation.recompute_totals()
+        messages.success(request, _("Cotización clonada correctamente. Revise y confirme el nuevo borrador."))
+        return redirect("sales:quotation_edit", pk=new_quotation.pk)
 
 
 class QuotationPrintView(ERPBaseViewMixin, View):
