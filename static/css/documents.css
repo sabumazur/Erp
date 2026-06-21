@@ -973,6 +973,26 @@ tr.dt-row-selected:hover > td {
   color: #0f172a;
 }
 
+/* ── Sticky totals wrapper ───────────────────────────────────────────────── */
+/* .doc-totals-wrap is applied to the d-flex wrapper that directly contains   */
+/* .doc-totals-card. The form is its nearest block ancestor, so sticky keeps  */
+/* the card pinned to the viewport bottom while the user scrolls line items.  */
+@supports (position: sticky) {
+  .doc-totals-wrap {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 4;
+  }
+}
+@media (max-width: 767.98px) {
+  .doc-totals-wrap {
+    position: static !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No animation here, but respect the pref for any future transitions */
+}
+
 /* ── Líneas — item rows (scoped to .doc-lines-card; no partial/JS changes) ── */
 /* item = two stacked rows (.item-row-main + .item-row-desc); kill the global
    even-row striping so it doesn't alternate mid-item. */
