@@ -1289,7 +1289,7 @@ tr.dt-row-selected:hover > td {
 
 .dt-progress-bar {
   height: 3px;
-  background: var(--module-accent, #3f6fd6);
+  background: var(--brand-accent, #3f6fd6);
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left;
