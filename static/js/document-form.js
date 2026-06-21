@@ -272,6 +272,8 @@
     // SweetAlert2 intercept for internal link clicks
     document.addEventListener("click", function (e) {
       if (!dirty) return;
+      // Let modifier-key clicks and non-left-clicks through (open in new tab, etc.)
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
       var anchor = e.target.closest("a[href]");
       if (!anchor) return;
       var href = anchor.getAttribute("href");
@@ -289,7 +291,7 @@
       }).then(function (result) {
         if (result.isConfirmed) {
           dirty = false;
-          window.location.href = href;
+          window.open(href, anchor.target || "_self");
         }
       });
     });
