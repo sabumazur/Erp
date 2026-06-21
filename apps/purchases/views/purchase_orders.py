@@ -10,14 +10,14 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..forms import PurchaseOrderForm, PurchaseDocumentItemFormSet, PurchaseDocumentItemFormSetCreate
 from ..models import PurchaseDocument, PurchaseDocumentItem
 from ..services import PurchaseOrderService
 
 
-class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "purchases/purchase_order_list.html"
     required_module = "purchasing"
 
@@ -38,9 +38,24 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "purchase_orders"
     dt_create_url = "purchases:po_create"
     dt_create_label = _("Nueva orden de compra")
+    csv_filename = "ordenes_compra.csv"
+    csv_headers = ["Número", "Proveedor", "Emisión", "Entrega", "Estado", "Total"]
+
+    def get_csv_row(self, po):
+        return [
+            po.number or "",
+            po.supplier.name,
+            po.issue_date,
+            po.expected_date or "",
+            po.get_status_display(),
+            po.total,
+        ]
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -55,6 +70,7 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         status_filter = self.request.GET.get("status", "")
         if status_filter:
             qs = qs.filter(status=status_filter)
+        self._csv_qs = qs
         ctx.update(self.apply_datatable(qs))
         if not self.request.htmx:
             # REFACTOR PQ-10: 4 separate queries → 1 conditional aggregation.

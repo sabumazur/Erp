@@ -35,7 +35,8 @@
       {% if order.has_line_items %}
         <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-outline-secondary btn-sm">
+          <button type="submit" class="btn btn-outline-secondary btn-sm"
+                  data-loading-text="{% trans 'Enviando…' %}">
             <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
           </button>
         </form>
@@ -264,6 +265,7 @@
       <div class="p-3 pb-0">
         {% include "sales/partials/status_badge.html" with status=order.status %}
       </div>
+      {% if stepper_steps %}{% include "sales/partials/status_stepper.html" %}{% endif %}
       <div class="kv-row">
         <span class="kv-k">{% trans "Número" %}</span>
         <span class="kv-v font-monospace fw-semibold">{{ order.doc_number|default:"—" }}</span>
@@ -344,7 +346,8 @@
         </div>
         <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-sm btn-brand">
+          <button type="submit" class="btn btn-sm btn-brand"
+                  data-loading-text="{% trans 'Guardando…' %}">
             <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar entrega" %}
           </button>
         </div>

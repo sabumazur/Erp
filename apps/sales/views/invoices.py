@@ -15,7 +15,7 @@ from django.views.generic import TemplateView, UpdateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..filters import InvoiceFilter
 from ..forms import (
@@ -29,7 +29,7 @@ from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
-class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class InvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "sales/invoice_list.html"
     required_module = "sales"
 
@@ -50,9 +50,24 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "invoices"
     dt_create_url = "sales:invoice_create"
     dt_create_label = _("Nueva factura")
+    csv_filename = "facturas.csv"
+    csv_headers = ["e-NCF", "Cliente", "Fecha", "Vence", "Estado", "Total"]
+
+    def get_csv_row(self, inv):
+        return [
+            inv.encf or "",
+            inv.customer.name,
+            inv.issue_date,
+            inv.due_date or "",
+            inv.get_status_display(),
+            inv.total,
+        ]
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -77,6 +92,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["encf"])
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
+        self._csv_qs = f.qs
         org_qs = SalesDocument.invoices.filter(organization=org)
         ctx.update(self.apply_datatable(f.qs))
 
@@ -138,6 +154,22 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
             {"label": invoice.doc_number or invoice.encf or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
+        _INVOICE_STEPS = [
+            ("DRAFT", _("Borrador")),
+            ("CONFIRMED", _("Confirmada")),
+            ("SENT", _("Enviada")),
+            ("PAID", _("Pagada")),
+        ]
+        status = invoice.status
+        position = "SENT" if status == "OVERDUE" else status
+        _keys = [s for s, _ in _INVOICE_STEPS]
+        idx = _keys.index(position) if position in _keys and status != "CANCELLED" else -1
+        if idx >= 0:
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < idx, "current": i == idx}
+                for i, (s, lbl) in enumerate(_INVOICE_STEPS)
+            ]
+            ctx["stepper_overdue"] = (status == "OVERDUE")
         return ctx
 
 

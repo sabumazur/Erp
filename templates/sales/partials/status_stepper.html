@@ -1,0 +1,24 @@
+{% load i18n %}
+<div class="doc-stepper" role="list" aria-label="{% trans 'Progreso del documento' %}">
+  {% for step in stepper_steps %}
+  <div class="doc-stepper-step" role="listitem">
+    <div class="doc-stepper-dot
+      {% if step.done %}doc-stepper-dot--done
+      {% elif step.current %}doc-stepper-dot--current
+      {% else %}doc-stepper-dot--pending{% endif %}"
+      aria-label="{{ step.label }}{% if step.done %} ({% trans 'completado' %}){% elif step.current %} ({% trans 'actual' %}){% endif %}">
+      {% if step.done %}<i class="bi bi-check-lg" aria-hidden="true"></i>{% endif %}
+    </div>
+    <span class="doc-stepper-label
+      {% if step.done %}text-success{% elif step.current %}stepper-label--current{% else %}text-muted{% endif %}">
+      {{ step.label }}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% if stepper_overdue %}
+<p class="px-3 pb-2 mb-0" style="font-size:.72rem;">
+  <i class="bi bi-exclamation-triangle-fill text-danger me-1" aria-hidden="true"></i>
+  <span class="text-danger fw-semibold">{% trans "Factura vencida" %}</span>
+</p>
+{% endif %}

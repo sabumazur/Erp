@@ -118,4 +118,25 @@
   window.formatMoney = formatMoney;
   window.setText = setText;
   window.getCsrfToken = getCsrfToken;
+
+  // ── Loading-state buttons ─────────────────────────────────────────────────
+  // Buttons with data-loading-text are disabled on form submit and their
+  // label replaced with a spinner + the loading text.  The page redirect that
+  // follows a successful POST resets the button naturally.
+  function initLoadingButtons() {
+    document.querySelectorAll('[data-loading-text]').forEach(function (btn) {
+      if (btn._loadingBound) return;
+      btn._loadingBound = true;
+      var form = btn.closest('form') || document.getElementById(btn.getAttribute('form'));
+      if (!form) return;
+      form.addEventListener('submit', function () {
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm me-1" ' +
+          'role="status" aria-hidden="true"></span>' +
+          btn.getAttribute('data-loading-text');
+      });
+    });
+  }
+  window.initLoadingButtons = initLoadingButtons;
 })();

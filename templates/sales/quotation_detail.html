@@ -34,7 +34,8 @@
     {% if quotation.status != "DRAFT" and quotation.status != "CANCELLED" %}
       <form method="post" action="{% url 'sales:quotation_email' quotation.pk %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary btn-sm">
+        <button type="submit" class="btn btn-outline-secondary btn-sm"
+                data-loading-text="{% trans 'Enviando…' %}">
           <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
         </button>
       </form>
@@ -47,7 +48,7 @@
       <form method="post" action="{% url 'sales:quotation_confirm' quotation.pk %}"
             x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar cotización?" %}', {icon:'question', color:'#f59e0b', ok:'Sí, confirmar'})">
         {% csrf_token %}
-        <button class="btn btn-sm btn-brand">
+        <button class="btn btn-sm btn-brand" data-loading-text="{% trans 'Confirmando…' %}">
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
@@ -62,7 +63,7 @@
     {% elif quotation.status == "CONFIRMED" %}
       <form method="post" action="{% url 'sales:quotation_send' quotation.pk %}">
         {% csrf_token %}
-        <button class="btn btn-outline-secondary btn-sm">
+        <button class="btn btn-outline-secondary btn-sm" data-loading-text="{% trans 'Enviando…' %}">
           <i class="bi bi-send me-1"></i>{% trans "Marcar enviada" %}
         </button>
       </form>
@@ -274,6 +275,7 @@
       <div class="p-3 pb-0">
         {% include "sales/partials/status_badge.html" with status=quotation.status %}
       </div>
+      {% if stepper_steps %}{% include "sales/partials/status_stepper.html" %}{% endif %}
       <div class="kv-row">
         <span class="kv-k">{% trans "Número" %}</span>
         <span class="kv-v font-monospace fw-semibold">{{ quotation.doc_number|default:"—" }}</span>
@@ -339,7 +341,8 @@
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
             {% trans "Cancelar" %}
           </button>
-          <button type="submit" class="btn btn-sm btn-brand">
+          <button type="submit" class="btn btn-sm btn-brand"
+                  data-loading-text="{% trans 'Convirtiendo…' %}">
             <i class="bi bi-arrow-right-circle me-1"></i>{% trans "Convertir" %}
           </button>
         </div>

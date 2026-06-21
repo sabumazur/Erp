@@ -11,7 +11,7 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
 from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, SaleOrderDeliverForm, ConsolidateForm
@@ -22,7 +22,7 @@ from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
-class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "sales/sale_order_list.html"
     required_module = "sales"
 
@@ -44,9 +44,25 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "sale_orders"
     dt_create_url = "sales:sale_order_create"
     dt_create_label = _("Nueva orden de venta")
+    csv_filename = "ordenes_venta.csv"
+    csv_headers = ["Número", "Cliente", "Depto.", "Emisión", "Entrega", "Estado", "Total"]
+
+    def get_csv_row(self, o):
+        return [
+            o.doc_number or "",
+            o.customer.name,
+            o.department.name if o.department else "",
+            o.issue_date,
+            o.delivery_date or "",
+            o.get_status_display(),
+            o.total,
+        ]
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -63,6 +79,7 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = SaleOrderFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
+        self._csv_qs = f.qs
         ctx.update(self.apply_datatable(f.qs))
 
         ctx["module"] = "sale-order"
@@ -133,6 +150,20 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
             {"label": o.doc_number or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
+        _SO_STEPS = [
+            ("DRAFT", _("Borrador")),
+            ("CONFIRMED", _("Confirmada")),
+            ("DELIVERED", _("Entregada")),
+            ("INVOICED", _("Facturada")),
+        ]
+        status = o.status
+        _keys = [s for s, _ in _SO_STEPS]
+        idx = _keys.index(status) if status in _keys and status != "CANCELLED" else -1
+        if idx >= 0:
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < idx, "current": i == idx}
+                for i, (s, lbl) in enumerate(_SO_STEPS)
+            ]
         return ctx
 
 

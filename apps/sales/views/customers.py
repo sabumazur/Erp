@@ -12,7 +12,7 @@ from django.views.generic import TemplateView, UpdateView, CreateView
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin, build_datatable_context
 from apps.core.search import fts_search
 from ..filters import CustomerFilter
 from ..forms import CustomerForm, CustomerDepartmentForm
@@ -66,7 +66,7 @@ def _department_datatable_context(request, customer):
     return ctx
 
 
-class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class CustomerListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "sales/customer_list.html"
     required_module = "sales"
 
@@ -87,6 +87,17 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "customers"
     dt_create_url = "sales:customer_create"
     dt_create_label = _("Nuevo cliente")
+    csv_filename = "clientes.csv"
+    csv_headers = ["Nombre", "RNC/Cédula", "Correo", "Teléfono", "Tipo NCF"]
+
+    def get_csv_row(self, c):
+        return [
+            c.name,
+            c.rnc_cedula or "",
+            c.email or "",
+            c.phone or "",
+            c.default_ncf_type or "",
+        ]
 
     @classmethod
     def _refresh_table(cls, request, msg, msg_type="success"):
@@ -111,6 +122,9 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -124,6 +138,7 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
         f = CustomerFilter(self.request.GET, queryset=qs)
         ctx["filter"] = f
+        self._csv_qs = f.qs
         ctx.update(self.apply_datatable(f.qs))
         ctx["module"] = "customer"
         ctx["breadcrumbs"] = [

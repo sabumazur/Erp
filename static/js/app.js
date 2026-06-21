@@ -42,5 +42,10 @@
 
     // Dashboard (loaded per-page on dashboard)
     if (typeof initDashboardCharts === "function") initDashboardCharts();
+
+    // Loading-state buttons
+    initLoadingButtons();
   });
+
+  document.body.addEventListener("htmx:afterSettle", initLoadingButtons);
 })();

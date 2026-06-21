@@ -10,13 +10,13 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.views import ERPBaseViewMixin
-from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin, build_datatable_context
 from apps.core.search import fts_search
 from ..forms import SupplierForm
 from ..models import Supplier, PurchaseDocument, SupplierPayment
 
 
-class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class SupplierListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "purchases/supplier_list.html"
     required_module = "purchasing"
 
@@ -36,6 +36,17 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "suppliers"
     dt_create_url = "purchases:supplier_create"
     dt_create_label = _("Nuevo proveedor")
+    csv_filename = "proveedores.csv"
+    csv_headers = ["Nombre", "RNC/Cédula", "Correo", "Teléfono", "Activo"]
+
+    def get_csv_row(self, s):
+        return [
+            s.name,
+            s.rnc_cedula or "",
+            s.email or "",
+            s.phone or "",
+            "Sí" if s.is_active else "No",
+        ]
 
     @classmethod
     def _refresh_table(cls, request, msg, msg_type="success"):
@@ -58,6 +69,9 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -69,6 +83,7 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = fts_search(qs, q, fts_fields=["name"], trgm_fields=["rnc_cedula"])
+        self._csv_qs = qs
         ctx.update(self.apply_datatable(qs))
         ctx["form"] = SupplierForm(organization=org)
         ctx["module"] = "supplier"

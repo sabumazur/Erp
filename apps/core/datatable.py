@@ -1,8 +1,11 @@
+import csv
+import io
 import json
 from dataclasses import dataclass
 
 from django.core.paginator import Paginator
 from django.db.models import Count
+from django.http import HttpResponse
 
 
 def status_pill_counts(qs, specs, *, field="status"):
@@ -214,3 +217,33 @@ class DataTableMixin:
             create_url=self.dt_create_url,
             create_label=self.dt_create_label,
         )
+
+
+class CsvExportMixin:
+    """Mixin that adds ?format=csv export to any DataTableMixin list view.
+
+    Set csv_filename and csv_headers on the view class, implement get_csv_row(),
+    and stash self._csv_qs = <unfiltered_qs> in get_context_data() BEFORE
+    calling apply_datatable() (which paginates).  Then check maybe_export_csv()
+    at the top of get().
+    """
+
+    csv_filename: str = "export.csv"
+    csv_headers: list = []
+    _csv_qs = None
+
+    def maybe_export_csv(self):
+        if self.request.GET.get("format") != "csv" or self._csv_qs is None:
+            return None
+        buf = io.StringIO()
+        buf.write("﻿")  # UTF-8 BOM so Excel opens without encoding issues
+        writer = csv.writer(buf)
+        writer.writerow(self.csv_headers)
+        for obj in self._csv_qs:
+            writer.writerow(self.get_csv_row(obj))
+        resp = HttpResponse(buf.getvalue(), content_type="text/csv; charset=utf-8-sig")
+        resp["Content-Disposition"] = f'attachment; filename="{self.csv_filename}"'
+        return resp
+
+    def get_csv_row(self, obj):
+        raise NotImplementedError

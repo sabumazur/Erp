@@ -9,7 +9,7 @@ from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..filters import QuotationFilter
 from ..forms import QuotationForm, InvoiceItemFormSet, InvoiceItemFormSetCreate
@@ -20,7 +20,7 @@ from ..signals import suspend_recompute
 from ._helpers import _customer_defaults_json
 
 
-class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class QuotationListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "sales/quotation_list.html"
     required_module = "sales"
 
@@ -41,9 +41,24 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "quotations"
     dt_create_url = "sales:quotation_create"
     dt_create_label = _("Nueva cotización")
+    csv_filename = "cotizaciones.csv"
+    csv_headers = ["Número", "Cliente", "Emisión", "Válida hasta", "Estado", "Total"]
+
+    def get_csv_row(self, q):
+        return [
+            q.doc_number or "",
+            q.customer.name,
+            q.issue_date,
+            q.valid_until or "",
+            q.get_status_display(),
+            q.total,
+        ]
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -57,6 +72,7 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
             qs = fts_search(qs, q, fts_fields=["customer__name"], trgm_fields=["doc_number"])
         f = QuotationFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
+        self._csv_qs = f.qs
         ctx.update(self.apply_datatable(f.qs))
 
         ctx["module"] = "quotation"
@@ -127,6 +143,21 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
             {"label": q.doc_number or str(_("Borrador"))},
         ]
         ctx["history_records"] = self.get_history(self.object)
+        _QUOTATION_STEPS = [
+            ("DRAFT", _("Borrador")),
+            ("CONFIRMED", _("Confirmada")),
+            ("SENT", _("Enviada")),
+            ("ACCEPTED", _("Aceptada")),
+        ]
+        status = q.status
+        _keys = [s for s, _ in _QUOTATION_STEPS]
+        _skip = {"REJECTED", "EXPIRED", "CANCELLED"}
+        idx = _keys.index(status) if status in _keys and status not in _skip else -1
+        if idx >= 0:
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < idx, "current": i == idx}
+                for i, (s, lbl) in enumerate(_QUOTATION_STEPS)
+            ]
         return ctx
 
 

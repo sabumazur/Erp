@@ -1333,3 +1333,72 @@ tr.dt-row-selected:hover > td {
   }
 }
 .doc-optfield-remove:hover { color: #b42318; background: #fdecee; }
+
+/* ── Document workflow status stepper ───────────────────────────── */
+
+.doc-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 12px 20px 4px;
+}
+.doc-stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+.doc-stepper-step + .doc-stepper-step::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: #e5e7eb;
+  z-index: 0;
+}
+.doc-stepper-step + .doc-stepper-step.step-done-line::before {
+  background: var(--module-accent);
+}
+.doc-stepper-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  position: relative;
+  z-index: 1;
+}
+.doc-stepper-dot--done {
+  background: var(--module-accent);
+  color: #fff;
+}
+.doc-stepper-dot--current {
+  background: #fff;
+  border: 2px solid var(--module-accent);
+  animation: stepper-pulse 1.5s ease-in-out infinite;
+}
+.doc-stepper-dot--pending {
+  background: #e5e7eb;
+}
+.doc-stepper-label {
+  font-size: .66rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 5px;
+  line-height: 1.2;
+}
+.stepper-label--current {
+  color: var(--module-accent);
+}
+@keyframes stepper-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--module-accent) 30%, transparent); }
+  50%       { box-shadow: 0 0 0 5px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doc-stepper-dot--current { animation: none; }
+}

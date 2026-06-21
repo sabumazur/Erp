@@ -10,14 +10,14 @@ from django.views import View
 from django.views.generic import TemplateView, DetailView
 
 from apps.accounts.views import ERPBaseViewMixin
-from apps.core.datatable import DTColumn, DataTableMixin
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..forms import SupplierInvoiceForm, PurchaseDocumentItemFormSet, PurchaseDocumentItemFormSetCreate
 from ..models import PurchaseDocument, PurchaseDocumentItem
 from ..services import SupplierInvoiceService
 
 
-class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
     template_name = "purchases/supplier_invoice_list.html"
     required_module = "purchasing"
 
@@ -38,9 +38,24 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_id = "supplier_invoices"
     dt_create_url = "purchases:supplier_invoice_create"
     dt_create_label = _("Nueva factura de proveedor")
+    csv_filename = "facturas_proveedor.csv"
+    csv_headers = ["NCF Proveedor", "Proveedor", "Emisión", "Vence", "Estado", "Total"]
+
+    def get_csv_row(self, si):
+        return [
+            si.supplier_ncf or "",
+            si.supplier.name,
+            si.issue_date,
+            si.due_date or "",
+            si.get_status_display(),
+            si.total,
+        ]
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)
@@ -55,6 +70,7 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         status_filter = self.request.GET.get("status", "")
         if status_filter:
             qs = qs.filter(status=status_filter)
+        self._csv_qs = qs
         ctx.update(self.apply_datatable(qs))
         if not self.request.htmx:
             # REFACTOR PQ-11: 4 separate queries → 1 conditional aggregation.
