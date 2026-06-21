@@ -1284,4 +1284,32 @@ tr.dt-row-selected:hover > td {
   border: 0; background: none; cursor: pointer; padding: 2px 5px; border-radius: 5px;
   font: inherit; font-size: .72rem; font-weight: 600; color: #6b7280; line-height: 1;
 }
+
+/* ── Datatable HTMX loading bar ─────────────────────────────── */
+
+.dt-progress-bar {
+  height: 3px;
+  background: var(--module-accent, #3f6fd6);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: opacity 0.15s ease;
+  border-radius: 0;
+  will-change: transform, opacity;
+}
+.dt-progress-bar.htmx-request {
+  opacity: 1;
+  animation: dt-progress-slide 1.4s ease-in-out infinite;
+}
+@keyframes dt-progress-slide {
+  0%   { transform: scaleX(0);   margin-left: 0;    }
+  50%  { transform: scaleX(0.5); margin-left: 25%;  }
+  100% { transform: scaleX(0);   margin-left: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dt-progress-bar.htmx-request {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
 .doc-optfield-remove:hover { color: #b42318; background: #fdecee; }

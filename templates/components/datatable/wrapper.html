@@ -37,7 +37,8 @@
         {% if dt_action_url %}hx-get="{{ dt_action_url }}"{% else %}hx-get="{% url dt_url %}"{% endif %}
         hx-target="#dt-results"
         hx-push-url="{{ dt_push_url|default:'true' }}"
-        hx-trigger="submit, input delay:350ms from:[name='q']">
+        hx-trigger="submit, input delay:350ms from:[name='q']"
+        hx-indicator="#dt-progress-bar">
 
     {# Hidden state — JS writes these before triggering form submit #}
     <input type="hidden" name="sort" id="dt-sort-input" value="{{ dt_sort }}">
@@ -169,7 +170,8 @@
   </form>{# /dt-form #}
 
   {# ── Table card — #dt-results is the HTMX swap target ───────────────────── #}
-  <div class="card shadow-sm">
+  <div class="card shadow-sm" style="overflow:hidden">
+    <div id="dt-progress-bar" class="dt-progress-bar" aria-hidden="true"></div>
     <div id="dt-results" class="card-body p-0"
          @click="!$event.target.closest('.dt-kebab') && $event.target.closest('tr[data-pk]') && selectRow($event.target.closest('tr[data-pk]'))"
          @dblclick="!$event.target.closest('.dt-kebab') && $event.target.closest('tr[data-pk]') && $event.target.closest('tr[data-pk]').dataset.detailUrl && (window.location.href = $event.target.closest('tr[data-pk]').dataset.detailUrl)">
