@@ -43,6 +43,8 @@
       row.remove();
     }
     recalcGrandTotal();
+    var f = btn.closest("form");
+    if (f) f.dispatchEvent(new Event("change"));
   }
 
   function addDocumentLine() {
@@ -67,8 +69,16 @@
     }
     if (window.SabSysTom) {
       window.SabSysTom.init(row);
+      // Wire new row's TomSelect instances into the unsaved-changes guard.
+      row.querySelectorAll("select").forEach(function (sel) {
+        if (sel.tomselect && window._docFormMarkDirty) {
+          sel.tomselect.on("change", window._docFormMarkDirty);
+        }
+      });
     }
     recalcGrandTotal();
+    var f = tbody.closest("form");
+    if (f) f.dispatchEvent(new Event("change"));
   }
 
   function recalcGrandTotal() {
@@ -262,12 +272,23 @@
 
     var dirty = false;
 
-    form.addEventListener("input",  function () { dirty = true; }, { passive: true });
-    form.addEventListener("change", function () { dirty = true; }, { passive: true });
+    function markDirty() { dirty = true; }
+    window._docFormMarkDirty = markDirty;
+
+    form.addEventListener("input",  markDirty, { passive: true });
+    form.addEventListener("change", markDirty, { passive: true });
     form.addEventListener("submit", function () { dirty = false; });
 
-    // TomSelect fires change events during boot — clear the flag after init settles
-    setTimeout(function () { dirty = false; }, 300);
+    // After all widgets finish initialising, hook into TomSelect's own change
+    // event — native DOM change may not fire when the user picks via TS UI
+    // (see modals.js initConsolidateForm comment). Also clears any false-positive
+    // dirty flags raised during widget boot.
+    window.addEventListener("load", function () {
+      form.querySelectorAll("select").forEach(function (sel) {
+        if (sel.tomselect) sel.tomselect.on("change", markDirty);
+      });
+      dirty = false;
+    });
 
     // SweetAlert2 intercept for internal link clicks
     document.addEventListener("click", function (e) {
