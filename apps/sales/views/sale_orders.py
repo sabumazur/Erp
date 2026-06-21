@@ -42,6 +42,8 @@ class SaleOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "sales/partials/sale_order_ribbon.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "sale_orders"
+    dt_create_url = "sales:sale_order_create"
+    dt_create_label = _("Nueva orden de venta")
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)

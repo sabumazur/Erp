@@ -85,6 +85,8 @@ class CustomerListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "sales/partials/customer_ribbon.html"
     dt_search_placeholder = _("Nombre o RNC…")
     dt_id = "customers"
+    dt_create_url = "sales:customer_create"
+    dt_create_label = _("Nuevo cliente")
 
     @classmethod
     def _refresh_table(cls, request, msg, msg_type="success"):

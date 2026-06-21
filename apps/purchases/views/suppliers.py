@@ -34,6 +34,8 @@ class SupplierListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "purchases/partials/supplier_ribbon.html"
     dt_search_placeholder = _("Nombre o RNC…")
     dt_id = "suppliers"
+    dt_create_url = "purchases:supplier_create"
+    dt_create_label = _("Nuevo proveedor")
 
     @classmethod
     def _refresh_table(cls, request, msg, msg_type="success"):

@@ -48,12 +48,32 @@
       {% include dt_row_template %}
     {% empty %}
     <tr>
-      <td colspan="{{ dt_columns|length|add:2 }}" class="text-center text-muted py-5">
-        <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+      <td colspan="{{ dt_columns|length|add:2 }}" class="text-center py-5">
+        <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-25"></i>
         {% if dt_q %}
-          {% blocktrans with q=dt_q %}Sin resultados para «{{ q }}».{% endblocktrans %}
+          {# Search miss: offer a clear-search shortcut #}
+          <p class="text-muted mb-3">
+            {% blocktrans with q=dt_q %}Sin resultados para «{{ q }}».{% endblocktrans %}
+          </p>
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  onclick="var f=document.getElementById('dt-form');f.querySelector('[name=q]').value='';htmx.trigger(f,'submit');">
+            <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar búsqueda" %}
+          </button>
+        {% elif active_filter_count %}
+          {# Filter miss: offer a clear-filters shortcut #}
+          <p class="text-muted mb-3">{% trans "No hay registros con los filtros aplicados." %}</p>
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  onclick="dtClearFilters(document.getElementById('dt-form'))">
+            <i class="bi bi-x-circle me-1"></i>{% trans "Limpiar filtros" %}
+          </button>
         {% else %}
-          {% trans "No hay registros." %}
+          {# Truly empty list #}
+          <p class="text-muted mb-3">{% trans "No hay registros aún." %}</p>
+          {% if dt_create_url %}
+          <a href="{% url dt_create_url %}" class="btn btn-sm btn-brand">
+            <i class="bi bi-plus-lg me-1"></i>{{ dt_create_label }}
+          </a>
+          {% endif %}
         {% endif %}
       </td>
     </tr>

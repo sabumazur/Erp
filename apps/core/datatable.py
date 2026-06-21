@@ -99,6 +99,8 @@ def build_datatable_context(
     search_placeholder="Buscar…",
     dt_id="main",
     status_pills=None,
+    create_url="",
+    create_label="",
 ):
     """
     Standalone function that applies sort + pagination to *qs* and returns
@@ -151,6 +153,8 @@ def build_datatable_context(
         "dt_active_status": request.GET.get("status", ""),
         "dt_page_size": page_size,
         "dt_page_size_options": _PAGE_SIZE_OPTIONS,
+        "dt_create_url": create_url,
+        "dt_create_label": create_label,
     }
 
 
@@ -189,6 +193,8 @@ class DataTableMixin:
     dt_search_placeholder: str = "Buscar…"
     dt_id: str = "main"
     dt_status_pills: list = []
+    dt_create_url: str = ""
+    dt_create_label: str = ""
 
     def apply_datatable(self, qs, status_pills=None) -> dict:
         """Apply sort + pagination to *qs*. Merge the returned dict into ctx."""
@@ -205,4 +211,6 @@ class DataTableMixin:
             search_placeholder=self.dt_search_placeholder,
             dt_id=self.dt_id,
             status_pills=status_pills if status_pills is not None else self.dt_status_pills,
+            create_url=self.dt_create_url,
+            create_label=self.dt_create_label,
         )

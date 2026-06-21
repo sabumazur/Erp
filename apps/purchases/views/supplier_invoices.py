@@ -36,6 +36,8 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "purchases/partials/supplier_invoice_ribbon.html"
     dt_search_placeholder = _("NCF o proveedor…")
     dt_id = "supplier_invoices"
+    dt_create_url = "purchases:supplier_invoice_create"
+    dt_create_label = _("Nueva factura de proveedor")
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)

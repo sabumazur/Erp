@@ -36,6 +36,8 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "purchases/partials/purchase_order_ribbon.html"
     dt_search_placeholder = _("Número o proveedor…")
     dt_id = "purchase_orders"
+    dt_create_url = "purchases:po_create"
+    dt_create_label = _("Nueva orden de compra")
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)

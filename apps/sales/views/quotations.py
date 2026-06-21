@@ -39,6 +39,8 @@ class QuotationListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "sales/partials/quotation_ribbon.html"
     dt_search_placeholder = _("Número o cliente…")
     dt_id = "quotations"
+    dt_create_url = "sales:quotation_create"
+    dt_create_label = _("Nueva cotización")
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
