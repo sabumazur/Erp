@@ -50,13 +50,18 @@ def fts_search(qs, q, fts_fields, trgm_fields=(), config="spanish"):
         vector = SearchVector(*fts_fields, config=config)
         query_obj = SearchQuery(q, config=config)
 
-        # Include FTS hits and trigram-similar hits on the same text fields
-        # (catches partial-word matches that FTS stemming misses).
-        # trigram_similar doesn't support JOIN traversal, so FK fields fall back to icontains.
+        # Include FTS hits, trigram-similar hits, and icontains hits on the same text fields.
+        # trigram_similar doesn't support JOIN traversal, so FK fields use icontains only.
+        # Direct fields use both: trigram_similar (fuzzy/typo) and icontains (prefix/substring).
+        # icontains is required because trigram similarity is too low for short queries against
+        # long strings (e.g., "bru" vs "BRUGAL & CO SA" scores ~0.19, below the 0.3 threshold).
         match_filter = Q(search_rank__gt=0)
         for field in fts_fields:
-            lookup = "icontains" if "__" in field else "trigram_similar"
-            match_filter |= Q(**{f"{field}__{lookup}": q})
+            if "__" in field:
+                match_filter |= Q(**{f"{field}__icontains": q})
+            else:
+                match_filter |= Q(**{f"{field}__trigram_similar": q})
+                match_filter |= Q(**{f"{field}__icontains": q})
         for field in trgm_fields:
             match_filter |= Q(**{f"{field}__icontains": q})
 
