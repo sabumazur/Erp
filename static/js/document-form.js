@@ -251,6 +251,57 @@
     });
   }
 
+  function initUnsavedGuard() {
+    var form =
+      document.getElementById("invoice-form") ||
+      document.getElementById("quotation-form") ||
+      document.getElementById("sale-order-form") ||
+      document.getElementById("doc-form") ||
+      document.getElementById("si-form");
+    if (!form) return;
+
+    var dirty = false;
+
+    form.addEventListener("input",  function () { dirty = true; }, { passive: true });
+    form.addEventListener("change", function () { dirty = true; }, { passive: true });
+    form.addEventListener("submit", function () { dirty = false; });
+
+    // TomSelect fires change events during boot — clear the flag after init settles
+    setTimeout(function () { dirty = false; }, 300);
+
+    // SweetAlert2 intercept for internal link clicks
+    document.addEventListener("click", function (e) {
+      if (!dirty) return;
+      var anchor = e.target.closest("a[href]");
+      if (!anchor) return;
+      var href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("javascript")) return;
+      e.preventDefault();
+      Swal.fire({
+        title: "¿Salir sin guardar?",
+        text: "Los cambios no guardados se perderán.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Salir",
+        cancelButtonText: "Quedarse",
+        confirmButtonColor: "#b42318",
+        cancelButtonColor: "#6b7280",
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          dirty = false;
+          window.location.href = href;
+        }
+      });
+    });
+
+    // Native fallback for browser-level navigation (back button, tab close, address bar)
+    window.addEventListener("beforeunload", function (e) {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+  }
+
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
   window.recalcGrandTotal = recalcGrandTotal;
@@ -260,6 +311,7 @@
   window.initIssueDateDeliverySync = initIssueDateDeliverySync;
   window.addDocumentLine = addDocumentLine;
   window.initHeaderCardCollapse = initHeaderCardCollapse;
+  window.initUnsavedGuard = initUnsavedGuard;
 
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-add-line]")) addDocumentLine();
