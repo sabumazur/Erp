@@ -11,7 +11,7 @@ from django.views.generic import TemplateView
 from apps.accounts.views import ERPBaseViewMixin
 from apps.core.history import record_change_reason
 from apps.core.mixins import HistoryMixin
-from apps.core.datatable import DTColumn, DataTableMixin, build_datatable_context
+from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin, build_datatable_context
 from .filters import ItemFilter
 from .forms import ItemForm
 from .models import Item, item_catalog_search
@@ -19,7 +19,7 @@ from .models import Item, item_catalog_search
 
 # ── List + Create ─────────────────────────────────────────────────────────────
 
-class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
+class ItemListView(ERPBaseViewMixin, CsvExportMixin, DataTableMixin, TemplateView):
     template_name = "items/item_list.html"
     required_module = "sales"
 
@@ -41,6 +41,20 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
     dt_ribbon_template = "items/partials/item_ribbon.html"
     dt_search_placeholder = _("Nombre o código…")
     dt_id = "items-v2"
+    csv_filename = "articulos.csv"
+    csv_headers = ["Código", "Nombre", "Tipo", "Unidad", "P. Venta", "P. Costo", "ITBIS", "Estado"]
+
+    def get_csv_row(self, item):
+        return [
+            item.code or "",
+            item.name,
+            item.get_item_type_display(),
+            item.unit or "",
+            item.unit_price,
+            item.cost_price if item.cost_price is not None else "",
+            item.get_itbis_rate_display(),
+            "Activo" if item.is_active else "Inactivo",
+        ]
 
     @classmethod
     def columns_for(cls, request):
@@ -78,6 +92,7 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         qs = Item.objects.for_org(self.request.organization)
         f  = ItemFilter(self.request.GET, queryset=qs)
+        self._csv_qs = f.qs
         ctx.update(build_datatable_context(
             self.request,
             f.qs,
@@ -105,6 +120,9 @@ class ItemListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         ctx = self.get_context_data(**kwargs)
+        csv_resp = self.maybe_export_csv()
+        if csv_resp:
+            return csv_resp
         if request.htmx:
             return render(request, "components/datatable/results.html", ctx)
         return self.render_to_response(ctx)

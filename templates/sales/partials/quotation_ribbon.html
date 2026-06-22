@@ -23,9 +23,4 @@
 
 <span class="dt-ribbon-sep"></span>
 
-<a href="?{{ request.GET.urlencode }}&format=csv"
-   class="btn btn-outline-secondary btn-sm{% if not dt_total %} disabled{% endif %}"
-   {% if not dt_total %}aria-disabled="true" tabindex="-1"{% endif %}
-   title="{% trans 'Exportar CSV' %}">
-  <i class="bi bi-download"></i>
-</a>
+{% include "components/datatable/export_csv_button.html" %}

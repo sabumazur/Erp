@@ -29,6 +29,10 @@
         @click="canAct && document.querySelector('tr.dt-row-selected [data-action=delete]')?.click()">
   <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
 </button>
+
+<span class="dt-ribbon-sep"></span>
+
+{% include "components/datatable/export_csv_button.html" %}
 {% else %}
 <button type="button" class="btn btn-outline-secondary"
         :disabled="!canAct"

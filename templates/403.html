@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Access denied{% endblock %}
+{% block title %}Acceso denegado{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
   <div class="col-md-5 text-center">
     <i class="bi bi-shield-lock display-3 text-danger"></i>
-    <h4 class="mt-3">Access denied</h4>
+    <h4 class="mt-3">Acceso denegado</h4>
     <p class="text-muted">
-      You don't have permission to view this page.<br>
-      Contact your workspace owner if you think this is a mistake.
+      No tienes permiso para ver esta página.<br>
+      Contacta al propietario del espacio de trabajo si crees que es un error.
     </p>
     <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary mt-2">
-      <i class="bi bi-arrow-left me-1"></i> Back to dashboard
+      <i class="bi bi-arrow-left me-1"></i> Volver al panel
     </a>
   </div>
 </div>
