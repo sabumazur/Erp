@@ -175,7 +175,7 @@ class PaymentTermDeleteView(ERPBaseViewMixin, View):
         term = get_object_or_404(PaymentTerm, pk=pk, organization=request.organization)
         name = term.name
 
-        customers_using = term.customer_set.count()
+        customers_using = term.customers.count()
         if customers_using:
             msg = _(
                 f"No se puede eliminar «{name}»: "
