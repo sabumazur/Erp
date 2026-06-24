@@ -46,6 +46,28 @@
     refreshSortOrder();
     var f = btn.closest("form");
     if (f) f.dispatchEvent(new Event("change"));
+    requestAnimationFrame(syncTotalsCard);
+  }
+
+  // Shift the sticky totals card down (via translateY) so it never overlaps
+  // the last visible line-item row. Cleared and recalculated on each call.
+  function syncTotalsCard() {
+    var totalsEl = document.querySelector(".doc-totals-wrap");
+    var tbody = document.getElementById("item-tbody");
+    if (!totalsEl || !tbody) return;
+
+    totalsEl.style.transform = "";
+    var totalsTop = totalsEl.getBoundingClientRect().top;
+
+    var rows = Array.from(tbody.querySelectorAll(".item-row-main"))
+      .filter(function (r) { return r.style.display !== "none"; });
+    if (rows.length === 0) return;
+
+    var lastRowBot = rows[rows.length - 1].getBoundingClientRect().bottom;
+    var gap = totalsTop - lastRowBot;
+    if (gap < 8) {
+      totalsEl.style.transform = "translateY(" + (8 - gap) + "px)";
+    }
   }
 
   function addDocumentLine() {
@@ -81,6 +103,16 @@
     recalcGrandTotal();
     var f = tbody.closest("form");
     if (f) f.dispatchEvent(new Event("change"));
+
+    // Ensure row is in viewport, then shift the sticky card down if it overlaps.
+    requestAnimationFrame(function () {
+      row.scrollIntoView({ behavior: "instant", block: "nearest" });
+      requestAnimationFrame(function () {
+        syncTotalsCard();
+        var descEl = row.querySelector('[name$="-description"]');
+        if (descEl) descEl.focus({ preventScroll: true });
+      });
+    });
   }
 
   function recalcGrandTotal() {
@@ -366,6 +398,7 @@
   window.initUnsavedGuard = initUnsavedGuard;
   window.initSortableLines = initSortableLines;
   window.refreshSortOrder = refreshSortOrder;
+  window.syncTotalsCard = syncTotalsCard;
 
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-add-line]")) addDocumentLine();
