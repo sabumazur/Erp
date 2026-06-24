@@ -43,6 +43,7 @@
       row.remove();
     }
     recalcGrandTotal();
+    refreshSortOrder();
     var f = btn.closest("form");
     if (f) f.dispatchEvent(new Event("change"));
   }
@@ -63,6 +64,7 @@
 
     tbody.appendChild(row);
     mgmt.value = String(idx + 1);
+    refreshSortOrder();
 
     if (typeof Alpine !== "undefined") {
       Alpine.initTree(row);
@@ -325,6 +327,33 @@
     });
   }
 
+  function refreshSortOrder() {
+    var tbody = document.getElementById("item-tbody");
+    if (!tbody) return;
+    var idx = 0;
+    tbody.querySelectorAll(".item-row-main").forEach(function (row) {
+      if (row.style.display === "none") return;
+      var inp = row.querySelector('[name$="-sort_order"]');
+      if (inp) inp.value = idx;
+      idx++;
+    });
+  }
+
+  function initSortableLines() {
+    var tbody = document.getElementById("item-tbody");
+    if (!tbody || typeof Sortable === "undefined") return;
+    Sortable.create(tbody, {
+      handle: ".drag-handle",
+      animation: 150,
+      ghostClass: "table-active",
+      onEnd: function () {
+        refreshSortOrder();
+        var f = tbody.closest("form");
+        if (f) f.dispatchEvent(new Event("change"));
+      },
+    });
+  }
+
   window.itemRow = itemRow;
   window.deleteRow = deleteRow;
   window.recalcGrandTotal = recalcGrandTotal;
@@ -335,6 +364,8 @@
   window.addDocumentLine = addDocumentLine;
   window.initHeaderCardCollapse = initHeaderCardCollapse;
   window.initUnsavedGuard = initUnsavedGuard;
+  window.initSortableLines = initSortableLines;
+  window.refreshSortOrder = refreshSortOrder;
 
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-add-line]")) addDocumentLine();
