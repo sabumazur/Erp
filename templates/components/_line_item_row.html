@@ -1,5 +1,11 @@
 {% load i18n %}
 <tr x-data="itemRow()" class="align-middle item-row-main">
+  <td style="width:28px" class="text-center">
+    <span class="drag-handle text-muted" title="{% trans 'Reordenar' %}" style="cursor:grab;font-size:1.1rem;line-height:1;user-select:none;">
+      <i class="bi bi-grip-vertical"></i>
+    </span>
+    {{ form.sort_order }}
+  </td>
   <td style="width:44px">
     <button type="button"
             class="btn btn-outline-secondary btn-sm"

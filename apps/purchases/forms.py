@@ -396,9 +396,10 @@ class PurchaseDocumentItemForm(DocumentLineItemFormMixin):
 
     class Meta:
         model = PurchaseDocumentItem
-        fields = ["item", "description", "quantity", "unit_price", "itbis_rate"]
+        fields = ["item", "description", "quantity", "unit_price", "itbis_rate", "sort_order"]
         widgets = {
             "itbis_rate": ItbisSelect(),
+            "sort_order": forms.HiddenInput(),
         }
 
     def get_item_types(self):
@@ -409,7 +410,7 @@ PurchaseDocumentItemFormSet = inlineformset_factory(
     PurchaseDocument,
     PurchaseDocumentItem,
     form=PurchaseDocumentItemForm,
-    fields=["item", "description", "quantity", "unit_price", "itbis_rate"],
+    fields=["item", "description", "quantity", "unit_price", "itbis_rate", "sort_order"],
     extra=1,
     can_delete=True,
     min_num=0,
@@ -419,7 +420,7 @@ PurchaseDocumentItemFormSetCreate = inlineformset_factory(
     PurchaseDocument,
     PurchaseDocumentItem,
     form=PurchaseDocumentItemForm,
-    fields=["item", "description", "quantity", "unit_price", "itbis_rate"],
+    fields=["item", "description", "quantity", "unit_price", "itbis_rate", "sort_order"],
     extra=1,
     can_delete=False,
     min_num=0,

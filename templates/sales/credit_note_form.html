@@ -35,7 +35,7 @@
               hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
               hx-target="#item-tbody"
               hx-swap="beforeend"
-              hx-on::after-request="recalcGrandTotal()">
+              hx-on::after-request="recalcGrandTotal(); refreshSortOrder();">
         <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
       </button>
     </div>
@@ -45,6 +45,8 @@
         <table class="table table-sm mb-0">
           <thead class="table-light">
             <tr>
+              <th style="width:28px"></th>
+              <th style="width:44px"></th>
               <th>{% trans "Descripción" %}</th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
               <th style="width:130px">{% trans "P. Unitario" %}</th>
@@ -57,23 +59,7 @@
           </thead>
           <tbody id="item-tbody">
             {% for item_form in formset %}
-            <tr x-data="itemRow()" class="align-middle">
-              <td>{{ item_form.description }}</td>
-              <td>{{ item_form.quantity }}</td>
-              <td>{{ item_form.unit_price }}</td>
-              <td>{{ item_form.itbis_rate }}</td>
-              <td class="text-end fw-semibold"><span x-text="fmtSubtotal()">0.00</span></td>
-              <td class="text-end text-muted"><span x-text="fmtItbis()">0.00</span></td>
-              <td class="text-end fw-semibold"><span x-text="fmtTotal()">0.00</span></td>
-              <td>
-                {{ item_form.DELETE }}
-                <button type="button" class="btn btn-outline-danger btn-sm"
-                        x-on:click="$el.closest('tr').remove(); recalcGrandTotal()">
-                  <i class="bi bi-trash"></i>
-                </button>
-                {{ item_form.id }}
-              </td>
-            </tr>
+              {% include "components/_line_item_row.html" with form=item_form %}
             {% endfor %}
           </tbody>
         </table>
@@ -101,6 +87,13 @@
   </div>
 </form>
 
+{% url 'sales:item_search' as item_search_url %}
+{% include "components/_item_picker_modal.html" with item_search_url=item_search_url %}
+
+<script>
+window.ITEM_QUICK_CREATE_URL = "{% url 'sales:item_quick_create' %}";
+</script>
+
 {% include "sales/partials/item_js.html" %}
 {% endblock %}
 
@@ -113,4 +106,6 @@
 <script src="{% static 'js/item-picker.js' %}"></script>
 <script src="{% static 'js/customer-picker.js' %}"></script>
 <script src="{% static 'js/picker-keyboard.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>initSortableLines();</script>
 {% endblock %}

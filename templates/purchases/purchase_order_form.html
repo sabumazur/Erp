@@ -58,6 +58,7 @@
         <table class="table table-sm mb-0">
           <thead>
             <tr>
+              <th style="width:28px"></th>
               <th style="width:44px"></th>
               <th>{% trans "Descripción" %}</th>
               <th style="width:110px">{% trans "Cantidad" %}</th>
@@ -154,4 +155,6 @@ window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}"
 <script src="{% static 'js/item-picker.js' %}"></script>
 <script src="{% static 'js/supplier-picker.js' %}"></script>
 <script src="{% static 'js/picker-keyboard.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>initSortableLines();</script>
 {% endblock %}

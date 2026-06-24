@@ -1076,10 +1076,12 @@ class SalesDocumentItem(AbstractDocumentLineItem):
         verbose_name=_("artículo"),
     )
 
+    sort_order = models.PositiveIntegerField(default=0)
+
     class Meta:
         verbose_name = _("línea de documento")
         verbose_name_plural = _("líneas de documento")
-        ordering = ["pk"]
+        ordering = ["sort_order", "pk"]
         indexes = [
             models.Index(
                 fields=["document", "itbis_rate"],
