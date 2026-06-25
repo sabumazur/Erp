@@ -27,7 +27,7 @@ from .models import (
 _PHONE_RE = re.compile(r"^\+?[\d\s.\-()+]{7,20}$")
 
 
-# ── Customer ──────────────────────────────────────────────────────────────────
+# ── Customer ───────────────────────────────────────────────────────────[...]
 
 
 class CustomerForm(forms.ModelForm):
@@ -274,7 +274,7 @@ class ItemQuickCreateForm(forms.ModelForm):
         self.fields["unit_price"].widget.attrs["placeholder"] = "0.00"
 
 
-# ── CustomerDepartment ────────────────────────────────────────────────────────
+# ── CustomerDepartment ────────────────────────────────────────────────────────[...]
 
 
 class CustomerDepartmentForm(forms.ModelForm):
@@ -317,7 +317,7 @@ class CustomerDepartmentForm(forms.ModelForm):
         return phone
 
 
-# ── Invoice ───────────────────────────────────────────────────────────────────
+# ── Invoice ────────────────────────────────────────────────────────────[...]
 
 
 class InvoiceForm(forms.ModelForm):
@@ -407,7 +407,7 @@ class InvoiceForm(forms.ModelForm):
         )
 
 
-# ── Quotation ─────────────────────────────────────────────────────────────────
+# ── Quotation ───────────────────────────────────────────────────────────[...]
 
 
 class QuotationForm(forms.ModelForm):
@@ -492,7 +492,7 @@ class QuotationForm(forms.ModelForm):
         )
 
 
-# ── Sale Order ────────────────────────────────────────────────────────────────
+# ── Sale Order ───────────────────────────────────────────────────────────[...]
 
 
 class SaleOrderForm(forms.ModelForm):
@@ -608,7 +608,7 @@ class SaleOrderForm(forms.ModelForm):
         )
 
 
-# ── Deliver Sale Order ────────────────────────────────────────────────────────
+# ── Deliver Sale Order ────────────────────────────────────────────────────────[...]
 
 
 class SaleOrderDeliverForm(forms.Form):
@@ -628,7 +628,7 @@ class SaleOrderDeliverForm(forms.Form):
         self.helper.layout = Layout("signed_by")
 
 
-# ── Consolidation ─────────────────────────────────────────────────────────────
+# ── Consolidation ──────────────────────────────────────────────────────────[...]
 
 
 class ConsolidateForm(forms.Form):
@@ -722,7 +722,7 @@ class ConsolidateForm(forms.Form):
         return cleaned_data
 
 
-# ── PaymentTerm ───────────────────────────────────────────────────────────────
+# ── PaymentTerm ──────────────────────────────────────────────────────────[...]
 
 
 class PaymentTermForm(forms.ModelForm):
@@ -818,7 +818,7 @@ InvoiceItemFormSetCreate = inlineformset_factory(
 )
 
 
-# ── Payment ───────────────────────────────────────────────────────────────────
+# ── Payment ────────────────────────────────────────────────────────────[...]
 
 
 class PaymentHeaderForm(forms.ModelForm):
@@ -912,37 +912,54 @@ class PaymentHeaderForm(forms.ModelForm):
         )
 
 
-class PaymentForm(forms.ModelForm):
+class PaymentForm(forms.Form):
     """
-    Header form for registering a payment receipt.
-    Used for the quick single-invoice modal on invoice_detail.html.
-    The full multi-invoice form lives in PaymentCreateView.
+    Quick payment form used in InvoiceDetailView and InvoicePayView.
+    Simplified form (not ModelForm) for capturing payment details inline without model binding.
     """
 
-    use_required_attribute = False
-
-    class Meta:
-        model = Payment
-        fields = ["amount", "date", "method", "reference", "notes"]
-        widgets = {
-            "date": DateInput(),
-            "notes": forms.Textarea(attrs={"rows": 1}),
-            "method": TomSelect(placeholder="Método…"),
-        }
-        error_messages = {
-            "amount": {"required": _("El monto es obligatorio.")},
-            "date": {"required": _("La fecha es obligatoria.")},
-            "method": {"required": _("El método de pago es obligatorio.")},
-        }
+    date = forms.DateField(
+        label=_("Fecha de pago"),
+        widget=DateInput(),
+        required=True,
+    )
+    method = forms.ChoiceField(
+        label=_("Método de pago"),
+        choices=[],
+        widget=TomSelect(placeholder="Método…"),
+        required=True,
+    )
+    amount = forms.DecimalField(
+        label=_("Monto"),
+        decimal_places=2,
+        max_digits=12,
+        widget=forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+        required=True,
+    )
+    reference = forms.CharField(
+        label=_("Referencia"),
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": _("Cheque, transferencia, etc.")}),
+    )
+    notes = forms.CharField(
+        label=_("Notas"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 1, "placeholder": _("Instrucciones o referencias internas…")}),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Get payment method choices from Payment model
+        method_choices = [(k, v) for k, v in Payment._meta.get_field("method").choices]
+        self.fields["method"].choices = method_choices
+        
         self.helper = FormHelper()
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Row(
-                Column("amount", css_class="col-md-4"),
                 Column("date", css_class="col-md-4"),
+                Column("amount", css_class="col-md-4"),
                 Column("method", css_class="col-md-4"),
             ),
             "reference",
@@ -998,7 +1015,7 @@ class CreditNoteForm(forms.ModelForm):
         )
 
 
-# ── NCFSequence ───────────────────────────────────────────────────────────────
+# ── NCFSequence ──────────────────────────────────────────────────────────[...]
 
 
 class NCFSequenceForm(forms.ModelForm):
