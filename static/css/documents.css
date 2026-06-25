@@ -114,12 +114,27 @@
 }
 
 .doc-card-chevron {
-  margin-left: auto;
   display: inline-flex;
   color: #6b7280;
   font-size: .95rem;
+  flex-shrink: 0;
   transition: transform .26s cubic-bezier(.4, 0, .2, 1), color .14s ease;
 }
+
+/* Header card collapsed summary (customer + date) */
+.doc-head-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 360px;
+}
+.doc-head-meta-customer { font-weight: 600; color: #374151; overflow: hidden; text-overflow: ellipsis; }
 
 .doc-order-card-head.is-toggle:hover .doc-card-chevron {
   color: #475569;
@@ -135,7 +150,8 @@
   transition: grid-template-rows .26s cubic-bezier(.4, 0, .2, 1);
 }
 
-.doc-order-card.is-collapsed .doc-card-collapse {
+.doc-order-card.is-collapsed .doc-card-collapse,
+.doc-lines-card.is-collapsed .doc-card-collapse {
   grid-template-rows: 0fr;
 }
 
@@ -143,6 +159,11 @@
   min-height: 0;
   overflow: hidden;
 }
+
+.doc-lines-card.is-collapsed .doc-card-chevron { transform: rotate(-90deg); }
+.doc-lines-head.is-toggle { cursor: pointer; user-select: none; }
+.doc-lines-head.is-toggle:hover { background: #f1f5fb; }
+.doc-lines-head.is-toggle:focus-visible { outline: 2px solid #86b7fe; outline-offset: -2px; }
 
 @media (prefers-reduced-motion: reduce) {
   .doc-card-collapse,
@@ -404,60 +425,6 @@
 
 .doc-items-table .table tbody tr:last-child td {
   border-bottom: none;
-}
-
-/* ── Document totals block ──────────────────────────────────── */
-
-.doc-totals-block {
-  padding: 16px 28px 20px;
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid #f1f3f7;
-}
-
-.doc-totals-inner {
-  min-width: 240px;
-}
-
-.doc-total-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 3px 0;
-  font-size: 0.875rem;
-  gap: 32px;
-}
-
-.doc-total-line .total-label {
-  color: #64748b;
-}
-
-.doc-total-line .total-value {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.doc-total-line.grand-total {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 2px solid #0f172a;
-}
-
-.doc-total-line.grand-total .total-label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #0f172a;
-}
-
-.doc-total-line.grand-total .total-value {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #0f172a;
 }
 
 /* ── Status sidebar card ────────────────────────────────────── */
@@ -842,10 +809,8 @@ tr.dt-row-selected:hover > td {
      • .doc-order-card  — header "Datos" card
      • .doc-lines-card  — line-items / allocations table card
      • .doc-lines-head  — lines card header + count chip
-     • .doc-bottom-grid — notes (left) + totals (right)
-     • .doc-totals-card — standalone "Resumen" card  (uses #grand-* IDs)
-     • .doc-notes-acc   — collapsible Notas accordion (Alpine + CSS max-height)
-     • .doc-notes-ribbon — OPTIONAL ribbon alternative (markup in comment below)
+     • .doc-inline-totals — horizontal totals bar at bottom of lines card
+     • .doc-notes-acc     — collapsible Notas accordion (Alpine + CSS max-height)
 
    NOTE: the older .document-totals-footer / .document-footer-notes /
    .document-totals-table rules above are legacy print/detail styles, kept
@@ -864,7 +829,6 @@ tr.dt-row-selected:hover > td {
 .doc-lines-head.app-card-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 .doc-lines-title {
@@ -873,9 +837,9 @@ tr.dt-row-selected:hover > td {
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
+  margin-right: auto;
 }
 .doc-lines-count {
-  margin-left: auto;
   font-size: .68rem;
   font-weight: 700;
   color: var(--muted);
@@ -886,109 +850,6 @@ tr.dt-row-selected:hover > td {
   letter-spacing: 0;
 }
 
-/* ── Bottom grid: Notas (left) + Resumen (right) ─────────────────────────── */
-.doc-bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 18px;
-  align-items: start;
-}
-@media (max-width: 767.98px) {
-  .doc-bottom-grid { grid-template-columns: 1fr; }
-}
-
-/* ── Resumen (totals) card ───────────────────────────────────────────────── */
-.doc-totals-card {
-  background: #fff;
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
-  padding: 16px 20px 18px;
-}
-.doc-totals-head {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-bottom: 11px;
-  margin-bottom: 4px;
-  border-bottom: 2px solid var(--kv-title, #2b3a44);
-}
-.doc-totals-head i { color: var(--kv-title, #2b3a44); font-size: 1rem; }
-.doc-totals-head span {
-  font-size: .76rem;
-  font-weight: 800;
-  letter-spacing: .085em;
-  text-transform: uppercase;
-  color: var(--kv-title, #2b3a44);
-}
-.doc-tot-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 9px 0;
-}
-.doc-tot-row + .doc-tot-row { border-top: 1px solid var(--hairline-soft, #eef0f6); }
-.doc-tot-k {
-  font-size: .86rem;
-  font-weight: 500;
-  color: var(--kv-label, #5f7d8c);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.doc-tot-tag {
-  font-size: .62rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--doc-accent-soft);
-  color: var(--doc-accent);
-}
-.doc-tot-v {
-  font-size: .9rem;
-  font-weight: 600;
-  color: #111827;
-  white-space: nowrap;
-}
-.doc-tot-row--grand {
-  border-top: 2px solid var(--kv-title, #2b3a44);
-  margin-top: 4px;
-  padding-top: 13px;
-  align-items: center;
-}
-.doc-tot-row--grand .doc-tot-k {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.15rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--kv-title, #2b3a44);
-}
-.doc-tot-row--grand .doc-tot-v {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.85rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: #0f172a;
-}
-
-/* ── Sticky totals wrapper ───────────────────────────────────────────────── */
-/* .doc-totals-wrap is applied to the d-flex wrapper that directly contains   */
-/* .doc-totals-card. The form is its nearest block ancestor, so sticky keeps  */
-/* the card pinned to the viewport bottom while the user scrolls line items.  */
-@supports (position: sticky) {
-  .doc-totals-wrap {
-    position: sticky;
-    bottom: 1rem;
-    z-index: 4;
-  }
-}
-@media (max-width: 767.98px) {
-  .doc-totals-wrap {
-    position: static !important;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   /* No animation here, but respect the pref for any future transitions */
 }
@@ -1401,4 +1262,57 @@ tr.dt-row-selected:hover > td {
 }
 @media (prefers-reduced-motion: reduce) {
   .doc-stepper-dot--current { animation: none; }
+}
+
+/* ── Inline horizontal totals bar ─────────────────────────────────────── */
+.doc-inline-totals {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--hairline-soft, #eef0f6);
+  padding: 14px 20px;
+}
+.doc-inline-tot-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0 24px;
+  border-right: 1px solid var(--hairline-soft, #eef0f6);
+  min-width: 150px;
+}
+.doc-inline-tot-cell:last-child { border-right: none; padding-right: 0; }
+.doc-inline-tot-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  font-weight: 500;
+}
+.doc-inline-tot-label .doc-tot-tag {
+  font-size: .65rem;
+  background: #e8f4f3;
+  color: #0f766e;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-weight: 600;
+  letter-spacing: .03em;
+}
+.doc-inline-tot-value {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-top: 3px;
+}
+.doc-inline-tot-cell--grand .doc-inline-tot-label {
+  color: var(--kv-title, #2b3a44);
+  font-weight: 700;
+}
+.doc-inline-tot-cell--grand .doc-inline-tot-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+@media (max-width: 575.98px) {
+  .doc-inline-totals { flex-direction: column; align-items: flex-end; gap: 10px; }
+  .doc-inline-tot-cell { border-right: none; padding: 0; min-width: 0; }
 }

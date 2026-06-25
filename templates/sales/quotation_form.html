@@ -32,78 +32,15 @@
         <i class="bi bi-file-text" aria-hidden="true"></i>
         {% trans "Datos de la cotización" %}
       </span>
+      <span class="doc-head-meta" id="doc-head-meta">
+        <span class="doc-head-meta-customer" id="doc-head-customer"></span>
+      </span>
     </div>
     <div class="doc-order-card-body">{% crispy form %}</div>
   </div>
 
   {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
-  <div class="app-table-wrap doc-lines-card mb-3">
-    <div class="app-card-head doc-lines-head">
-      <span class="doc-lines-title">{% trans "Líneas" %}</span>
-      <div class="d-flex align-items-center gap-2">
-        <span class="doc-lines-count" id="doc-line-count"></span>
-        <button type="button" class="btn btn-outline-secondary btn-sm doc-add-line" data-add-line>
-          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
-        </button>
-      </div>
-    </div>
-    <div>
-      {{ formset.management_form }}
-      {% if formset.non_form_errors %}
-        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small">
-          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
-        </div>
-      {% endif %}
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th style="width:28px"></th>
-              <th style="width:44px"></th>
-              <th>{% trans "Descripción" %}</th>
-              <th style="width:110px">{% trans "Cantidad" %}</th>
-              <th style="width:130px">{% trans "P. Unitario" %}</th>
-              <th style="width:130px">{% trans "ITBIS" %}</th>
-              <th class="text-end" style="width:130px">{% trans "Subtotal" %}</th>
-              <th class="text-end" style="width:110px">{% trans "ITBIS RD$" %}</th>
-              <th class="text-end" style="width:130px">{% trans "Total" %}</th>
-              <th style="width:40px"></th>
-            </tr>
-          </thead>
-          <tbody id="item-tbody">
-            {% for item_form in formset %}
-              {% include "components/_line_item_row.html" with form=item_form %}
-            {% endfor %}
-          </tbody>
-          <template id="empty-item-row">
-            {% include "components/_line_item_row.html" with form=formset.empty_form %}
-          </template>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  {# ── Bottom · Resumen (totals card) ──────────────────────────────────── #}
-  <div class="d-flex justify-content-end mb-3 doc-totals-wrap">
-    <div class="doc-totals-card">
-      <div class="doc-totals-head">
-        <i class="bi bi-calculator" aria-hidden="true"></i>
-        <span>{% trans "Resumen" %}</span>
-      </div>
-      <div class="doc-tot-row">
-        <span class="doc-tot-k">{% trans "Subtotal" %}</span>
-        <span class="doc-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
-      </div>
-      <div class="doc-tot-row">
-        <span class="doc-tot-k">{% trans "ITBIS" %} <span class="doc-tot-tag">18%</span></span>
-        <span class="doc-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
-      </div>
-      <div class="doc-tot-row doc-tot-row--grand">
-        <span class="doc-tot-k">{% trans "Total" %}</span>
-        <span class="doc-tot-v font-monospace"><span id="grand-total">0.00</span></span>
-      </div>
-    </div>
-  </div>
+  {% include "sales/partials/_doc_lines_card.html" %}
 
 </form>
 
@@ -115,41 +52,11 @@
 window.CUSTOMER_DEFAULTS         = {{ customer_defaults_json|safe }};
 window.CUSTOMER_QUICK_CREATE_URL = "{% url 'sales:customer_quick_create' %}";
 window.ITEM_QUICK_CREATE_URL     = "{% url 'sales:item_quick_create' %}";
-
-(function () {
-  function syncCount() {
-    var el = document.getElementById("doc-line-count");
-    if (!el) return;
-    var rows = document.querySelectorAll('#item-tbody tr.item-row-main');
-    var n = 0;
-    rows.forEach(function (r) {
-      var del = r.querySelector('[name$="-DELETE"]');
-      if (!(del && del.checked) && r.style.display !== "none") n++;
-    });
-    el.textContent = n + (n === 1 ? " línea" : " líneas");
-  }
-  document.addEventListener("DOMContentLoaded", syncCount);
-  document.body.addEventListener("htmx:afterSwap", syncCount);
-  document.addEventListener("click", function (e) {
-    if (e.target.closest('[onclick*="deleteRow"]') || e.target.closest('[data-add-line]')) {
-      setTimeout(syncCount, 50);
-    }
-  });
-})();
 </script>
 {% include "sales/partials/item_js.html" %}
 
 {% endblock %}
 
 {% block extra_js %}
-{% load static %}
-<script src="{% static 'vendor/tom-select/tom-select.complete.min.js' %}"></script>
-<script src="{% static 'js/init-tomselect.js' %}"></script>
-<script src="{% static 'js/document-form.js' %}"></script>
-<script src="{% static 'js/picker-base.js' %}"></script>
-<script src="{% static 'js/item-picker.js' %}"></script>
-<script src="{% static 'js/customer-picker.js' %}"></script>
-<script src="{% static 'js/picker-keyboard.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
-<script>initSortableLines();</script>
+{% include "sales/partials/_doc_extra_js.html" %}
 {% endblock %}

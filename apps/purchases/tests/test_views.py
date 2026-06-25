@@ -156,18 +156,20 @@ class TestPurchaseOrderForm:
     )
     def test_purchase_document_templates_remove_legacy_notes_accordion(self, template_path):
         source = Path(template_path).read_text(encoding="utf-8")
+        totals = Path("templates/components/_doc_inline_totals.html").read_text(encoding="utf-8")
 
+        # Legacy structures removed
         assert "doc-notes-acc" not in source
         assert "doc-bottom-grid mb-3" not in source
-        assert 'class="d-flex justify-content-end mb-3"' in source
-        assert 'class="doc-totals-card" style="width:360px"' in source
-        for total_id in [
-            "grand-subtotal",
-            "grand-itbis18",
-            "grand-itbis16",
-            "grand-total",
-        ]:
-            assert total_id in source
+        assert 'class="d-flex justify-content-end mb-3"' not in source
+        assert 'class="doc-totals-card" style="width:360px"' not in source
+
+        # Inline totals partial wired up
+        assert "_doc_inline_totals.html" in source
+
+        # Grand total IDs live in the inline totals partial
+        for total_id in ["grand-subtotal", "grand-itbis18", "grand-itbis16", "grand-total"]:
+            assert total_id in totals
 
     def test_supplier_payment_form_template_loads_optional_fields_script(self):
         source = Path("templates/purchases/supplier_payment_form.html").read_text(

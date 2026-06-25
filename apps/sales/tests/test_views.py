@@ -616,19 +616,21 @@ class TestSaleOrderFormView:
     )
     def test_sales_document_templates_remove_legacy_notes_accordion(self, template_path):
         source = Path(template_path).read_text(encoding="utf-8")
+        lines_card = Path("templates/sales/partials/_doc_lines_card.html").read_text(encoding="utf-8")
+        totals = Path("templates/components/_doc_inline_totals.html").read_text(encoding="utf-8")
 
+        # Legacy structures removed
         assert "doc-notes-acc" not in source
         assert "doc-bottom-grid mb-3" not in source
-        assert 'class="d-flex justify-content-end mb-3"' in source
-        assert 'class="doc-totals-card"' in source
+        assert "doc-totals-card" not in source
         assert 'style="width:360px"' not in source
-        for total_id in [
-            "grand-subtotal",
-            "grand-itbis18",
-            "grand-itbis16",
-            "grand-total",
-        ]:
-            assert total_id in source
+
+        # New partials wired up in template
+        assert '_doc_lines_card.html' in source
+
+        # Grand total IDs live in the inline totals partial
+        for total_id in ["grand-subtotal", "grand-itbis18", "grand-itbis16", "grand-total"]:
+            assert total_id in totals
 
     def test_payment_form_template_loads_optional_fields_script(self):
         source = Path("templates/sales/payment_form.html").read_text(encoding="utf-8")

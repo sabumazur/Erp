@@ -28,6 +28,7 @@
     if (typeof initCustomerDefaults === "function") initCustomerDefaults();
     if (typeof initIssueDateDeliverySync === "function") initIssueDateDeliverySync();
     if (typeof initHeaderCardCollapse === "function") initHeaderCardCollapse();
+    if (typeof initHeadSummary === "function") initHeadSummary();
     if (typeof initUnsavedGuard === "function") initUnsavedGuard();
 
     // Payment (loaded per-page on payment forms)

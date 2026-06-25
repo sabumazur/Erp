@@ -46,28 +46,6 @@
     refreshSortOrder();
     var f = btn.closest("form");
     if (f) f.dispatchEvent(new Event("change"));
-    requestAnimationFrame(syncTotalsCard);
-  }
-
-  // Shift the sticky totals card down (via translateY) so it never overlaps
-  // the last visible line-item row. Cleared and recalculated on each call.
-  function syncTotalsCard() {
-    var totalsEl = document.querySelector(".doc-totals-wrap");
-    var tbody = document.getElementById("item-tbody");
-    if (!totalsEl || !tbody) return;
-
-    totalsEl.style.transform = "";
-    var totalsTop = totalsEl.getBoundingClientRect().top;
-
-    var rows = Array.from(tbody.querySelectorAll(".item-row-main"))
-      .filter(function (r) { return r.style.display !== "none"; });
-    if (rows.length === 0) return;
-
-    var lastRowBot = rows[rows.length - 1].getBoundingClientRect().bottom;
-    var gap = totalsTop - lastRowBot;
-    if (gap < 8) {
-      totalsEl.style.transform = "translateY(" + (8 - gap) + "px)";
-    }
   }
 
   function addDocumentLine() {
@@ -75,6 +53,19 @@
     var tbody = document.getElementById("item-tbody");
     var mgmt  = document.querySelector('[name$="-TOTAL_FORMS"]');
     if (!tmpl || !tbody || !mgmt) return;
+
+    // Auto-expand lines card if it's collapsed so the new row is visible.
+    var linesCard = tbody.closest(".doc-lines-card");
+    if (linesCard && linesCard.classList.contains("is-collapsed")) {
+      linesCard.classList.remove("is-collapsed");
+      var linesHead = linesCard.querySelector(".doc-lines-head");
+      if (linesHead) linesHead.setAttribute("aria-expanded", "true");
+      try {
+        var lKey = "sabsys.docLines." +
+          location.pathname.replace(/\/[0-9a-f-]{6,}/gi, "/:id").replace(/\/$/, "");
+        localStorage.setItem(lKey, "0");
+      } catch (e) {}
+    }
 
     var idx  = parseInt(mgmt.value, 10);
     var html = tmpl.innerHTML.replace(/__prefix__/g, String(idx));
@@ -104,14 +95,10 @@
     var f = tbody.closest("form");
     if (f) f.dispatchEvent(new Event("change"));
 
-    // Ensure row is in viewport, then shift the sticky card down if it overlaps.
     requestAnimationFrame(function () {
       row.scrollIntoView({ behavior: "instant", block: "nearest" });
-      requestAnimationFrame(function () {
-        syncTotalsCard();
-        var descEl = row.querySelector('[name$="-description"]');
-        if (descEl) descEl.focus({ preventScroll: true });
-      });
+      var descEl = row.querySelector('[name$="-description"]');
+      if (descEl) descEl.focus({ preventScroll: true });
     });
   }
 
@@ -243,6 +230,47 @@
   }
 
   function initHeaderCardCollapse() {
+    document.querySelectorAll(".doc-lines-card").forEach(function (card) {
+      var head = card.querySelector(".doc-lines-head");
+      var body = head && head.nextElementSibling;
+      if (!head || !body || head.dataset.collapseInit) return;
+      head.dataset.collapseInit = "1";
+
+      var wrap = document.createElement("div");
+      wrap.className = "doc-card-collapse";
+      var inner = document.createElement("div");
+      inner.className = "doc-card-collapse-inner";
+      body.parentNode.insertBefore(wrap, body);
+      wrap.appendChild(inner);
+      inner.appendChild(body);
+
+      head.classList.add("is-toggle");
+      head.setAttribute("role", "button");
+      head.setAttribute("tabindex", "0");
+      var chev = document.createElement("i");
+      chev.className = "bi bi-chevron-down doc-card-chevron";
+      chev.setAttribute("aria-hidden", "true");
+      head.appendChild(chev);
+
+      var key = "sabsys.docLines." +
+        location.pathname.replace(/\/[0-9a-f-]{6,}/gi, "/:id").replace(/\/$/, "");
+
+      function applyLines(collapsed, persist) {
+        card.classList.toggle("is-collapsed", collapsed);
+        head.setAttribute("aria-expanded", String(!collapsed));
+        if (persist) { try { localStorage.setItem(key, collapsed ? "1" : "0"); } catch (e) {} }
+      }
+      var saved = null;
+      try { saved = localStorage.getItem(key); } catch (e) {}
+      applyLines(saved === "1", false);
+
+      function toggleLines() { applyLines(!card.classList.contains("is-collapsed"), true); }
+      head.addEventListener("click", toggleLines);
+      head.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLines(); }
+      });
+    });
+
     document.querySelectorAll(".doc-order-card").forEach(function (card) {
       var head = card.querySelector(".doc-order-card-head");
       var body = card.querySelector(".doc-order-card-body");
@@ -359,6 +387,34 @@
     });
   }
 
+  function initHeadSummary() {
+    var custEl = document.getElementById("doc-head-customer");
+    if (custEl) {
+      function syncCustomer() {
+        var hidden = document.getElementById("id_customer");
+        var display = document.getElementById("customer-display-text");
+        custEl.textContent = (hidden && hidden.value && display)
+          ? display.textContent.trim() : "";
+      }
+      var hiddenCustomer = document.getElementById("id_customer");
+      if (hiddenCustomer) hiddenCustomer.addEventListener("change", function () { setTimeout(syncCustomer, 0); });
+      syncCustomer();
+    }
+
+    var suppEl = document.getElementById("doc-head-supplier");
+    if (suppEl) {
+      function syncSupplier() {
+        var hidden = document.getElementById("id_supplier");
+        var display = document.getElementById("supplier-display-text");
+        suppEl.textContent = (hidden && hidden.value && display)
+          ? display.textContent.trim() : "";
+      }
+      var hiddenSupplier = document.getElementById("id_supplier");
+      if (hiddenSupplier) hiddenSupplier.addEventListener("change", function () { setTimeout(syncSupplier, 0); });
+      syncSupplier();
+    }
+  }
+
   function refreshSortOrder() {
     var tbody = document.getElementById("item-tbody");
     if (!tbody) return;
@@ -398,9 +454,26 @@
   window.initUnsavedGuard = initUnsavedGuard;
   window.initSortableLines = initSortableLines;
   window.refreshSortOrder = refreshSortOrder;
-  window.syncTotalsCard = syncTotalsCard;
+  window.initHeadSummary = initHeadSummary;
+
+  function syncLineCount() {
+    var el = document.getElementById("doc-line-count");
+    if (!el) return;
+    var rows = document.querySelectorAll("#item-tbody tr.item-row-main");
+    var n = 0;
+    rows.forEach(function (r) {
+      var del = r.querySelector('[name$="-DELETE"]');
+      if (!(del && del.checked) && r.style.display !== "none") n++;
+    });
+    el.textContent = n + (n === 1 ? " línea" : " líneas");
+  }
+  document.addEventListener("DOMContentLoaded", syncLineCount);
+  document.body.addEventListener("htmx:afterSwap", syncLineCount);
 
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-add-line]")) addDocumentLine();
+    if (e.target.closest('[onclick*="deleteRow"]') || e.target.closest("[data-add-line]")) {
+      setTimeout(syncLineCount, 50);
+    }
   });
 })();

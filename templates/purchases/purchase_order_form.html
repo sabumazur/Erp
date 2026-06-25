@@ -25,18 +25,21 @@
 <form method="post" id="doc-form">
   {% csrf_token %}
 
-  {# ── Card 1 · Datos de la orden (unchanged) ──────────────────────────── #}
+  {# ── Card 1 · Datos de la orden ──────────────────────────────────────── #}
   <div class="app-table-wrap doc-order-card mb-3">
     <div class="app-card-head doc-order-card-head">
       <span class="doc-order-card-title">
         <i class="bi bi-clipboard-check" aria-hidden="true"></i>
         {% trans "Datos de la orden" %}
       </span>
+      <span class="doc-head-meta" id="doc-head-meta">
+        <span class="doc-head-meta-customer" id="doc-head-supplier"></span>
+      </span>
     </div>
     <div class="doc-order-card-body">{% crispy form %}</div>
   </div>
 
-  {# ── Card 2 · Líneas — items table only (totals footer removed) ──────── #}
+  {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
   <div class="app-table-wrap doc-lines-card mb-3">
     <div class="app-card-head doc-lines-head">
       <span class="doc-lines-title">{% trans "Líneas" %}</span>
@@ -80,36 +83,8 @@
           </template>
         </table>
       </div>
+      {% include "components/_doc_inline_totals.html" %}
     </div>
-  </div>
-
-  {# ── Bottom · Resumen (totals card) ──────────────────────────────────── #}
-  <div class="d-flex justify-content-end mb-3 doc-totals-wrap">
-
-    {# Resumen — totals card. IDs preserved for recalcGrandTotal(). #}
-    <div class="doc-totals-card" style="width:360px">
-      <div class="doc-totals-head">
-        <i class="bi bi-calculator" aria-hidden="true"></i>
-        <span>{% trans "Resumen" %}</span>
-      </div>
-      <div class="doc-tot-row">
-        <span class="doc-tot-k">{% trans "Subtotal" %}</span>
-        <span class="doc-tot-v font-monospace"><span id="grand-subtotal">0.00</span></span>
-      </div>
-      <div class="doc-tot-row">
-        <span class="doc-tot-k">{% trans "ITBIS" %} <span class="doc-tot-tag">18%</span></span>
-        <span class="doc-tot-v font-monospace"><span id="grand-itbis18">0.00</span></span>
-      </div>
-      <div class="doc-tot-row">
-        <span class="doc-tot-k">{% trans "ITBIS" %} <span class="doc-tot-tag">16%</span></span>
-        <span class="doc-tot-v font-monospace"><span id="grand-itbis16">0.00</span></span>
-      </div>
-      <div class="doc-tot-row doc-tot-row--grand">
-        <span class="doc-tot-k">{% trans "Total" %}</span>
-        <span class="doc-tot-v font-monospace"><span id="grand-total">0.00</span></span>
-      </div>
-    </div>
-
   </div>
 
 </form>
@@ -121,26 +96,6 @@
 <script>
 window.ITEM_QUICK_CREATE_URL     = "{% url 'purchases:item_quick_create' %}";
 window.SUPPLIER_QUICK_CREATE_URL = "{% url 'purchases:supplier_quick_create' %}";
-
-/* Optional: keep the "N líneas" chip in sync. Safe no-op if not desired. */
-(function () {
-  function syncCount() {
-    var el = document.getElementById("doc-line-count");
-    if (!el) return;
-    var rows = document.querySelectorAll('#item-tbody tr.item-row-main');
-    var n = 0;
-    rows.forEach(function (r) {
-      var del = r.querySelector('[name$="-DELETE"]');
-      if (!(del && del.checked) && r.style.display !== "none") n++;
-    });
-    el.textContent = n + (n === 1 ? " línea" : " líneas");
-  }
-  document.addEventListener("DOMContentLoaded", syncCount);
-  document.body.addEventListener("htmx:afterSwap", syncCount);
-  document.addEventListener("click", function (e) {
-    if (e.target.closest('[onclick*="deleteRow"]')) setTimeout(syncCount, 0);
-  });
-})();
 </script>
 {% include "sales/partials/item_js.html" %}
 
