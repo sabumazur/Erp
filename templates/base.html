@@ -1,8 +1,9 @@
 {% load static i18n %}
 <!doctype html>
 {% get_current_language as LANGUAGE_CODE %}
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}" data-bs-theme="light">
 <head>
+  <script>(function(){try{var t=localStorage.getItem('sabsys-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SabSys - {% block title %}{% trans "Inicio" %}{% endblock %}</title>
@@ -22,6 +23,7 @@
   <link href="{% static 'css/picker.css' %}" rel="stylesheet">
   <link href="{% static 'vendor/tom-select/tom-select.bootstrap5.css' %}" rel="stylesheet">
   <link href="{% static 'css/sabsys-tomselect.css' %}" rel="stylesheet">
+  <link href="{% static 'css/dark.css' %}" rel="stylesheet">
 
   <style>[x-cloak]{display:none!important}</style>
   {% block extra_css %}{% endblock %}

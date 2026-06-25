@@ -125,3 +125,6 @@ class DocumentLineItemFormMixin(forms.ModelForm):
         self.initial.setdefault("quantity", 1)
         self.initial.setdefault("unit_price", 0)
         self.initial.setdefault("itbis_rate", "RATE_18")
+        # Set sort_order default to 0 for new instances to prevent validation errors
+        if hasattr(self, "fields") and "sort_order" in self.fields:
+            self.initial.setdefault("sort_order", 0)
