@@ -460,6 +460,12 @@
 [data-bs-theme="dark"] .doc-order-card-head.is-toggle:hover { background: #1d2745; }
 [data-bs-theme="dark"] .doc-card-chevron            { color: #586080; }
 
+/* Lines card header */
+[data-bs-theme="dark"] .doc-lines-card              { background: #18203a; border-color: #2d3a58; }
+[data-bs-theme="dark"] .doc-lines-head              { background: #12182a; border-bottom-color: #2d3a58; color: #8895b3; }
+[data-bs-theme="dark"] .doc-lines-head.is-toggle:hover { background: #1d2745; }
+[data-bs-theme="dark"] .doc-lines-title             { color: #8895b3; }
+
 /* Form controls inside document cards */
 [data-bs-theme="dark"] .doc-order-card-body .form-control,
 [data-bs-theme="dark"] .doc-order-card-body .form-select,
@@ -507,6 +513,20 @@
 [data-bs-theme="dark"] .item-row-desc textarea      { background: #12182a; color: #8895b3; }
 [data-bs-theme="dark"] .item-row-desc .form-control:hover { background: #18203a; }
 [data-bs-theme="dark"] .doc-lines-count             { background: #1d2745; color: #8895b3; border-color: #2d3a58; }
+
+/* Line row — computed cells */
+[data-bs-theme="dark"] .doc-lines-card .row-subtotal { color: #b9c5d9; }
+[data-bs-theme="dark"] .doc-lines-card .row-itbis    { color: #586080; }
+[data-bs-theme="dark"] .doc-lines-card .row-total    { color: #e8edf6; }
+
+/* Line row — item search button */
+[data-bs-theme="dark"] .doc-lines-card .item-row-main .btn-outline-secondary          { background: #1d2745; border-color: #2d3a58; color: #8895b3; }
+[data-bs-theme="dark"] .doc-lines-card .item-row-main .btn-outline-secondary:hover    { background: #242f52; border-color: #5b9af5; color: #5b9af5; }
+
+/* Line row — description text field */
+[data-bs-theme="dark"] .doc-lines-card .item-row-desc .form-control                  { background: #12182a; border-color: transparent; color: #b9c5d9; }
+[data-bs-theme="dark"] .doc-lines-card .item-row-desc .form-control:hover             { background: #18203a; border-color: #2d3a58; }
+[data-bs-theme="dark"] .doc-lines-card .item-row-desc .form-control:focus             { background: #1d2745; border-color: #5b9af5; box-shadow: 0 0 0 .16rem rgba(91,154,245,.18); }
 
 /* Status card / sidebar info */
 [data-bs-theme="dark"] .doc-status-card             { background: #18203a; border-color: #2d3a58; }

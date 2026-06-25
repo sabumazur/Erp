@@ -764,6 +764,8 @@ class PaymentTermForm(forms.ModelForm):
 
 
 class InvoiceItemForm(DocumentLineItemFormMixin):
+    sort_order = forms.IntegerField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = SalesDocumentItem
         fields = ["item", "description", "quantity", "unit_price", "itbis_rate", "sort_order"]
@@ -772,7 +774,6 @@ class InvoiceItemForm(DocumentLineItemFormMixin):
                 attrs={"step": "0.01", "min": "0"}
             ),
             "itbis_rate": ItbisSelect(),
-            "sort_order": forms.HiddenInput(),
         }
 
     def get_item_types(self):

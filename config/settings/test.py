@@ -35,9 +35,5 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-# Disable migrations for faster test database setup
-if "migrate" not in __import__("sys").argv:
-    MIGRATION_MODULES = {app.split(".")[1]: None for app in LOCAL_APPS}
-
 # Email backend for tests (console output)
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
