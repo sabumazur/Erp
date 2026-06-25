@@ -8,6 +8,7 @@
 </button>
 
 <span class="dt-ribbon-sep"></span>
+{% endif %}
 
 <button type="button" class="btn btn-outline-secondary"
         :disabled="!canAct"
@@ -16,6 +17,7 @@
   <i class="bi bi-eye me-1"></i>{% trans "Ver" %}
 </button>
 
+{% if membership.is_admin %}
 <button type="button" class="btn btn-outline-secondary"
         :disabled="!canAct"
         :class="{'disabled': !canAct}"
@@ -25,19 +27,19 @@
 
 <button type="button" class="btn btn-outline-secondary"
         :disabled="!canAct"
+        :class="{'disabled': !canAct}"
+        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=toggle]')?.click()">
+  <i class="bi bi-toggle-on me-1"></i>{% trans "Activar/Desactivar" %}
+</button>
+
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct"
         :class="{'disabled': !canAct, 'text-danger': canAct}"
         @click="canAct && document.querySelector('tr.dt-row-selected [data-action=delete]')?.click()">
   <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
 </button>
+{% endif %}
 
 <span class="dt-ribbon-sep"></span>
 
 {% include "components/datatable/export_csv_button.html" %}
-{% else %}
-<button type="button" class="btn btn-outline-secondary"
-        :disabled="!canAct"
-        :class="{'disabled': !canAct}"
-        @click="canAct && (window.location.href = document.querySelector('tr.dt-row-selected [data-action=view]')?.href || '#')">
-  <i class="bi bi-eye me-1"></i>{% trans "Ver" %}
-</button>
-{% endif %}

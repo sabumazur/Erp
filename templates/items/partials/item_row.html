@@ -44,6 +44,7 @@
           <li>
             <button type="button"
                     class="dropdown-item {% if row.is_active %}text-warning{% else %}text-success{% endif %}"
+                    data-action="toggle"
                     onclick="Swal.fire({
                       icon: 'question',
                       title: '{% if row.is_active %}{% trans "¿Desactivar artículo?" %}{% else %}{% trans "¿Activar artículo?" %}{% endif %}',
