@@ -99,6 +99,16 @@
     {% if membership %}<span class="badge bg-secondary small">{{ membership.get_role_display }}</span>{% endif %}
   </span>
 
+  {# ── Theme toggle ────────────────────────────────────────── #}
+  <button id="theme-toggle-btn"
+          type="button"
+          class="topbar-toggle"
+          onclick="toggleTheme()"
+          aria-label="Modo oscuro"
+          title="Cambiar a modo oscuro">
+    <i class="bi bi-moon"></i>
+  </button>
+
   {# ── User dropdown ──────────────────────────────────────── #}
   <div class="dropdown">
     <button class="topbar-avatar dropdown-toggle dropdown-toggle-no-caret"

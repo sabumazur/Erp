@@ -13,6 +13,7 @@
 
   ready(function () {
     // Shell
+    initTheme();
     initToasts();
     initPasswordToggles();
     initSidebarState();

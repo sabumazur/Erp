@@ -135,8 +135,33 @@
     }
   }
 
+  function initTheme() {
+    var btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    _updateThemeBtn(btn, isDark);
+  }
+
+  function toggleTheme() {
+    var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    var next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-bs-theme', next);
+    try { localStorage.setItem('sabsys-theme', next); } catch (e) {}
+    var btn = document.getElementById('theme-toggle-btn');
+    if (btn) _updateThemeBtn(btn, next === 'dark');
+  }
+
+  function _updateThemeBtn(btn, isDark) {
+    var icon = btn.querySelector('i');
+    if (icon) icon.className = isDark ? 'bi bi-sun' : 'bi bi-moon';
+    btn.setAttribute('aria-label', isDark ? 'Modo claro' : 'Modo oscuro');
+    btn.setAttribute('title', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  }
+
   window.swalConfirm = swalConfirm;
   window.toggleSidebar = toggleSidebar;
+  window.toggleTheme = toggleTheme;
+  window.initTheme = initTheme;
   window.initToasts = initToasts;
   window.initPasswordToggles = initPasswordToggles;
   window.initSidebarState = initSidebarState;
