@@ -1169,6 +1169,10 @@ tr.dt-row-selected:hover > td {
 /* ── Datatable HTMX loading bar ─────────────────────────────── */
 
 .dt-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 3px;
   background: var(--brand-accent, #3f6fd6);
   opacity: 0;
@@ -1177,6 +1181,8 @@ tr.dt-row-selected:hover > td {
   transition: opacity 0.15s ease;
   border-radius: 0;
   will-change: transform, opacity;
+  z-index: 10;
+  pointer-events: none;
 }
 .dt-progress-bar.htmx-request {
   opacity: 1;

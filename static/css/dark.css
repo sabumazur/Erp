@@ -349,8 +349,9 @@
 [data-bs-theme="dark"] .app-table-wrap thead th             { background: #12182a !important; color: #8895b3; border-bottom-color: #2d3a58; letter-spacing: .04em; }
 [data-bs-theme="dark"] .app-table-wrap tfoot td,
 [data-bs-theme="dark"] .app-table-wrap tfoot th             { background: #12182a; border-top-color: #3a4e70; color: #b9c5d9; }
+[data-bs-theme="dark"] .app-table-wrap .table               { --bs-table-hover-bg: #1d2745; --bs-table-hover-color: #e8edf6; }
 [data-bs-theme="dark"] .app-table-wrap tbody td             { color: #b9c5d9; border-bottom-color: #1e2c44; }
-[data-bs-theme="dark"] .app-table-wrap tbody tr:hover > td  { background: #1d2745; color: #e8edf6; }
+[data-bs-theme="dark"] .app-table-wrap tbody tr:hover > td  { background: #1d2745 !important; color: #e8edf6; }
 
 /* Row selection */
 [data-bs-theme="dark"] tr.dt-row-selected > td             { background-color: #1a2e50 !important; }
@@ -378,7 +379,75 @@
 [data-bs-theme="dark"] .dt-pagination .dt-page-btn                     { background: #18203a; border-color: #2d3a58; color: #8895b3; }
 [data-bs-theme="dark"] .dt-pagination .dt-page-btn:hover:not(:disabled) { background: #242f52; color: #e8edf6; }
 [data-bs-theme="dark"] .dt-pagination .dt-page-btn.active              { background: #5b9af5; border-color: #5b9af5; color: #fff; }
-[data-bs-theme="dark"] .dt-pagination .dt-page-btn:disabled            { background: #12182a; color: #586080; border-color: #1e2c44; }
+[data-bs-theme="dark"] .dt-pagination .dt-page-btn:disabled            { background: #12182a; color: #586080; border-color: #1e2c44; opacity: 1; }
+
+
+/* ─────────────────────────────────────────────────────────────
+   § 7b  DT-SLATE SKIN  (slate-list.css dark overrides)
+   slate-list.css uses hardcoded near-black values that beat
+   the generic tbody-td rule above. Every rule here must be at
+   least as specific as the slate-list.css source rule.
+   ──────────────────────────────────────────────────────────── */
+
+/* Table card */
+[data-bs-theme="dark"] .dt-slate .card.shadow-sm       { border-color: #2d3a58; box-shadow: 0 1px 4px rgba(0,0,0,.4) !important; }
+
+/* Table head */
+[data-bs-theme="dark"] .dt-slate .app-table-wrap thead th             { background: #12182a !important; color: #8895b3; border-bottom-color: #2d3a58; }
+[data-bs-theme="dark"] .dt-slate .app-table-wrap thead th .btn-link   { color: #8895b3 !important; }
+
+/* Table body */
+[data-bs-theme="dark"] .dt-slate .app-table-wrap .table { --bs-table-hover-bg: #1d2745; --bs-table-hover-color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .app-table-wrap tbody td             { color: #b9c5d9; border-bottom-color: #1e2c44; }
+[data-bs-theme="dark"] .dt-slate .app-table-wrap tbody tr:hover       { background: #1d2745 !important; }
+[data-bs-theme="dark"] .dt-slate .app-table-wrap tbody tr:hover > td  { background: #1d2745 !important; color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .app-table-wrap tbody tr:last-child td { border-bottom: none; }
+
+/* Cell vocabulary */
+[data-bs-theme="dark"] .dt-slate .cust              { color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .cust a            { color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .cust a:hover      { color: #5b9af5; }
+[data-bs-theme="dark"] .dt-slate .cust .rnc         { color: #586080; }
+[data-bs-theme="dark"] .dt-slate .amt               { color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .amt.zero          { color: #586080; }
+[data-bs-theme="dark"] .dt-slate .ref               { color: #8895b3; }
+[data-bs-theme="dark"] .dt-slate .docnum            { color: #b9c5d9; }
+[data-bs-theme="dark"] .dt-slate .docnum:hover      { color: #5b9af5; }
+[data-bs-theme="dark"] .dt-slate .docnum.muted      { color: #586080; }
+[data-bs-theme="dark"] .dt-slate td .dt             { color: #8895b3; }
+
+/* Entity cell (avatar + name) */
+[data-bs-theme="dark"] .dt-slate .cell-entity .avatar   { background: #242f52; color: #b9c5d9; }
+[data-bs-theme="dark"] .dt-slate .cell-entity .nm       { color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .cell-entity .nm a     { color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .cell-entity .nm .rnc  { color: #586080; }
+[data-bs-theme="dark"] .dt-slate .cell-contact          { color: #b9c5d9; }
+[data-bs-theme="dark"] .dt-slate .cell-method i         { color: #586080; }
+
+/* Ribbon */
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .input-group                              { background: #1d2745; border-color: #2d3a58; }
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .input-group .input-group-text            { background: #1d2745; border-color: transparent; color: #8895b3; }
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .input-group .form-control                { background: #1d2745; color: #b9c5d9; }
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .input-group .form-control::placeholder   { color: #586080; }
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .btn-outline-secondary                    { background: #18203a; border-color: #2d3a58; color: #8895b3; }
+[data-bs-theme="dark"] .dt-slate .dt-ribbon .btn-outline-secondary:hover              { background: #242f52; color: #e8edf6; }
+
+/* Status pills */
+[data-bs-theme="dark"] .dt-slate .dt-pill                    { background: #18203a; border-color: #2d3a58; color: #8895b3; }
+[data-bs-theme="dark"] .dt-slate .dt-pill:hover              { background: #1d2745; border-color: #3a4e70; color: #b9c5d9; }
+[data-bs-theme="dark"] .dt-slate .dt-pill.dt-pill-active     { background: #1a2e50; border-color: #3a5a80; color: #5b9af5; }
+[data-bs-theme="dark"] .dt-slate .dt-pill .dt-pill-count     { background: rgba(255,255,255,.08); }
+
+/* Footer bar */
+[data-bs-theme="dark"] .dt-slate #dt-results > div:last-child { background: #12182a !important; border-top-color: #2d3a58 !important; color: #8895b3; }
+/* text-dark inside footer — Bootstrap does not invert --bs-dark-rgb in dark mode */
+[data-bs-theme="dark"] #dt-results .text-dark { color: #e8edf6 !important; }
+
+/* Pagination */
+[data-bs-theme="dark"] .dt-slate .dt-pagination .dt-page-btn                      { background: #18203a; border-color: #2d3a58; color: #8895b3; }
+[data-bs-theme="dark"] .dt-slate .dt-pagination .dt-page-btn:hover:not(:disabled) { background: #242f52; color: #e8edf6; }
+[data-bs-theme="dark"] .dt-slate .dt-pagination .dt-page-btn.dt-page-btn-active   { background: #5b9af5 !important; border-color: #5b9af5 !important; color: #fff !important; }
+[data-bs-theme="dark"] .dt-slate .dt-pagination .dt-page-btn:disabled             { background: #12182a; color: #586080; border-color: #1e2c44; opacity: 1; }
 
 
 /* ─────────────────────────────────────────────────────────────
@@ -537,7 +606,7 @@
 
 /* Section labels */
 [data-bs-theme="dark"] .db-section-label { color: #8895b3; }
-[data-bs-theme="dark"] .db-section-rule  { border-color: #2d3a58; }
+[data-bs-theme="dark"] .db-section-rule  { background: #2d3a58; }
 [data-bs-theme="dark"] .db-section-note  { color: #586080; }
 
 /* Panel cards */
@@ -596,6 +665,55 @@
 
 /* Total label */
 [data-bs-theme="dark"] .db-total-label   { color: #8895b3; }
+
+
+/* ─────────────────────────────────────────────────────────────
+   § 11b  REMAINING COMPONENT GAPS
+   Components with hardcoded light colors not yet overridden.
+   ──────────────────────────────────────────────────────────── */
+
+/* KV-card CSS tokens — must come before any rule that reads them */
+[data-bs-theme="dark"] {
+  --kv-title:  #7db3f8;
+  --kv-label:  #8895b3;
+  --kv-value:  #e8edf6;
+  --v-status:  #a78bfa;
+  --v-type:    #f5a623;
+  --v-link:    #5b9af5;
+}
+
+/* KV-card internals now readable via token, but heads need bg too */
+[data-bs-theme="dark"] .kv-card-head          { border-bottom-color: #2d3a58; }
+[data-bs-theme="dark"] .kv-table thead th     { color: #8895b3; border-bottom-color: #2d3a58; }
+[data-bs-theme="dark"] .kv-table thead th.text-end,
+[data-bs-theme="dark"] .kv-table thead th.text-center { color: #8895b3; }
+
+/* Cell helpers (used outside .dt-slate, e.g. customer/supplier list) */
+[data-bs-theme="dark"] .cell-contact                   { color: #b9c5d9; }
+[data-bs-theme="dark"] .cell-contact .muted            { color: #586080; }
+[data-bs-theme="dark"] .cell-method                    { color: #b9c5d9; }
+[data-bs-theme="dark"] .cell-entity .avatar.is-muted   { background: #1d2745; color: #8895b3; }
+
+/* App card head (detail page section headings) */
+[data-bs-theme="dark"] .app-card-head                  { color: #b9c5d9; border-bottom-color: #2d3a58; }
+[data-bs-theme="dark"] .app-card-head--row .app-card-head-title { color: #b9c5d9; }
+
+/* Document detail meta */
+[data-bs-theme="dark"] .doc-head-meta-customer         { color: #b9c5d9; }
+
+/* Modal chrome (components.css sets explicit background that beats BS tokens) */
+[data-bs-theme="dark"] .modal .modal-header,
+[data-bs-theme="dark"] .erp-dialog .modal-header       { background: #12182a; border-bottom-color: #2d3a58; }
+[data-bs-theme="dark"] .modal .modal-footer,
+[data-bs-theme="dark"] .erp-dialog .modal-footer       { background: #12182a; border-top-color: #2d3a58; }
+[data-bs-theme="dark"] .modal-title                    { color: #e8edf6; }
+
+/* Cash risk panel */
+[data-bs-theme="dark"] .db-cash-risk                   { background: #2a1010; border-left-color: #7f2222; }
+[data-bs-theme="dark"] a.db-cash-risk:hover            { background: #331414; }
+[data-bs-theme="dark"] .db-cash-risk-top               { color: #f66464; }
+[data-bs-theme="dark"] .db-cash-risk-value             { color: #f66464; }
+[data-bs-theme="dark"] .db-cash-risk-link              { color: #f88080; }
 
 
 /* ─────────────────────────────────────────────────────────────
