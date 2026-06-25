@@ -1,0 +1,607 @@
+/* ============================================================
+   SabSys ERP — dark.css
+   All custom dark mode overrides. Loaded last in base.html.
+   Bootstrap 5.3 handles its own component variables automatically
+   when data-bs-theme="dark" is set on <html>.
+   ============================================================ */
+
+/* ── Custom token overrides (from components.css :root) ──────── */
+[data-bs-theme="dark"] {
+  --brand-ink:        #c9cdd8;
+  --brand-ink-2:      #d8dce6;
+  --brand-accent:     #5b9af5;
+  --brand-soft:       #1e2535;
+  --pos:              #34d399;
+  --neg:              #f87171;
+  --warn:             #fbbf24;
+  --muted:            #9ca3af;
+  --muted-2:          #6b7280;
+  --hairline:         #2d3245;
+  --hairline-soft:    #252836;
+  --kv-title:         #cbd5e1;
+  --kv-label:         #64748b;
+  --kv-value:         #f1f5f9;
+  --v-status:         #a78bfa;
+  --v-type:           #fb923c;
+  --v-link:           #38bdf8;
+
+  /* Picker tokens (picker.css :root) */
+  --pk-ink:           #e2e8f0;
+  --pk-ink-soft:      #cbd5e1;
+  --pk-muted:         #64748b;
+  --pk-faint:         #475569;
+  --pk-line:          #2d3245;
+  --pk-line-soft:     #252836;
+  --pk-bg-soft:       #171a27;
+  --pk-blue:          #5b9af5;
+  --pk-blue-bg:       #1a2540;
+  --pk-blue-line:     #1e3258;
+}
+
+/* ── Shell: body ─────────────────────────────────────────────── */
+[data-bs-theme="dark"] body {
+  background: #0f1117;
+}
+
+/* ── Shell: topbar ───────────────────────────────────────────── */
+[data-bs-theme="dark"] #topbar {
+  background: #1a1d2e;
+  border-bottom-color: #2d3245;
+}
+
+[data-bs-theme="dark"] #topbar .topbar-toggle:hover {
+  background: #252836;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] #topbar .topbar-title {
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #topbar .breadcrumb-item.active {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] #topbar .breadcrumb-item + .breadcrumb-item::before {
+  color: #4a5268;
+}
+
+/* ── Shell: subnav ───────────────────────────────────────────── */
+[data-bs-theme="dark"] #subnav {
+  background: #13151f;
+  border-bottom-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .subnav-link {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .subnav-link:hover {
+  color: #e2e8f0;
+  border-bottom-color: #475569;
+}
+
+[data-bs-theme="dark"] .subnav-link.active {
+  color: #e2e8f0;
+  border-bottom-color: #5b9af5;
+}
+
+/* ── Shell: main content area ────────────────────────────────── */
+[data-bs-theme="dark"] #main-area {
+  background: #0f1117;
+}
+
+/* ── Page header (app.css) ───────────────────────────────────── */
+[data-bs-theme="dark"] .app-header {
+  border-bottom-color: #3a4060;
+}
+
+[data-bs-theme="dark"] .app-header-title {
+  color: #e2e8f0;
+}
+
+/* ── Settings panels (app.css) ───────────────────────────────── */
+[data-bs-theme="dark"] .settings-panel,
+[data-bs-theme="dark"] .settings-aside {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .settings-panel-title {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .settings-panel-icon {
+  background: #1e2a4a;
+  color: #818cf8;
+}
+
+[data-bs-theme="dark"] .settings-aside-title {
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .settings-checklist li {
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .settings-form-actions {
+  border-top-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .settings-secondary-link {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .settings-secondary-link:hover {
+  color: #c9cdd8;
+}
+
+[data-bs-theme="dark"] .password-strength {
+  background: #171a27;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .password-strength-track {
+  background: #2d3245;
+}
+
+/* ── Form labels (app.css) ───────────────────────────────────── */
+[data-bs-theme="dark"] .form-label {
+  color: #94a3b8;
+}
+
+/* ── Profile page ────────────────────────────────────────────── */
+[data-bs-theme="dark"] .profile-identity {
+  background: #171a27;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .profile-signature-box {
+  background: #171a27;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .profile-side-list dt {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .profile-side-list dd {
+  color: #e2e8f0;
+}
+
+/* ── KPI cards (components.css) ──────────────────────────────── */
+[data-bs-theme="dark"] .db-kpi {
+  background: #1a1d2e;
+  border-color: #2d3245;
+  border-top-color: #3a4060;
+}
+
+[data-bs-theme="dark"] .db-kpi-icon {
+  background: #252836;
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .db-kpi-label {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .db-kpi-value {
+  color: #f1f5f9;
+}
+
+/* ── Boolean status toggle (components.css) ──────────────────── */
+[data-bs-theme="dark"] .boolean-status-card {
+  background: #171a27;
+}
+
+[data-bs-theme="dark"] .boolean-status-card:hover {
+  background: #1a1d2e;
+  border-color: #3a3f5c;
+}
+
+[data-bs-theme="dark"] .boolean-status-icon {
+  background: #252836;
+}
+
+/* ── Department popover (components.css) ─────────────────────── */
+[data-bs-theme="dark"] .dept-popover-bs .popover-body {
+  background: #1a1d2e;
+  color: #c9cdd8;
+}
+
+[data-bs-theme="dark"] .dept-chip {
+  color: #94a3b8;
+  border-bottom-color: #252836;
+}
+
+/* ── KV card (components.css) ────────────────────────────────── */
+[data-bs-theme="dark"] .kv-card {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .kv-stat {
+  background: #1a1d2e;
+}
+
+[data-bs-theme="dark"] .kv-stats {
+  background: #2d3245;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .kv-note {
+  background: #1e3a5f;
+  border-color: rgba(91, 154, 245, 0.20);
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .kv-alert {
+  background: #3a1c1c;
+  border-color: #7f3333;
+}
+
+[data-bs-theme="dark"] .kv-table tbody td {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .kv-table tbody tr:hover {
+  background: #1e2240;
+}
+
+/* ── Customer block (components.css) ─────────────────────────── */
+[data-bs-theme="dark"] .customer-block {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .customer-avatar {
+  background: #252836;
+  color: #cbd5e1;
+}
+
+/* ── App metric card (components.css / report pages) ─────────── */
+[data-bs-theme="dark"] .app-metric-card {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .app-metric-value {
+  color: #f1f5f9;
+}
+
+/* ── App table wrap ──────────────────────────────────────────── */
+[data-bs-theme="dark"] .app-table-wrap {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .app-table-wrap thead th {
+  background: #13151f !important;
+  color: #6b7280;
+  border-bottom-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .app-table-wrap tfoot td,
+[data-bs-theme="dark"] .app-table-wrap tfoot th {
+  background: #13151f;
+  border-top-color: #3a4060;
+}
+
+[data-bs-theme="dark"] .app-table-wrap tbody td {
+  color: #cbd5e1;
+  border-bottom-color: #252836;
+}
+
+[data-bs-theme="dark"] .app-table-wrap tbody tr:hover > td {
+  background: #1e2240;
+}
+
+/* ── Detail DL ───────────────────────────────────────────────── */
+[data-bs-theme="dark"] .detail-dl dt {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .detail-dl dd {
+  color: #e2e8f0;
+}
+
+/* ── Cell vocabulary (components.css) ───────────────────────── */
+[data-bs-theme="dark"] .cell-entity .nm {
+  color: #e2e8f0;
+}
+
+/* ── Surface muted ───────────────────────────────────────────── */
+[data-bs-theme="dark"] .surface-muted {
+  background: #13151f;
+}
+
+/* ── Card shadows ────────────────────────────────────────────── */
+[data-bs-theme="dark"] .card {
+  border-color: #2d3245;
+}
+
+/* ── App filter panel ────────────────────────────────────────── */
+[data-bs-theme="dark"] .app-filter-panel {
+  background: #13151f;
+  border-color: #2d3245;
+}
+
+/* ── App form bar ────────────────────────────────────────────── */
+[data-bs-theme="dark"] .app-form-bar {
+  background: #1a1d2e;
+  border-top-color: #2d3245;
+}
+
+/* ── Org pill ────────────────────────────────────────────────── */
+[data-bs-theme="dark"] .org-pill {
+  color: #c9cdd8;
+  background: #252836;
+  border-color: #2d3245;
+}
+
+/* ── document form (documents.css) ──────────────────────────── */
+[data-bs-theme="dark"] .doc-order-card {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .doc-order-card-head {
+  background: #13151f;
+  border-bottom-color: #2d3245;
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .doc-order-card-head.is-toggle:hover {
+  background: #1e2240;
+}
+
+[data-bs-theme="dark"] .doc-paper {
+  background: #1a1d2e;
+}
+
+[data-bs-theme="dark"] .doc-meta-grid {
+  background: #13151f;
+  border-bottom-color: #252836;
+}
+
+[data-bs-theme="dark"] .doc-meta-value {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .doc-header {
+  border-bottom-color: #252836;
+}
+
+[data-bs-theme="dark"] .doc-ref-number {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .doc-status-card {
+  background: #1a1d2e;
+}
+
+[data-bs-theme="dark"] .doc-status-card-header {
+  background: #13151f;
+  border-bottom-color: #252836;
+}
+
+[data-bs-theme="dark"] .document-totals-footer {
+  background: #13151f;
+  border-top-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .doc-inline-totals {
+  border-top-color: #252836;
+}
+
+[data-bs-theme="dark"] .doc-inline-tot-value {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .doc-inline-tot-cell--grand .doc-inline-tot-value {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .doc-notes-acc {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .doc-notes-trigger {
+  background: #1a1d2e;
+}
+
+[data-bs-theme="dark"] .doc-notes-trigger:hover {
+  background: #1e2240;
+}
+
+[data-bs-theme="dark"] .doc-notes-title {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .doc-optfield-chip {
+  background: #1a1d2e;
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .doc-optfield-chip:hover {
+  background: #1e2240;
+}
+
+[data-bs-theme="dark"] .doc-lines-count {
+  background: #252836;
+  color: #94a3b8;
+}
+
+/* ── DataTable ribbon and pills (slate-list.css / documents.css) */
+[data-bs-theme="dark"] .dt-ribbon {
+  border-bottom-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .dt-ribbon-sep {
+  background: #2d3245;
+}
+
+[data-bs-theme="dark"] .dt-pill {
+  background: #1a1d2e;
+  border-color: #2d3245;
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .dt-pill:hover,
+[data-bs-theme="dark"] .dt-pill.active {
+  background: #1e2240;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .dt-ribbon .input-group,
+[data-bs-theme="dark"] .dt-ribbon .form-control,
+[data-bs-theme="dark"] .dt-ribbon .input-group-text {
+  background: #1a1d2e;
+  border-color: #2d3245;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .dt-ribbon .form-control::placeholder {
+  color: #4a5268;
+}
+
+/* ── Row selection ───────────────────────────────────────────── */
+[data-bs-theme="dark"] tr.dt-row-selected > td {
+  background-color: #1e3a5f !important;
+}
+
+[data-bs-theme="dark"] tr.dt-row-selected:hover > td {
+  background-color: #1a3357 !important;
+}
+
+/* ── Module page title ───────────────────────────────────────── */
+[data-bs-theme="dark"] .module-page-title h1 {
+  color: #f1f5f9;
+}
+
+/* ── Tom Select custom styles (sabsys-tomselect.css) ─────────── */
+[data-bs-theme="dark"] .ts-dropdown {
+  background: #1a1d2e;
+  border-color: #2d3245;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .dropdown-input {
+  background: #1a1d2e;
+  border-bottom-color: #2d3245 !important;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .dropdown-input::placeholder {
+  color: #4a5268;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option.active {
+  background: #252836;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .option.selected {
+  background: #1e3a5f;
+  color: #5b9af5;
+}
+
+[data-bs-theme="dark"] .ts-dropdown .no-results {
+  color: #4a5268;
+}
+
+[data-bs-theme="dark"] .ts-wrapper .ts-control {
+  background: var(--bs-body-bg);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+/* ── Picker modal (picker.css) ───────────────────────────────── */
+[data-bs-theme="dark"] .picker-content {
+  background: #1a1d2e;
+}
+
+[data-bs-theme="dark"] .picker-field {
+  background: #13151f;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .picker-kbd {
+  background: #252836;
+  border-color: #2d3245;
+  color: #6b7280;
+}
+
+[data-bs-theme="dark"] .picker-foot {
+  background: #13151f;
+  border-top-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .picker-count {
+  background: #252836;
+  border-color: #2d3245;
+  color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .picker-unit {
+  background: #252836;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .picker-create-fields {
+  background: #13151f;
+  border-color: #2d3245;
+}
+
+/* ── Dashboard cash band / flow stats ────────────────────────── */
+[data-bs-theme="dark"] .db-cash-band {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .db-flow-stat {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .db-flow-stat-label {
+  color: #64748b;
+}
+
+[data-bs-theme="dark"] .db-flow-stat-value {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .db-worklist {
+  background: #1a1d2e;
+  border-color: #2d3245;
+}
+
+[data-bs-theme="dark"] .db-worklist-head {
+  border-bottom-color: #2d3245;
+}
+
+/* ── Stepper (documents.css) ─────────────────────────────────── */
+[data-bs-theme="dark"] .doc-stepper-step + .doc-stepper-step::before {
+  background: #2d3245;
+}
+
+[data-bs-theme="dark"] .doc-stepper-dot--pending {
+  background: #2d3245;
+}
+
+/* ── Print: no dark mode ─────────────────────────────────────── */
+@media print {
+  [data-bs-theme="dark"] body,
+  [data-bs-theme="dark"] #main-area,
+  [data-bs-theme="dark"] .doc-paper,
+  [data-bs-theme="dark"] .doc-order-card {
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
