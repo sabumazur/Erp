@@ -102,7 +102,7 @@
 
 /* ── Table head ─────────────────────────────────────────────────────────── */
 .dt-slate .app-table-wrap thead th {
-  background: #f9fafb !important;
+  background: #f9fafb;
   font-size: .68rem;
   font-weight: 700;
   letter-spacing: .05em;
@@ -113,11 +113,11 @@
   white-space: nowrap;
 }
 .dt-slate .app-table-wrap thead th .btn-link {
-  font-size: .68rem !important;
-  font-weight: 700 !important;
+  font-size: .68rem !important;  /* counters documents.css .table th .btn-link { font-size !important } */
+  font-weight: 700;
   letter-spacing: .05em;
   text-transform: uppercase;
-  color: var(--muted) !important;
+  color: var(--muted);
 }
 
 /* ── Table body ─────────────────────────────────────────────────────────── */
@@ -250,8 +250,8 @@
 
 /* ── Footer bar (record count + page-size + pagination) ─────────────────── */
 .dt-slate #dt-results > div:last-child {
-  background: #f9fafb !important;
-  border-top: 1px solid var(--hairline) !important;
+  background: #f9fafb;
+  border-top: 1px solid var(--hairline);
 }
 
 /* ── Pagination ─────────────────────────────────────────────────────────── */
@@ -274,7 +274,7 @@
   opacity: .45;
 }
 .dt-slate .dt-pagination .dt-page-btn.dt-page-btn-active {
-  background: var(--brand-ink) !important;
-  border-color: var(--brand-ink) !important;
-  color: #fff !important;
+  background: var(--brand-ink);
+  border-color: var(--brand-ink);
+  color: #fff;
 }

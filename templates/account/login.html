@@ -1,5 +1,5 @@
 {% extends "base_anon.html" %}
-{% load crispy_forms_tags i18n %}
+{% load crispy_forms_tags i18n static %}
 
 {% block title %}Iniciar sesión{% endblock %}
 
@@ -17,16 +17,6 @@
     </button>
   </form>
 
-  <script>
-    document.getElementById('login-form').addEventListener('submit', function () {
-      var btn = document.getElementById('login-btn');
-      document.getElementById('login-icon').classList.add('d-none');
-      document.getElementById('login-spinner').classList.remove('d-none');
-      document.getElementById('login-label').textContent = ' Iniciando…';
-      btn.disabled = true;
-    });
-  </script>
-
   <div class="text-center mt-3">
     <a href="{% url 'account_reset_password' %}" style="font-size:.82rem;color:#94a3b8;text-decoration:none;">
       ¿Olvidaste tu contraseña?
@@ -36,4 +26,8 @@
   <hr class="auth-divider">
   <p class="auth-foot">¿Sin acceso? Solicítalo al administrador de tu organización.</p>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}"></script>
 {% endblock %}

@@ -114,5 +114,8 @@
       "Bash(mkdir -p apps/purchases)",
       "Bash(python manage.py startapp purchases apps/purchases)"
     ]
+  },
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": true
   }
 }

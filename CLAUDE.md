@@ -36,13 +36,17 @@ python manage.py empty_sales_doc               # Delete all invoices/quotations/
 python manage.py empty_sales_doc --no-input    # Skip confirmation prompt
 python manage.py audit_module_access           # Read-only audit of team module access config
 python manage.py audit_module_access --strict  # Exit non-zero if audit findings found
+python manage.py refresh_revenue_mv                          # Manually refresh sales_customer_revenue_mv materialized view
+python manage.py seed_purchasing_documents --org <slug>      # Seed 50 suppliers/items, 500 POs, 500 invoices
+python manage.py seed_purchasing_documents --clear           # Wipe then re-seed purchasing data
+python manage.py seed_purchasing_documents --skip-payments
 ```
 
 Settings split across `config/settings/base.py`, `development.py`, `production.py`. `pytest.ini` pins `DJANGO_SETTINGS_MODULE = config.settings.development`. Env vars via `python-decouple` (`.env` or env). Dev uses PostgreSQL; configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
 
 ## Skills
 
-Three project skills are installed as `.skill` files in the repo root:
+Two project skills are installed as `.skill` files in the repo root:
 
 | Skill | File | Trigger |
 |-------|------|---------|

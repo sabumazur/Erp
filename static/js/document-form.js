@@ -317,7 +317,7 @@
         apply(!card.classList.contains("is-collapsed"), true);
       }
       head.addEventListener("click", function (e) {
-        if (e.target.closest("button")) return;
+        if (e.target.closest("button, a, select, input, textarea")) return;
         toggle();
       });
       head.addEventListener("keydown", function (e) {
