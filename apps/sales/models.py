@@ -320,8 +320,8 @@ class NCFSequence(models.Model):
     ELECTRONIC_TYPES = {31, 32, 33, 34, 41, 43, 44, 45, 46, 47}
 
     class Series(models.TextChoices):
-        PHYSICAL = "B", _("B – Físico (comprobante tradicional)")
-        ELECTRONIC = "E", _("E – Electrónico (e-CF)")
+        PHYSICAL = "B", _("B – Físico")
+        ELECTRONIC = "E", _("E – Electrónico")
 
     organization = models.ForeignKey(
         "accounts.Organization",

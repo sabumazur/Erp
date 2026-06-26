@@ -8,9 +8,9 @@
   <div class="modal-body">
     {% crispy form %}
   </div>
-  <div class="modal-footer border-top" style="background:#F8F9FA">
+  <div class="modal-footer border-top bg-light">
     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-    <button type="submit" class="btn btn-primary btn-sm">
+    <button type="submit" class="btn btn-brand btn-sm">
       {% if submit_label %}{{ submit_label }}{% else %}{% trans "Registrar" %}{% endif %}
     </button>
   </div>

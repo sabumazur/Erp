@@ -42,11 +42,15 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Correo electrónico" %}</span>
-        <span class="kv-v {% if supplier.email %}v-link{% else %}v-muted{% endif %}">{{ supplier.email|default:"—" }}</span>
+        <span class="kv-v">
+          {% if supplier.email %}<a href="mailto:{{ supplier.email }}" class="v-link">{{ supplier.email }}</a>{% else %}<span class="v-muted">—</span>{% endif %}
+        </span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Teléfono" %}</span>
-        <span class="kv-v font-monospace">{{ supplier.phone|default:"—" }}</span>
+        <span class="kv-v font-monospace">
+          {% if supplier.phone %}<a href="tel:{{ supplier.phone }}" class="v-link">{{ supplier.phone }}</a>{% else %}—{% endif %}
+        </span>
       </div>
       {% if supplier.contact_name %}
       <div class="kv-row">

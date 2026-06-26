@@ -245,8 +245,11 @@
 .dt-slate .alloc:hover { color: var(--brand-accent); }
 .dt-slate .alloc .alloc-amt { color: var(--muted-2); }
 
-/* reference cell (Pagos) */
+/* reference cell (Pagos) — truly secondary info */
 .dt-slate .ref { font-family: var(--slate-mono); font-size: .78rem; color: var(--muted); }
+
+/* primary fiscal/code identifier (RNC, CÉDULA, item code) — dedicated column */
+.dt-slate .id-code { font-family: var(--slate-mono); font-size: .82rem; color: var(--text-secondary); letter-spacing: .01em; }
 
 /* ── Footer bar (record count + page-size + pagination) ─────────────────── */
 .dt-slate #dt-results > div:last-child {

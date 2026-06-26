@@ -45,7 +45,9 @@ def send_invoice_email(invoice: SalesDocument, request) -> bool:
         "invoice": invoice,
         "items": invoice.items.all(),
         "org": org,
-        "logo_url": _logo_data_uri(org),
+        "logo_url": _logo_url(org, request),
+        "sender": request.user,
+        "sender_signature_url": _signature_url(request.user, request),
     }
     html_body = render_to_string("sales/email/invoice_email.html", ctx, request=request)
     doc_ref = invoice.encf or invoice.doc_number or _("Borrador")
@@ -119,7 +121,9 @@ def send_quotation_email(quotation: SalesDocument, request) -> bool:
         "quotation": quotation,
         "items": quotation.items.all(),
         "org": org,
-        "logo_url": _logo_data_uri(org),
+        "logo_url": _logo_url(org, request),
+        "sender": request.user,
+        "sender_signature_url": _signature_url(request.user, request),
     }
     html_body = render_to_string("sales/email/quotation_email.html", ctx, request=request)
     doc_ref = quotation.doc_number or _("Borrador")
@@ -146,7 +150,8 @@ def send_sale_order_email(order: SalesDocument, request) -> bool:
         "order": order,
         "items": order.items.all(),
         "org": org,
-        "logo_url": _logo_data_uri(org),
+        "logo_url": _logo_url(org, request),
+        "sender": request.user,
     }
     html_body = render_to_string("sales/email/sale_order_email.html", ctx, request=request)
     doc_ref = order.doc_number or _("Borrador")

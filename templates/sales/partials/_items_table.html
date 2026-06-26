@@ -7,7 +7,7 @@
   <td style="padding: 16px 28px 0;">
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <thead>
-        <tr bgcolor="#1f2937">
+        <tr bgcolor="#1e2130">
           <th align="left"   style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;">{% trans "Descripción" %}</th>
           <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:60px;">{% trans "Cant." %}</th>
           <th align="right"  style="padding:8px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#ffffff;width:90px;">{% trans "P. Unit." %}</th>
@@ -18,7 +18,7 @@
       </thead>
       <tbody>
         {% for item in items %}
-        <tr bgcolor="{% cycle '#ffffff' '#fdf8f6' %}">
+        <tr bgcolor="{% cycle '#ffffff' '#f8f9fa' %}">
           <td style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.description }}</td>
           <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.quantity|floatformat:"-4" }}</td>
           <td align="right"  style="padding:7px 9px;font-size:12px;border-bottom:1px solid #e5e7eb;vertical-align:top;">{{ item.unit_price|floatformat:2|intcomma }}</td>

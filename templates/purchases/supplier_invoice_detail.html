@@ -6,7 +6,7 @@
 {% block content %}
 
 <div class="app-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="d-flex align-items-center gap-3">
     <a href="{% url 'purchases:supplier_invoice_list' %}"
        class="btn btn-outline-secondary btn-sm btn-icon"
        aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
@@ -18,26 +18,9 @@
     </div>
   </div>
   <div class="app-header-actions">
-    <form method="post" action="{% url 'purchases:supplier_invoice_clone' invoice.pk %}"
-          x-data
-          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta factura como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
-      </button>
-    </form>
 
-    {% if invoice.linked_purchase_order %}
-      <a href="{% url 'purchases:po_detail' invoice.linked_purchase_order.pk %}"
-         class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-cart3 me-1"></i>{% trans "Ver OC" %}
-      </a>
-    {% endif %}
-
+    {# ── Primary action (one per status) ── #}
     {% if invoice.status == "DRAFT" %}
-      <a href="{% url 'purchases:supplier_invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
-      </a>
       <form method="post" action="{% url 'purchases:supplier_invoice_confirm' invoice.pk %}"
             x-data
             x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar factura? Se validará el NCF y se actualizarán los costos de artículos." %}', {icon:'warning', color:'#10b981', ok:'Sí, confirmar'})">
@@ -46,39 +29,128 @@
           <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
       </form>
-      <form method="post" action="{% url 'purchases:supplier_invoice_delete' invoice.pk %}"
-            x-data
-            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
-          <i class="bi bi-trash" aria-hidden="true"></i>
-        </button>
-      </form>
-
     {% elif invoice.status == "CONFIRMED" %}
       <a href="{% url 'purchases:supplier_payment_create' %}?supplier={{ invoice.supplier.pk }}"
          class="btn btn-sm btn-brand">
         <i class="bi bi-cash-coin me-1"></i>{% trans "Registrar pago" %}
       </a>
-      <form method="post" action="{% url 'purchases:supplier_invoice_cancel' invoice.pk %}"
-            x-data
-            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
-        </button>
-      </form>
-
-    {% elif invoice.status == "CANCELLED" %}
-      <form method="post" action="{% url 'purchases:supplier_invoice_reopen' invoice.pk %}"
-            x-data
-            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Reabrir como borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, reabrir'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "Reabrir" %}
-        </button>
-      </form>
     {% endif %}
+
+    {# ── Secondary always-visible ── #}
+    {% if invoice.status == "DRAFT" %}
+      <a href="{% url 'purchases:supplier_invoice_edit' invoice.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+      </a>
+    {% endif %}
+
+    {% if invoice.linked_purchase_order %}
+      <a href="{% url 'purchases:po_detail' invoice.linked_purchase_order.pk %}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-cart3 me-1"></i>{% trans "Ver OC" %}
+      </a>
+    {% endif %}
+
+    {# ── Overflow: utility + destructive ── #}
+    <div class="doc-action-row">
+      <div class="doc-action-overflow">
+        <form method="post" action="{% url 'purchases:supplier_invoice_clone' invoice.pk %}"
+              x-data
+              x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta factura como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
+          </button>
+        </form>
+        {% if invoice.status == "CANCELLED" %}
+          <form method="post" action="{% url 'purchases:supplier_invoice_reopen' invoice.pk %}"
+                x-data
+                x-on:submit.prevent="swalConfirm($el, '{% trans "¿Reabrir como borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, reabrir'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "Reabrir" %}
+            </button>
+          </form>
+        {% endif %}
+        {% if invoice.status == "CONFIRMED" %}
+          <form method="post" action="{% url 'purchases:supplier_invoice_cancel' invoice.pk %}"
+                x-data
+                x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+            </button>
+          </form>
+        {% endif %}
+        {% if invoice.status == "DRAFT" %}
+          <form method="post" action="{% url 'purchases:supplier_invoice_delete' invoice.pk %}"
+                x-data
+                x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+      {# "Más" dropdown — visible only < 720px via .doc-action-more CSS #}
+      <div class="dropdown doc-action-more">
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button" data-bs-toggle="dropdown"
+                aria-label="{% trans 'Más acciones' %}">
+          <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <form method="post" action="{% url 'purchases:supplier_invoice_clone' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta factura como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-copy me-2"></i>{% trans "Clonar" %}
+              </button>
+            </form>
+          </li>
+          {% if invoice.status == "CANCELLED" %}
+          <li>
+            <form method="post" action="{% url 'purchases:supplier_invoice_reopen' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Reabrir como borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, reabrir'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>{% trans "Reabrir" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+          {% if invoice.status == "CONFIRMED" %}
+          <li>
+            <form method="post" action="{% url 'purchases:supplier_invoice_cancel' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta factura?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-x-circle me-2"></i>{% trans "Anular" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+          {% if invoice.status == "DRAFT" %}
+          <li>
+            <form method="post" action="{% url 'purchases:supplier_invoice_delete' invoice.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -338,11 +410,11 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ invoice.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ invoice.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
 

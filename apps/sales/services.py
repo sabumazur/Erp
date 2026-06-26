@@ -349,18 +349,40 @@ class SaleOrderService:
         return order
 
     @staticmethod
-    def mark_delivered(order: SalesDocument, signed_by: str) -> SalesDocument:
-        """CONFIRMED → DELIVERED. Records who signed the delivery."""
+    @transaction.atomic
+    def confirm_and_deliver(order: SalesDocument, signed_by: str = "") -> SalesDocument:
+        """DRAFT → DELIVERED atomically. Assigns doc_number, sets delivery_date = issue_date."""
+        if order.doc_type != SalesDocument.DocType.SALE_ORDER:
+            raise ValueError(_("Este documento no es una orden de venta."))
+        if order.status != SalesDocument.Status.DRAFT:
+            raise ValueError(
+                f"Solo se pueden confirmar órdenes en Borrador. "
+                f"Estado actual: {order.get_status_display()}."
+            )
+
+        doc_number = DocumentSequence.generate(
+            order.organization, "SALE_ORDER",
+            defaults={"prefix": "OV", "include_year": True, "padding": 4},
+        )
+        order.doc_number = doc_number
+        order.delivery_date = order.issue_date
+        order.signed_by = signed_by
+        order.status = SalesDocument.Status.DELIVERED
+        order.save(update_fields=["doc_number", "delivery_date", "signed_by", "status", "updated_at"])
+        return order
+
+    @staticmethod
+    def mark_delivered(order: SalesDocument, signed_by: str = "") -> SalesDocument:
+        """CONFIRMED → DELIVERED. signed_by is optional."""
         if order.doc_type != SalesDocument.DocType.SALE_ORDER:
             raise ValueError(_("Este documento no es una orden de venta."))
         if order.status != SalesDocument.Status.CONFIRMED:
             raise ValueError(_("Solo se pueden marcar como entregadas órdenes confirmadas."))
-        if not signed_by or not signed_by.strip():
-            raise ValueError(_("Debe indicar el nombre de quien recibe la entrega."))
 
-        order.signed_by = signed_by.strip()
+        order.signed_by = signed_by.strip() if signed_by else ""
+        order.delivery_date = order.delivery_date or order.issue_date
         order.status = SalesDocument.Status.DELIVERED
-        order.save(update_fields=["signed_by", "status", "updated_at"])
+        order.save(update_fields=["signed_by", "delivery_date", "status", "updated_at"])
         return order
 
     @staticmethod

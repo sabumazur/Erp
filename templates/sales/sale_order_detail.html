@@ -6,7 +6,7 @@
 {% block content %}
 
 <div class="app-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="d-flex align-items-center gap-3">
     <a href="{% url 'sales:sale_order_list' %}"
        class="btn btn-outline-secondary btn-sm btn-icon"
        aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
@@ -18,36 +18,36 @@
     </div>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:sale_order_print' order.pk %}" target="_blank"
-       class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
-    </a>
-    <form method="post" action="{% url 'sales:sale_order_clone' order.pk %}"
-          x-data
-          x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
-      </button>
-    </form>
 
-    {% if order.status != "CANCELLED" %}
-      {% if order.has_line_items %}
-        <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-outline-secondary btn-sm"
-                  data-loading-text="{% trans 'Enviando…' %}">
-            <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
-          </button>
-        </form>
-      {% else %}
-        <button type="button" class="btn btn-outline-secondary btn-sm" disabled
-                title="{% trans 'Agregue líneas para enviar' %}">
-          <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
+    {# ── Primary action (one per status) ── #}
+    {% if order.status == "DRAFT" %}
+      <form method="post" action="{% url 'sales:sale_order_confirm' order.pk %}"
+            x-data
+            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Confirmar esta orden?" %}', {icon:'question', color:'#6366f1', ok:'Sí, confirmar'})">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-brand">
+          <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar" %}
         </button>
-      {% endif %}
+      </form>
+    {% elif order.status == "CONFIRMED" %}
+      <form method="post" action="{% url 'sales:sale_order_deliver' order.pk %}"
+            x-data
+            x-on:submit.prevent="swalConfirm($el, '{% trans "¿Marcar como entregada?" %}', {icon:'question', color:'#6366f1', ok:'Sí, entregar'})">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-brand">
+          <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}
+        </button>
+      </form>
     {% endif %}
 
+    {# ── Edit (DRAFT only — keep visible) ── #}
+    {% if order.status == "DRAFT" %}
+      <a href="{% url 'sales:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+      </a>
+    {% endif %}
+
+    {# ── Link to consolidated invoice (INVOICED) ── #}
     {% if order.status == "INVOICED" and order.consolidated_into %}
       <a href="{% url 'sales:invoice_detail' order.consolidated_into.pk %}"
          class="btn btn-outline-secondary btn-sm">
@@ -55,33 +55,122 @@
       </a>
     {% endif %}
 
-    {% if order.status == "DRAFT" %}
-      <a href="{% url 'sales:sale_order_edit' order.pk %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
-      </a>
-      {# deferred: confirm/deliver workflow — re-enable when the full lifecycle ships #}
-      <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
-            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm" aria-label="{% trans 'Eliminar' %}" title="{% trans 'Eliminar' %}">
-          <i class="bi bi-trash" aria-hidden="true"></i>
-        </button>
-      </form>
+    {# ── Overflow: utility + destructive ── #}
+    <div class="doc-action-row">
+      <div class="doc-action-overflow">
+        <a href="{% url 'sales:sale_order_print' order.pk %}" target="_blank"
+           class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+        </a>
+        <form method="post" action="{% url 'sales:sale_order_clone' order.pk %}"
+              x-data
+              x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-copy me-1"></i>{% trans "Clonar" %}
+          </button>
+        </form>
+        {% if order.status != "CANCELLED" %}
+          {% if order.has_line_items %}
+            <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-secondary btn-sm"
+                      data-loading-text="{% trans 'Enviando…' %}">
+                <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
+              </button>
+            </form>
+          {% else %}
+            <button type="button" class="btn btn-outline-secondary btn-sm" disabled
+                    title="{% trans 'Agregue líneas para enviar' %}">
+              <i class="bi bi-envelope me-1"></i>{% trans "Enviar por correo" %}
+            </button>
+          {% endif %}
+        {% endif %}
+        {% if order.status == "CONFIRMED" %}
+          <form method="post" action="{% url 'sales:sale_order_cancel' order.pk %}"
+                x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+            </button>
+          </form>
+        {% endif %}
+        {% if order.status == "DRAFT" %}
+          <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
+                x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash me-1"></i>{% trans "Eliminar" %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
 
-    {% elif order.status == "CONFIRMED" %}
-      {# deferred: confirm/deliver workflow — unreachable in the create→send flow, kept for later #}
-      <button class="btn btn-sm btn-brand"
-              data-bs-toggle="modal" data-bs-target="#deliverModal">
-        <i class="bi bi-box-seam me-1"></i>{% trans "Marcar entregada" %}
-      </button>
-      <form method="post" action="{% url 'sales:sale_order_cancel' order.pk %}"
-            x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-x-circle me-1"></i>{% trans "Anular" %}
+      {# "Más" dropdown — visible only < 720px via .doc-action-more CSS #}
+      <div class="dropdown doc-action-more">
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button" data-bs-toggle="dropdown"
+                aria-label="{% trans 'Más acciones' %}">
+          <i class="bi bi-three-dots"></i>
         </button>
-      </form>
-    {% endif %}
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <a class="dropdown-item" href="{% url 'sales:sale_order_print' order.pk %}" target="_blank">
+              <i class="bi bi-printer me-2"></i>{% trans "Imprimir" %}
+            </a>
+          </li>
+          <li>
+            <form method="post" action="{% url 'sales:sale_order_clone' order.pk %}"
+                  x-data
+                  x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-copy me-2"></i>{% trans "Clonar" %}
+              </button>
+            </form>
+          </li>
+          {% if order.status != "CANCELLED" %}
+          <li>
+            {% if order.has_line_items %}
+            <form method="post" action="{% url 'sales:sale_order_email' order.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-envelope me-2"></i>{% trans "Enviar por correo" %}
+              </button>
+            </form>
+            {% else %}
+            <button type="button" class="dropdown-item disabled" disabled>
+              <i class="bi bi-envelope me-2"></i>{% trans "Enviar por correo" %}
+            </button>
+            {% endif %}
+          </li>
+          {% endif %}
+          {% if order.status == "CONFIRMED" %}
+          <li>
+            <form method="post" action="{% url 'sales:sale_order_cancel' order.pk %}"
+                  x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Anular esta orden?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, anular'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-x-circle me-2"></i>{% trans "Anular" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+          {% if order.status == "DRAFT" %}
+          <li>
+            <form method="post" action="{% url 'sales:sale_order_delete' order.pk %}"
+                  x-data x-on:submit.prevent="swalConfirm($el, '{% trans "¿Eliminar borrador?" %}', {icon:'warning', color:'#dc3545', ok:'Sí, eliminar'})">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-trash me-2"></i>{% trans "Eliminar" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -313,49 +402,17 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ order.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ order.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ order.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ order.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
 
   </div>
 
 </div>
-
-{# Deliver modal #}
-{% if order.status == "CONFIRMED" %}
-<div class="modal fade" id="deliverModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
-      <form method="post" action="{% url 'sales:sale_order_deliver' order.pk %}">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
-            <i class="bi bi-box-seam me-2" style="color:#6b7280"></i>{% trans "Registrar entrega" %}
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-muted small">
-            {% trans "Ingrese el nombre de la persona que recibe y firma la entrega." %}
-          </p>
-          {% crispy deliver_form %}
-        </div>
-        <div class="modal-footer" style="background:#f9fafb;border-top:1px solid #e5e7eb">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
-          <button type="submit" class="btn btn-sm btn-brand"
-                  data-loading-text="{% trans 'Guardando…' %}">
-            <i class="bi bi-check-circle me-1"></i>{% trans "Confirmar entrega" %}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 {% include "components/history/timeline_panel.html" with history_records=history_records %}
 {% endblock %}

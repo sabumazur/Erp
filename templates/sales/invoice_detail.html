@@ -438,7 +438,7 @@
       {% if invoice.organization.address %}
       <div class="kv-row">
         <span class="kv-k">{% trans "Dirección" %}</span>
-        <span class="kv-v v-link small">{{ invoice.organization.address }}</span>
+        <span class="kv-v small text-secondary">{{ invoice.organization.address }}</span>
       </div>
       {% endif %}
     </section>
@@ -455,7 +455,7 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizada" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ invoice.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ invoice.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
 

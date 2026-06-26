@@ -11,7 +11,7 @@
     data-detail-url="{% url 'items:item_detail' row.pk %}">
 
   {# ── Código ─────────────────────────────────────────────── #}
-  <td data-col="code"><span class="ref">{{ row.code|default:"—" }}</span></td>
+  <td data-col="code"><span class="id-code">{{ row.code|default:"—" }}</span></td>
 
   {# ── Nombre ─────────────────────────────────────────────── #}
   <td data-col="name">

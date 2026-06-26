@@ -1041,13 +1041,10 @@ class NCFSequenceForm(forms.ModelForm):
                 Column("ncf_type", css_class="col-md-7"),
             ),
             Row(
-                Column("current_seq", css_class="col-md-4"),
-                Column("max_seq", css_class="col-md-4"),
-                Column(
-                    Field("is_active", template="components/forms/boolean_status_card.html"),
-                    css_class="col-md-4",
-                ),
+                Column("current_seq", css_class="col-6"),
+                Column("max_seq", css_class="col-6"),
             ),
+            Field("is_active", template="components/forms/boolean_status_card.html"),
         )
 
     def clean(self):

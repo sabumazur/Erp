@@ -14,7 +14,7 @@ from apps.core.mixins import HistoryMixin
 from apps.core.datatable import DTColumn, DataTableMixin, CsvExportMixin
 from apps.core.search import fts_search
 from ..filters import SaleOrderFilter
-from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, SaleOrderDeliverForm, ConsolidateForm
+from ..forms import SaleOrderForm, InvoiceItemFormSet, InvoiceItemFormSetCreate, ConsolidateForm
 from ..models import SalesDocument, SalesDocumentItem, CustomerDepartment
 from ..email import send_sale_order_email, _signature_url
 from ..services import SaleOrderService
@@ -141,7 +141,7 @@ class SaleOrderDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.select_related("item").all()
-        ctx["deliver_form"] = SaleOrderDeliverForm()
+
         ctx["module"] = "sale-order"
         o = self.object
         ctx["breadcrumbs"] = [
@@ -234,7 +234,7 @@ class SaleOrderConfirmView(ERPBaseViewMixin, View):
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
         try:
-            SaleOrderService.confirm(o)
+            SaleOrderService.confirm_and_deliver(o)
             messages.success(request, _(f"Orden confirmada: {o.doc_number}"))
         except Exception as exc:
             messages.error(request, str(exc))
@@ -246,13 +246,9 @@ class SaleOrderDeliverView(ERPBaseViewMixin, View):
 
     def post(self, request, pk):
         o = get_object_or_404(SalesDocument.sale_orders, pk=pk, organization=request.organization)
-        form = SaleOrderDeliverForm(request.POST)
-        if not form.is_valid():
-            messages.error(request, _("Debe indicar el nombre de quien recibe la entrega."))
-            return redirect("sales:sale_order_detail", pk=o.pk)
         try:
-            SaleOrderService.mark_delivered(o, form.cleaned_data["signed_by"])
-            messages.success(request, _(f"Orden marcada como entregada. Recibido por: {o.signed_by}"))
+            SaleOrderService.mark_delivered(o)
+            messages.success(request, _("Orden marcada como entregada."))
         except ValueError as exc:
             messages.error(request, str(exc))
         return redirect("sales:sale_order_detail", pk=o.pk)

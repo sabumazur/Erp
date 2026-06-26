@@ -151,12 +151,29 @@ class QuotationDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
         ]
         status = q.status
         _keys = [s for s, _ in _QUOTATION_STEPS]
-        _skip = {"REJECTED", "EXPIRED", "CANCELLED"}
-        idx = _keys.index(status) if status in _keys and status not in _skip else -1
-        if idx >= 0:
+        if status in _keys:
+            idx = _keys.index(status)
             ctx["stepper_steps"] = [
                 {"key": s, "label": lbl, "done": i < idx, "current": i == idx}
                 for i, (s, lbl) in enumerate(_QUOTATION_STEPS)
+            ]
+        elif status == "REJECTED":
+            steps = _QUOTATION_STEPS[:3] + [("REJECTED", _("Rechazada"))]
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < 3, "current": i == 3}
+                for i, (s, lbl) in enumerate(steps)
+            ]
+        elif status == "EXPIRED":
+            steps = _QUOTATION_STEPS[:3] + [("EXPIRED", _("Expirada"))]
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < 3, "current": i == 3}
+                for i, (s, lbl) in enumerate(steps)
+            ]
+        elif status == "CONVERTED":
+            steps = _QUOTATION_STEPS + [("CONVERTED", _("Convertida"))]
+            ctx["stepper_steps"] = [
+                {"key": s, "label": lbl, "done": i < 4, "current": i == 4}
+                for i, (s, lbl) in enumerate(steps)
             ]
         return ctx
 

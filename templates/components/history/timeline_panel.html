@@ -14,9 +14,8 @@
     padding: 14px 14px 14px 52px;
     border-bottom: 1px solid #f0f2f5;
   }
-  .history-record:last-child {
-    border-bottom: none;
-  }
+  .history-record:last-child { border-bottom: none; }
+
   .history-dot {
     position: absolute;
     left: 10px;
@@ -31,20 +30,56 @@
     justify-content: center;
     font-size: 10px;
   }
+  .history-dot--created  { background: #0A6640; color: #fff; }
+  .history-dot--modified { background: #185FA5; color: #fff; }
+  .history-dot--deleted  { background: #842029; color: #fff; }
+
+  .history-actor { font-size: 13px; font-weight: 600; color: #111827; }
+  .history-time  { font-size: 11px; color: #6c757d; }
+
+  .history-diff {
+    margin-top: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: var(--bs-font-monospace);
+  }
+  .history-diff-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .history-diff-row + .history-diff-row {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #e9ecef;
+  }
+  .history-diff-field  { min-width: 110px; color: #6c757d; font-size: 11px; }
+  .history-diff-old    { color: #842029; text-decoration: line-through; }
+  .history-diff-arrow  { color: #adb5bd; font-size: 11px; }
+  .history-diff-new    { color: #0A6640; }
+  .history-reason      { margin-top: 6px; font-size: 11px; color: #6c757d; font-style: italic; }
 </style>
 
 {% if history_records %}
 <div class="card mt-4" x-data="{ open: false }">
   <div class="card-header d-flex align-items-center justify-content-between py-2"
-       style="cursor: pointer;" @click="open = !open">
+       style="cursor:pointer" @click="open = !open">
     <div class="d-flex align-items-center gap-2">
-      <i class="bi bi-clock-history"></i>
+      <i class="bi bi-clock-history" aria-hidden="true"></i>
       <strong>{% trans "Historial de cambios" %}</strong>
-      <span class="badge bg-secondary rounded-pill">{{ history_records|length }}</span>
+      <span class="badge-soft badge-confirmed">{{ history_records|length }}</span>
     </div>
-    <i :class="open ? 'bi bi-chevron-up' : 'bi bi-chevron-down'" class="text-muted"></i>
+    <i :class="open ? 'bi bi-chevron-up' : 'bi bi-chevron-down'" class="text-muted" aria-hidden="true"></i>
   </div>
-  <div class="card-body p-0" x-show="open" x-cloak>
+  <div class="card-body p-0"
+       x-show="open" x-cloak
+       x-transition:enter="transition-all"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100">
     <div class="history-timeline position-relative">
       {% include "components/history/timeline.html" with records=history_records %}
     </div>
@@ -53,7 +88,7 @@
 {% else %}
 <div class="card mt-4">
   <div class="card-header d-flex align-items-center gap-2">
-    <i class="bi bi-clock-history"></i>
+    <i class="bi bi-clock-history" aria-hidden="true"></i>
     <strong>{% trans "Historial de cambios" %}</strong>
   </div>
   <div class="card-body">

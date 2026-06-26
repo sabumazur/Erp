@@ -6,13 +6,12 @@
 {% block content %}
 
 {# ── Print-only document header ───────────────────────────────────────────── #}
-<div class="print-header mb-4">
-  <p style="font-size:.8rem;color:#6c757d;margin:0">{{ organization.name }}</p>
-  <h1 style="font-size:1.2rem;font-weight:600;margin:.25rem 0">{% trans "Estado de Cuenta" %}</h1>
+<div class="print-header">
+  <p class="print-org">{{ organization.name }}</p>
+  <h1 class="print-title">{% trans "Estado de Cuenta" %}</h1>
   {% if customer %}
-  <p style="font-size:.8rem;color:#495057;margin:0">
-    {{ customer.name }}{% if customer.rnc_cedula %} · {{ customer.get_id_type_display }} {{ customer.rnc_cedula }}{% endif %}<br>
-    {% trans "Período" %}: {{ date_from }} — {{ date_to }}
+  <p class="print-meta">
+    {{ customer.name }}{% if customer.rnc_cedula %} · {{ customer.get_id_type_display }} {{ customer.rnc_cedula }}{% endif %} · {% trans "Período" %}: {{ date_from }} — {{ date_to }}
   </p>
   {% endif %}
 </div>
@@ -26,7 +25,7 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'sales:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if customer and lines %}

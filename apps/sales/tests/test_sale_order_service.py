@@ -68,21 +68,14 @@ class TestSaleOrderMarkDelivered:
         with pytest.raises(ValueError, match="confirmadas"):
             SaleOrderService.mark_delivered(order, signed_by="Juan")
 
-    def test_raises_when_signed_by_is_blank(self):
+    def test_allows_blank_signed_by(self):
         customer = CustomerFactory()
         org = customer.organization
         order = make_confirmed_order(org, customer)
 
-        with pytest.raises(ValueError, match="nombre"):
-            SaleOrderService.mark_delivered(order, signed_by="")
-
-    def test_raises_when_signed_by_is_whitespace(self):
-        customer = CustomerFactory()
-        org = customer.organization
-        order = make_confirmed_order(org, customer)
-
-        with pytest.raises(ValueError, match="nombre"):
-            SaleOrderService.mark_delivered(order, signed_by="   ")
+        result = SaleOrderService.mark_delivered(order, signed_by="")
+        assert result.signed_by == ""
+        assert result.status == SalesDocument.Status.DELIVERED
 
     def test_strips_signed_by(self):
         customer = CustomerFactory()

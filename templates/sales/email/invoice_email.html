@@ -22,6 +22,18 @@
         {% trans "Factura" as doc_title %}
         {% include "sales/partials/_org_header.html" with doc_title=doc_title doc_number=invoice.encf|default:invoice.doc_number|default:"Borrador" %}
 
+        <!-- ── GREETING ── -->
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
+              {% trans "Estimado(a)" %} <strong style="color:#1a1a1a;">{{ invoice.customer.name }}</strong>,
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#6b7280;line-height:1.65;">
+              {% trans "Adjunto encontrará su factura según los productos y servicios prestados. Le agradecemos su preferencia y quedamos a su disposición ante cualquier consulta." %}
+            </p>
+          </td>
+        </tr>
+
         <!-- ── PARTIES (Cliente | Tipo NCF) ── -->
         <tr>
           <td style="padding: 18px 28px 0;">
@@ -75,6 +87,28 @@
         {% include "sales/partials/_totals.html" with doc=invoice %}
 
         {% include "sales/partials/_notes.html" with doc=invoice %}
+
+        <!-- ── SENDER SIGNATURE ── -->
+        {% if sender %}
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="border-top:1px solid #e5e7eb;padding-top:14px;">
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;margin-bottom:6px;">{% trans "De parte de" %}</div>
+                  {% if sender_signature_url %}
+                  <img src="{{ sender_signature_url }}" alt="{{ sender.full_name }}" height="48"
+                       style="max-height:48px;max-width:160px;display:block;margin-bottom:6px;">
+                  {% endif %}
+                  <div style="font-size:13px;font-weight:700;color:#1a1a1a;">{{ sender.full_name }}</div>
+                  <div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ sender.email }}</div>
+                  {% if org.phone %}<div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ org.phone }}</div>{% endif %}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
 
         {% trans "Ver factura" as cta_label %}
         {% include "sales/partials/_cta.html" with label=cta_label %}

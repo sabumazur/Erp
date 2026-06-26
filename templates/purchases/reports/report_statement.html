@@ -5,13 +5,12 @@
 
 {% block content %}
 
-<div class="print-header mb-4">
-  <p style="font-size:.8rem;color:#6c757d;margin:0">{{ organization.name }}</p>
-  <h1 style="font-size:1.2rem;font-weight:600;margin:.25rem 0">Estado de Cuenta de Proveedor</h1>
+<div class="print-header">
+  <p class="print-org">{{ organization.name }}</p>
+  <h1 class="print-title">Estado de Cuenta de Proveedor</h1>
   {% if supplier %}
-  <p style="font-size:.8rem;color:#495057;margin:0">
-    {{ supplier.name }}{% if supplier.rnc_cedula %} · {{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}{% endif %}<br>
-    Período: {{ date_from }} — {{ date_to }}
+  <p class="print-meta">
+    {{ supplier.name }}{% if supplier.rnc_cedula %} · {{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}{% endif %} · Período: {{ date_from }} — {{ date_to }}
   </p>
   {% endif %}
 </div>
@@ -22,7 +21,7 @@
     <p class="app-header-sub">Facturas recibidas, pagos realizados y saldo acumulado por proveedor.</p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'purchases:reports' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>Reportes
     </a>
     {% if supplier and lines %}

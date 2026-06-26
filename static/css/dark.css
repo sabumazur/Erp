@@ -188,6 +188,13 @@
   --v-type:           #fb923c;
   --v-link:           #2dd4bf;
 
+  /* Design token overrides (design-tokens.css) */
+  --surface-muted:    var(--dm-s0);   /* was #F9FAFB — table heads, footer bars */
+  --surface-subtle:   var(--dm-s2);   /* was #F3F4F6 — icon bg, avatar circles  */
+  --text-primary:     var(--dm-t1);   /* was #0F172A */
+  --text-secondary:   var(--dm-t2);   /* was #374151 */
+  --app-bg:           var(--dm-bg);   /* was #F8FAFC */
+
   /* Picker tokens (picker.css) */
   --pk-ink:           var(--dm-t1);
   --pk-ink-soft:      var(--dm-t2);
@@ -284,6 +291,19 @@
 /* App filter panel + form bar */
 [data-bs-theme="dark"] .app-filter-panel { background: var(--dm-s0); border-color: var(--dm-border); }
 [data-bs-theme="dark"] .app-form-bar     { background: rgba(30,33,48,0.97); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top-color: var(--dm-border); box-shadow: 0 -2px 16px rgba(0,0,0,.2); }
+
+/* Brand button — override --brand-ink (body text token) with accent blue */
+[data-bs-theme="dark"] .btn-brand {
+  background:   var(--dm-accent);
+  border-color: var(--dm-accent);
+  color: #fff;
+}
+[data-bs-theme="dark"] .btn-brand:hover,
+[data-bs-theme="dark"] .btn-brand:focus {
+  background:   var(--dm-accent-h);
+  border-color: var(--dm-accent-h);
+  color: #fff;
+}
 
 /* Generic link variant */
 [data-bs-theme="dark"] .link-brand       { color: var(--dm-t2); }

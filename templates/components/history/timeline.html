@@ -4,47 +4,51 @@
 
   {# Dot on spine #}
   {% if record.history_type == "+" %}
-  <div class="history-dot bg-success">
-    <i class="bi bi-plus text-white"></i>
+  <div class="history-dot history-dot--created" aria-hidden="true">
+    <i class="bi bi-plus"></i>
   </div>
   {% elif record.history_type == "~" %}
-  <div class="history-dot bg-warning">
-    <i class="bi bi-pencil text-dark"></i>
+  <div class="history-dot history-dot--modified" aria-hidden="true">
+    <i class="bi bi-pencil"></i>
   </div>
   {% else %}
-  <div class="history-dot bg-danger">
-    <i class="bi bi-dash text-white"></i>
+  <div class="history-dot history-dot--deleted" aria-hidden="true">
+    <i class="bi bi-x"></i>
   </div>
   {% endif %}
 
   {# Header row #}
   <div class="d-flex align-items-center gap-2 flex-wrap">
-    <strong style="font-size: 13px;">
+    <span class="history-actor">
       {% if record.history_user %}{{ record.history_user.get_full_name|default:record.history_user.email }}{% else %}{% trans "Sistema" %}{% endif %}
-    </strong>
+    </span>
     {% if record.history_type == "+" %}
-      <span class="badge bg-success rounded-pill">{% trans "Creado" %}</span>
+      <span class="badge-soft badge-paid">{% trans "Creado" %}</span>
     {% elif record.history_type == "~" %}
-      <span class="badge bg-warning text-dark rounded-pill">{% trans "Modificado" %}</span>
+      <span class="badge-soft badge-confirmed">{% trans "Modificado" %}</span>
     {% else %}
-      <span class="badge bg-danger rounded-pill">{% trans "Eliminado" %}</span>
+      <span class="badge-soft badge-overdue">{% trans "Eliminado" %}</span>
     {% endif %}
-    <span class="text-muted ms-auto" style="font-size: 11px;">{{ record.history_date|naturaltime }}</span>
+    <time class="history-time ms-auto"
+          datetime="{{ record.history_date|date:'c' }}"
+          title="{{ record.history_date|date:'d/m/Y H:i' }}">
+      {{ record.history_date|naturaltime }}
+    </time>
   </div>
 
   {# Diff block #}
   {% if record.diff_changes %}
-  <div class="bg-light border rounded p-2 mt-2" style="font-size: 12px;">
+  <div class="history-diff">
     {% for change in record.diff_changes %}
-    <div>
-      <span class="text-muted" style="min-width: 120px; display: inline-block;">{{ change.field }}</span>
+    <div class="history-diff-row">
+      <span class="history-diff-field">{{ change.field }}</span>
       {% if change.old %}
-        <span style="color: #dc3545; text-decoration: line-through;">{{ change.old }}</span>
-        <span class="text-muted mx-1">→</span>
+        <span class="history-diff-old">{{ change.old }}</span>
+        <span class="history-diff-arrow">→</span>
       {% else %}
-        <span class="text-muted mx-1">→</span>
+        <span class="history-diff-arrow">→</span>
       {% endif %}
-      <span style="color: #198754;">{{ change.new }}</span>
+      <span class="history-diff-new">{{ change.new }}</span>
     </div>
     {% endfor %}
   </div>
@@ -52,8 +56,8 @@
 
   {# Change reason #}
   {% if record.history_change_reason %}
-  <div class="mt-1" style="font-size: 11px; color: #6c757d; font-style: italic;">
-    <i class="bi bi-chat-left-text me-1"></i>{{ record.history_change_reason }}
+  <div class="history-reason">
+    <i class="bi bi-chat-left-text me-1" aria-hidden="true"></i>{{ record.history_change_reason }}
   </div>
   {% endif %}
 
