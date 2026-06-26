@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models import DecimalField, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -55,48 +55,6 @@ class SupplierPaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         if q:
             qs = fts_search(qs, q, fts_fields=["supplier__name"], trgm_fields=["reference"])
         ctx.update(self.apply_datatable(qs))
-        if not self.request.htmx:
-            # REFACTOR PQ-12: 4 separate queries → 1 conditional aggregation.
-            today = date.today()
-            _DEC = DecimalField(max_digits=14, decimal_places=2)
-            stats_agg = (
-                SupplierPayment.objects
-                .filter(organization=org)
-                .aggregate(
-                    total_count=Count("id"),
-                    month_total=Coalesce(
-                        Sum("amount", filter=Q(
-                            date__year=today.year,
-                            date__month=today.month,
-                        )),
-                        Value(0, output_field=_DEC),
-                        output_field=_DEC,
-                    ),
-                    grand_total=Coalesce(
-                        Sum("amount"),
-                        Value(0, output_field=_DEC),
-                        output_field=_DEC,
-                    ),
-                    month_count=Count("id", filter=Q(
-                        date__year=today.year,
-                        date__month=today.month,
-                    )),
-                )
-            )
-            ctx["stats"] = [
-                {"label": _("Total pagos"),
-                 "value": stats_agg["total_count"],
-                 "icon": "bi-cash-coin",      "color": "primary"},
-                {"label": _("Pagado este mes"),
-                 "value": "{:,.2f}".format(stats_agg["month_total"] or 0),
-                 "icon": "bi-cash-stack",     "color": "success", "currency": "RD$"},
-                {"label": _("Total pagado"),
-                 "value": "{:,.2f}".format(stats_agg["grand_total"] or 0),
-                 "icon": "bi-wallet2",        "color": "info",    "currency": "RD$"},
-                {"label": _("Pagos este mes"),
-                 "value": stats_agg["month_count"],
-                 "icon": "bi-calendar-check", "color": "secondary"},
-            ]
         ctx["module"] = "supplier-payment"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

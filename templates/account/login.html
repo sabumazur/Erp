@@ -7,13 +7,25 @@
 <div class="auth-card" style="max-width:350px;">
   <h1 class="auth-card-title">Iniciar sesión</h1>
 
-  <form method="post" action="{% url 'account_login' %}">
+  <form method="post" action="{% url 'account_login' %}" id="login-form">
     {% csrf_token %}
     {% language "es" %}{{ form|crispy }}{% endlanguage %}
-    <button type="submit" class="auth-btn auth-btn-primary mt-2">
-      <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+    <button type="submit" class="auth-btn auth-btn-primary mt-2" id="login-btn">
+      <span id="login-icon"><i class="bi bi-box-arrow-in-right"></i></span>
+      <span id="login-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+      <span id="login-label"> Iniciar sesión</span>
     </button>
   </form>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function () {
+      var btn = document.getElementById('login-btn');
+      document.getElementById('login-icon').classList.add('d-none');
+      document.getElementById('login-spinner').classList.remove('d-none');
+      document.getElementById('login-label').textContent = ' Iniciando…';
+      btn.disabled = true;
+    });
+  </script>
 
   <div class="text-center mt-3">
     <a href="{% url 'account_reset_password' %}" style="font-size:.82rem;color:#94a3b8;text-decoration:none;">

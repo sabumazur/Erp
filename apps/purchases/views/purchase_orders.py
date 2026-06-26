@@ -1,7 +1,5 @@
 from datetime import date
 
-from django.db.models import Q, Sum
-from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -72,38 +70,6 @@ class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, Te
             qs = qs.filter(status=status_filter)
         self._csv_qs = qs
         ctx.update(self.apply_datatable(qs))
-        if not self.request.htmx:
-            # REFACTOR PQ-10: 4 separate queries → 1 conditional aggregation.
-            from django.db.models import DecimalField, Count, Value
-            _DEC = DecimalField(max_digits=14, decimal_places=2)
-            stats_agg = (
-                PurchaseDocument.purchase_orders
-                .filter(organization=org)
-                .aggregate(
-                    total_count=Count("id"),
-                    confirmed_count=Count("id", filter=Q(status="CONFIRMED")),
-                    received_count=Count("id", filter=Q(status="RECEIVED")),
-                    confirmed_total=Coalesce(
-                        Sum("total", filter=Q(status="CONFIRMED")),
-                        Value(0, output_field=_DEC),
-                        output_field=_DEC,
-                    ),
-                )
-            )
-            ctx["stats"] = [
-                {"label": _("Total órdenes"),
-                 "value": stats_agg["total_count"],
-                 "icon": "bi-cart",            "color": "primary"},
-                {"label": _("Por recibir"),
-                 "value": stats_agg["confirmed_count"],
-                 "icon": "bi-hourglass-split", "color": "warning"},
-                {"label": _("Recibidas"),
-                 "value": stats_agg["received_count"],
-                 "icon": "bi-check2-circle",   "color": "success"},
-                {"label": _("Valor pendiente"),
-                 "value": "{:,.2f}".format(stats_agg["confirmed_total"] or 0),
-                 "icon": "bi-cash-stack",      "color": "info", "currency": "RD$"},
-            ]
         ctx["module"] = "purchase-order"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

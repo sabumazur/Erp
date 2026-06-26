@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models import DecimalField, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -59,23 +59,6 @@ class PaymentListView(ERPBaseViewMixin, DataTableMixin, TemplateView):
         f = PaymentFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         ctx.update(self.apply_datatable(f.qs))
-
-        if not self.request.htmx:
-            today = date.today()
-            base = Payment.objects.filter(organization=org)
-            month_qs = base.filter(date__year=today.year, date__month=today.month)
-            ctx["stats"] = [
-                {"label": _("Total pagos"), "value": base.count(),
-                 "icon": "bi-cash-coin", "color": "primary"},
-                {"label": _("Cobrado este mes"),
-                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "success", "currency": "RD$"},
-                {"label": _("Total cobrado"),
-                 "value": "{:,.2f}".format(base.aggregate(t=Sum("amount"))["t"] or 0),
-                 "icon": "bi-wallet2", "color": "info", "currency": "RD$"},
-                {"label": _("Pagos este mes"), "value": month_qs.count(),
-                 "icon": "bi-calendar-check", "color": "secondary"},
-            ]
 
         ctx["module"] = "payment"
         ctx["breadcrumbs"] = [

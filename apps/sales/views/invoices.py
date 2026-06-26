@@ -5,7 +5,6 @@ from decimal import Decimal
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -93,28 +92,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, Template
         f = InvoiceFilter(self.request.GET, queryset=qs, organization=org)
         ctx["filter"] = f
         self._csv_qs = f.qs
-        org_qs = SalesDocument.invoices.filter(organization=org)
         ctx.update(self.apply_datatable(f.qs))
-
-        if not self.request.htmx:
-            today = date.today()
-            month_qs = org_qs.filter(
-                issue_date__year=today.year, issue_date__month=today.month,
-            )
-            ctx["stats"] = [
-                {"label": _("Total facturas"), "value": org_qs.count(),
-                 "icon": "bi-receipt", "color": "primary"},
-                {"label": _("Facturado este mes"),
-                 "value": "{:,.2f}".format(month_qs.aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-cash-stack", "color": "success", "currency": "RD$"},
-                {"label": _("Por cobrar"),
-                 "value": "{:,.2f}".format(
-                     org_qs.filter(status__in=["CONFIRMED", "SENT", "OVERDUE"])
-                     .aggregate(t=Sum("total"))["t"] or 0),
-                 "icon": "bi-hourglass-split", "color": "warning", "currency": "RD$"},
-                {"label": _("Vencidas"), "value": org_qs.filter(status="OVERDUE").count(),
-                 "icon": "bi-exclamation-circle", "color": "danger"},
-            ]
 
         ctx["module"] = "invoice"
         ctx["breadcrumbs"] = [

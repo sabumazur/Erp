@@ -1,7 +1,5 @@
 from datetime import date
 
-from django.db.models import Count, DecimalField, Q, Sum, Value
-from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -72,43 +70,6 @@ class SupplierInvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, 
             qs = qs.filter(status=status_filter)
         self._csv_qs = qs
         ctx.update(self.apply_datatable(qs))
-        if not self.request.htmx:
-            # REFACTOR PQ-11: 4 separate queries → 1 conditional aggregation.
-            today = date.today()
-            _DEC = DecimalField(max_digits=14, decimal_places=2)
-            stats_agg = (
-                PurchaseDocument.supplier_invoices
-                .filter(organization=org)
-                .aggregate(
-                    total_count=Count("id"),
-                    month_total=Coalesce(
-                        Sum("total", filter=Q(
-                            issue_date__year=today.year,
-                            issue_date__month=today.month,
-                        )),
-                        Value(0, output_field=_DEC), output_field=_DEC,
-                    ),
-                    confirmed_total=Coalesce(
-                        Sum("total", filter=Q(status="CONFIRMED")),
-                        Value(0, output_field=_DEC), output_field=_DEC,
-                    ),
-                    paid_count=Count("id", filter=Q(status="PAID")),
-                )
-            )
-            ctx["stats"] = [
-                {"label": _("Total facturas"),
-                 "value": stats_agg["total_count"],
-                 "icon": "bi-receipt",          "color": "primary"},
-                {"label": _("Comprado este mes"),
-                 "value": "{:,.2f}".format(stats_agg["month_total"] or 0),
-                 "icon": "bi-cash-stack",       "color": "success", "currency": "RD$"},
-                {"label": _("Por pagar"),
-                 "value": "{:,.2f}".format(stats_agg["confirmed_total"] or 0),
-                 "icon": "bi-hourglass-split",  "color": "warning", "currency": "RD$"},
-                {"label": _("Pagadas"),
-                 "value": stats_agg["paid_count"],
-                 "icon": "bi-check2-circle",    "color": "info"},
-            ]
         ctx["module"] = "supplier-invoice"
         ctx["breadcrumbs"] = [
             {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},
