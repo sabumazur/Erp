@@ -6,7 +6,7 @@
 {% block content %}
 
 <div class="app-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="d-flex align-items-center gap-3">
     <a href="{% url 'purchases:supplier_list' %}"
        class="btn btn-outline-secondary btn-sm btn-icon"
        aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
@@ -90,6 +90,10 @@
           <div class="kv-stat-l">{% trans "Saldo" %}</div>
           <div class="kv-stat-n font-monospace {% if balance > 0 %}num-warn{% else %}num-muted{% endif %}">{{ balance|floatformat:2|intcomma }}</div>
         </div>
+        <div class="kv-stat">
+          <div class="kv-stat-l">{% trans "Vencido" %}</div>
+          <div class="kv-stat-n font-monospace {% if overdue > 0 %}num-neg{% else %}num-muted{% endif %}">{{ overdue|floatformat:2|intcomma }}</div>
+        </div>
       </div>
     </section>
 
@@ -121,9 +125,11 @@
             <td class="small text-nowrap text-muted">{{ inv.issue_date|date:"d/m/Y" }}</td>
             <td class="text-end small font-monospace">{{ inv.total|floatformat:2|intcomma }}</td>
             <td class="text-center">
-              <span class="badge-soft badge-{% if inv.status == 'PAID' %}confirmed{% elif inv.status == 'CONFIRMED' %}primary{% elif inv.status == 'CANCELLED' %}danger{% else %}default{% endif %}">
-                {{ inv.get_status_display }}
-              </span>
+              {% if inv.status == 'PAID' %}<span class="badge-soft badge-confirmed">{{ inv.get_status_display }}</span>
+              {% elif inv.status == 'CONFIRMED' %}<span class="badge-soft badge-primary">{{ inv.get_status_display }}</span>
+              {% elif inv.status == 'RECEIVED' %}<span class="badge-soft badge-sent">{{ inv.get_status_display }}</span>
+              {% elif inv.status == 'CANCELLED' %}<span class="badge-soft badge-cancelled">{{ inv.get_status_display }}</span>
+              {% else %}<span class="badge-soft badge-default">{{ inv.get_status_display }}</span>{% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -194,11 +200,11 @@
       {% endif %}
       <div class="kv-row">
         <span class="kv-k">{% trans "Última factura" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+        <span class="kv-v font-monospace fw-medium">{% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Último pago" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+        <span class="kv-v font-monospace fw-medium">{% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Estado" %}</span>
@@ -220,11 +226,11 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ supplier.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ supplier.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ supplier.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ supplier.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
 

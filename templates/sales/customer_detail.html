@@ -16,7 +16,7 @@
 {% block content %}
 
 <div class="app-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="d-flex align-items-center gap-3">
     <a href="{% url 'sales:customer_list' %}"
        class="btn btn-outline-secondary btn-sm btn-icon"
        aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
@@ -241,11 +241,11 @@
       {% endif %}
       <div class="kv-row">
         <span class="kv-k">{% trans "Última factura" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+        <span class="kv-v font-monospace fw-medium">{% if invoices %}{{ invoices.0.issue_date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Último pago" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
+        <span class="kv-v font-monospace fw-medium">{% if recent_payments %}{{ recent_payments.0.date|date:"d/m/Y" }}{% else %}<span class="v-muted">—</span>{% endif %}</span>
       </div>
       {% if customer.credit_limit and balance > customer.credit_limit %}
       <div class="kv-alert">
@@ -282,11 +282,11 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ customer.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ customer.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ customer.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ customer.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
 
@@ -297,10 +297,10 @@
 {# ── Department modal ── #}
 <div class="modal fade" id="deptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content border-0" style="border-radius:8px;overflow:hidden">
+    <div class="modal-content border-0 rounded-3 overflow-hidden">
       <div class="modal-header">
-        <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
-          <i class="bi bi-diagram-3 me-2" style="color:#6b7280"></i><span id="deptModalTitle">{% trans "Departamento" %}</span>
+        <h5 class="modal-title fw-semibold small">
+          <i class="bi bi-diagram-3 me-2 opacity-50" aria-hidden="true"></i><span id="deptModalTitle">{% trans "Departamento" %}</span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Cerrar' %}"></button>
       </div>

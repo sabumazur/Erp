@@ -32,7 +32,7 @@
       {% csrf_token %}
       <div class="app-table-wrap mb-3">
         <div class="app-card-head">
-          {% trans "Datos del artículo" %}
+          <i class="bi bi-box me-2 opacity-50"></i>{% trans "Datos del artículo" %}
         </div>
         <div class="p-3">
           {% crispy form %}

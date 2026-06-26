@@ -166,8 +166,8 @@
 }
 
 .boolean-status-input:checked+.boolean-status-card {
-  border-color: rgba(30, 33, 48, .28);
-  background: #fff;
+  border-color: var(--brand-accent-ring);
+  background: var(--brand-soft);
 }
 
 .boolean-status-main {
@@ -191,9 +191,16 @@
 }
 
 .boolean-status-input:checked+.boolean-status-card .boolean-status-icon {
-  background: rgba(22, 163, 74, .12);
-  color: var(--pos);
+  background: rgba(37, 99, 235, .12);
+  color: var(--brand-accent);
 }
+
+/* Dual icon — show dash when off, filled check when on */
+.boolean-status-icon-on  { display: none; }
+.boolean-status-icon-off { display: block; }
+
+.boolean-status-input:checked+.boolean-status-card .boolean-status-icon-on  { display: block; }
+.boolean-status-input:checked+.boolean-status-card .boolean-status-icon-off { display: none; }
 
 .boolean-status-title,
 .boolean-status-help {
@@ -271,7 +278,7 @@
 }
 
 .boolean-status-input:checked+.boolean-status-card .boolean-status-switch {
-  background: var(--brand-ink);
+  background: var(--brand-accent);
 }
 
 .boolean-status-input:checked+.boolean-status-card .boolean-status-switch span {
@@ -454,6 +461,7 @@ a.db-kpi:focus-visible {
 /* ── Card section header (F3: replaces the ~65× inline style string) ─────── */
 .app-card-head {
   padding: 10px 14px 9px;
+  background: var(--surface-muted);
   border-bottom: 1px solid var(--hairline);
   font-size: .78rem;
   font-weight: 700;

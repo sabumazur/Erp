@@ -14,12 +14,14 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'items:item_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i>
+    <a href="{% url 'items:item_list' %}"
+       class="btn btn-outline-secondary btn-sm btn-icon"
+       aria-label="{% trans 'Volver al listado' %}" title="{% trans 'Volver al listado' %}">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
     </a>
     {% if membership.is_admin %}
-    <a href="{% url 'items:item_edit' item.pk %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+    <a href="{% url 'items:item_edit' item.pk %}" class="btn btn-brand btn-sm">
+      <i class="bi bi-pencil me-1" aria-hidden="true"></i>{% trans "Editar" %}
     </a>
     <form method="post" action="{% url 'items:item_toggle' item.pk %}"
           x-data
@@ -82,8 +84,12 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Estado" %}</span>
-        <span class="kv-v {% if item.is_active %}num-pos{% else %}v-muted{% endif %}">
-          {% if item.is_active %}{% trans "Activo" %}{% else %}{% trans "Inactivo" %}{% endif %}
+        <span class="kv-v">
+          {% if item.is_active %}
+            <span class="badge-soft badge-confirmed">{% trans "Activo" %}</span>
+          {% else %}
+            <span class="badge-soft badge-default">{% trans "Inactivo" %}</span>
+          {% endif %}
         </span>
       </div>
       {% if item.notes %}
@@ -94,6 +100,28 @@
 
   {# ── Audit sidebar ── #}
   <div class="col-lg-4 d-flex flex-column gap-3">
+
+    {% if item.default_supplier %}
+    <section class="kv-card">
+      <div class="kv-card-head">
+        <i class="bi bi-truck" aria-hidden="true"></i>
+        <span class="kv-card-title">{% trans "Proveedor por defecto" %}</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-k">{% trans "Nombre" %}</span>
+        <span class="kv-v">
+          <a href="{% url 'purchases:supplier_detail' item.default_supplier.pk %}" class="link-brand">{{ item.default_supplier.name }}</a>
+        </span>
+      </div>
+      {% if item.default_supplier.rnc_cedula %}
+      <div class="kv-row">
+        <span class="kv-k">{% trans "RNC" %}</span>
+        <span class="kv-v font-monospace">{{ item.default_supplier.rnc_cedula }}</span>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
     <section class="kv-card">
       <div class="kv-card-head">
         <i class="bi bi-clock-history" aria-hidden="true"></i>
@@ -101,11 +129,11 @@
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Creado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ item.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ item.created_at|date:"d/m/Y H:i" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Actualizado" %}</span>
-        <span class="kv-v font-monospace" style="font-weight:500">{{ item.updated_at|date:"d/m/Y H:i" }}</span>
+        <span class="kv-v font-monospace fw-medium">{{ item.updated_at|date:"d/m/Y H:i" }}</span>
       </div>
     </section>
   </div>

@@ -175,6 +175,7 @@ class SupplierDetailView(ERPBaseViewMixin, View):
         # the detail page never loads an unbounded queryset.
         from decimal import Decimal
         from django.db.models import Sum
+        from django.utils import timezone
         supplier = get_object_or_404(Supplier, pk=pk, organization=request.organization)
 
         # Aggregate totals in SQL — one query, no Python accumulation.
@@ -190,6 +191,17 @@ class SupplierDetailView(ERPBaseViewMixin, View):
             supplier=supplier, organization=request.organization
         ).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
         balance = total_invoiced - total_paid
+
+        overdue = (
+            PurchaseDocument.supplier_invoices
+            .filter(
+                organization=request.organization,
+                supplier=supplier,
+                status=PurchaseDocument.Status.CONFIRMED,
+                due_date__lt=timezone.now().date(),
+            )
+            .aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+        )
 
         # Bounded invoice list — most recent 200; enough for display.
         invoices = list(
@@ -217,6 +229,7 @@ class SupplierDetailView(ERPBaseViewMixin, View):
                 total_invoiced=total_invoiced,
                 total_paid=total_paid,
                 balance=balance,
+                overdue=overdue,
                 recent_payments=recent_payments,
                 breadcrumbs=[
                     {"label": _("Dashboard"), "url": reverse("accounts:dashboard")},

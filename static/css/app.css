@@ -59,7 +59,48 @@ textarea.form-control {
 
 .app-breadcrumb { font-size: .75rem; }
 
-.rnc-lookup-row { min-height: 1.6rem; }
+/* RNC lookup row — zero height when idle, expands on activity */
+.rnc-lookup-row {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 200ms ease, margin 200ms ease;
+  font-size: .78rem;
+  color: var(--muted);
+}
+
+.rnc-lookup-row:has(#rnc-lookup-spinner.htmx-request),
+.rnc-lookup-row:has(#rnc-lookup-result:not(:empty)) {
+  max-height: 2rem;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+/* Override htmx-indicator opacity default — use display toggle instead */
+#rnc-lookup-spinner {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-accent);
+  font-size: .78rem;
+}
+
+#rnc-lookup-spinner.htmx-request {
+  display: inline-flex;
+}
+
+.rnc-spinner-ring {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--brand-accent);
+  border-radius: 50%;
+  animation: rnc-spin 0.65s linear infinite;
+}
+
+@keyframes rnc-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    SabSys ERP — Commercial Module Design System

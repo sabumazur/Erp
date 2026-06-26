@@ -329,10 +329,20 @@
 /* Boolean status toggle */
 [data-bs-theme="dark"] .boolean-status-card          { background: var(--dm-s0); border-color: var(--dm-border); }
 [data-bs-theme="dark"] .boolean-status-card:hover    { background: var(--dm-s1); border-color: var(--dm-border-hi); }
+[data-bs-theme="dark"] .boolean-status-title         { color: var(--dm-t1); }
+[data-bs-theme="dark"] .boolean-status-help          { color: var(--dm-t3); }
 [data-bs-theme="dark"] .boolean-status-icon          { background: var(--dm-s2); color: var(--dm-t3); }
 [data-bs-theme="dark"] .boolean-status-badge-on      { background: #0e2a1a; color: var(--pos); }
 [data-bs-theme="dark"] .boolean-status-badge-off     { background: var(--dm-s3); color: var(--dm-t3); }
 [data-bs-theme="dark"] .boolean-status-switch        { background: var(--dm-border); }
+[data-bs-theme="dark"] .boolean-status-input:checked + .boolean-status-card {
+  background: var(--dm-accent-bg);
+  border-color: rgba(91, 154, 245, .3);
+}
+[data-bs-theme="dark"] .boolean-status-input:checked + .boolean-status-card .boolean-status-icon {
+  background: var(--dm-accent-bg);
+  color: var(--dm-accent);
+}
 [data-bs-theme="dark"] .boolean-status-input:checked + .boolean-status-card .boolean-status-switch {
   background: var(--dm-accent);
 }
@@ -745,7 +755,7 @@
 [data-bs-theme="dark"] .cell-entity .avatar.is-muted   { background: var(--dm-s2); color: var(--dm-t3); }
 
 /* App card head (detail page section headings) */
-[data-bs-theme="dark"] .app-card-head                  { color: var(--dm-t2); border-bottom-color: var(--dm-border); }
+[data-bs-theme="dark"] .app-card-head                  { background: var(--dm-s1); color: var(--dm-t2); border-bottom-color: var(--dm-border); }
 [data-bs-theme="dark"] .app-card-head--row .app-card-head-title { color: var(--dm-t2); }
 
 /* Document detail meta */
