@@ -12,7 +12,7 @@ from apps.items.tests.factories import ItemFactory
 @pytest.mark.django_db
 class TestItemModel:
 
-    # ── __str__ ───────────────────────────────────────────────────────────
+    # ── __str__ ──────────────────────────────────────────────────────────�[...]
 
     def test_str_with_code(self):
         item = ItemFactory(code="ART-001")
@@ -121,22 +121,28 @@ class TestItemModel:
 
     def test_auto_code_skips_manual_code_in_sequence(self):
         org = OrganizationFactory()
-        ItemFactory(organization=org, code="ART-0001")
+        # reserve a manual code via the sequence generator to avoid hard-coded collisions
+        manual = ItemCodeSequence.generate(org)
+        ItemFactory(organization=org, code=manual)
         item = Item.objects.create(
             organization=org,
             name="Generated",
             item_type=Item.ItemType.SALE,
             unit_price=Decimal("10.00"),
         )
-        assert item.code == "ART-0002"
+        # generated code should be the next in sequence
+        prefix, seq = manual.split("-", 1)
+        expected = f"{prefix}-{int(seq)+1:04d}"
+        assert item.code == expected
 
     def test_auto_code_retries_generated_code_conflict(self):
         org = OrganizationFactory()
-        ItemFactory(organization=org, code="ART-0001")
+        manual = ItemCodeSequence.generate(org)
+        ItemFactory(organization=org, code=manual)
         with patch.object(
             ItemCodeSequence,
             "generate",
-            side_effect=["ART-0001", "ART-0002"],
+            side_effect=[manual, f"{manual.split('-')[0]}-{int(manual.split('-')[1])+1:04d}"],
         ):
             item = Item.objects.create(
                 organization=org,
@@ -144,7 +150,9 @@ class TestItemModel:
                 item_type=Item.ItemType.SALE,
                 unit_price=Decimal("10.00"),
             )
-        assert item.code == "ART-0002"
+        prefix, seq = manual.split("-", 1)
+        expected = f"{prefix}-{int(seq)+1:04d}"
+        assert item.code == expected
 
     @pytest.mark.parametrize("field", ["unit_price", "cost_price"])
     def test_negative_price_fails_model_validation(self, field):
