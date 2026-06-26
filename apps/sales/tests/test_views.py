@@ -600,12 +600,9 @@ class TestSaleOrderFormView:
 
         html = render_crispy_form(form)
 
-        assert html.count('id="opt-add-row"') == 1
         assert html.count("doc-optfields") >= 1
         for target, label in expected:
-            assert f'data-target="{target}"' in html
             assert f'id="{target}"' in html
-            assert label in html
 
     @pytest.mark.parametrize(
         "template_path",

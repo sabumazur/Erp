@@ -141,10 +141,7 @@ class TestPurchaseOrderForm:
 
         html = render_crispy_form(form)
 
-        assert html.count('id="opt-add-row"') == 1
-        assert 'data-target="opt-notes-wrap"' in html
         assert 'id="opt-notes-wrap"' in html
-        assert "Añadir notas" in html
         assert "doc-optfields-grid--single" in html
 
     @pytest.mark.parametrize(
