@@ -28,6 +28,11 @@
         <i class="bi bi-cash-coin" aria-hidden="true"></i>
         {% trans "Datos del pago" %}
       </span>
+      <div id="opt-add-row" class="doc-head-optfields ms-auto">
+        <button type="button" class="doc-optfield-chip" data-target="opt-notes-wrap">
+          <i class="bi bi-plus-lg"></i>{% trans "Notas" %}
+        </button>
+      </div>
     </div>
     <div class="doc-order-card-body">
       {% if form.non_field_errors %}

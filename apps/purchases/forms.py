@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
-from apps.core.layout import optional_fields
+from apps.core.layout import optional_fields, optional_field_wraps
 from apps.core.widgets import TomSelect, ItbisSelect, DateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
@@ -309,8 +309,7 @@ class PurchaseOrderForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-3"),
                 Column("expected_date", css_class="col-md-3"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("notes", _("Añadir notas"))),
+            optional_field_wraps(("notes", _("Añadir notas"))),
         )
 
 
@@ -378,8 +377,7 @@ class SupplierInvoiceForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("due_date", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("notes", _("Añadir notas"))),
+            optional_field_wraps(("notes", _("Añadir notas"))),
         )
 
 
@@ -480,6 +478,5 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
                 Column("method", css_class="col-md-3"),
                 Column("reference", css_class="col-md-2"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("notes", _("Añadir notas"))),
+            optional_field_wraps(("notes", _("Añadir notas"))),
         )

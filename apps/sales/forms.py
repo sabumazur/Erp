@@ -10,7 +10,7 @@ from crispy_forms.layout import Layout, Row, Column, HTML, Field
 
 from django.urls import reverse_lazy
 
-from apps.core.layout import optional_fields
+from apps.core.layout import optional_fields, optional_field_wraps
 from apps.core.widgets import TomSelect, ItbisSelect, DateInput, AutosizeTextarea
 from apps.core.forms import DocumentLineItemFormMixin
 from apps.items.models import Item as _Item
@@ -402,8 +402,7 @@ class InvoiceForm(forms.ModelForm):
                 Column("due_date", css_class="col-md-4"),
                 Column("payment_condition", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
+            optional_field_wraps(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
         )
 
 
@@ -487,8 +486,7 @@ class QuotationForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("valid_until", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
+            optional_field_wraps(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
         )
 
 
@@ -603,8 +601,7 @@ class SaleOrderForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("delivery_date", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("notes", _("Añadir notas"))),
+            optional_field_wraps(("notes", _("Añadir notas"))),
         )
 
 
@@ -908,8 +905,7 @@ class PaymentHeaderForm(forms.ModelForm):
                 Column("method", css_class="col-md-3"),
                 Column("reference", css_class="col-md-2"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("notes", _("Añadir notas"))),
+            optional_field_wraps(("notes", _("Añadir notas"))),
         )
 
 
@@ -1011,8 +1007,7 @@ class CreditNoteForm(forms.ModelForm):
                 Column("issue_date", css_class="col-md-4"),
                 Column("due_date", css_class="col-md-4"),
             ),
-            HTML('<hr class="my-3">'),
-            optional_fields(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
+            optional_field_wraps(("terms", _("Añadir términos")), ("notes", _("Añadir notas"))),
         )
 
 

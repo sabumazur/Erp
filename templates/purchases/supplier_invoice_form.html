@@ -32,9 +32,16 @@
         <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
         {% trans "Datos de la factura" %}
       </span>
-      <span class="doc-head-meta" id="doc-head-meta">
-        <span class="doc-head-meta-customer" id="doc-head-supplier"></span>
-      </span>
+      <div class="doc-head-right">
+        <div id="opt-add-row" class="doc-head-optfields">
+          <button type="button" class="doc-optfield-chip" data-target="opt-notes-wrap">
+            <i class="bi bi-plus-lg"></i>{% trans "Notas" %}
+          </button>
+        </div>
+        <span class="doc-head-meta" id="doc-head-meta">
+          <span class="doc-head-meta-customer" id="doc-head-supplier"></span>
+        </span>
+      </div>
     </div>
     <div class="doc-order-card-body">{% crispy form %}</div>
   </div>

@@ -23,7 +23,17 @@
   {% csrf_token %}
 
   <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold">{% trans "Datos de la nota" %}</div>
+    <div class="card-header fw-semibold d-flex align-items-center">
+      {% trans "Datos de la nota" %}
+      <div id="opt-add-row" class="doc-head-optfields ms-auto">
+        <button type="button" class="doc-optfield-chip" data-target="opt-terms-wrap">
+          <i class="bi bi-plus-lg"></i>{% trans "Términos" %}
+        </button>
+        <button type="button" class="doc-optfield-chip" data-target="opt-notes-wrap">
+          <i class="bi bi-plus-lg"></i>{% trans "Notas" %}
+        </button>
+      </div>
+    </div>
     <div class="card-body">{% crispy form %}</div>
   </div>
 

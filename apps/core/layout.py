@@ -2,6 +2,18 @@ from crispy_forms.layout import Div, Field, HTML
 from django.utils.translation import gettext_lazy as _
 
 
+def optional_field_wraps(*specs):
+    """Return only the hidden field wrappers — chips live in the card header."""
+    grid_cls = "doc-optfields-grid"
+    if len(specs) == 1:
+        grid_cls += " doc-optfields-grid--single"
+    wraps = [
+        Div(Field(name), css_id="opt-{}-wrap".format(name), css_class="doc-optfield-wrap")
+        for name, _label in specs
+    ]
+    return Div(*wraps, css_class=grid_cls)
+
+
 def optional_fields(*specs):
     """
     Build the optional document fields chips fragment for document header cards.

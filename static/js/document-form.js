@@ -316,7 +316,10 @@
       function toggle() {
         apply(!card.classList.contains("is-collapsed"), true);
       }
-      head.addEventListener("click", toggle);
+      head.addEventListener("click", function (e) {
+        if (e.target.closest("button")) return;
+        toggle();
+      });
       head.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
       });

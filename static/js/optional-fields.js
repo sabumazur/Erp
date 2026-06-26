@@ -42,10 +42,7 @@
     var addRow = document.getElementById("opt-add-row");
     if (!addRow) return;
     var anyChipVisible = !!addRow.querySelector('.doc-optfield-chip:not([style*="display: none"])');
-    var section = addRow.closest(".doc-optfields") || addRow;
-    var hint = section.querySelector(".doc-optfields-hint");
     addRow.style.display = anyChipVisible ? "" : "none";
-    if (hint) hint.style.display = anyChipVisible ? "" : "none";
   }
 
   document.addEventListener("DOMContentLoaded", initOptionalFields);
