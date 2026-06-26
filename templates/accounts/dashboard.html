@@ -117,7 +117,7 @@
         <td>
           {% include "sales/partials/status_badge.html" with status=inv.status %}
         </td>
-        <td class="text-end font-monospace fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace fw-semibold col-amount">{{ inv.total|floatformat:2|intcomma }}</td>
       </tr>
       {% empty %}
       <tr>
@@ -159,7 +159,7 @@
             </td>
             <td class="db-table-muted">{{ inv.customer.name }}</td>
             <td class="text-end fw-bold font-monospace db-table-danger">{{ inv.days_overdue }}</td>
-            <td class="text-end font-monospace fw-semibold db-table-danger">{{ inv.total|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold db-table-danger col-amount">{{ inv.total|floatformat:2|intcomma }}</td>
           </tr>
           {% empty %}
           <tr>
@@ -211,7 +211,7 @@
               {% else %}<span class="badge-soft badge-default">{{ pmt.get_method_display }}</span>
               {% endif %}
             </td>
-            <td class="text-end font-monospace fw-semibold db-table-success">{{ pmt.amount|floatformat:2|intcomma }}</td>
+            <td class="text-end font-monospace fw-semibold db-table-success col-amount">{{ pmt.amount|floatformat:2|intcomma }}</td>
           </tr>
           {% empty %}
           <tr>

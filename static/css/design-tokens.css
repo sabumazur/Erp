@@ -1,0 +1,254 @@
+/* ============================================================
+   SabSys ERP — Design Token Layer
+   Loaded last in base.html so overrides win the cascade.
+   Defines the canonical token scale; individual rules reference
+   these vars so future tweaks touch one value, not fifteen.
+   ============================================================ */
+
+/* ── Token scale ──────────────────────────────────────────── */
+
+:root {
+  /* Radius */
+  --r-xs: 4px;    /* badges, pills, small chips       */
+  --r-sm: 6px;    /* inputs, selects, small buttons   */
+  --r-md: 8px;    /* standard cards, table wrappers   */
+  --r-lg: 12px;   /* modals, dialogs, large overlays  */
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04);
+  --shadow-md: 0 1px 3px rgba(15, 23, 42, .06),
+               0 4px 16px rgba(15, 23, 42, .04);
+
+  /* Brand accent upgrade: #3f6fd6 → #2563EB (standard SaaS blue) */
+  --brand-accent:      #2563EB;
+  --brand-ink-2:       #1d4ed8;      /* accent hover */
+  --brand-soft:        #eff6ff;      /* accent tinted surface */
+  --brand-accent-ring: rgba(37, 99, 235, .25);
+
+  /* Semantic palette corrections */
+  --pos:  #059669;   /* was #16a34a — emerald-600, richer success green */
+  --neg:  #DC2626;   /* was #b42318 — red-600, standard danger red       */
+
+  /* Content area background — tighten to near-white */
+  --app-bg: #F8FAFC;
+
+  /* Text scale */
+  --text-primary:   #0F172A;   /* slate-900 — headings, doc numbers, bold values  */
+  --text-secondary: #374151;   /* gray-700  — body, labels, table cells           */
+
+  /* Surface scale */
+  --surface-muted:  #F9FAFB;   /* gray-50   — card headers, form bars, table head */
+  --surface-subtle: #F3F4F6;   /* gray-100  — icon backgrounds, avatar circles    */
+
+  /* KV-card heading color inherits brand-ink; no change needed */
+
+  /* ── Bootstrap 5 variable overrides ───────────────────────
+     Bootstrap components reference these vars internally, so
+     overriding here propagates to .btn, .card, .modal-content,
+     .dropdown-menu, .form-control, .badge, .popover, etc.
+     without needing per-selector rules for each one.          */
+  --bs-border-radius:    var(--r-sm);   /* 6px  — form-control, btn, card  */
+  --bs-border-radius-sm: var(--r-xs);   /* 4px  — badge, btn-sm            */
+  --bs-border-radius-lg: var(--r-md);   /* 8px  — dropdown-menu, popover   */
+  --bs-border-radius-xl: var(--r-lg);   /* 12px — modal-content            */
+
+  --bs-box-shadow:    var(--shadow-md);
+  --bs-box-shadow-sm: var(--shadow-sm);
+  --bs-box-shadow-lg: 0 8px 32px rgba(15, 23, 42, .12);
+}
+
+/* ── Font ─────────────────────────────────────────────────── */
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Radius — cards & wrappers ────────────────────────────── */
+
+.app-table-wrap,
+.app-filter-panel,
+.settings-panel,
+.settings-aside,
+.doc-order-card,
+.boolean-status-card,
+.password-strength {
+  border-radius: var(--r-md);
+}
+
+.erp-dialog,
+.kv-card,
+.doc-notes-acc,
+.doc-notes-ribbon {
+  border-radius: var(--r-lg);
+}
+
+/* 10px → 8px for document detail cards */
+.doc-paper,
+.doc-status-card,
+.app-metric-card {
+  border-radius: var(--r-md);
+}
+
+/* ── Radius — form controls ───────────────────────────────── */
+
+.form-control,
+.form-select {
+  border-radius: var(--r-sm);
+}
+
+/* Document form overrides were 7px — bring to token */
+.doc-order-card-body .form-control,
+.doc-order-card-body .form-select,
+.doc-order-card-body .input-group,
+.doc-lines-card .item-row-main .form-control,
+.doc-lines-card .item-row-main .form-select {
+  border-radius: var(--r-sm);
+}
+
+.doc-order-card-body .input-group .btn {
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.doc-order-card-body .supplier-display-text {
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+}
+
+/* Notes panel textarea */
+.doc-notes-panel-inner textarea,
+.doc-ribbon-body-inner textarea {
+  border-radius: var(--r-sm);
+}
+
+/* ── Radius — buttons ─────────────────────────────────────── */
+
+.dt-ribbon .btn,
+.dt-filter-actions .btn {
+  border-radius: var(--r-xs);
+}
+
+/* ── Radius — badges ──────────────────────────────────────── */
+
+.badge-soft {
+  border-radius: var(--r-xs);
+}
+
+/* ── Radius — misc components ─────────────────────────────── */
+
+.dept-popover-bs.popover { border-radius: var(--r-md); }
+.dept-popover-bs .popover-header { border-radius: var(--r-md) var(--r-md) 0 0; }
+.settings-panel-icon { border-radius: var(--r-sm); }
+.app-form-bar { border-radius: 0; }
+
+/* ── Shadows ──────────────────────────────────────────────── */
+
+.db-kpi,
+.app-table-wrap,
+.settings-panel,
+.settings-aside,
+.kv-card,
+.doc-status-card,
+.doc-notes-acc {
+  box-shadow: var(--shadow-sm);
+}
+
+.doc-order-card,
+.doc-paper {
+  box-shadow: var(--shadow-md);
+}
+
+/* Dialogs keep stronger depth — modal needs separation from content */
+.erp-dialog {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .16);
+}
+
+/* ── Color — semantic propagation ────────────────────────── */
+
+/* Main content area bg */
+#main-area {
+  background: var(--app-bg);
+}
+
+#subnav {
+  background: var(--app-bg);
+}
+
+/* Danger states that hardcoded the old neg color */
+.kv-alert {
+  color: var(--neg);
+}
+
+.doc-stamp-overdue,
+.doc-stamp-rejected {
+  color: var(--neg);
+}
+
+/* ── Color — accent propagation ───────────────────────────── */
+
+/* Focus rings that were hardcoded to old rgba(63,111,214,...) */
+.boolean-status-input:focus-visible + .boolean-status-card {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 .2rem var(--brand-accent-ring);
+}
+
+.btn-brand:focus-visible {
+  box-shadow: 0 0 0 .2rem var(--brand-accent-ring);
+}
+
+/* Active subnav indicator */
+.subnav-link.active {
+  color: var(--brand-accent);
+  border-bottom-color: var(--brand-accent);
+}
+
+/* ── Bootstrap btn-primary — brand navy + dark gray hover ─── */
+
+.btn-primary {
+  --bs-btn-color:               #fff;
+  --bs-btn-bg:                  var(--brand-ink);
+  --bs-btn-border-color:        var(--brand-ink);
+  --bs-btn-hover-color:         #fff;
+  --bs-btn-hover-bg:            #374151;
+  --bs-btn-hover-border-color:  #374151;
+  --bs-btn-active-color:        #fff;
+  --bs-btn-active-bg:           #1f2937;
+  --bs-btn-active-border-color: #1f2937;
+  --bs-btn-disabled-color:      #fff;
+  --bs-btn-disabled-bg:         var(--brand-ink);
+  --bs-btn-disabled-border-color: var(--brand-ink);
+  --bs-btn-focus-shadow-rgb:    30, 33, 48;
+}
+
+.btn-outline-primary {
+  --bs-btn-color:               var(--brand-ink);
+  --bs-btn-border-color:        var(--brand-ink);
+  --bs-btn-hover-color:         #fff;
+  --bs-btn-hover-bg:            #374151;
+  --bs-btn-hover-border-color:  #374151;
+  --bs-btn-active-color:        #fff;
+  --bs-btn-active-bg:           var(--brand-ink);
+  --bs-btn-active-border-color: var(--brand-ink);
+  --bs-btn-focus-shadow-rgb:    30, 33, 48;
+}
+
+/* btn-brand hover — align to same dark gray */
+.btn-brand:hover,
+.btn-brand:focus {
+  background:   #374151;
+  border-color: #374151;
+  color: #fff;
+}
+
+/* ── Tabular numerals — money columns ─────────────────────── */
+
+.app-table-wrap td.col-amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Always-numeric components */
+.kv-stat .kv-stat-n,
+.doc-inline-tot-value,
+.db-kpi-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}

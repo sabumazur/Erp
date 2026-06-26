@@ -60,7 +60,7 @@
   <td data-col="due_date"><span class="dt{% if row.status == 'OVERDUE' %} over{% endif %}">{{ row.due_date|date:"d/m/Y"|default:"—" }}</span></td>
 
   {# ── Total ──────────────────────────────────────────────── #}
-  <td data-col="total" class="text-end"><span class="amt">{{ row.total|floatformat:2|intcomma }}</span></td>
+  <td data-col="total" class="text-end col-amount"><span class="amt">{{ row.total|floatformat:2|intcomma }}</span></td>
 
   {# ── Estado ─────────────────────────────────────────────── #}
   <td data-col="status" class="text-center">

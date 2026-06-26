@@ -54,9 +54,9 @@
   align-items: center;
   gap: 8px;
   font-size: .8rem;
-  color: #374151;
+  color: var(--text-secondary);
   padding: 5px 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--surface-subtle);
 }
 
 .dept-chip:last-child {
@@ -91,12 +91,12 @@
   /* app primary / neutral brand */
   --brand-ink-2: #2a3050;
   /* hover */
-  --brand-accent: #3f6fd6;
+  --brand-accent: #2563EB;
   /* link / focus accent */
   --brand-soft: #eef3fc;
-  --pos: #16a34a;
+  --pos: #059669;
   /* money received / positive */
-  --neg: #b42318;
+  --neg: #DC2626;
   /* overdue / negative */
   --muted: #6b7280;
   --muted-2: #9ca3af;
@@ -119,7 +119,7 @@
 }
 
 .btn-brand:focus-visible {
-  box-shadow: 0 0 0 0.2rem rgba(63, 111, 214, 0.3);
+  box-shadow: 0 0 0 0.2rem var(--brand-accent-ring);
 }
 
 /* ── Boolean status card (CRUD forms) ───────────────────────────────────── */
@@ -150,7 +150,7 @@
   padding: 10px 12px;
   border: 1px solid var(--hairline);
   border-radius: 8px;
-  background: #f9fafb;
+  background: var(--surface-muted);
   cursor: pointer;
   transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
 }
@@ -162,7 +162,7 @@
 
 .boolean-status-input:focus-visible+.boolean-status-card {
   border-color: var(--brand-accent);
-  box-shadow: 0 0 0 .2rem rgba(63, 111, 214, .18);
+  box-shadow: 0 0 0 .2rem var(--brand-accent-ring);
 }
 
 .boolean-status-input:checked+.boolean-status-card {
@@ -346,7 +346,7 @@ a.db-kpi:focus-visible {
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  background: #f3f4f6;
+  background: var(--surface-subtle);
   color: #6b7280;
   font-size: 1.05rem;
 }
@@ -356,7 +356,7 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi-value {
-  color: #111827;
+  color: var(--text-primary);
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-feature-settings: "tnum";
   font-size: 1.12rem;
@@ -383,12 +383,12 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-ar {
-  border-top-color: #3f6fd6;
+  border-top-color: var(--brand-accent);
 }
 
 .db-kpi.is-ar .db-kpi-icon {
   background: #eef3fc;
-  color: #3f6fd6;
+  color: var(--brand-accent);
 }
 
 .db-kpi.is-ap {
@@ -401,21 +401,21 @@ a.db-kpi:focus-visible {
 }
 
 .db-kpi.is-neg {
-  border-top-color: #b42318;
+  border-top-color: var(--neg);
 }
 
 .db-kpi.is-neg .db-kpi-icon {
   background: #fdeceb;
-  color: #b42318;
+  color: var(--neg);
 }
 
 .db-kpi.is-pos {
-  border-top-color: #16a34a;
+  border-top-color: var(--pos);
 }
 
 .db-kpi.is-pos .db-kpi-icon {
   background: #eaf7ef;
-  color: #16a34a;
+  color: var(--pos);
 }
 
 .db-kpi.is-net {
@@ -457,7 +457,7 @@ a.db-kpi:focus-visible {
   border-bottom: 1px solid var(--hairline);
   font-size: .78rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .app-card-head--row {
@@ -470,7 +470,7 @@ a.db-kpi:focus-visible {
 .app-card-head--row .app-card-head-title {
   font-size: .78rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 /* ── In-card stat strip (account summary & similar) ──────────────────────────
@@ -587,7 +587,7 @@ a.db-kpi:focus-visible {
 
 /* ── Filter panel ────────────────────────────────────────── */
 .app-filter-panel {
-  background: #f9fafb;
+  background: var(--surface-muted);
   border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 14px 16px;
@@ -616,7 +616,7 @@ a.db-kpi:focus-visible {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .app-metric-label {
@@ -642,7 +642,7 @@ a.db-kpi:focus-visible {
 }
 
 .app-table-wrap thead th {
-  background: #f9fafb;
+  background: var(--surface-muted);
   font-size: .7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -655,7 +655,7 @@ a.db-kpi:focus-visible {
 
 .app-table-wrap tfoot td,
 .app-table-wrap tfoot th {
-  background: #f9fafb;
+  background: var(--surface-muted);
   border-top: 2px solid var(--brand-ink);
   font-weight: 700;
 }
@@ -761,8 +761,8 @@ a.db-kpi:focus-visible {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
   font-weight: 600;
   font-size: .9rem;
   display: flex;
@@ -801,7 +801,7 @@ a.db-kpi:focus-visible {
 
 .cell-entity .nm {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   line-height: 1.25;
 }
 
@@ -816,7 +816,7 @@ a.db-kpi:focus-visible {
 /* contact cell */
 .cell-contact {
   font-size: .8rem;
-  color: #374151;
+  color: var(--text-secondary);
   line-height: 1.35;
 }
 
@@ -831,7 +831,7 @@ a.db-kpi:focus-visible {
   align-items: center;
   gap: 6px;
   font-size: .8rem;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .cell-method i {
@@ -896,7 +896,7 @@ a.db-kpi:focus-visible {
   margin: 0;
   font-size: .875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   line-height: 1.3;
 }
 
@@ -915,17 +915,17 @@ a.db-kpi:focus-visible {
 }
 
 /* ── F12 · Muted surface (modal headers/footers + sticky form bars) ─────────
-   Replaces inline style="background:#f9fafb;border-bottom:1px solid #e5e7eb"
+   Replaces inline style="background:var(--surface-muted);border-bottom:1px solid #e5e7eb"
    repeated on modal chrome and save bars. */
 .surface-muted {
-  background: #f9fafb;
+  background: var(--surface-muted);
 }
 
 .erp-dialog .modal-header,
 .erp-dialog .modal-footer,
 .modal .modal-header,
 .modal .modal-footer {
-  background: #f9fafb;
+  background: var(--surface-muted);
 }
 
 .modal .modal-header {
@@ -936,7 +936,7 @@ a.db-kpi:focus-visible {
   border-top: 1px solid var(--hairline);
 }
 
-/* sticky save bar at the foot of long forms */
+/* save bar — sticky foot of inline forms (not full-page forms) */
 .app-form-bar {
   position: sticky;
   bottom: 0;
@@ -946,9 +946,11 @@ a.db-kpi:focus-visible {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;
-  background: #f9fafb;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-top: 1px solid var(--hairline);
-  border-radius: 0 0 8px 8px;
+  box-shadow: 0 -2px 12px rgba(15, 23, 42, .06);
 }
 
 .app-form-bar .form-bar-info {
@@ -1031,7 +1033,7 @@ a.db-kpi:focus-visible {
   /* dark slate-teal heading + head rule */
   --kv-label: #5f7d8c;
   /* steel-teal row label                */
-  --kv-value: #111827;
+  --kv-value: var(--text-primary);
   /* default value (near-black)          */
   --v-status: #7c3aed;
   /* enum / state value  → violet        */
@@ -1172,7 +1174,7 @@ a.db-kpi:focus-visible {
   margin: 6px 0 14px;
   padding: 10px 13px;
   background: #eef3fc;
-  border: 1px solid rgba(63, 111, 214, 0.20);
+  border: 1px solid rgba(37, 99, 235, 0.20);
   border-radius: 8px;
   font-size: .82rem;
   color: #475569;
@@ -1255,7 +1257,7 @@ a.db-kpi:focus-visible {
   padding: 11px 10px;
   border-bottom: 1px solid var(--hairline-soft);
   font-size: .85rem;
-  color: #374151;
+  color: var(--text-secondary);
   vertical-align: middle;
 }
 
@@ -1272,3 +1274,29 @@ a.db-kpi:focus-visible {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── db-kpi as anchor ────────────────────────────────────────── */
+.db-kpi-link {
+  min-width: 120px;
+  text-decoration: none !important;
+}
+
+/* ── Form stat cards (supplier/customer edit smart buttons) ──── */
+.form-stat-card { min-width: 80px; cursor: pointer; }
+.form-stat-card-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: .25rem;
+  color: var(--brand-ink);
+}
+.form-stat-card-label {
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+
+/* ── Small icon / small text utilities ───────────────────────── */
+.icon-xs  { font-size: .75rem; }
+.text-xs  { font-size: .75rem; }

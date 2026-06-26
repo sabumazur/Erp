@@ -6,7 +6,7 @@ All public functions assume they are called from within a request/view context
 where request.organization is already set.
 """
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -249,13 +249,20 @@ class QuotationService:
         if quotation.status != SalesDocument.Status.ACCEPTED:
             raise ValueError(_("Solo se pueden convertir cotizaciones aceptadas."))
 
+        customer = quotation.customer
+        today = date.today()
+        if customer.payment_term_id and customer.payment_term.days_due:
+            due_date = today + timedelta(days=customer.payment_term.days_due)
+        else:
+            due_date = quotation.due_date
+
         invoice = SalesDocument.objects.create(
             doc_type=SalesDocument.DocType.INVOICE,
             organization=quotation.organization,
-            customer=quotation.customer,
+            customer=customer,
             ncf_type=ncf_type,
-            issue_date=date.today(),
-            due_date=quotation.due_date,
+            issue_date=today,
+            due_date=due_date,
             payment_condition=quotation.payment_condition,
             currency=quotation.currency,
             exchange_rate=quotation.exchange_rate,
@@ -268,7 +275,7 @@ class QuotationService:
         # bulk_create bypasses the post_save signal, so recompute_totals() is
         # called once explicitly. quotation.items is already prefetch_related
         # by the caller (get_object_or_404 with prefetch_related("items")).
-        SalesDocumentItem.objects.bulk_create([
+        new_items = [
             SalesDocumentItem(
                 document=invoice,
                 item=item.item,
@@ -278,7 +285,10 @@ class QuotationService:
                 itbis_rate=item.itbis_rate,
             )
             for item in quotation.items.all()
-        ])
+        ]
+        for new_item in new_items:
+            new_item.compute()
+        SalesDocumentItem.objects.bulk_create(new_items)
         invoice.recompute_totals()
 
         # Mark quotation as converted

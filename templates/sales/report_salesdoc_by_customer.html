@@ -113,7 +113,7 @@
             {% elif inv.doc_type == 'SALE_ORDER' %}{% url 'sales:sale_order_detail' inv.pk as detail_url %}
             {% else %}{% url 'sales:invoice_detail' inv.pk as detail_url %}{% endif %}
             <a href="{{ detail_url }}" class="text-decoration-none text-dark">
-              <i class="bi bi-receipt me-1 text-muted no-print" style="font-size:.75rem"></i>{{ inv.display_number }}
+              <i class="bi bi-receipt me-1 text-muted no-print icon-xs"></i>{{ inv.display_number }}
             </a>
           </td>
           {% if multi_customer %}<td>{{ inv.customer.name }}</td>{% endif %}

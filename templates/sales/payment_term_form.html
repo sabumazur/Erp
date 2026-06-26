@@ -11,15 +11,18 @@
     <p class="app-header-sub">{% trans "Facturación" %}</p>
   </div>
   <div class="app-header-actions">
+    <button type="submit" form="payment-term-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
+    </button>
     <a href="{% url 'sales:payment_term_list' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+      {% trans "Cancelar" %}
     </a>
   </div>
 </div>
 
 <div class="row justify-content-center">
   <div class="col-lg-6">
-    <form method="post">
+    <form method="post" id="payment-term-form">
       {% csrf_token %}
       <div class="app-table-wrap mb-3">
         <div class="app-card-head">
@@ -30,14 +33,6 @@
         </div>
       </div>
 
-      <div class="app-form-bar">
-        <button type="submit" class="btn btn-sm btn-brand">
-          <i class="bi bi-floppy me-1"></i>{% trans "Guardar" %}
-        </button>
-        <a href="{% url 'sales:payment_term_list' %}" class="btn btn-outline-secondary btn-sm">
-          {% trans "Cancelar" %}
-        </a>
-      </div>
     </form>
   </div>
 </div>

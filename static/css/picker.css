@@ -7,12 +7,12 @@
 
 :root{
   --pk-ink:#1e2130;
-  --pk-ink-soft:#374151;
+  --pk-ink-soft:var(--text-secondary);
   --pk-muted:#6b7280;
   --pk-faint:#9ca3af;
   --pk-line:#e8eaee;
   --pk-line-soft:#f0f1f4;
-  --pk-bg-soft:#f9fafb;
+  --pk-bg-soft:var(--surface-muted);
   --pk-blue:#185FA5;
   --pk-blue-bg:#E6F1FB;
   --pk-blue-line:#cfe1f1;

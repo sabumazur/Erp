@@ -27,7 +27,7 @@
   border-radius: 0;
   padding: 9px 12px;
   font-size: .83rem;
-  color: #374151;
+  color: var(--text-secondary);
   box-shadow: none !important;
   outline: none !important;
 }
@@ -35,11 +35,11 @@
 
 /* Option list */
 .ts-dropdown .ts-dropdown-content { padding: 5px; max-height: 230px; }
-.ts-dropdown .option { border-radius: 7px; padding: 0; color: #374151; font-size: .85rem; }
+.ts-dropdown .option { border-radius: 7px; padding: 0; color: var(--text-secondary); font-size: .85rem; }
 .ts-dropdown .ts-opt-row { display:flex; align-items:center; gap:9px; padding:8px 10px; white-space:nowrap; }
 .ts-dropdown .ts-opt-label { flex: 1; }
 .ts-dropdown .ts-rate { font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:#9ca3af; }
-.ts-dropdown .option.active  { background:#f3f5f9; color:#374151; }
+.ts-dropdown .option.active  { background:#f3f5f9; color:var(--text-secondary); }
 .ts-dropdown .option.selected { background:#eef3fc; color:#185FA5; font-weight:600; }
 .ts-dropdown .option.selected .ts-rate { color:#3f6fd6; }
 .ts-dropdown .option.selected .ts-opt-row::after {

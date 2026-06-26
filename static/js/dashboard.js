@@ -39,11 +39,11 @@
         ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "#111827";
+        ctx.fillStyle = "#0F172A";
         ctx.font = "700 1.15rem 'IBM Plex Mono', 'Courier New', monospace";
         ctx.fillText(String(statusTotal), centerX, centerY - 6);
         ctx.fillStyle = "#6b7280";
-        ctx.font = "700 .58rem Manrope, sans-serif";
+        ctx.font = "700 .58rem Inter, sans-serif";
         ctx.fillText(getConfig("chartStatusTotalLabel", "Facturas").toUpperCase(), centerX, centerY + 15);
         ctx.restore();
       },
@@ -52,7 +52,7 @@
     var spCanvas = document.getElementById("salesPurchasesChart");
     if (spCanvas) {
       var spDatasets = [
-        { label: getConfig("chartInvoicedLabel", "Facturado"), data: invoiced, backgroundColor: "rgba(13,110,253,0.75)", borderRadius: 4 },
+        { label: getConfig("chartInvoicedLabel", "Facturado"), data: invoiced, backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4 },
       ];
       if (getConfig("hasPurchasingAccess", false)) {
         spDatasets.push({ label: getConfig("chartPurchasedLabel", "Comprado"), data: purchased, backgroundColor: "rgba(245,158,11,0.78)", borderRadius: 4 });
@@ -73,8 +73,8 @@
       data: {
         labels: months,
         datasets: [
-          { label: getConfig("chartInvoicedLabel", "Facturado"), data: invoiced, backgroundColor: "rgba(13,110,253,0.75)", borderRadius: 4 },
-          { label: getConfig("chartCollectedLabel", "Cobrado"), data: collected, backgroundColor: "rgba(25,135,84,0.75)", borderRadius: 4 },
+          { label: getConfig("chartInvoicedLabel", "Facturado"), data: invoiced, backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4 },
+          { label: getConfig("chartCollectedLabel", "Cobrado"), data: collected, backgroundColor: "rgba(5,150,105,0.75)", borderRadius: 4 },
         ],
       },
       options: {
@@ -122,7 +122,7 @@
     var agCanvas = document.getElementById("arApAgingChart");
     if (agCanvas) {
       var agDatasets = [
-        { label: getConfig("chartARLabel", "Por cobrar"), data: arAging, backgroundColor: "rgba(63,111,214,0.78)", borderRadius: 4 },
+        { label: getConfig("chartARLabel", "Por cobrar"), data: arAging, backgroundColor: "rgba(37,99,235,0.78)", borderRadius: 4 },
       ];
       if (getConfig("hasPurchasingAccess", false)) {
         agDatasets.push({ label: getConfig("chartAPLabel", "Por pagar"), data: apAging, backgroundColor: "rgba(217,119,6,0.80)", borderRadius: 4 });

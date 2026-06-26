@@ -28,7 +28,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1;
 }
@@ -57,7 +57,7 @@
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 /* ── Document paper card (detail pages) ─────────────────────── */
@@ -86,7 +86,7 @@
   padding: 12px 16px;
   background: #f8fafc;
   border-bottom: 1px solid #e5eaf1;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .doc-order-card-title {
@@ -141,7 +141,7 @@
   overflow: hidden;
   max-width: 360px;
 }
-.doc-head-meta-customer { font-weight: 600; color: #374151; overflow: hidden; text-overflow: ellipsis; }
+.doc-head-meta-customer { font-weight: 600; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
 
 /* Optional field chips inside the card header */
 .doc-head-optfields {
@@ -220,7 +220,7 @@
   margin-bottom: 6px;
   font-size: .78rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .doc-order-card-body .asteriskField {
@@ -235,7 +235,7 @@
   border-color: #d7dde6;
   border-radius: 7px;
   background-color: #fff;
-  color: #111827;
+  color: var(--text-primary);
   font-size: .86rem;
   transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease;
 }
@@ -317,7 +317,7 @@
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text-primary);
   line-height: 1;
 }
 
@@ -439,7 +439,7 @@
   border-bottom: 1px solid #f5f7fb;
   font-size: 0.875rem;
   vertical-align: middle;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .doc-items-table .table tbody tr:last-child td {
@@ -551,7 +551,7 @@ tr.dt-row-selected .dt-row-actions {
 }
 
 .dt-kebab-btn:hover {
-  color: #334155 !important;
+  color: var(--text-secondary) !important;
   background: #f1f5f9;
 }
 
@@ -707,7 +707,7 @@ tr.dt-row-selected:hover > td {
 }
 
 .dt-pill:hover {
-  color: #334155;
+  color: var(--text-secondary);
   background: #e2e8f0;
   text-decoration: none;
 }
@@ -761,7 +761,7 @@ tr.dt-row-selected:hover > td {
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  background: #f9fafb;
+  background: var(--surface-muted);
   border-top: 1px solid #dee2e6;
   padding: 14px 16px;
 }
@@ -778,7 +778,7 @@ tr.dt-row-selected:hover > td {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .document-footer-notes textarea {
@@ -916,9 +916,9 @@ tr.dt-row-selected:hover > td {
 .doc-lines-card .row-total {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
 }
-.doc-lines-card .row-subtotal { font-weight: 600; color: #1f2937; }
+.doc-lines-card .row-subtotal { font-weight: 600; color: var(--text-primary); }
 .doc-lines-card .row-itbis    { color: var(--muted); }
-.doc-lines-card .row-total    { font-weight: 700; color: #111827; }
+.doc-lines-card .row-total    { font-weight: 700; color: var(--text-primary); }
 
 /* catalog (search) button — softer, accent on hover */
 .doc-lines-card .item-row-main .btn-outline-secondary {
@@ -941,10 +941,10 @@ tr.dt-row-selected:hover > td {
 .doc-lines-card .item-row-desc .form-control {
   min-height: 34px;
   border: 1px solid transparent;
-  background: #f9fafb;
+  background: var(--surface-muted);
   border-radius: 7px;
   font-size: .82rem;
-  color: #1f2937;
+  color: var(--text-primary);
   padding: 6px 10px;
 }
 .doc-lines-card .item-row-desc .form-control:hover {
@@ -999,7 +999,7 @@ tr.dt-row-selected:hover > td {
   font-size: .95rem;
 }
 .doc-notes-txt { flex: 1; min-width: 0; }
-.doc-notes-title { display: block; font-size: .8rem; font-weight: 700; color: #1f2937; }
+.doc-notes-title { display: block; font-size: .8rem; font-weight: 700; color: var(--text-primary); }
 .doc-notes-hint  { display: block; font-size: .74rem; color: var(--muted); margin-top: 1px; }
 .doc-notes-badge {
   font-size: .64rem;
@@ -1325,7 +1325,7 @@ tr.dt-row-selected:hover > td {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-size: 1.05rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   margin-top: 3px;
 }
 .doc-inline-tot-cell--grand .doc-inline-tot-label {
@@ -1335,7 +1335,7 @@ tr.dt-row-selected:hover > td {
 .doc-inline-tot-cell--grand .doc-inline-tot-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 @media (max-width: 575.98px) {
   .doc-inline-totals { flex-direction: column; align-items: flex-end; gap: 10px; }

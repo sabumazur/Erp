@@ -328,7 +328,7 @@
         <div class="modal-body">
           <p class="text-muted small">{% trans "Seleccione el tipo de comprobante fiscal para la nueva factura." %}</p>
           <label class="form-label fw-semibold small">{% trans "Tipo de comprobante" %}</label>
-          <select name="ncf_type" class="form-select" data-tom="" data-placeholder="Seleccione tipo…" required>
+          <select name="ncf_type" class="form-select" required>
             {% for value, label in ncf_type_choices %}
               <option value="{{ value }}">{{ label }}</option>
             {% empty %}

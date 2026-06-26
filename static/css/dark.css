@@ -283,7 +283,7 @@
 
 /* App filter panel + form bar */
 [data-bs-theme="dark"] .app-filter-panel { background: var(--dm-s0); border-color: var(--dm-border); }
-[data-bs-theme="dark"] .app-form-bar     { background: var(--dm-s1); border-top-color: var(--dm-border); }
+[data-bs-theme="dark"] .app-form-bar     { background: rgba(30,33,48,0.97); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top-color: var(--dm-border); box-shadow: 0 -2px 16px rgba(0,0,0,.2); }
 
 /* Generic link variant */
 [data-bs-theme="dark"] .link-brand       { color: var(--dm-t2); }

@@ -12,7 +12,7 @@
     {% if item.code %}<code class="text-muted me-1">{{ item.code }}</code>{% endif %}
     {{ item.name }}
   </div>
-  <div class="text-muted" style="font-size:.75rem">
+  <div class="text-muted text-xs">
     {{ item.get_unit_display }} &middot; {{ item.unit_price|floatformat:2|intcomma }} &middot; {{ item.get_itbis_rate_display }}
   </div>
 </button>

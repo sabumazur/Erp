@@ -24,7 +24,7 @@ body {
   font-size: .8rem;
   font-weight: 600;
   margin-bottom: .3rem;
-  color: #495057;
+  color: var(--text-secondary);
 }
 
 /* Inputs & selects: sm-equivalent sizing globally */
@@ -57,6 +57,10 @@ textarea.form-control {
   font-size: .75rem;
 }
 
+.app-breadcrumb { font-size: .75rem; }
+
+.rnc-lookup-row { min-height: 1.6rem; }
+
 /* ═══════════════════════════════════════════════════════════════
    SabSys ERP — Commercial Module Design System
    Quotation · Sale Order · Invoice
@@ -65,7 +69,7 @@ textarea.form-control {
 /* ── Global typography ──────────────────────────────────────── */
 
 body {
-  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 0.875rem;
   letter-spacing: 0;
 }
@@ -77,55 +81,13 @@ code,
   letter-spacing: 0 !important;
 }
 
-/* ── Module accent CSS variable system ──────────────────────── */
+/* ── Module accent — unified brand navy ──────────────────────── */
 
 :root {
-  --module-accent: #0d6efd;
-  --module-accent-dark: #0a58ca;
-  --module-accent-subtle: rgba(13, 110, 253, 0.07);
-  --module-accent-border: rgba(13, 110, 253, 0.18);
-}
-
-[data-module="quotation"] {
-  --module-accent: #f59e0b;
-  --module-accent-dark: #d97706;
-  --module-accent-subtle: rgba(245, 158, 11, 0.07);
-  --module-accent-border: rgba(245, 158, 11, 0.22);
-}
-
-[data-module="sale-order"] {
-  --module-accent: #6366f1;
-  --module-accent-dark: #4f46e5;
-  --module-accent-subtle: rgba(99, 102, 241, 0.07);
-  --module-accent-border: rgba(99, 102, 241, 0.22);
-}
-
-[data-module="invoice"] {
-  --module-accent: #10b981;
-  --module-accent-dark: #059669;
-  --module-accent-subtle: rgba(16, 185, 129, 0.07);
-  --module-accent-border: rgba(16, 185, 129, 0.22);
-}
-
-[data-module="payment"] {
-  --module-accent: #0891b2;
-  --module-accent-dark: #0e7490;
-  --module-accent-subtle: rgba(8, 145, 178, 0.07);
-  --module-accent-border: rgba(8, 145, 178, 0.22);
-}
-
-[data-module="customer"] {
-  --module-accent: #7c3aed;
-  --module-accent-dark: #6d28d9;
-  --module-accent-subtle: rgba(124, 58, 237, 0.07);
-  --module-accent-border: rgba(124, 58, 237, 0.22);
-}
-
-[data-module="item"] {
-  --module-accent: #ea580c;
-  --module-accent-dark: #c2410c;
-  --module-accent-subtle: rgba(234, 88, 12, 0.07);
-  --module-accent-border: rgba(234, 88, 12, 0.22);
+  --module-accent:        #1e2130;
+  --module-accent-dark:   #2a3050;
+  --module-accent-subtle: rgba(30, 33, 48, 0.07);
+  --module-accent-border: rgba(30, 33, 48, 0.18);
 }
 
 /* Page header */
@@ -134,7 +96,7 @@ code,
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: 14px;
-  border-bottom: 2px solid #1e2130;
+  border-bottom: 2px solid var(--brand-ink);
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
   gap: .5rem;
@@ -143,14 +105,14 @@ code,
 .app-header-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   letter-spacing: 0;
   margin: 0;
 }
 
 .app-header-sub {
   font-size: .8rem;
-  color: #6b7280;
+  color: var(--muted);
   margin: 3px 0 0;
 }
 
@@ -207,7 +169,7 @@ code,
 
 .settings-panel-title {
   margin: 0;
-  color: #111827;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -215,7 +177,7 @@ code,
 
 .settings-panel-sub {
   margin: .15rem 0 0;
-  color: #6b7280;
+  color: var(--muted);
   font-size: .8rem;
 }
 
@@ -234,7 +196,7 @@ code,
   align-items: center;
   gap: .4rem;
   min-width: 0;
-  color: #64748b;
+  color: var(--muted);
   font-size: .8rem;
   font-weight: 600;
   line-height: 1.2;
@@ -243,14 +205,14 @@ code,
 
 .settings-secondary-link:hover,
 .settings-secondary-link:focus {
-  color: #1e2130;
+  color: var(--brand-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .settings-secondary-link i {
   flex: 0 0 auto;
-  color: #94a3b8;
+  color: var(--muted-2);
 }
 
 .settings-secondary-link span {
@@ -263,7 +225,7 @@ code,
 }
 
 .settings-aside-title {
-  color: #374151;
+  color: var(--text-secondary);
   font-size: .72rem;
   font-weight: 700;
   letter-spacing: .08em;
@@ -283,7 +245,7 @@ code,
   display: flex;
   align-items: flex-start;
   gap: .5rem;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: .8rem;
   line-height: 1.35;
 }
@@ -299,7 +261,7 @@ code,
   padding: .75rem;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  background: #f9fafb;
+  background: var(--surface-muted);
 }
 
 .password-strength-track {
