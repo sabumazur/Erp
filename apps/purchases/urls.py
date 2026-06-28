@@ -17,6 +17,7 @@ from .views import (
     PurchaseOrderDeleteView,
     PurchaseOrderCloneView,
     PurchaseOrderPrintView,
+    PurchaseOrderEmailView,
     # Supplier Invoices
     SupplierInvoiceListView,
     SupplierInvoiceCreateView,
@@ -70,6 +71,7 @@ urlpatterns = [
     path("purchases/purchase-orders/<uuid:pk>/delete/",  PurchaseOrderDeleteView.as_view(),  name="po_delete"),
     path("purchases/purchase-orders/<uuid:pk>/clone/",   PurchaseOrderCloneView.as_view(),   name="po_clone"),
     path("purchases/purchase-orders/<uuid:pk>/print/",   PurchaseOrderPrintView.as_view(),   name="po_print"),
+    path("purchases/purchase-orders/<uuid:pk>/email/",   PurchaseOrderEmailView.as_view(),   name="po_email"),
 
     # ── Supplier Invoices ──────────────────────────────────────────────────────
     path("purchases/supplier-invoices/",                     SupplierInvoiceListView.as_view(),    name="supplier_invoice_list"),

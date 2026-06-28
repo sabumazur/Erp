@@ -13,6 +13,7 @@ from apps.core.search import fts_search
 from ..forms import PurchaseOrderForm, PurchaseDocumentItemFormSet, PurchaseDocumentItemFormSetCreate
 from ..models import PurchaseDocument, PurchaseDocumentItem
 from ..services import PurchaseOrderService
+from ..email import send_purchase_order_email
 
 
 class PurchaseOrderListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, TemplateView):
@@ -313,3 +314,30 @@ class PurchaseOrderPrintView(ERPBaseViewMixin, View):
                 "org": po.organization,
             },
         )
+
+
+class PurchaseOrderEmailView(ERPBaseViewMixin, View):
+    required_module = "purchasing"
+
+    def post(self, request, pk):
+        po = get_object_or_404(
+            PurchaseDocument.purchase_orders, pk=pk, organization=request.organization
+        )
+        if po.status != PurchaseDocument.Status.CONFIRMED:
+            messages.warning(request, _("Solo se puede enviar una orden confirmada."))
+            return redirect("purchases:po_detail", pk=po.pk)
+        try:
+            sent = send_purchase_order_email(po, request)
+            if sent:
+                messages.success(
+                    request,
+                    _("Correo enviado a %(email)s.") % {"email": po.supplier.email},
+                )
+            else:
+                messages.warning(request, _("El proveedor no tiene correo registrado."))
+        except Exception as exc:
+            messages.error(
+                request,
+                _("No se pudo enviar el correo: %(error)s") % {"error": str(exc)},
+            )
+        return redirect("purchases:po_detail", pk=po.pk)

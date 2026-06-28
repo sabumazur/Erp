@@ -16,6 +16,7 @@ from .purchase_orders import (
     PurchaseOrderDeleteView,
     PurchaseOrderCloneView,
     PurchaseOrderPrintView,
+    PurchaseOrderEmailView,
 )
 from .supplier_invoices import (
     SupplierInvoiceListView,
