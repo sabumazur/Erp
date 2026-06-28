@@ -31,11 +31,11 @@ class ItemAdmin(ERPHistoryAdmin):
 
 @admin.register(ItemCodeSequence)
 class ItemCodeSequenceAdmin(admin.ModelAdmin):
-    list_display  = ["organization", "prefix", "current_seq", "next_code", "updated_at"]
+    list_display  = ["organization", "item_type", "prefix", "current_seq", "next_code", "updated_at"]
+    list_filter   = ["item_type"]
     readonly_fields = ["current_seq", "updated_at", "next_code"]
-    fields        = ["organization", "prefix", "current_seq", "next_code", "updated_at"]
+    fields        = ["organization", "item_type", "prefix", "current_seq", "next_code", "updated_at"]
 
     def next_code(self, obj):
-        """Preview of the next code that would be generated."""
         return f"{obj.prefix}-{obj.current_seq + 1:04d}"
     next_code.short_description = _("próximo código")
