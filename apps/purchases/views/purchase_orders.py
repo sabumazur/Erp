@@ -318,6 +318,7 @@ class PurchaseOrderPrintView(ERPBaseViewMixin, View):
 
 class PurchaseOrderEmailView(ERPBaseViewMixin, View):
     required_module = "purchasing"
+    admin_required = True
 
     def post(self, request, pk):
         po = get_object_or_404(
