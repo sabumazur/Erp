@@ -15,26 +15,33 @@ from apps.core.search import fts_search
 
 class ItemCodeSequence(models.Model):
     """
-    Atomic auto-increment counter for item codes, one row per organization.
+    Atomic auto-increment counter for item codes.
+    One row per (organization, item_type).
 
-    Generates codes like "ART-0001", "ART-0002", …
-    The prefix is editable per organization (e.g. "PRD", "VTA").
-
-    Only used when an Item with item_type SALE or BOTH is saved without a
-    manually supplied code.
+    Generates codes like "VTA-0001" (SALE), "COM-0001" (PURCHASE), "ART-0001" (BOTH).
+    Prefix is editable per row.
     """
 
-    organization = models.OneToOneField(
+    TYPE_PREFIXES = {
+        "SALE": "VTA",
+        "PURCHASE": "COM",
+        "BOTH": "ART",
+    }
+
+    organization = models.ForeignKey(
         "accounts.Organization",
         on_delete=models.CASCADE,
-        related_name="item_code_sequence",
+        related_name="item_code_sequences",
         verbose_name=_("organización"),
+    )
+    item_type = models.CharField(
+        max_length=10,
+        verbose_name=_("tipo de artículo"),
     )
     prefix = models.CharField(
         max_length=5,
-        default="ART",
         verbose_name=_("prefijo"),
-        help_text=_("Prefijo del código generado automáticamente (ej. ART, PRD, VTA)."),
+        help_text=_("Prefijo del código generado automáticamente (ej. VTA, COM, ART)."),
     )
     current_seq = models.PositiveIntegerField(
         default=0,
@@ -45,26 +52,34 @@ class ItemCodeSequence(models.Model):
     class Meta:
         verbose_name = _("secuencia de códigos de artículo")
         verbose_name_plural = _("secuencias de códigos de artículo")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "item_type"],
+                name="unique_item_code_sequence_per_org_type",
+            )
+        ]
 
     def __str__(self):
-        return f"{self.organization} · {self.prefix}-{self.current_seq:04d}"
+        return f"{self.organization} · {self.item_type} · {self.prefix}-{self.current_seq:04d}"
 
     @classmethod
-    def generate(cls, organization) -> str:
+    def generate(cls, organization, item_type: str) -> str:
         """
-        Atomically reserve and return the next item code for the organization.
+        Atomically reserve and return the next item code for (organization, item_type).
 
         Uses SELECT FOR UPDATE to prevent duplicates under concurrent saves.
-        Format: PREFIX-NNNN  (e.g. ART-0001)
-        Pads to 4 digits; expands naturally beyond 9999 (ART-10000, etc.).
+        Format: PREFIX-NNNN  (e.g. VTA-0001)
+        Pads to 4 digits; expands naturally beyond 9999 (VTA-10000, etc.).
 
         Skips any sequence values whose code already exists as a manual entry
         (including soft-deleted rows) to avoid collisions with hand-entered codes.
         """
+        default_prefix = cls.TYPE_PREFIXES.get(item_type, "ART")
         with transaction.atomic():
             seq, _ = cls.objects.select_for_update().get_or_create(
                 organization=organization,
-                defaults={"prefix": "ART", "current_seq": 0},
+                item_type=item_type,
+                defaults={"prefix": default_prefix, "current_seq": 0},
             )
             while True:
                 seq.current_seq += 1
@@ -90,8 +105,7 @@ class Item(ERPBaseModel):
       - PURCHASE → available in purchase orders (future)
       - BOTH     → available everywhere (default)
 
-    Codes are auto-generated for SALE and BOTH items when left blank.
-    PURCHASE-only items keep code optional/manual.
+    Codes are auto-generated for SALE, PURCHASE, and BOTH items when left blank.
 
     The `item` FK on SalesDocumentItem is optional; name, unit_price, and
     itbis_rate are always editable — the FK is a catalog snapshot reference.
@@ -103,7 +117,7 @@ class Item(ERPBaseModel):
         BOTH = "BOTH", _("Venta y Compra")
 
     # Types that trigger auto-code generation
-    AUTO_CODE_TYPES = {ItemType.SALE, ItemType.BOTH}
+    AUTO_CODE_TYPES = {ItemType.SALE, ItemType.PURCHASE, ItemType.BOTH}
 
     class Unit(models.TextChoices):
         UNIT = "UNIT", _("Unidad")
@@ -227,7 +241,7 @@ class Item(ERPBaseModel):
         for attempt in range(5):
             try:
                 with transaction.atomic():
-                    self.code = ItemCodeSequence.generate(self.organization)
+                    self.code = ItemCodeSequence.generate(self.organization, self.item_type)
                     return super().save(*args, **kwargs)
             except IntegrityError:
                 self.code = ""
