@@ -19,7 +19,8 @@ class TestItemModel:
         assert str(item) == f"[ART-001] {item.name}"
 
     def test_str_without_code(self):
-        item = ItemFactory(code="", item_type=Item.ItemType.PURCHASE)
+        item = ItemFactory()  # gets a TST-NNNN code from factory sequence
+        item.code = ""  # clear in memory — tests __str__ path without re-saving
         assert str(item) == item.name
 
     # ── ERPBaseModel fields ───────────────────────────────────────────────
@@ -107,10 +108,18 @@ class TestItemModel:
         )
         assert item.code != ""
 
-    def test_purchase_item_no_auto_code(self):
-        item = ItemFactory(code="", item_type=Item.ItemType.PURCHASE)
-        item.refresh_from_db()
-        assert item.code == ""
+    def test_purchase_item_gets_auto_code(self):
+        org = OrganizationFactory()
+        item = Item.objects.create(
+            organization=org,
+            name="Purchase Auto Code Test",
+            item_type=Item.ItemType.PURCHASE,
+            unit=Item.Unit.UNIT,
+            unit_price=Decimal("0.00"),
+            itbis_rate=Item.ITBISRate.RATE_18,
+        )
+        assert item.code != ""
+        assert item.code.startswith("COM-")
 
     def test_existing_code_not_overwritten_on_resave(self):
         item = ItemFactory(code="MANUAL-01")
@@ -122,7 +131,7 @@ class TestItemModel:
     def test_auto_code_skips_manual_code_in_sequence(self):
         org = OrganizationFactory()
         # reserve a manual code via the sequence generator to avoid hard-coded collisions
-        manual = ItemCodeSequence.generate(org)
+        manual = ItemCodeSequence.generate(org, "SALE")
         ItemFactory(organization=org, code=manual)
         item = Item.objects.create(
             organization=org,
@@ -137,7 +146,7 @@ class TestItemModel:
 
     def test_auto_code_retries_generated_code_conflict(self):
         org = OrganizationFactory()
-        manual = ItemCodeSequence.generate(org)
+        manual = ItemCodeSequence.generate(org, "SALE")
         ItemFactory(organization=org, code=manual)
         with patch.object(
             ItemCodeSequence,
@@ -153,6 +162,59 @@ class TestItemModel:
         prefix, seq = manual.split("-", 1)
         expected = f"{prefix}-{int(seq)+1:04d}"
         assert item.code == expected
+
+    def test_auto_code_sale_uses_vta_prefix(self):
+        org = OrganizationFactory()
+        item = Item.objects.create(
+            organization=org,
+            name="Sale Item",
+            item_type=Item.ItemType.SALE,
+            unit=Item.Unit.UNIT,
+            unit_price=Decimal("50.00"),
+            itbis_rate=Item.ITBISRate.RATE_18,
+        )
+        assert item.code.startswith("VTA-")
+
+    def test_auto_code_purchase_uses_com_prefix(self):
+        org = OrganizationFactory()
+        item = Item.objects.create(
+            organization=org,
+            name="Purchase Item",
+            item_type=Item.ItemType.PURCHASE,
+            unit=Item.Unit.UNIT,
+            unit_price=Decimal("0.00"),
+            itbis_rate=Item.ITBISRate.RATE_18,
+        )
+        assert item.code.startswith("COM-")
+
+    def test_auto_code_both_uses_art_prefix(self):
+        org = OrganizationFactory()
+        item = Item.objects.create(
+            organization=org,
+            name="Both Item",
+            item_type=Item.ItemType.BOTH,
+            unit=Item.Unit.UNIT,
+            unit_price=Decimal("50.00"),
+            itbis_rate=Item.ITBISRate.RATE_18,
+        )
+        assert item.code.startswith("ART-")
+
+    def test_auto_code_sequences_independent_per_type(self):
+        org = OrganizationFactory()
+        sale_item = Item.objects.create(
+            organization=org,
+            name="Sale",
+            item_type=Item.ItemType.SALE,
+            unit_price=Decimal("10.00"),
+        )
+        purchase_item = Item.objects.create(
+            organization=org,
+            name="Purchase",
+            item_type=Item.ItemType.PURCHASE,
+            unit_price=Decimal("0.00"),
+        )
+        assert sale_item.code == "VTA-0001"
+        assert purchase_item.code == "COM-0001"
 
     @pytest.mark.parametrize("field", ["unit_price", "cost_price"])
     def test_negative_price_fails_model_validation(self, field):
@@ -177,36 +239,54 @@ class TestItemCodeSequence:
 
     def test_generate_creates_sequence_on_first_call(self):
         org = OrganizationFactory()
-        code = ItemCodeSequence.generate(org)
-        assert ItemCodeSequence.objects.filter(organization=org).exists()
-        assert code.startswith("ART-")
+        code = ItemCodeSequence.generate(org, "SALE")
+        assert ItemCodeSequence.objects.filter(organization=org, item_type="SALE").exists()
+        assert code.startswith("VTA-")
 
     def test_generate_returns_formatted_code(self):
         org = OrganizationFactory()
-        code = ItemCodeSequence.generate(org)
+        code = ItemCodeSequence.generate(org, "SALE")
         assert "-" in code
         prefix, seq = code.split("-", 1)
         assert seq.isdigit()
 
     def test_generate_increments_sequence(self):
         org = OrganizationFactory()
-        code1 = ItemCodeSequence.generate(org)
-        code2 = ItemCodeSequence.generate(org)
+        code1 = ItemCodeSequence.generate(org, "SALE")
+        code2 = ItemCodeSequence.generate(org, "SALE")
         assert code1 != code2
-        seq = ItemCodeSequence.objects.get(organization=org)
+        seq = ItemCodeSequence.objects.get(organization=org, item_type="SALE")
         assert seq.current_seq == 2
 
     def test_generate_isolated_per_org(self):
         org1 = OrganizationFactory()
         org2 = OrganizationFactory()
-        ItemCodeSequence.generate(org1)
-        ItemCodeSequence.generate(org1)
-        code2 = ItemCodeSequence.generate(org2)
+        ItemCodeSequence.generate(org1, "SALE")
+        ItemCodeSequence.generate(org1, "SALE")
+        code2 = ItemCodeSequence.generate(org2, "SALE")
         _, seq_str = code2.split("-", 1)
         assert int(seq_str) == 1
 
+    def test_generate_isolated_per_type(self):
+        org = OrganizationFactory()
+        ItemCodeSequence.generate(org, "SALE")
+        ItemCodeSequence.generate(org, "SALE")
+        code = ItemCodeSequence.generate(org, "PURCHASE")
+        _, seq_str = code.split("-", 1)
+        assert int(seq_str) == 1
+
+    def test_generate_purchase_uses_com_prefix(self):
+        org = OrganizationFactory()
+        code = ItemCodeSequence.generate(org, "PURCHASE")
+        assert code.startswith("COM-")
+
+    def test_generate_both_uses_art_prefix(self):
+        org = OrganizationFactory()
+        code = ItemCodeSequence.generate(org, "BOTH")
+        assert code.startswith("ART-")
+
     def test_str(self):
         org = OrganizationFactory()
-        ItemCodeSequence.generate(org)
-        seq = ItemCodeSequence.objects.get(organization=org)
+        ItemCodeSequence.generate(org, "SALE")
+        seq = ItemCodeSequence.objects.get(organization=org, item_type="SALE")
         assert str(seq) != ""
