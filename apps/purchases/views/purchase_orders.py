@@ -295,3 +295,21 @@ class PurchaseOrderCloneView(ERPBaseViewMixin, View):
         new_po.recompute_totals()
         messages.success(request, _("Orden clonada correctamente. Revise y confirme el nuevo borrador."))
         return redirect("purchases:po_edit", pk=new_po.pk)
+
+
+class PurchaseOrderPrintView(ERPBaseViewMixin, View):
+    required_module = "purchasing"
+
+    def get(self, request, pk):
+        po = get_object_or_404(
+            PurchaseDocument.objects.select_related("supplier", "organization"),
+            pk=pk, organization=request.organization, doc_type=PurchaseDocument.DocType.PURCHASE_ORDER,
+        )
+        return render(
+            request, "purchases/purchase_order_print.html",
+            {
+                "po": po,
+                "items": po.items.all(),
+                "org": po.organization,
+            },
+        )

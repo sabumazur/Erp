@@ -324,6 +324,8 @@ Sends HTML emails with inline org logo (base64 data URI, no external fetch). All
 
 Shared helper `_pdf_bytes(template, context, request)` renders any print template to PDF via WeasyPrint; returns `None` on `ImportError`. All three PDF helpers (`_invoice_pdf_bytes`, `_quotation_pdf_bytes`, `_sale_order_pdf_bytes`) delegate to it.
 
+**Print templates** — `invoice_print.html`, `quotation_print.html`, `sale_order_print.html`, `purchases/purchase_order_print.html` are standalone HTML pages (no `base.html`). All load `static/css/print-doc.css` + Google Fonts Inter/IBM Plex Mono. Set `data-auto-print="true"` on `<body>` to trigger `window.print()` on load. PO print URL: `purchases:po_print`.
+
 Email templates embed logo as `data:image/...;base64,...` so email clients don't need to fetch external URLs.
 
 ### HTMX document-form views (`apps/sales/views/htmx.py`)
@@ -383,6 +385,22 @@ metric tile (dashboard + list pages). The ~10 report templates deliberately keep
 compact, centered, print-tuned `.app-metric-card` tile (icon-less, dense) — by design,
 not a pending migration. Shim/rule for both in `components.css`.
 
+### CSS file map (`static/css/`)
+
+| File | Purpose |
+|------|---------|
+| `app.css` | Page headers (`.app-header`), settings panels, profile, form bar |
+| `components.css` | KPI cards (`.db-kpi`), badges, shared components |
+| `dark.css` | Dark mode overrides — loaded last in `base.html`, targets `[data-bs-theme="dark"]` |
+| `documents.css` | Document form + detail classes (`.doc-order-card`, `.doc-lines-card`, `.doc-stamp-*`) |
+| `print-doc.css` | Standalone print template layout (invoice, quotation, sale order, PO) |
+| `dashboard.css` | Dashboard-only components |
+| `picker.css` | Item/customer/supplier picker modals |
+| `shell.css` | Sidebar, topbar, shell layout |
+| `slate-list.css` | `.dt-slate` datatable skin |
+
+**Dark mode** — `data-bs-theme` attribute on `<html>` toggles theme. Persisted in `localStorage` key `sabsys-theme`. Inline script in `base.html` reads it on load (before paint) to avoid flash. `dark.css` overrides Bootstrap tokens + SabSys custom vars; all dark rules use CSS vars defined in the §0 palette block at the top of the file — change palette there, not per-rule.
+
 ### Test factories
 
 All factories in `apps/accounts/tests/factories.py` + `apps/sales/tests/factories.py` use `@mute_signals(post_save)` to suppress `create_default_organization`. Signal tests call `User.objects.create_user()` directly.
@@ -403,7 +421,7 @@ HTMX-aware: `request.htmx` → partial response with `HX-Trigger` instead of red
 
 ### Items app (`apps/items/`)
 
-`Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for `SALE`/`BOTH` via `ItemCodeSequence.generate()` if blank — generation retries up to 5× on uniqueness race (checks `all_objects` including soft-deleted). `cost_price` nullable; `margin` valid only when set. `unit_price` and `cost_price` have `MinValueValidator(0.00)`. `InvoiceItem` FK to `Item` optional — line items can be free-text.
+`Item` has `ItemType` discriminator (`SALE`, `PURCHASE`, `BOTH`). Codes auto-generated for all types via `ItemCodeSequence.generate(org, item_type)` if blank — one counter per `(org, item_type)`, default prefixes `SALE→VTA`, `PURCHASE→COM`, `BOTH→ART`. Generation retries up to 5× on uniqueness race (checks `all_objects` including soft-deleted). `cost_price` nullable; `margin` valid only when set. `unit_price` and `cost_price` have `MinValueValidator(0.00)`. `InvoiceItem` FK to `Item` optional — line items can be free-text.
 
 Search: GIN trgm on `name`/`code` (migration `items/0006`); item list uses `fts_search` with `fts_fields=["name"]`, `trgm_fields=["code"]`. `default_supplier` FK to `purchases.Supplier` (nullable, `SET_NULL`); auto-set on `SupplierInvoiceService.confirm()` if not already set.
 

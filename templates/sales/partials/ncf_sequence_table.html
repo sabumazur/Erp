@@ -39,14 +39,14 @@
               {% elif seq.remaining < 100 %}
                 <span class="amt neg">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% elif seq.remaining < 500 %}
-                <span class="amt" style="color:#856404">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
+                <span class="amt num-warn">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% elif seq.current_seq == 0 %}
                 <span class="ref">{% trans "Sin usar" %}</span>
               {% else %}
                 <span class="amt pos">{{ seq.remaining|intcomma }} {% trans "disponibles" %}</span>
               {% endif %}
             </div>
-            <div class="rounded" style="height:4px;background:rgba(0,0,0,.08);overflow:hidden">
+            <div class="rounded" style="height:4px;background:var(--hairline-soft);overflow:hidden">
               {% if seq.remaining < 100 %}
                 <div class="rounded" style="height:100%;width:{{ seq.pct_used }}%;background:#dc2626"></div>
               {% elif seq.remaining < 500 %}
@@ -72,8 +72,8 @@
         {% empty %}
         <tr>
           <td colspan="4" class="py-5 text-center text-muted">
-            <i class="bi bi-upc-scan d-block mb-2" style="font-size:1.5rem;color:#d1d5db"></i>
-            <div class="fw-semibold mb-1" style="font-size:.9rem;color:#374151">{% trans "Sin secuencias registradas" %}</div>
+            <i class="bi bi-upc-scan d-block mb-2 text-muted" style="font-size:1.5rem"></i>
+            <div class="fw-semibold mb-1" style="font-size:.9rem">{% trans "Sin secuencias registradas" %}</div>
             <div style="font-size:.82rem">{% trans "Crea tu primera secuencia NCF con el botón de arriba." %}</div>
           </td>
         </tr>

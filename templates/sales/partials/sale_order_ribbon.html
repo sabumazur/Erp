@@ -23,6 +23,14 @@
 
 <span class="dt-ribbon-sep"></span>
 
+<button type="button" class="btn btn-outline-secondary"
+        :disabled="!canAct" :class="{'disabled': !canAct}"
+        @click="canAct && window.open(document.querySelector('tr.dt-row-selected [data-action=print]')?.href, '_blank')">
+  <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
+</button>
+
+<span class="dt-ribbon-sep"></span>
+
 <a href="{% url 'sales:sale_order_consolidate' %}" class="btn btn-outline-secondary">
   <i class="bi bi-receipt me-1"></i>{% trans "Consolidar" %}
 </a>

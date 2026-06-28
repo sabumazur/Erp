@@ -35,6 +35,11 @@
             </a>
           </li>
           <li>
+            <a class="dropdown-item" href="{% url 'sales:sale_order_print' row.pk %}" data-action="print" target="_blank">
+              <i class="bi bi-printer me-2"></i>{% trans "Imprimir" %}
+            </a>
+          </li>
+          <li>
             {% if row.status == 'DRAFT' %}
               <a class="dropdown-item" href="{% url 'sales:sale_order_edit' row.pk %}" data-action="edit">
                 <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}

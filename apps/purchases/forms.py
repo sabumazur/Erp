@@ -413,7 +413,7 @@ PurchaseDocumentItemFormSet = inlineformset_factory(
     PurchaseDocumentItem,
     form=PurchaseDocumentItemForm,
     fields=["item", "description", "quantity", "unit_price", "itbis_rate", "sort_order"],
-    extra=1,
+    extra=0,
     can_delete=True,
     min_num=0,
 )

@@ -1205,7 +1205,8 @@ a.db-kpi:focus-visible {
 /* ── KPI stat strip (Resumen de cuenta) ──────────────────── */
 .kv-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 1px;
   margin: 14px 0 16px;
   background: var(--hairline-soft);
@@ -1279,6 +1280,8 @@ a.db-kpi:focus-visible {
 
 @media (max-width: 575.98px) {
   .kv-stats {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
     grid-template-columns: repeat(2, 1fr);
   }
 }

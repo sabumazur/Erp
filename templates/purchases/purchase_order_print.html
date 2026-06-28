@@ -1,0 +1,161 @@
+{% load i18n humanize static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% trans "Orden de Compra" %} {{ po.number|default:"Borrador" }} – {{ org.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/print-doc.css' %}">
+</head>
+<body data-auto-print="true">
+
+  <button class="print-btn no-print" onclick="window.print()">
+    {% trans "Imprimir" %}
+  </button>
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div>
+      <div class="org-name">{{ org.name }}</div>
+      <div class="org-meta">
+        {% if org.tax_id %}RNC {{ org.tax_id }}{% endif %}
+        {% if org.address %}&nbsp;·&nbsp;{{ org.address }}{% endif %}
+      </div>
+      <div class="doc-title">
+        <h1>{% trans "Orden de Compra" %}</h1>
+        <div class="doc-number">{{ po.number|default:"Borrador" }}</div>
+      </div>
+    </div>
+    {% if org.logo %}
+    <div class="doc-logo">
+      <img src="{{ org.logo.url }}" alt="{{ org.name }}">
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Parties -->
+  <div class="parties">
+    <div class="party">
+      <div class="party-label">{% trans "Proveedor" %}</div>
+      <div class="party-name">{{ po.supplier.name }}</div>
+      {% if po.supplier.rnc_cedula %}
+        <div class="party-meta">{{ po.supplier.get_id_type_display }}: {{ po.supplier.rnc_cedula }}</div>
+      {% endif %}
+      {% if po.supplier.address %}
+        <div class="party-meta">{{ po.supplier.address }}</div>
+      {% endif %}
+    </div>
+    <div class="party">
+      <div class="party-label">{% trans "Emisor" %}</div>
+      <div class="party-name">{{ org.name }}</div>
+      {% if org.tax_id %}<div class="party-meta">RNC: {{ org.tax_id }}</div>{% endif %}
+      {% if org.phone %}<div class="party-meta">{{ org.phone }}</div>{% endif %}
+    </div>
+  </div>
+
+  <!-- Dates and metadata -->
+  <div class="doc-meta">
+    <div class="meta-item">
+      <div class="meta-label">{% trans "Fecha emisión" %}</div>
+      <div class="meta-value">{{ po.issue_date|date:"d/m/Y" }}</div>
+    </div>
+    {% if po.expected_date %}
+    <div class="meta-item">
+      <div class="meta-label">{% trans "Fecha esperada" %}</div>
+      <div class="meta-value">{{ po.expected_date|date:"d/m/Y" }}</div>
+    </div>
+    {% endif %}
+    {% if po.currency != "DOP" %}
+    <div class="meta-item">
+      <div class="meta-label">{% trans "Moneda" %}</div>
+      <div class="meta-value">{{ po.currency }} @ {{ po.exchange_rate }}</div>
+    </div>
+    {% endif %}
+    <div class="meta-item">
+      <div class="meta-label">{% trans "Estado" %}</div>
+      <div class="meta-value">{{ po.get_status_display }}</div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <table>
+    <thead>
+      <tr>
+        <th>{% trans "Descripción" %}</th>
+        <th class="text-end" style="width:70px">{% trans "Cant." %}</th>
+        <th class="text-end" style="width:100px">{% trans "P. Unit." %}</th>
+        <th class="text-center" style="width:70px">{% trans "ITBIS" %}</th>
+        <th class="text-end" style="width:100px">{% trans "Subtotal" %}</th>
+        <th class="text-end" style="width:110px">{% trans "Total" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.description }}</td>
+        <td class="text-end">{{ item.quantity|floatformat:"-4" }}</td>
+        <td class="text-end">{{ item.unit_price|floatformat:2|intcomma }}</td>
+        <td class="text-center">{{ item.get_itbis_rate_display }}</td>
+        <td class="text-end">{{ item.line_total|floatformat:2|intcomma }}</td>
+        <td class="text-end">{{ item.line_total_with_itbis|floatformat:2|intcomma }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals -->
+  <div class="totals-wrap">
+    <table class="totals-table">
+      <tr>
+        <td>{% trans "Subtotal" %}</td>
+        <td><span class="cur">{{ po.currency }}</span>{{ po.subtotal|floatformat:2|intcomma }}</td>
+      </tr>
+      {% if po.itbis_18 %}
+      <tr>
+        <td>{% trans "ITBIS 18%" %}</td>
+        <td><span class="cur">{{ po.currency }}</span>{{ po.itbis_18|floatformat:2|intcomma }}</td>
+      </tr>
+      {% endif %}
+      {% if po.itbis_16 %}
+      <tr>
+        <td>{% trans "ITBIS 16%" %}</td>
+        <td><span class="cur">{{ po.currency }}</span>{{ po.itbis_16|floatformat:2|intcomma }}</td>
+      </tr>
+      {% endif %}
+      <tr class="grand">
+        <td>{% trans "TOTAL" %}</td>
+        <td><span class="cur">{{ po.currency }}</span>{{ po.total|floatformat:2|intcomma }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Notes -->
+  {% if po.notes %}
+  <div class="footer-notes">
+    <div>
+      <div class="note-label">{% trans "Notas" %}</div>
+      <div class="note-text">{{ po.notes }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Signature block -->
+  <div class="signature-row">
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <div class="signature-label">{% trans "Autorizado por" %}</div>
+    </div>
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <div class="signature-label">{% trans "Recibido / Firmado por" %}</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    {{ org.name }}{% if org.tax_id %} · RNC {{ org.tax_id }}{% endif %}
+    &nbsp;—&nbsp;{% trans "Documento generado el" %} {% now "d/m/Y H:i" %}
+  </div>
+
+</body>
+</html>

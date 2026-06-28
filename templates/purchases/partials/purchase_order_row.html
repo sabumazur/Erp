@@ -10,11 +10,7 @@
 
   {# ── Número ─────────────────────────────────────────────── #}
   <td data-col="number">
-    {% if row.number %}
-      <a href="{% url 'purchases:po_detail' row.pk %}" class="docnum">{{ row.number }}</a>
-    {% else %}
-      <span class="docnum muted">—</span>
-    {% endif %}
+    <a href="{% url 'purchases:po_detail' row.pk %}" class="docnum{% if not row.number %} muted{% endif %}">{{ row.display_number }}</a>
     <span class="dt-row-actions">
       <div class="dropdown dt-kebab">
         <button type="button" class="btn btn-link btn-sm p-0 dt-kebab-btn" aria-label="{% trans 'Acciones' %}"
@@ -24,6 +20,8 @@
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
           <li><a class="dropdown-item" href="{% url 'purchases:po_detail' row.pk %}" data-action="view">
             <i class="bi bi-eye me-2"></i>{% trans "Ver" %}</a></li>
+          <li><a class="dropdown-item" href="{% url 'purchases:po_print' row.pk %}" data-action="print" target="_blank">
+            <i class="bi bi-printer me-2"></i>{% trans "Imprimir" %}</a></li>
           <li>
             {% if row.status == 'DRAFT' %}
               <a class="dropdown-item" href="{% url 'purchases:po_edit' row.pk %}" data-action="edit">
