@@ -1,0 +1,139 @@
+{% load i18n humanize %}<!DOCTYPE html>
+<html lang="es">
+<head>
+{% include "sales/partials/_email_head.html" %}
+  <title>{% trans "Orden de Compra" %} {{ po.number|default:"Borrador" }} – {{ org.name }}</title>
+</head>
+<body bgcolor="#f4f4f4">
+
+<!-- Preheader -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f4f4f4;">{% trans "Orden de Compra" %} {{ po.number|default:"Borrador" }} · {% trans "Total" %}: {{ po.total|floatformat:2|intcomma }}</div>
+
+<!-- Wrapper -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f4">
+  <tr>
+    <td align="center" style="padding: 24px 16px;">
+
+      <!-- Card -->
+      <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+        {% include "sales/partials/_topbar.html" %}
+
+        {% trans "Orden de Compra" as doc_title %}
+        {% include "sales/partials/_org_header.html" with doc_title=doc_title doc_number=po.number|default:"Borrador" %}
+
+        <!-- ── GREETING ── -->
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
+              {% trans "Estimado(a)" %} <strong style="color:#1a1a1a;">{{ po.supplier.contact_name|default:po.supplier.name }}</strong>,
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#6b7280;line-height:1.65;">
+              {% trans "Adjunto encontrará la orden de compra correspondiente a los artículos indicados. Quedo a su disposición para cualquier consulta o ajuste." %}
+            </p>
+          </td>
+        </tr>
+
+        <!-- ── PARTIES (Proveedor | Comprador) ── -->
+        <tr>
+          <td style="padding: 18px 28px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <!-- Supplier (recipient) -->
+                <td width="50%" valign="top" style="padding-right:8px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="background:#f8f9fa;border-left:3px solid #1e2130;border-radius:0 4px 4px 0;padding:10px 12px;">
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;font-weight:700;margin-bottom:4px;">{% trans "Proveedor" %}</div>
+                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ po.supplier.name }}</div>
+                        {% if po.supplier.rnc_cedula %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ po.supplier.get_id_type_display }}: {{ po.supplier.rnc_cedula }}</div>{% endif %}
+                        {% if po.supplier.address %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ po.supplier.address }}</div>{% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <!-- Org (buyer) -->
+                <td width="50%" valign="top" style="padding-left:8px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="background:#f8f9fa;border-left:3px solid #1e2130;border-radius:0 4px 4px 0;padding:10px 12px;">
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#6b7280;font-weight:700;margin-bottom:4px;">{% trans "Comprador" %}</div>
+                        <div style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ org.name }}</div>
+                        {% if org.tax_id %}<div style="font-size:11px;color:#555;margin-top:2px;">RNC: {{ org.tax_id }}</div>{% endif %}
+                        {% if org.address %}<div style="font-size:11px;color:#555;margin-top:2px;">{{ org.address }}</div>{% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── META ── -->
+        <tr>
+          <td style="padding: 14px 28px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="border-bottom:1px solid #e5e7eb;padding-bottom:12px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      {% trans "Fecha emisión" as l %}
+                      {% include "sales/partials/_meta_item.html" with label=l value=po.issue_date|date:"d/m/Y" pr=24 pl=0 %}
+                      {% if po.expected_date %}
+                      {% trans "Fecha esperada" as l %}
+                      {% include "sales/partials/_meta_item.html" with label=l value=po.expected_date|date:"d/m/Y" value_color="#0369a1" pr=24 pl=0 %}
+                      {% endif %}
+                      {% if po.currency != "DOP" %}
+                      <td style="padding-left:24px;">
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;">{% trans "Moneda" %}</div>
+                        <div style="font-weight:700;font-size:12px;color:#1a1a1a;margin-top:2px;">{{ po.currency }} @ {{ po.exchange_rate }}</div>
+                      </td>
+                      {% endif %}
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        {% include "sales/partials/_items_table.html" %}
+
+        {% include "sales/partials/_totals.html" with doc=po %}
+
+        {% include "sales/partials/_notes.html" with doc=po %}
+
+        <!-- ── SENDER SIGNATURE ── -->
+        {% if sender %}
+        <tr>
+          <td style="padding: 20px 28px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="border-top:1px solid #e5e7eb;padding-top:14px;">
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#6b7280;font-weight:700;margin-bottom:6px;">{% trans "De parte de" %}</div>
+                  {% if sender_signature_url %}
+                  <img src="{{ sender_signature_url }}" alt="{{ sender.full_name }}" height="48"
+                       style="max-height:48px;max-width:160px;display:block;margin-bottom:6px;">
+                  {% endif %}
+                  <div style="font-size:13px;font-weight:700;color:#1a1a1a;">{{ sender.full_name }}</div>
+                  <div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ sender.email }}</div>
+                  {% if org.phone %}<div style="font-size:11px;color:#6b7280;margin-top:2px;">{{ org.phone }}</div>{% endif %}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        {% include "sales/partials/_footer.html" %}
+
+      </table>
+      <!-- /Card -->
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
