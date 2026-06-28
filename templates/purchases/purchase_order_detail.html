@@ -58,6 +58,14 @@
         <a href="{% url 'purchases:po_print' po.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
           <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
         </a>
+        {% if po.status == "CONFIRMED" %}
+        <form method="post" action="{% url 'purchases:po_email' po.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-envelope me-1"></i>{% trans "Enviar al proveedor" %}
+          </button>
+        </form>
+        {% endif %}
         <form method="post" action="{% url 'purchases:po_clone' po.pk %}"
               x-data
               x-on:submit.prevent="swalConfirm($el, '{% trans "¿Clonar esta orden como nuevo borrador?" %}', {icon:'question', color:'#6366f1', ok:'Sí, clonar'})">
@@ -99,6 +107,16 @@
               <i class="bi bi-printer me-2"></i>{% trans "Imprimir" %}
             </a>
           </li>
+          {% if po.status == "CONFIRMED" %}
+          <li>
+            <form method="post" action="{% url 'purchases:po_email' po.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-envelope me-2"></i>{% trans "Enviar al proveedor" %}
+              </button>
+            </form>
+          </li>
+          {% endif %}
           <li>
             <form method="post" action="{% url 'purchases:po_clone' po.pk %}"
                   x-data
