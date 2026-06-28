@@ -160,6 +160,18 @@
   --bs-pagination-disabled-bg:     var(--dm-s0);
   --bs-pagination-disabled-color:  var(--dm-t4);
   --bs-pagination-disabled-border-color: var(--dm-border-soft);
+
+  /* ── Badge semantic tokens — dark-mode palette ── */
+  --badge-conf-bg:     #1a2e50; --badge-conf-fg:     #7db3f8;
+  --badge-sent-bg:     #0c2438; --badge-sent-fg:     #67e8f9;
+  --badge-paid-bg:     #0a2318; --badge-paid-fg:     #6ee7b7;
+  --badge-over-bg:     #2a1010; --badge-over-fg:     #f87171;
+  --badge-cancel-bg:   #1e2535; --badge-cancel-fg:   #8895b3;
+  --badge-draft-bg:    #1e2535; --badge-draft-fg:    #8895b3;
+  --badge-active-bg:   #0a2318; --badge-active-fg:   #6ee7b7;
+  --badge-inactive-bg: #1e2535; --badge-inactive-fg: #8895b3;
+  --badge-invoice-bg:  #1e2535; --badge-invoice-fg:  #8895b3;
+  --badge-payment-bg:  #0a2318; --badge-payment-fg:  #6ee7b7;
 }
 
 
@@ -422,9 +434,12 @@
 [data-bs-theme="dark"] .app-table-wrap tbody td             { color: var(--dm-t2); border-bottom-color: var(--dm-border-soft); }
 [data-bs-theme="dark"] .app-table-wrap tbody tr:hover > td  { background: var(--dm-s2) !important; color: var(--dm-t1); }
 
-/* Row selection */
-[data-bs-theme="dark"] tr.dt-row-selected > td             { background-color: var(--dm-accent-bg) !important; }
-[data-bs-theme="dark"] tr.dt-row-selected:hover > td       { background-color: #1e3460 !important; }
+/* Row selection — also override --bs-table-bg-state so Bootstrap's
+   box-shadow inset doesn't hide the selected colour on hover */
+[data-bs-theme="dark"] tr.dt-row-selected > td                                         { background-color: var(--dm-accent-bg) !important; }
+[data-bs-theme="dark"] tr.dt-row-selected:hover > td                                   { background-color: #1e3460 !important; }
+[data-bs-theme="dark"] .table.table-hover tbody tr.dt-row-selected > td                { --bs-table-bg-state: var(--dm-accent-bg); }
+[data-bs-theme="dark"] .table.table-hover tbody tr.dt-row-selected:hover > td          { --bs-table-bg-state: #1e3460; }
 
 
 /* ─────────────────────────────────────────────────────────────

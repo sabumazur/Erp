@@ -39,7 +39,7 @@
 {% endcomment %}
 
 {% if stats %}
-<div class="row g-2 mb-3">
+<div class="row g-3 mb-3">
   {% for stat in stats %}
   <div class="{{ col_class|default:'col-12 col-sm-6 col-xl-3' }}">
     <{% if stat.href %}a href="{{ stat.href }}"{% else %}div{% endif %} class="db-kpi{% if stat.variant %} {{ stat.variant }}{% elif stat.color == 'primary' %} is-ar{% elif stat.color == 'success' %} is-pos{% elif stat.color == 'danger' %} is-neg{% elif stat.color == 'warning' %} is-ap{% elif stat.color == 'info' %} is-net{% endif %}">

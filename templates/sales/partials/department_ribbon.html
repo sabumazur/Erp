@@ -1,9 +1,27 @@
 {% load i18n %}
-<button type="button" class="btn btn-outline-secondary"
+{# Ribbon for the department datatable — rendered inside Alpine dtTable() scope. #}
+
+<button type="button" class="btn btn-outline-secondary btn-sm"
+        :disabled="!canAct"
+        :class="{'disabled': !canAct}"
+        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=edit]')?.click()">
+  <i class="bi bi-pencil me-1"></i>{% trans "Editar" %}
+</button>
+
+<button type="button" class="btn btn-outline-secondary btn-sm"
+        :disabled="!canAct"
+        :class="{'disabled': !canAct}"
+        @click="canAct && document.querySelector('tr.dt-row-selected [data-action=toggle]')?.click()">
+  <i class="bi bi-toggle-on me-1"></i>{% trans "Activar/Desactivar" %}
+</button>
+
+<span class="dt-ribbon-sep"></span>
+
+<button type="button" class="btn btn-outline-secondary btn-sm"
         hx-get="{% url 'sales:department_create' customer.pk %}"
         hx-target="#dept-modal-body"
         data-modal-open="#deptModal"
         data-modal-title-id="deptModalTitle"
         data-modal-title="{% trans 'Nuevo departamento' %}">
-  <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{% trans "Nuevo" %}
+  <i class="bi bi-plus-lg me-1"></i>{% trans "Nuevo" %}
 </button>

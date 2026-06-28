@@ -573,15 +573,27 @@ tr.dt-row-selected .dt-row-actions {
 /* ── Row selection ──────────────────────────────────────────── */
 
 tr.dt-row-selected > td {
-  background-color: #dbeafe;
+  background-color: #e8edf6;
 }
 
 tr.dt-row-selected > td:first-child {
   padding-left: 12px;
 }
 
+/* Bootstrap 5 table-hover renders hover via box-shadow inset that paints
+   OVER background-color. Without overriding --bs-table-bg-state here, the
+   selected colour only appears on mouseleave (when the box-shadow clears).
+   Higher specificity forces Bootstrap's own inset trick to use our colour. */
+.table.table-hover tbody tr.dt-row-selected > td {
+  --bs-table-bg-state: #e8edf6;
+}
+
+.table.table-hover tbody tr.dt-row-selected:hover > td {
+  --bs-table-bg-state: #d0d9ec;
+}
+
 tr.dt-row-selected:hover > td {
-  background-color: #bfdbfe;
+  background-color: #d0d9ec;
 }
 
 /* .dt-row-selected .dt-row-actions opacity handled in the kebab block above */

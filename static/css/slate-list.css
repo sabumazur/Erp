@@ -65,6 +65,11 @@
   font-weight: 600;
   padding: 6px 13px;
 }
+
+.dt-slate .dt-pill:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
 .dt-slate .dt-pill:hover {
   border-color: #cbd2da;
   background: #fff;
@@ -103,9 +108,9 @@
 /* ── Table head ─────────────────────────────────────────────────────────── */
 .dt-slate .app-table-wrap thead th {
   background: var(--surface-muted);
-  font-size: .68rem;
+  font-size: var(--t-xs);
   font-weight: 700;
-  letter-spacing: .05em;
+  letter-spacing: var(--ls-tight);
   text-transform: uppercase;
   color: var(--muted);
   border-bottom: 1px solid var(--hairline);
@@ -113,9 +118,9 @@
   white-space: nowrap;
 }
 .dt-slate .app-table-wrap thead th .btn-link {
-  font-size: .68rem !important;  /* counters documents.css .table th .btn-link { font-size !important } */
+  font-size: var(--t-xs) !important;
   font-weight: 700;
-  letter-spacing: .05em;
+  letter-spacing: var(--ls-tight);
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -136,7 +141,7 @@
   border-top: none;
   border-bottom: 1px solid var(--hairline-soft);
 }
-.dt-slate .app-table-wrap tbody tr:hover { background: #f8fafc; }
+.dt-slate .app-table-wrap tbody tr:hover { background: #f1f5f9; }
 .dt-slate .app-table-wrap tbody tr:last-child td { border-bottom: none; }
 
 /* ── Cell vocabulary (scoped — names mirror the Refined Slate spec) ──────── */
@@ -262,11 +267,16 @@
   min-width: 32px;
   height: 32px;
   border: 1px solid var(--hairline);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: #fff;
   color: var(--text-secondary);
   font-size: .8rem;
   font-weight: 600;
+}
+
+.dt-slate .dt-pagination .dt-page-btn:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
 }
 .dt-slate .dt-pagination .dt-page-btn:hover:not(:disabled) {
   background: var(--surface-muted);

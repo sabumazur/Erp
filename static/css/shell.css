@@ -73,7 +73,7 @@ body.sidebar-collapsed #sidebar {
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-label);
   color: #8892b0;
   padding: 18px 20px 6px;
   white-space: nowrap;
@@ -238,7 +238,6 @@ body.sidebar-collapsed #sidebar {
 
 /* Breadcrumbs inside the topbar */
 #topbar .breadcrumb {
-  font-size: 0.82rem;
   margin: 0;
   padding: 0;
   flex-wrap: nowrap;

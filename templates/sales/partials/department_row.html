@@ -2,10 +2,9 @@
 <tr data-pk="{{ row.pk }}"
     data-status="{% if row.is_active %}active{% else %}inactive{% endif %}"
     data-detail-url="">
-  <td data-col="name" class="fw-semibold">
+  <td data-col="name">
     <button type="button"
-            class="btn btn-link p-0 fw-semibold text-decoration-none link-brand"
-            style="font-size:.85rem"
+            class="btn btn-link p-0 fw-semibold text-decoration-none link-brand small"
             hx-get="{% url 'sales:department_edit' customer.pk row.pk %}"
             hx-target="#dept-modal-body"
             onclick="event.stopPropagation()"
@@ -34,6 +33,18 @@
                     data-modal-title-id="deptModalTitle"
                     data-modal-title="{% trans 'Editar departamento' %}">
               <i class="bi bi-pencil me-2"></i>{% trans "Editar" %}
+            </button>
+          </li>
+          <li>
+            <button type="button" class="dropdown-item" data-action="toggle"
+                    hx-post="{% url 'sales:department_toggle' customer.pk row.pk %}"
+                    hx-target="#dt-results"
+                    hx-swap="innerHTML">
+              {% if row.is_active %}
+                <i class="bi bi-toggle-off me-2"></i>{% trans "Desactivar" %}
+              {% else %}
+                <i class="bi bi-toggle-on me-2"></i>{% trans "Activar" %}
+              {% endif %}
             </button>
           </li>
           <li><hr class="dropdown-divider"></li>

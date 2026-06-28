@@ -56,7 +56,7 @@
 
   {# ── Cliente ────────────────────────────────────────────── #}
   <td data-col="customer__name">
-    <span class="cust">{{ row.customer.name }}{% if row.customer.rnc_cedula %}<span class="rnc">RNC {{ row.customer.rnc_cedula }}</span>{% endif %}</span>
+    <span class="cust"><span class="nm">{{ row.customer.name }}{% if row.customer.rnc_cedula %}<small class="rnc">RNC {{ row.customer.rnc_cedula }}</small>{% endif %}</span></span>
   </td>
 
   {# ── Fecha ──────────────────────────────────────────────── #}
