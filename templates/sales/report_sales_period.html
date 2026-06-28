@@ -48,13 +48,13 @@
   </div>
   <div class="col-6 col-sm-4">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ totals.collected|floatformat:2|intcomma }}</div>
+      <div class="app-metric-value num-pos">{{ totals.collected|floatformat:2|intcomma }}</div>
       <div class="app-metric-label">{% trans "Total cobrado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+      <div class="app-metric-value {% if totals.net > 0 %}num-warn{% elif totals.net < 0 %}num-neg{% endif %}">
         {{ totals.net|floatformat:2|intcomma }}
       </div>
       <div class="app-metric-label">
@@ -82,19 +82,19 @@
           {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
         </td>
         <td class="text-end font-monospace">{{ row.invoiced|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace text-success">{{ row.collected|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-danger{% endif %}">
+        <td class="text-end font-monospace num-pos">{{ row.collected|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}num-warn{% elif row.net < 0 %}num-neg{% endif %}">
           {{ row.net|floatformat:2|intcomma }}
         </td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr>
+      <tr class="table-group-divider">
         <td>{% trans "Total" %}</td>
         <td class="text-end font-monospace">{{ totals.invoiced|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace text-success">{{ totals.collected|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+        <td class="text-end font-monospace num-pos">{{ totals.collected|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace {% if totals.net > 0 %}num-warn{% elif totals.net < 0 %}num-neg{% endif %}">
           {{ totals.net|floatformat:2|intcomma }}
         </td>
       </tr>

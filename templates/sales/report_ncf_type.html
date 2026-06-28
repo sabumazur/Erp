@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Ventas por Tipo de Comprobante{% endblock %}
+{% block title %}{% trans "Ventas por Tipo de Comprobante" %}{% endblock %}
 
 {% block content %}
 
 {# ── Print-only document header ───────────────────────────────────────────── #}
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Ventas por Tipo de Comprobante</h1>
+  <h1 class="print-title">{% trans "Ventas por Tipo de Comprobante" %}</h1>
   {% if month and year %}
   <p class="print-meta">{{ today|date:"F" }} {{ year }}</p>
   {% endif %}
@@ -17,16 +17,16 @@
 {# ── Screen header ────────────────────────────────────────────────────────── #}
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Ventas por Tipo de Comprobante</h1>
+    <h1 class="app-header-title">{% trans "Ventas por Tipo de Comprobante" %}</h1>
     {% if month and year %}<p class="app-header-sub">{{ today|date:"F" }} {{ year }}</p>{% endif %}
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if rows %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -43,25 +43,25 @@
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
       <div class="app-metric-value">{{ rows|length }}</div>
-      <div class="app-metric-label">Tipos usados</div>
+      <div class="app-metric-label">{% trans "Tipos usados" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
       <div class="app-metric-value">{{ total_count }}</div>
-      <div class="app-metric-label">Documentos</div>
+      <div class="app-metric-label">{% trans "Documentos" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-danger">{{ totals.itbis|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total ITBIS</div>
+      <div class="app-metric-value num-neg">{{ totals.itbis|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total ITBIS" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ totals.total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total facturado</div>
+      <div class="app-metric-value num-pos">{{ totals.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total facturado" %}</div>
     </div>
   </div>
 </div>
@@ -73,11 +73,11 @@
       <thead>
         <tr>
           <th style="width:5%">#</th>
-          <th>Tipo de Comprobante</th>
-          <th class="text-center">Documentos</th>
-          <th class="text-end">Subtotal</th>
-          <th class="text-end text-danger">ITBIS</th>
-          <th class="text-end">Total</th>
+          <th>{% trans "Tipo de Comprobante" %}</th>
+          <th class="text-center">{% trans "Documentos" %}</th>
+          <th class="text-end">{% trans "Subtotal" %}</th>
+          <th class="text-end num-neg">{% trans "ITBIS" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -87,17 +87,17 @@
           <td>{{ row.ncf_label }}</td>
           <td class="text-center">{{ row.count }}</td>
           <td class="text-end font-monospace">{{ row.subtotal|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-danger">{{ row.itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-neg">{{ row.itbis|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace fw-semibold">{{ row.total|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td colspan="2">Total</td>
+        <tr class="table-group-divider">
+          <td colspan="2">{% trans "Total" %}</td>
           <td class="text-center">{{ total_count }}</td>
           <td class="text-end font-monospace">{{ totals.subtotal|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-danger">{{ totals.itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-neg">{{ totals.itbis|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
@@ -108,7 +108,7 @@
 {% else %}
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
-  No hay facturas registradas para el mes {{ month }}/{{ year }}.
+  {% blocktrans with m=month y=year %}No hay facturas registradas para el mes {{ m }}/{{ y }}.{% endblocktrans %}
 </div>
 {% endif %}
 {% endif %}

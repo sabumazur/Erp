@@ -10,13 +10,13 @@
     <h1 class="app-header-title">
       {% if invoice %}{% trans "Editar factura" %}{% else %}{% trans "Nueva factura" %}{% endif %}
     </h1>
-    <p class="app-header-sub">{% trans "Facturas" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:invoice_list' %}" class="v-link">{% trans "Facturas" %}</a></p>
   </div>
   <div class="app-header-actions">
     <button type="submit" form="invoice-form" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% if invoice %}{% url 'sales:invoice_detail' invoice.pk %}{% else %}{% url 'sales:invoice_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 

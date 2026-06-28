@@ -4,15 +4,24 @@
 {% block title %}{% trans "Nueva Nota de Crédito / Débito" %}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0">{% trans "Nueva Nota de Crédito / Débito" %}</h1>
-  <a href="{% url 'sales:invoice_detail' original.pk %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
-  </a>
+
+<div class="app-header">
+  <div>
+    <h1 class="app-header-title">{% trans "Nueva Nota de Crédito / Débito" %}</h1>
+    <p class="app-header-sub">
+      <a href="{% url 'sales:invoice_detail' original.pk %}" class="v-link">{{ original.display_number }}</a>
+    </p>
+  </div>
+  <div class="app-header-actions">
+    <button type="submit" form="invoice-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
+    </button>
+    <a href="{% url 'sales:invoice_detail' original.pk %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+  </div>
 </div>
 
-<div class="alert alert-info">
-  <i class="bi bi-info-circle me-1"></i>
+<div class="kv-alert mb-3">
+  <i class="bi bi-info-circle" aria-hidden="true"></i>
   {% blocktrans with encf=original.encf %}
     Esta nota referencia la factura <strong>{{ encf }}</strong>.
     Incluya las líneas que corrigen o anulan la factura original.
@@ -22,9 +31,13 @@
 <form method="post" id="invoice-form" x-data>
   {% csrf_token %}
 
-  <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold d-flex align-items-center">
-      {% trans "Datos de la nota" %}
+  {# ── Card 1 · Datos de la nota ────────────────────────────────────────── #}
+  <div class="app-table-wrap doc-order-card mb-3">
+    <div class="app-card-head doc-order-card-head">
+      <span class="doc-order-card-title">
+        <i class="bi bi-file-earmark-minus" aria-hidden="true"></i>
+        {% trans "Datos de la nota" %}
+      </span>
       <div id="opt-add-row" class="doc-head-optfields ms-auto">
         <button type="button" class="doc-optfield-chip" data-target="opt-terms-wrap">
           <i class="bi bi-plus-lg"></i>{% trans "Términos" %}
@@ -34,26 +47,30 @@
         </button>
       </div>
     </div>
-    <div class="card-body">{% crispy form %}</div>
+    <div class="doc-order-card-body">{% crispy form %}</div>
   </div>
 
-  <div class="card shadow-sm mb-3">
-    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-      {% trans "Líneas" %}
-      <button type="button"
-              class="btn btn-outline-primary btn-sm"
-              hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
-              hx-target="#item-tbody"
-              hx-swap="beforeend"
-              hx-on::after-request="recalcGrandTotal(); refreshSortOrder();">
-        <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
-      </button>
+  {# ── Card 2 · Líneas ──────────────────────────────────────────────────── #}
+  <div class="app-table-wrap doc-lines-card mb-3">
+    <div class="app-card-head doc-lines-head">
+      <span class="doc-lines-title">{% trans "Líneas" %}</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="doc-lines-count" id="doc-line-count"></span>
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                hx-get="{% url 'sales:item_row' %}?form_index={{ formset.total_form_count }}"
+                hx-target="#item-tbody"
+                hx-swap="beforeend"
+                hx-on::after-request="recalcGrandTotal(); refreshSortOrder();">
+          <i class="bi bi-plus-lg me-1"></i>{% trans "Agregar línea" %}
+        </button>
+      </div>
     </div>
-    <div class="card-body p-0">
+    <div>
       {{ formset.management_form }}
       <div class="table-responsive">
         <table class="table table-sm mb-0">
-          <thead class="table-light">
+          <thead>
             <tr>
               <th style="width:28px"></th>
               <th style="width:44px"></th>
@@ -78,12 +95,6 @@
     </div>
   </div>
 
-  <div class="d-flex gap-2 mb-4">
-    <button type="submit" class="btn btn-primary">
-      <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
-    </button>
-    <a href="{% url 'sales:invoice_detail' original.pk %}" class="btn btn-outline-secondary">{% trans "Cancelar" %}</a>
-  </div>
 </form>
 
 {% url 'sales:item_search' as item_search_url %}
@@ -94,6 +105,7 @@ window.ITEM_QUICK_CREATE_URL = "{% url 'sales:item_quick_create' %}";
 </script>
 
 {% include "sales/partials/item_js.html" %}
+
 {% endblock %}
 
 {% block extra_js %}

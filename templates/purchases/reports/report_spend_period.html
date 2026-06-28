@@ -1,32 +1,32 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Compras por Período{% endblock %}
+{% block title %}{% trans "Compras por Período" %}{% endblock %}
 
 {% block content %}
 
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Compras por Período</h1>
+  <h1 class="print-title">{% trans "Compras por Período" %}</h1>
   {% if year %}
   <p class="print-meta">
-    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}
+    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}
   </p>
   {% endif %}
 </div>
 
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Compras por Período</h1>
-    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
+    <h1 class="app-header-title">{% trans "Compras por Período" %}</h1>
+    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}</p>{% endif %}
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if rows %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -41,21 +41,21 @@
   <div class="col-6 col-sm-4">
     <div class="app-metric-card">
       <div class="app-metric-value">{{ totals.invoiced|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total facturado</div>
+      <div class="app-metric-label">{% trans "Total facturado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ totals.paid|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total pagado</div>
+      <div class="app-metric-value num-pos">{{ totals.paid|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total pagado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-4">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+      <div class="app-metric-value {% if totals.net > 0 %}num-warn{% elif totals.net < 0 %}num-neg{% endif %}">
         {{ totals.net|floatformat:2|intcomma }}
       </div>
-      <div class="app-metric-label">{% if by_day %}Neto del mes{% else %}Neto del año{% endif %}</div>
+      <div class="app-metric-label">{% if by_day %}{% trans "Neto del mes" %}{% else %}{% trans "Neto del año" %}{% endif %}</div>
     </div>
   </div>
 </div>
@@ -64,10 +64,10 @@
   <table class="table table-hover table-sm mb-0">
     <thead>
       <tr>
-        <th>{% if by_day %}Día{% else %}Mes{% endif %}</th>
-        <th class="text-end">Facturado</th>
-        <th class="text-end">Pagado</th>
-        <th class="text-end">Neto</th>
+        <th>{% if by_day %}{% trans "Día" %}{% else %}{% trans "Mes" %}{% endif %}</th>
+        <th class="text-end">{% trans "Facturado" %}</th>
+        <th class="text-end">{% trans "Pagado" %}</th>
+        <th class="text-end">{% trans "Neto" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -77,19 +77,19 @@
           {% if by_day %}{{ row.period|date:"d/m/Y" }}{% else %}{{ row.period|date:"F Y" }}{% endif %}
         </td>
         <td class="text-end font-monospace">{{ row.invoiced|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace text-success">{{ row.paid|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}text-warning{% elif row.net < 0 %}text-danger{% endif %}">
+        <td class="text-end font-monospace num-pos">{{ row.paid|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace fw-semibold {% if row.net > 0 %}num-warn{% elif row.net < 0 %}num-neg{% endif %}">
           {{ row.net|floatformat:2|intcomma }}
         </td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr>
-        <td>Total</td>
+      <tr class="table-group-divider">
+        <td>{% trans "Total" %}</td>
         <td class="text-end font-monospace">{{ totals.invoiced|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace text-success">{{ totals.paid|floatformat:2|intcomma }}</td>
-        <td class="text-end font-monospace {% if totals.net > 0 %}text-warning{% elif totals.net < 0 %}text-danger{% endif %}">
+        <td class="text-end font-monospace num-pos">{{ totals.paid|floatformat:2|intcomma }}</td>
+        <td class="text-end font-monospace {% if totals.net > 0 %}num-warn{% elif totals.net < 0 %}num-neg{% endif %}">
           {{ totals.net|floatformat:2|intcomma }}
         </td>
       </tr>
@@ -100,9 +100,9 @@
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
   {% if by_day %}
-    No hay actividad registrada para el mes {{ month }}/{{ year }}.
+    {% blocktrans with m=month y=year %}No hay actividad registrada para el mes {{ m }}/{{ y }}.{% endblocktrans %}
   {% else %}
-    No hay actividad registrada para el año {{ year }}.
+    {% blocktrans with y=year %}No hay actividad registrada para el año {{ y }}.{% endblocktrans %}
   {% endif %}
 </div>
 {% endif %}

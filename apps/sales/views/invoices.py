@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -33,7 +34,7 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, Template
     required_module = "sales"
 
     dt_columns = [
-        DTColumn("encf",          _("e-NCF"),   sortable=True),
+        DTColumn("encf",          _("NCF"),     sortable=True),
         DTColumn("customer__name",_("Cliente"), sortable=True),
         DTColumn("issue_date",    _("Fecha"),   sortable=True),
         DTColumn("due_date",      _("Vence"),   sortable=True),
@@ -45,12 +46,12 @@ class InvoiceListView(ERPBaseViewMixin, DataTableMixin, CsvExportMixin, Template
     dt_row_template = "sales/partials/invoice_row.html"
     dt_filter_template = "sales/partials/invoice_filters.html"
     dt_ribbon_template = "sales/partials/invoice_ribbon.html"
-    dt_search_placeholder = _("e-NCF o cliente…")
+    dt_search_placeholder = _("NCF o cliente…")
     dt_id = "invoices"
     dt_create_url = "sales:invoice_create"
     dt_create_label = _("Nueva factura")
     csv_filename = "facturas.csv"
-    csv_headers = ["e-NCF", "Cliente", "Fecha", "Vence", "Estado", "Total"]
+    csv_headers = ["NCF", "Cliente", "Fecha", "Vence", "Estado", "Total"]
 
     def get_csv_row(self, inv):
         return [
@@ -117,8 +118,12 @@ class InvoiceDetailView(HistoryMixin, ERPBaseViewMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["items"] = self.object.items.all()
-        ctx["allocations"] = self.object.allocations.select_related("payment").order_by("payment__date")
-        ctx["payment_form"] = PaymentForm(initial={"amount": self.object.total, "date": date.today()})
+        allocations = self.object.allocations.select_related("payment").order_by("payment__date")
+        ctx["allocations"] = allocations
+        paid_total = allocations.aggregate(t=Sum("amount"))["t"] or Decimal("0")
+        ctx["paid_amount"] = paid_total
+        ctx["balance_due"] = self.object.total - paid_total
+        ctx["payment_form"] = PaymentForm(initial={"amount": ctx["balance_due"] or self.object.total, "date": date.today()})
         ctx["consolidated_orders"] = (
             self.object.consolidated_orders.select_related("customer").order_by("delivery_date")
             if self.object.is_invoice

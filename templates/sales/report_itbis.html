@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Resumen de ITBIS{% endblock %}
+{% block title %}{% trans "Resumen de ITBIS" %}{% endblock %}
 
 {% block content %}
 
 {# ── Print-only document header ───────────────────────────────────────────── #}
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Resumen de ITBIS</h1>
+  <h1 class="print-title">{% trans "Resumen de ITBIS" %}</h1>
   {% if year %}
   <p class="print-meta">
-    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}
+    {% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}
   </p>
   {% endif %}
 </div>
@@ -19,16 +19,16 @@
 {# ── Screen header ────────────────────────────────────────────────────────── #}
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Resumen de ITBIS</h1>
-    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}Año {{ year }}{% endif %}</p>{% endif %}
+    <h1 class="app-header-title">{% trans "Resumen de ITBIS" %}</h1>
+    {% if year %}<p class="app-header-sub">{% if month %}{{ rows.0.period|date:"F Y" }}{% else %}{% trans "Año" %} {{ year }}{% endif %}</p>{% endif %}
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if rows %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -45,25 +45,25 @@
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
       <div class="app-metric-value">{{ totals.total_base|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total base</div>
+      <div class="app-metric-label">{% trans "Total base" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-warning">{{ totals.itbis_16|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">ITBIS 16%</div>
+      <div class="app-metric-value num-warn">{{ totals.itbis_16|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "ITBIS 16%" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-danger">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">ITBIS 18%</div>
+      <div class="app-metric-value num-neg">{{ totals.itbis_18|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "ITBIS 18%" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-danger">{{ totals.total_itbis|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total ITBIS</div>
+      <div class="app-metric-value num-neg">{{ totals.total_itbis|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total ITBIS" %}</div>
     </div>
   </div>
 </div>
@@ -74,15 +74,15 @@
     <table class="table table-hover table-sm mb-0">
       <thead>
         <tr>
-          <th>{% if by_day %}Día{% else %}Mes{% endif %}</th>
-          <th class="text-end">Exento / Tasa 0%</th>
-          <th class="text-end">Base Grav. 16%</th>
-          <th class="text-end text-warning">ITBIS 16%</th>
-          <th class="text-end">Base Grav. 18%</th>
-          <th class="text-end text-danger">ITBIS 18%</th>
-          <th class="text-end">Total Base</th>
-          <th class="text-end text-danger">Total ITBIS</th>
-          <th class="text-end">Total</th>
+          <th>{% if by_day %}{% trans "Día" %}{% else %}{% trans "Mes" %}{% endif %}</th>
+          <th class="text-end">{% trans "Exento / Tasa 0%" %}</th>
+          <th class="text-end">{% trans "Base Grav. 16%" %}</th>
+          <th class="text-end num-warn">{% trans "ITBIS 16%" %}</th>
+          <th class="text-end">{% trans "Base Grav. 18%" %}</th>
+          <th class="text-end num-neg">{% trans "ITBIS 18%" %}</th>
+          <th class="text-end">{% trans "Total Base" %}</th>
+          <th class="text-end num-neg">{% trans "Total ITBIS" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -97,31 +97,31 @@
           <td class="text-end font-monospace">
             {% if row.base_16 %}{{ row.base_16|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="text-end font-monospace text-warning">
+          <td class="text-end font-monospace num-warn">
             {% if row.itbis_16 %}{{ row.itbis_16|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="text-end font-monospace">
             {% if row.base_18 %}{{ row.base_18|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="text-end font-monospace text-danger">
+          <td class="text-end font-monospace num-neg">
             {% if row.itbis_18 %}{{ row.itbis_18|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="text-end font-monospace">{{ row.total_base|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-danger">{{ row.total_itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-neg">{{ row.total_itbis|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace fw-semibold">{{ row.grand_total|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td>Total</td>
+        <tr class="table-group-divider">
+          <td>{% trans "Total" %}</td>
           <td class="text-end font-monospace text-muted">{{ totals.exempt|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.base_16|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-warning">{{ totals.itbis_16|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-warn">{{ totals.itbis_16|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.base_18|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-danger">{{ totals.itbis_18|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-neg">{{ totals.itbis_18|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.total_base|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-danger">{{ totals.total_itbis|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-neg">{{ totals.total_itbis|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.grand_total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
@@ -133,9 +133,9 @@
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
   {% if month %}
-    No hay facturas con ITBIS registradas para el mes {{ month }}/{{ year }}.
+    {% blocktrans with m=month y=year %}No hay facturas con ITBIS registradas para el mes {{ m }}/{{ y }}.{% endblocktrans %}
   {% else %}
-    No hay facturas con ITBIS registradas para el año {{ year }}.
+    {% blocktrans with y=year %}No hay facturas con ITBIS registradas para el año {{ y }}.{% endblocktrans %}
   {% endif %}
 </div>
 {% endif %}

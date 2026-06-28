@@ -55,23 +55,23 @@
   {% if customer %}
   <div class="customer-avatar">{{ customer.name|slice:":2"|upper }}</div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ customer.name }}</p>
+    <p class="fw-semibold mb-0">{{ customer.name }}</p>
     {% if customer.rnc_cedula %}
-    <p class="text-muted mb-0" style="font-size:.8rem">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
+    <p class="text-muted mb-0 small">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
     {% endif %}
   </div>
   {% elif selected_customers %}
   <div class="customer-avatar"><i class="bi bi-people"></i></div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ selected_customers|length }} {% trans "clientes" %}</p>
-    <p class="text-muted mb-0 text-truncate" style="font-size:.8rem">
+    <p class="fw-semibold mb-0">{{ selected_customers|length }} {% trans "clientes" %}</p>
+    <p class="text-muted mb-0 small text-truncate">
       {% for c in selected_customers %}{{ c.name }}{% if not forloop.last %} · {% endif %}{% endfor %}
     </p>
   </div>
   {% else %}
   <div class="customer-avatar"><i class="bi bi-people"></i></div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{% trans "Todos los clientes" %}</p>
+    <p class="fw-semibold mb-0">{% trans "Todos los clientes" %}</p>
   </div>
   {% endif %}
   {% if invoices %}
@@ -111,7 +111,7 @@
             {% if inv.doc_type == 'QUOTATION' %}{% url 'sales:quotation_detail' inv.pk as detail_url %}
             {% elif inv.doc_type == 'SALE_ORDER' %}{% url 'sales:sale_order_detail' inv.pk as detail_url %}
             {% else %}{% url 'sales:invoice_detail' inv.pk as detail_url %}{% endif %}
-            <a href="{{ detail_url }}" class="text-decoration-none text-dark">
+            <a href="{{ detail_url }}" class="v-link">
               <i class="bi bi-receipt me-1 text-muted no-print icon-xs"></i>{{ inv.display_number }}
             </a>
           </td>
@@ -120,7 +120,7 @@
           <td>{{ inv.get_payment_condition_display }}</td>
           <td class="text-end font-monospace">{{ inv.subtotal|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ inv.itbis_18|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace fw-semibold">{{ inv.total|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace fw-semibold num-pos">{{ inv.total|floatformat:2|intcomma }}</td>
           <td class="pe-4 text-center">
             {% if inv.status == "CONFIRMED" %}<span class="badge-soft badge-confirmed">{% trans "Confirmada" %}</span>
             {% elif inv.status == "SENT" %}<span class="badge-soft badge-sent">{% trans "Enviada" %}</span>
@@ -133,11 +133,11 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
+        <tr class="table-group-divider">
           <td class="ps-4" colspan="{% if multi_customer %}4{% else %}3{% endif %}">{% trans "Total del período" %}</td>
           <td class="text-end font-monospace">{{ totals.subtotal|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.itbis_18|floatformat:2|intcomma }}</td>
-          <td class="text-end font-monospace text-success">{{ totals.total|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-pos">{{ totals.total|floatformat:2|intcomma }}</td>
           <td class="pe-4"></td>
         </tr>
       </tfoot>

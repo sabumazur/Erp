@@ -22,7 +22,7 @@
 
   {# ── Name & description ──────────────────────────────────────── #}
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-bottom py-3">
+    <div class="card-header border-bottom py-3">
       <h6 class="fw-semibold mb-0"><i class="bi bi-pencil me-1"></i>{% trans "Datos del equipo" %}</h6>
     </div>
     <div class="card-body">
@@ -44,22 +44,24 @@
 
   {# ── Module access ────────────────────────────────────────────── #}
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-bottom py-3">
+    <div class="card-header border-bottom py-3">
       <h6 class="fw-semibold mb-0">
         <i class="bi bi-grid me-1"></i>{% trans "Acceso a módulos" %}
-        <span class="text-muted fw-normal ms-1" style="font-size:.8rem;">
-          — {% trans "dejar todo sin marcar permite acceso a todos los módulos" %}
-        </span>
       </h6>
     </div>
     <div class="card-body">
+      <div class="small mb-3 px-1 py-2 rounded-2 d-flex align-items-center gap-2"
+           style="background:var(--brand-soft);color:var(--bs-secondary-color);">
+        <i class="bi bi-info-circle-fill flex-shrink-0" style="color:var(--brand-accent);"></i>
+        {% trans "Dejar todos sin marcar permite acceso completo a todos los módulos." %}
+      </div>
       {% if all_modules %}
       <div class="row g-3">
         {% for module in all_modules %}
         <div class="col-md-4">
           <label class="d-block h-100" style="cursor:pointer;" for="module_{{ module.slug }}">
-            <div class="card h-100 border module-card {% if module.pk|stringformat:'s' in selected_module_pks %}border-primary shadow-sm{% endif %}"
-                 style="transition: border-color .15s, box-shadow .15s;">
+            <div class="card h-100 border module-card {% if module.pk|stringformat:'s' in selected_module_pks %}border-primary{% endif %}"
+                 style="transition: border-color .15s, background-color .15s;{% if module.pk|stringformat:'s' in selected_module_pks %}background:var(--brand-soft);{% endif %}">
               <div class="card-body p-3">
                 <div class="d-flex align-items-start gap-2">
                   <input
@@ -70,7 +72,7 @@
                     id="module_{{ module.slug }}"
                     {% if module.pk|stringformat:'s' in selected_module_pks %}checked{% endif %}
                     onchange="this.closest('.card').classList.toggle('border-primary', this.checked);
-                              this.closest('.card').classList.toggle('shadow-sm', this.checked);">
+                              this.closest('.card').style.background = this.checked ? 'var(--brand-soft)' : '';">
                   <div>
                     <div class="fw-semibold small">
                       <i class="bi {{ module.icon }} me-1 text-primary"></i>{{ module.name }}

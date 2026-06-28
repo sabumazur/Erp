@@ -20,22 +20,20 @@
   </div>
 </div>
 
-{# ── Invite form ────────────────────────────────────────────────── #}
+{# ── Invite form ────────────────────────────────────────────── #}
 <div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-white border-bottom py-3">
+  <div class="card-header border-bottom py-3">
     <h6 class="fw-semibold mb-0"><i class="bi bi-person-plus me-1"></i>{% trans "Invitar a un miembro" %}</h6>
   </div>
   <div class="card-body">
     <form method="post" action="{% url 'accounts:invite_member' %}" class="row g-2 align-items-end">
       {% csrf_token %}
       <div class="col-md-6">
-        <label class="form-label d-flex align-items-center gap-1 mb-1" style="font-size:.7rem;color:#6b7280;">
-          <i class="bi bi-envelope-at"></i>{% trans "Correo electrónico" %}
-        </label>
+        <label class="form-label fw-semibold small">{% trans "Correo electrónico" %}</label>
         {{ invite_form.email }}
       </div>
       <div class="col-md-3">
-        <label class="form-label small fw-semibold">{% trans "Rol" %}</label>
+        <label class="form-label fw-semibold small">{% trans "Rol" %}</label>
         {{ invite_form.role }}
       </div>
       <div class="col-md-3">
@@ -47,9 +45,9 @@
   </div>
 </div>
 
-{# ── Active members table ────────────────────────────────────────── #}
+{# ── Active members table ────────────────────────────────────── #}
 <div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-white border-bottom py-3">
+  <div class="card-header border-bottom py-3">
     <h6 class="fw-semibold mb-0"><i class="bi bi-people me-1"></i>{% trans "Miembros activos" %}</h6>
   </div>
   <div class="card-body p-0">
@@ -69,12 +67,12 @@
           <td class="ps-4 py-3">
             <div class="d-flex align-items-center gap-3">
               <img src="{% if m.user.avatar %}{{ m.user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ m.user.full_name|urlencode }}&size=36&background=6c757d&color=fff&rounded=true{% endif %}"
-                   width="36" height="36" class="rounded-circle object-fit-cover" alt="">
+                   width="36" height="36" class="rounded-circle object-fit-cover" alt="{{ m.user.full_name }}" loading="lazy">
               <div>
                 <div class="fw-semibold small">
                   {{ m.user.full_name }}
                   {% if m.user == request.user %}
-                    <span class="badge bg-secondary ms-1" style="font-size:.65rem;">{% trans "tú" %}</span>
+                    <span class="badge-soft badge-default ms-1" style="font-size:.62rem;letter-spacing:.01em;">{% trans "tú" %}</span>
                   {% endif %}
                 </div>
                 <div class="text-muted" style="font-size:.8rem;">{{ m.user.email }}</div>
@@ -99,13 +97,15 @@
                 </select>
               </form>
             {% else %}
-              <span class="badge
-                {% if m.role == 'owner' %}bg-primary
-                {% elif m.role == 'admin' %}bg-info text-dark
-                {% elif m.role == 'member' %}bg-success
-                {% else %}bg-secondary{% endif %}">
-                {{ m.get_role_display }}
-              </span>
+              {% if m.role == 'owner' %}
+                <span class="badge-soft badge-default">{{ m.get_role_display }}</span>
+              {% elif m.role == 'admin' %}
+                <span class="badge-soft badge-confirmed">{{ m.get_role_display }}</span>
+              {% elif m.role == 'member' %}
+                <span class="badge-soft badge-paid">{{ m.get_role_display }}</span>
+              {% else %}
+                <span class="badge-soft badge-cancelled">{{ m.get_role_display }}</span>
+              {% endif %}
             {% endif %}
           </td>
 
@@ -135,7 +135,7 @@
               <form method="post" action="{% url 'accounts:member_remove' m.pk %}"
                     @submit.prevent="_open = true">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Eliminar miembro' %}">
                   <i class="bi bi-person-dash"></i>
                 </button>
               </form>
@@ -158,7 +158,10 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center text-muted py-5">{% trans "No se encontraron miembros." %}</td>
+          <td colspan="5" class="text-center py-5">
+            <i class="bi bi-people text-muted" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+            <span class="text-muted small">{% trans "No se encontraron miembros." %}</span>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -166,10 +169,10 @@
   </div>
 </div>
 
-{# ── Pending invitations ─────────────────────────────────────────── #}
+{# ── Pending invitations ─────────────────────────────────────── #}
 {% if pending_invitations %}
 <div class="card border-0 shadow-sm">
-  <div class="card-header bg-white border-bottom py-3">
+  <div class="card-header border-bottom py-3">
     <h6 class="fw-semibold mb-0">
       <i class="bi bi-envelope-open me-1"></i>{% trans "Invitaciones pendientes" %}
       <span class="badge bg-warning text-dark ms-1">{{ pending_invitations|length }}</span>
@@ -190,26 +193,31 @@
         {% for inv in pending_invitations %}
         <tr>
           <td class="ps-4 py-3">
-            <div class="text-muted d-flex align-items-center gap-1 mb-1" style="font-size:.7rem;">
-              <i class="bi bi-envelope-at"></i>{% trans "Correo electrónico" %}
+            <div class="d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                   style="width:36px;height:36px;background:var(--surface-subtle);">
+                <i class="bi bi-envelope text-muted" style="font-size:.85rem;"></i>
+              </div>
+              <span class="fw-semibold" style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;">{{ inv.email }}</span>
             </div>
-            <div class="fw-semibold" style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;">{{ inv.email }}</div>
           </td>
           <td class="py-3">
-            <span class="badge
-              {% if inv.role == 'owner' %}bg-primary
-              {% elif inv.role == 'admin' %}bg-info text-dark
-              {% elif inv.role == 'member' %}bg-success
-              {% else %}bg-secondary{% endif %}">
-              {{ inv.get_role_display }}
-            </span>
+            {% if inv.role == 'owner' %}
+              <span class="badge-soft badge-default">{{ inv.get_role_display }}</span>
+            {% elif inv.role == 'admin' %}
+              <span class="badge-soft badge-confirmed">{{ inv.get_role_display }}</span>
+            {% elif inv.role == 'member' %}
+              <span class="badge-soft badge-paid">{{ inv.get_role_display }}</span>
+            {% else %}
+              <span class="badge-soft badge-cancelled">{{ inv.get_role_display }}</span>
+            {% endif %}
           </td>
           <td class="py-3 text-muted small">{{ inv.invited_by.full_name|default:"—" }}</td>
-          <td class="py-3 text-muted small">
+          <td class="py-3 small">
             {% if inv.is_expired %}
               <span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>{% trans "Expirada" %}</span>
             {% else %}
-              {{ inv.expires_at|date:"d/m/Y" }}
+              <span class="text-muted">{{ inv.expires_at|date:"d/m/Y" }}</span>
             {% endif %}
           </td>
           <td class="pe-4 py-3 text-end">
@@ -224,7 +232,7 @@
                 <form method="post" action="{% url 'accounts:invitation_cancel' inv.pk %}"
                       @submit.prevent="_open = true">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Cancelar' %}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Cancelar invitación' %}">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </form>

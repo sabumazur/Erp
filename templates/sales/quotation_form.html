@@ -12,13 +12,13 @@
     <h1 class="app-header-title">
       {% if quotation %}{% trans "Editar cotización" %}{% else %}{% trans "Nueva cotización" %}{% endif %}
     </h1>
-    <p class="app-header-sub">{% trans "Cotizaciones" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:quotation_list' %}" class="v-link">{% trans "Cotizaciones" %}</a></p>
   </div>
   <div class="app-header-actions">
     <button type="submit" form="quotation-form" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'sales:quotation_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% if quotation %}{% url 'sales:quotation_detail' quotation.pk %}{% else %}{% url 'sales:quotation_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 

@@ -1,6 +1,7 @@
 import django_filters
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.widgets import TomSelect
 from .models import Module
 
 
@@ -15,6 +16,7 @@ class ModuleFilter(django_filters.FilterSet):
         method="active_filter",
         empty_label=None,
         label=_("Estado"),
+        widget=TomSelect(attrs={"class": "form-select form-select-sm"}, placeholder=_("Todos los estados")),
     )
 
     class Meta:

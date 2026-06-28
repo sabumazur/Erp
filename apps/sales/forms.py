@@ -359,11 +359,6 @@ class InvoiceForm(forms.ModelForm):
             )
         self.fields["customer"].widget = forms.HiddenInput(attrs={"id": "id_customer"})
 
-        # Only Factura de Crédito Fiscal is used — lock the field.
-        # Django's disabled=True means the submitted value is ignored and the
-        # model default (CREDITO_FISCAL) is always used instead.
-        # self.fields["ncf_type"].disabled = True
-
         self.helper = FormHelper()
         self.helper.form_tag = False
         # HTML() blocks below are rendered as Django templates by crispy-forms.
@@ -378,8 +373,10 @@ class InvoiceForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openCustomerPicker()">'
+                        ' onclick="openCustomerPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCustomerPicker();}">'
                         '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
                         '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
                         '{% endif %}'
@@ -463,8 +460,10 @@ class QuotationForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openCustomerPicker()">'
+                        ' onclick="openCustomerPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCustomerPicker();}">'
                         '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
                         '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
                         '{% endif %}'
@@ -575,8 +574,10 @@ class SaleOrderForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openCustomerPicker()">'
+                        ' onclick="openCustomerPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCustomerPicker();}">'
                         '{% if form.instance.customer %}{{ form.instance.customer.name }}{% else %}'
                         '<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'
                         '{% endif %}'
@@ -883,8 +884,10 @@ class PaymentHeaderForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control customer-display-text" id="customer-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openCustomerPicker()">'
+                        ' onclick="openCustomerPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCustomerPicker();}">'
                         '{% if form.selected_customer %}{{ form.selected_customer.name }}'
                         '{% if form.selected_customer.rnc_cedula %} ({{ form.selected_customer.rnc_cedula }}){% endif %}'
                         '{% else %}<span class=\\"text-muted fst-italic\\">Sin cliente seleccionado</span>'

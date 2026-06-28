@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Antigüedad de Cuentas por Pagar{% endblock %}
+{% block title %}{% trans "Antigüedad de Cuentas por Pagar" %}{% endblock %}
 
 {% block content %}
 
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Antigüedad de Cuentas por Pagar</h1>
-  <p class="print-meta">Al {{ today|date:"d/m/Y" }}</p>
+  <h1 class="print-title">{% trans "Antigüedad de Cuentas por Pagar" %}</h1>
+  <p class="print-meta">{% trans "Al" %} {{ today|date:"d/m/Y" }}</p>
 </div>
 
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Antigüedad de Cuentas por Pagar</h1>
-    <p class="app-header-sub">Al {{ today|date:"d/m/Y" }}</p>
+    <h1 class="app-header-title">{% trans "Antigüedad de Cuentas por Pagar" %}</h1>
+    <p class="app-header-sub">{% trans "Al" %} {{ today|date:"d/m/Y" }}</p>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if rows %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -34,11 +34,11 @@
     <table class="table table-hover table-sm mb-0">
       <thead>
         <tr>
-          <th>Proveedor</th>
+          <th>{% trans "Proveedor" %}</th>
           {% for bh in bucket_headers %}
           <th class="text-end {{ bh.css }}">{{ bh.label }}</th>
           {% endfor %}
-          <th class="text-end">Total</th>
+          <th class="text-end">{% trans "Total" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -46,7 +46,7 @@
         <tr>
           <td>
             <a href="{% url 'purchases:supplier_detail' row.supplier_id %}"
-               class="text-decoration-none fw-semibold">
+               class="v-link fw-semibold">
               {{ row.supplier_name }}
             </a>
           </td>
@@ -60,8 +60,8 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td>Total</td>
+        <tr class="table-group-divider">
+          <td>{% trans "Total" %}</td>
           {% for ctc in col_total_cells %}
           <td class="text-end font-monospace {{ ctc.css }}">{{ ctc.amount|floatformat:2|intcomma }}</td>
           {% endfor %}
@@ -74,7 +74,7 @@
 {% else %}
 <div class="alert alert-success">
   <i class="bi bi-check-circle me-1"></i>
-  No hay cuentas por pagar pendientes con vencimiento registrado.
+  {% trans "No hay cuentas por pagar pendientes con vencimiento registrado." %}
 </div>
 {% endif %}
 

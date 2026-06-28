@@ -13,7 +13,7 @@
   {% if confirmation %}
     <p class="auth-card-sub">
       Por favor confirma que
-      <strong style="color:#1e2130;">{{ confirmation.email_address.email }}</strong>
+      <strong style="color:var(--text-primary);">{{ confirmation.email_address.email }}</strong>
       es tu correo electrónico.
     </p>
     <form method="post">
@@ -25,7 +25,7 @@
   {% else %}
     <p class="auth-card-sub">
       Este enlace de confirmación es inválido o ha expirado.
-      <a href="{% url 'account_email' %}" style="color:#1e2130;font-weight:600;">Solicita uno nuevo</a>.
+      <a href="{% url 'account_email' %}" class="fw-semibold" style="color:var(--brand-ink);">Solicita uno nuevo</a>.
     </p>
   {% endif %}
 

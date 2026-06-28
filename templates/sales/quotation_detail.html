@@ -246,10 +246,6 @@
           <div class="kv-stat-l">{% trans "Total" %} {{ quotation.currency }}</div>
           <div class="kv-stat-n font-monospace num-pos">{{ quotation.total|floatformat:2|intcomma }}</div>
         </div>
-        <div class="kv-stat">
-          <div class="kv-stat-l">{% trans "Artículos" %}</div>
-          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
-        </div>
       </div>
     </section>
 
@@ -257,7 +253,7 @@
     <section class="kv-card kv-card--flush">
       <div class="kv-card-head">
         <i class="bi bi-list-ul" aria-hidden="true"></i>
-        <span class="kv-card-title">{% trans "Artículos" %}</span>
+        <span class="kv-card-title">{% trans "Artículos" %}<span class="badge-soft badge-default ms-1">{{ items|length }}</span></span>
       </div>
       <table class="kv-table">
         <thead>
@@ -307,7 +303,7 @@
             <td class="text-end font-monospace">{{ quotation.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr style="border-top:2px solid #e5e7eb">
+          <tr class="table-group-divider">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
             <td class="text-end font-monospace fw-bold num-pos">{{ quotation.total|floatformat:2|intcomma }}</td>
           </tr>
@@ -323,9 +319,11 @@
         <span class="kv-card-title">{% trans "Notas y condiciones" %}</span>
       </div>
       {% if quotation.notes %}
+      <p class="small fw-semibold text-muted mb-1 px-3 pt-3">{% trans "Notas" %}</p>
       <div class="kv-note">{{ quotation.notes }}</div>
       {% endif %}
       {% if quotation.terms %}
+      <p class="small fw-semibold text-muted mb-1 px-3 {% if not quotation.notes %}pt-3{% endif %}">{% trans "Condiciones" %}</p>
       <div class="kv-note">{{ quotation.terms }}</div>
       {% endif %}
     </section>
@@ -390,7 +388,7 @@
       <form method="post" action="{% url 'sales:quotation_convert' quotation.pk %}">
         {% csrf_token %}
         <div class="modal-header">
-          <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
+          <h5 class="modal-title fw-semibold small">
             {% trans "Convertir a factura" %}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

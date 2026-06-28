@@ -8,7 +8,7 @@
 <div class="app-header">
   <div>
     <h1 class="app-header-title">{% trans "Editar término de pago" %}</h1>
-    <p class="app-header-sub">{% trans "Facturación" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:payment_term_list' %}" class="v-link">{% trans "Configuración" %}</a></p>
   </div>
   <div class="app-header-actions">
     <button type="submit" form="payment-term-form" class="btn btn-sm btn-brand">

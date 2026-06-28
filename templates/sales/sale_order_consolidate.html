@@ -8,7 +8,7 @@
 <div class="app-header">
   <div>
     <h1 class="app-header-title">{% trans "Consolidar órdenes en factura" %}</h1>
-    <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:sale_order_list' %}" class="v-link">{% trans "Órdenes de venta" %}</a></p>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">
@@ -25,7 +25,7 @@
   <div class="col-lg-7">
     <div class="app-table-wrap mb-3">
       <div class="app-card-head">
-        {% trans "Parámetros" %}
+        <i class="bi bi-sliders me-2 opacity-50"></i>{% trans "Parámetros" %}
       </div>
       <div class="p-3">
         <form method="post" id="consolidate-form">
@@ -49,7 +49,7 @@
   <div class="col-lg-5">
     <div class="app-table-wrap">
       <div class="app-card-head">
-        {% trans "Vista previa" %}
+        <i class="bi bi-eye me-2 opacity-50"></i>{% trans "Vista previa" %}
       </div>
       <div id="consolidate-preview">
         <div class="text-center text-muted py-4 small">

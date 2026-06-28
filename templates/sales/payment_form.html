@@ -8,7 +8,7 @@
 <div class="app-header">
   <div>
     <h1 class="app-header-title">{% trans "Registrar pago" %}</h1>
-    <p class="app-header-sub">{% trans "Pagos" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:payment_list' %}" class="v-link">{% trans "Pagos" %}</a></p>
   </div>
   <div class="app-header-actions">
     <button type="submit" form="payment-form" class="btn btn-sm btn-brand" id="submit-btn" disabled>
@@ -58,7 +58,7 @@
               <th>{% trans "NCF" %}</th>
               <th>{% trans "Emisión" %}</th>
               <th>{% trans "Vence" %}</th>
-              <th class="text-center">{% trans "Aging" %}</th>
+              <th class="text-center">{% trans "Antigüedad" %}</th>
               <th class="text-end">{% trans "Total" %}</th>
               <th class="text-end">{% trans "Saldo" %}</th>
               <th class="text-end" style="width:130px">{% trans "Aplicar" %}</th>

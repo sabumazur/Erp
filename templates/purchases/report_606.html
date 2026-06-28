@@ -15,7 +15,8 @@
   <form method="get" class="d-flex align-items-end gap-2">
     <div>
       <label class="form-label small mb-1">{% trans "Mes" %}</label>
-      <select name="month" class="form-select form-select-sm" data-tom="" data-placeholder="Seleccione mes…">
+      <select name="month" class="form-select form-select-sm">
+        <option value="" disabled {% if not month %}selected{% endif %}>— {% trans "Mes" %} —</option>
         {% for num, name in months %}
         <option value="{{ num }}"{% if num == month %} selected{% endif %}>{{ name }}</option>
         {% endfor %}
@@ -27,8 +28,7 @@
              class="form-control form-control-sm" style="width:80px">
     </div>
     <button type="submit" class="btn btn-outline-secondary btn-sm">{% trans "Filtrar" %}</button>
-    <a href="?month={{ month }}&year={{ year }}&format=csv" class="btn btn-sm"
-       style="background:#D1E7DD;color:#0A6640;border:none;font-weight:500">
+    <a href="?month={{ month }}&year={{ year }}&format=csv" class="btn btn-sm btn-brand">
       <i class="bi bi-download me-1"></i>{% trans "Descargar CSV" %}
     </a>
   </form>
@@ -65,7 +65,7 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
+        <tr class="table-group-divider">
           <td colspan="4" class="text-end fw-bold">{% trans "Totales" %}</td>
           <td class="text-end font-monospace fw-bold">{{ total_subtotal|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace fw-bold" colspan="2">{{ total_itbis|floatformat:2|intcomma }}</td>
@@ -82,10 +82,9 @@
 </div>
 {% endif %}
 
-<div class="d-flex align-items-start gap-2 p-3 rounded-3 mt-3"
-     style="background:#EFF6FF;border:1px solid #BFDBFE;font-size:.875rem">
-  <i class="bi bi-calendar-event-fill mt-1 flex-shrink-0" style="color:#1D4ED8"></i>
-  <span style="color:#1E3A8A">
+<div class="alert alert-info d-flex align-items-start gap-2 small mt-3">
+  <i class="bi bi-calendar-event-fill mt-1 flex-shrink-0"></i>
+  <span>
     <strong>{% trans "Próximo vencimiento DGII" %}: {{ dgii_deadline|date:"j \d\e F \d\e Y" }}.</strong>
     {% trans "Los archivos generados deben cargarse en la Oficina Virtual (OFV) de la DGII. Verifique los datos antes de remitir." %}
   </span>

@@ -7,7 +7,7 @@
 <div class="app-header">
   <div>
     <h1 class="app-header-title">{% trans "Nueva organización" %}</h1>
-    <p class="app-header-sub">{% trans "Crear espacio de trabajo para un cliente" %}</p>
+    <p class="app-header-sub">{% trans "Crea un espacio de trabajo independiente para un cliente" %}</p>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
@@ -16,29 +16,82 @@
   </div>
 </div>
 
-    <div class="alert alert-warning d-flex align-items-start gap-2 mb-4" role="alert">
-      <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+<div class="settings-layout">
+
+  {# ── Form ── #}
+  <section class="settings-panel">
+    <div class="settings-panel-header">
+      <span class="settings-panel-icon">
+        <i class="bi bi-building-add" aria-hidden="true"></i>
+      </span>
       <div>
-        <strong>{% trans "Acción irreversible." %}</strong>
-        {% trans "Esta acción crea un espacio de trabajo independiente. Los datos no pueden transferirse entre organizaciones." %}
+        <h2 class="settings-panel-title">{% trans "Datos de la organización" %}</h2>
+        <p class="settings-panel-sub">{% trans "Solo el nombre y el correo del propietario son requeridos. El resto puede completarse después." %}</p>
       </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-4">
-        <form method="post" novalidate>
-          {% csrf_token %}
-          {% crispy form %}
-          <div class="d-flex justify-content-end gap-2 mt-4">
-            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
-              {% trans "Cancelar" %}
-            </a>
-            <button type="submit" class="btn btn-sm btn-brand">
-              <i class="bi bi-building-add me-1"></i>
-              {% trans "Crear organización y enviar invitación" %}
-            </button>
-          </div>
-        </form>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% crispy form %}
+      <div class="settings-form-actions">
+        <a href="{% url 'accounts:dashboard' %}" class="settings-secondary-link">
+          <i class="bi bi-x-lg"></i>
+          <span>{% trans "Cancelar" %}</span>
+        </a>
+        <button type="submit" class="btn btn-sm btn-brand">
+          <i class="bi bi-building-add me-1"></i>{% trans "Crear organización" %}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  {# ── Sidebar ── #}
+  <aside class="d-flex flex-column gap-3">
+
+    <div class="d-flex align-items-start gap-2 alert alert-warning small mb-0">
+      <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+      <div>
+        <strong>{% trans "Acción irreversible." %}</strong>
+        {% trans "Los datos no pueden transferirse entre organizaciones." %}
       </div>
     </div>
+
+    <section class="settings-aside">
+      <h2 class="settings-aside-title">{% trans "Qué ocurre al crear" %}</h2>
+      <ul class="settings-checklist">
+        <li>
+          <i class="bi bi-check2"></i>
+          <span>{% trans "Se crea un espacio de trabajo aislado con su propia configuración." %}</span>
+        </li>
+        <li>
+          <i class="bi bi-check2"></i>
+          <span>{% trans "Se envía una invitación de propietario al correo indicado." %}</span>
+        </li>
+        <li>
+          <i class="bi bi-check2"></i>
+          <span>{% trans "Al aceptar, el usuario puede configurar equipos, módulos y secuencias NCF." %}</span>
+        </li>
+        <li>
+          <i class="bi bi-check2"></i>
+          <span>{% trans "Los datos de contacto pueden editarse en cualquier momento desde los ajustes." %}</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="settings-aside">
+      <h2 class="settings-aside-title">{% trans "Campos requeridos" %}</h2>
+      <ul class="settings-checklist">
+        <li>
+          <i class="bi bi-asterisk" style="color:var(--brand-accent);font-size:.65rem;margin-top:.1rem;"></i>
+          <span>{% trans "Nombre de la organización" %}</span>
+        </li>
+        <li>
+          <i class="bi bi-asterisk" style="color:var(--brand-accent);font-size:.65rem;margin-top:.1rem;"></i>
+          <span>{% trans "Correo del propietario" %}</span>
+        </li>
+      </ul>
+    </section>
+
+  </aside>
+</div>
 {% endblock %}

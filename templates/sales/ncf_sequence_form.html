@@ -8,11 +8,14 @@
 <div class="app-header">
   <div>
     <h1 class="app-header-title">{% trans "Editar secuencia NCF" %}</h1>
-    <p class="app-header-sub">{% trans "Secuencias NCF" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:ncf_sequences' %}" class="v-link">{% trans "Secuencias NCF" %}</a></p>
   </div>
   <div class="app-header-actions">
+    <button type="submit" form="ncf-form" class="btn btn-sm btn-brand">
+      <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
+    </button>
     <a href="{% url 'sales:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>{% trans "Volver" %}
+      {% trans "Cancelar" %}
     </a>
   </div>
 </div>
@@ -23,20 +26,12 @@
   <div class="col-lg-7">
     <div class="app-table-wrap">
       <div class="app-card-head">
-        {% trans "Parámetros" %}
+        <i class="bi bi-sliders me-2 opacity-50"></i>{% trans "Parámetros" %}
       </div>
       <div class="p-3">
-        <form method="post">
+        <form method="post" id="ncf-form">
           {% csrf_token %}
           {% crispy form %}
-          <div class="d-flex gap-2 pt-2 mt-1 border-top">
-            <button type="submit" class="btn btn-sm btn-brand">
-              <i class="bi bi-floppy me-1"></i>{% trans "Guardar cambios" %}
-            </button>
-            <a href="{% url 'sales:ncf_sequences' %}" class="btn btn-outline-secondary btn-sm">
-              {% trans "Cancelar" %}
-            </a>
-          </div>
         </form>
       </div>
     </div>
@@ -47,46 +42,41 @@
 
     {# Identity + preview #}
     <div class="app-table-wrap">
-      <div style="padding:10px 14px 9px;border-bottom:1px solid #e5e7eb;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;display:flex;align-items:center;gap:8px">
+      <div class="app-card-head">
         {% if object.series == 'B' %}
-          <span class="badge-soft badge-confirmed">B</span>
+          <span class="badge-soft badge-confirmed me-1">B</span>
         {% else %}
-          <span class="badge-soft badge-sent">E</span>
+          <span class="badge-soft badge-sent me-1">E</span>
         {% endif %}
         {{ object.get_ncf_type_display }}
       </div>
       <div class="p-3">
 
-        <p class="text-muted mb-1" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">
+        <p class="text-muted mb-1 small fw-semibold text-uppercase" style="letter-spacing:.05em">
           {% trans "Próximo NCF a asignar" %}
         </p>
         <code class="d-inline-block font-monospace fw-bold fs-5 bg-light border rounded px-3 py-2 mb-3">{{ object.preview_next }}</code>
 
-        <p class="text-muted mb-1" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">
+        <p class="text-muted mb-1 small fw-semibold text-uppercase" style="letter-spacing:.05em">
           {% trans "Capacidad" %}
         </p>
         <div class="d-flex justify-content-between align-items-baseline mb-1">
           {% if object.remaining == 0 %}
-            <span class="fw-semibold" style="font-size:.83rem;color:#dc2626">{% trans "Agotada" %}</span>
+            <span class="fw-semibold small num-neg">{% trans "Agotada" %}</span>
           {% elif object.remaining < 100 %}
-            <span class="fw-semibold" style="font-size:.83rem;color:#dc2626">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
+            <span class="fw-semibold small num-neg">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
           {% elif object.remaining < 500 %}
-            <span class="fw-semibold" style="font-size:.83rem;color:#856404">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
+            <span class="fw-semibold small num-warn">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
           {% else %}
-            <span class="fw-semibold" style="font-size:.83rem;color:#16a34a">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
+            <span class="fw-semibold small num-pos">{{ object.remaining|intcomma }} {% trans "disponibles" %}</span>
           {% endif %}
-          <span class="text-muted" style="font-size:.72rem">{{ object.pct_used }}%</span>
+          <span class="text-muted small">{{ object.pct_used }}%</span>
         </div>
         <div class="rounded mb-1" style="height:5px;background:rgba(0,0,0,.07);overflow:hidden">
-          {% if object.remaining < 100 %}
-            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#dc2626"></div>
-          {% elif object.remaining < 500 %}
-            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#d97706"></div>
-          {% else %}
-            <div class="rounded" style="height:100%;width:{{ object.pct_used }}%;background:#16a34a"></div>
-          {% endif %}
+          <div class="rounded {% if object.remaining < 100 %}bg-danger{% elif object.remaining < 500 %}bg-warning{% else %}bg-success{% endif %}"
+               style="height:100%;width:{{ object.pct_used }}%"></div>
         </div>
-        <p class="text-muted mt-1 mb-0" style="font-size:.72rem">
+        <p class="text-muted small mt-1 mb-0">
           {{ object.current_seq|intcomma }} {% trans "usados de" %} {{ object.max_seq|intcomma }}
         </p>
 

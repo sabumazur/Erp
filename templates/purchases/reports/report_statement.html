@@ -1,32 +1,32 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Estado de Cuenta de Proveedor{% endblock %}
+{% block title %}{% trans "Estado de Cuenta de Proveedor" %}{% endblock %}
 
 {% block content %}
 
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Estado de Cuenta de Proveedor</h1>
+  <h1 class="print-title">{% trans "Estado de Cuenta de Proveedor" %}</h1>
   {% if supplier %}
   <p class="print-meta">
-    {{ supplier.name }}{% if supplier.rnc_cedula %} · {{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}{% endif %} · Período: {{ date_from }} — {{ date_to }}
+    {{ supplier.name }}{% if supplier.rnc_cedula %} · {{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}{% endif %} · {% trans "Período" %}: {{ date_from }} — {{ date_to }}
   </p>
   {% endif %}
 </div>
 
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Estado de Cuenta de Proveedor</h1>
-    <p class="app-header-sub">Facturas recibidas, pagos realizados y saldo acumulado por proveedor.</p>
+    <h1 class="app-header-title">{% trans "Estado de Cuenta de Proveedor" %}</h1>
+    <p class="app-header-sub">{% trans "Facturas recibidas, pagos realizados y saldo acumulado por proveedor." %}</p>
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if supplier and lines %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -45,9 +45,9 @@
 <div class="customer-block no-print">
   <div class="customer-avatar">{{ supplier.name|slice:":2"|upper }}</div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ supplier.name }}</p>
+    <p class="fw-semibold mb-0">{{ supplier.name }}</p>
     {% if supplier.rnc_cedula %}
-    <p class="text-muted mb-0" style="font-size:.8rem">{{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}</p>
+    <p class="text-muted mb-0 small">{{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}</p>
     {% endif %}
   </div>
   {% if date_from and date_to %}
@@ -60,30 +60,30 @@
 <div class="row g-2 mb-4 no-print">
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
+      <div class="app-metric-value {% if opening_balance > 0 %}num-warn{% endif %}">
         {{ opening_balance|floatformat:2|intcomma }}
       </div>
-      <div class="app-metric-label">Saldo inicial</div>
+      <div class="app-metric-label">{% trans "Saldo inicial" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
       <div class="app-metric-value">{{ period_invoiced|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Facturado</div>
+      <div class="app-metric-label">{% trans "Facturado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ period_paid|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Pagado</div>
+      <div class="app-metric-value num-pos">{{ period_paid|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Pagado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+      <div class="app-metric-value {% if closing_balance > 0 %}num-warn{% elif closing_balance < 0 %}num-neg{% else %}num-pos{% endif %}">
         {{ closing_balance|floatformat:2|intcomma }}
       </div>
-      <div class="app-metric-label">Saldo final</div>
+      <div class="app-metric-label">{% trans "Saldo final" %}</div>
     </div>
   </div>
 </div>
@@ -94,19 +94,18 @@
     <table class="table table-hover table-sm mb-0" style="font-size:.875rem">
       <thead>
         <tr>
-          <th class="ps-4">Fecha</th>
-          <th>Tipo</th>
-          <th>Referencia</th>
-          <th class="text-end">Débito</th>
-          <th class="text-end">Crédito</th>
-          <th class="pe-4 text-end">Saldo</th>
+          <th class="ps-4">{% trans "Fecha" %}</th>
+          <th>{% trans "Tipo" %}</th>
+          <th>{% trans "Referencia" %}</th>
+          <th class="text-end">{% trans "Débito" %}</th>
+          <th class="text-end">{% trans "Crédito" %}</th>
+          <th class="pe-4 text-end">{% trans "Saldo" %}</th>
         </tr>
       </thead>
       <tbody>
         <tr class="table-light">
-          <td class="ps-4 text-muted" style="font-size:.8rem" colspan="5">Saldo anterior al período</td>
-          <td class="pe-4 text-end font-monospace fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}"
-              style="font-size:.8rem">
+          <td class="ps-4 text-muted small" colspan="5">{% trans "Saldo anterior al período" %}</td>
+          <td class="pe-4 text-end font-monospace fw-semibold small {% if opening_balance > 0 %}num-warn{% endif %}">
             {{ opening_balance|floatformat:2|intcomma }}
           </td>
         </tr>
@@ -115,13 +114,13 @@
           <td class="ps-4 text-nowrap">{{ line.date|date:"d/m/Y" }}</td>
           <td>
             {% if line.type == 'invoice' %}
-              <span class="badge-soft badge-invoice">Factura</span>
+              <span class="badge-soft badge-invoice">{% trans "Factura" %}</span>
             {% else %}
-              <span class="badge-soft badge-payment">Pago</span>
+              <span class="badge-soft badge-payment">{% trans "Pago" %}</span>
             {% endif %}
           </td>
           <td>
-            <a href="{{ line.url }}" class="text-decoration-none font-monospace fw-semibold text-dark" style="font-size:.82rem">
+            <a href="{{ line.url }}" class="v-link font-monospace fw-semibold small">
               {% if line.type == 'invoice' %}<i class="bi bi-receipt me-1 text-muted no-print icon-xs"></i>
               {% else %}<i class="bi bi-cash me-1 text-muted no-print icon-xs"></i>{% endif %}
               {{ line.ref }}
@@ -130,21 +129,21 @@
           <td class="text-end font-monospace">
             {% if line.debit %}{{ line.debit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="text-end font-monospace text-success">
+          <td class="text-end font-monospace num-pos">
             {% if line.credit %}{{ line.credit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="pe-4 text-end font-monospace fw-semibold
-            {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
+            {% if line.balance > 0 %}num-warn{% elif line.balance < 0 %}num-neg{% endif %}">
             {{ line.balance|floatformat:2|intcomma }}
           </td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td class="ps-4" colspan="5">Saldo final</td>
+        <tr class="table-group-divider">
+          <td class="ps-4" colspan="5">{% trans "Saldo final" %}</td>
           <td class="pe-4 text-end font-monospace
-            {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+            {% if closing_balance > 0 %}num-warn{% elif closing_balance < 0 %}num-neg{% else %}num-pos{% endif %}">
             {{ closing_balance|floatformat:2|intcomma }}
           </td>
         </tr>
@@ -155,7 +154,7 @@
 {% else %}
 <div class="alert alert-info no-print">
   <i class="bi bi-person-lines-fill me-2"></i>
-  No hay movimientos en el período seleccionado. Prueba con un rango de fechas diferente.
+  {% trans "No hay movimientos en el período seleccionado. Prueba con un rango de fechas diferente." %}
 </div>
 {% endif %}
 

@@ -12,13 +12,13 @@
     <h1 class="app-header-title">
       {% if order %}{% trans "Editar orden de venta" %}{% else %}{% trans "Nueva orden de venta" %}{% endif %}
     </h1>
-    <p class="app-header-sub">{% trans "Órdenes de venta" %}</p>
+    <p class="app-header-sub"><a href="{% url 'sales:sale_order_list' %}" class="v-link">{% trans "Órdenes de venta" %}</a></p>
   </div>
   <div class="app-header-actions">
     <button type="submit" form="sale-order-form" class="btn btn-sm btn-brand">
       <i class="bi bi-floppy me-1"></i>{% trans "Guardar borrador" %}
     </button>
-    <a href="{% url 'sales:sale_order_list' %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
+    <a href="{% if order %}{% url 'sales:sale_order_detail' order.pk %}{% else %}{% url 'sales:sale_order_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">{% trans "Cancelar" %}</a>
   </div>
 </div>
 

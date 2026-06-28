@@ -153,18 +153,22 @@
       }
     }
 
+    recomputeDueDate(pk);
+  }
+
+  function recomputeDueDate(pk) {
+    var defaults = (window.CUSTOMER_DEFAULTS || {})[pk];
+    if (!defaults) return;
     var daysDue = defaults.days_due || 0;
-    if (daysDue > 0) {
-      var issueDateEl = document.querySelector('[name="issue_date"]');
-      var dueDateEl = document.querySelector('[name="due_date"]');
-      if (issueDateEl && dueDateEl) {
-        var base = issueDateEl.value ? new Date(issueDateEl.value) : new Date();
-        base.setDate(base.getDate() + daysDue);
-        dueDateEl.value = base.getFullYear() + "-" +
-          String(base.getMonth() + 1).padStart(2, "0") + "-" +
-          String(base.getDate()).padStart(2, "0");
-      }
-    }
+    if (daysDue <= 0) return;
+    var issueDateEl = document.querySelector('[name="issue_date"]');
+    var dueDateEl = document.querySelector('[name="due_date"]');
+    if (!issueDateEl || !dueDateEl) return;
+    var base = issueDateEl.value ? new Date(issueDateEl.value + "T00:00:00") : new Date();
+    base.setDate(base.getDate() + daysDue);
+    dueDateEl.value = base.getFullYear() + "-" +
+      String(base.getMonth() + 1).padStart(2, "0") + "-" +
+      String(base.getDate()).padStart(2, "0");
   }
 
   function initInvoiceItemFormset() {
@@ -227,6 +231,13 @@
         if (deptSel) deptSel.value = "";
       }
     });
+    var issueDateEl = document.querySelector('[name="issue_date"]');
+    if (issueDateEl) {
+      issueDateEl.addEventListener("change", function () {
+        var pk = custSel.tomselect ? custSel.tomselect.getValue() : custSel.value;
+        if (pk) recomputeDueDate(pk);
+      });
+    }
   }
 
   function initHeaderCardCollapse() {

@@ -16,9 +16,9 @@
     <p class="app-header-sub"><i class="bi bi-building me-1"></i>{{ organization.name }} · {{ today|date:"F Y" }}</p>
   </div>
   <div class="app-header-actions">
-    <span class="btn btn-outline-secondary btn-sm no-print">
+    <time class="btn btn-outline-secondary btn-sm no-print" datetime="{{ today|date:'Y-m-d' }}" style="cursor:default;pointer-events:none;">
       <i class="bi bi-calendar3 me-1"></i>{{ today|date:"d/m/Y" }}
-    </span>
+    </time>
   </div>
 </div>
 
@@ -92,8 +92,8 @@
     <span class="db-panel-title">{% trans "Facturas recientes" %}</span>
     <a href="{% url 'sales:invoice_list' %}" class="btn btn-outline-secondary btn-sm no-print db-panel-action">{% trans "Ver todas" %} →</a>
   </div>
-  <table class="table table-hover mb-0">
-    <thead>
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
       <tr>
         <th>{% trans "N° Factura" %}</th>
         <th>{% trans "Cliente" %}</th>
@@ -142,8 +142,8 @@
         <a href="{% url 'sales:invoice_list' %}?status=OVERDUE" class="btn btn-sm no-print db-panel-action db-panel-action-danger">{% trans "Ver todas" %} →</a>
         {% endif %}
       </div>
-      <table class="table mb-0">
-        <thead>
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
           <tr>
             <th>{% trans "Factura" %}</th>
             <th>{% trans "Cliente" %}</th>
@@ -189,8 +189,8 @@
         <span class="db-panel-title">{% trans "Pagos recientes" %}</span>
         <a href="{% url 'sales:payment_list' %}" class="btn btn-outline-secondary btn-sm no-print db-panel-action">{% trans "Ver todos" %} →</a>
       </div>
-      <table class="table mb-0">
-        <thead>
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
           <tr>
             <th>{% trans "Fecha" %}</th>
             <th>{% trans "Cliente" %}</th>
@@ -203,7 +203,7 @@
           <tr>
             <td class="db-table-muted text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
             <td class="db-table-text">
-              <a href="{% url 'sales:customer_detail' pmt.customer.pk %}" class="text-decoration-none text-dark">{{ pmt.customer.name }}</a>
+              <a href="{% url 'sales:customer_detail' pmt.customer.pk %}" class="text-decoration-none text-body">{{ pmt.customer.name }}</a>
             </td>
             <td>
               {% if pmt.method == 'TRANSFER' %}<span class="badge-soft badge-sent">{{ pmt.get_method_display }}</span>
@@ -228,6 +228,12 @@
   </div>
 </div>
 
+{% else %}
+<div class="d-flex flex-column align-items-center justify-content-center text-center py-5" style="min-height:280px;">
+  <i class="bi bi-lock text-muted" style="font-size:2.5rem;margin-bottom:.75rem;display:block;"></i>
+  <p class="fw-semibold text-secondary mb-1">{% trans "Sin acceso al módulo de ventas" %}</p>
+  <p class="text-muted small mb-0">{% trans "Contacta al administrador para solicitar acceso." %}</p>
+</div>
 {% endif %}
 {% endblock %}
 

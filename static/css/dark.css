@@ -401,6 +401,15 @@
 /* Generic card border */
 [data-bs-theme="dark"] .card { border-color: var(--dm-border); }
 
+/* Status badges */
+[data-bs-theme="dark"] .badge-confirmed { background: var(--dm-accent-bg); color: var(--dm-accent); }
+[data-bs-theme="dark"] .badge-sent      { background: #0c2830;             color: #67d2de; }
+[data-bs-theme="dark"] .badge-paid      { background: #0e2a1a;             color: #4ade80; }
+[data-bs-theme="dark"] .badge-overdue   { background: #2a1010;             color: #f87171; }
+[data-bs-theme="dark"] .badge-cancelled { background: var(--dm-s3);        color: var(--dm-t3); }
+[data-bs-theme="dark"] .badge-default   { background: var(--dm-s3);        color: var(--dm-t3); }
+[data-bs-theme="dark"] .badge-invoice   { background: var(--dm-s3);        color: var(--dm-t3); }
+
 
 /* ─────────────────────────────────────────────────────────────
    § 6  APP TABLE  (shared list-view table wrapper)

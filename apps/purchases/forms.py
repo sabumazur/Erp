@@ -289,8 +289,10 @@ class PurchaseOrderForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control supplier-display-text" id="supplier-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openSupplierPicker()">'
+                        ' onclick="openSupplierPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openSupplierPicker();}">'
                         "{% if form.instance.supplier %}{{ form.instance.supplier.name }}{% else %}"
                         '<span class=\\"text-muted fst-italic\\">Sin proveedor seleccionado</span>'
                         "{% endif %}"
@@ -354,8 +356,10 @@ class SupplierInvoiceForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control supplier-display-text" id="supplier-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openSupplierPicker()">'
+                        ' onclick="openSupplierPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openSupplierPicker();}">'
                         "{% if form.instance.supplier %}{{ form.instance.supplier.name }}{% else %}"
                         '<span class=\\"text-muted fst-italic\\">Sin proveedor seleccionado</span>'
                         "{% endif %}"
@@ -457,8 +461,10 @@ class SupplierPaymentHeaderForm(forms.ModelForm):
                         + '<span class="asteriskField">*</span></label>'
                         '<div class="input-group mb-1">'
                         '<span class="form-control supplier-display-text" id="supplier-display-text"'
+                        ' role="button" tabindex="0"'
                         ' style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"'
-                        ' onclick="openSupplierPicker()">'
+                        ' onclick="openSupplierPicker()"'
+                        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openSupplierPicker();}">'
                         "{% if form.instance.supplier %}{{ form.instance.supplier.name }}{% else %}"
                         '<span class=\\"text-muted fst-italic\\">Sin proveedor seleccionado</span>'
                         "{% endif %}"

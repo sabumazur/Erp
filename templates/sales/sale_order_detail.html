@@ -260,10 +260,6 @@
           <div class="kv-stat-l">{% trans "Total" %} {{ order.currency }}</div>
           <div class="kv-stat-n font-monospace num-pos">{{ order.total|floatformat:2|intcomma }}</div>
         </div>
-        <div class="kv-stat">
-          <div class="kv-stat-l">{% trans "Artículos" %}</div>
-          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
-        </div>
       </div>
     </section>
 
@@ -271,7 +267,7 @@
     <section class="kv-card kv-card--flush">
       <div class="kv-card-head">
         <i class="bi bi-list-ul" aria-hidden="true"></i>
-        <span class="kv-card-title">{% trans "Artículos" %}</span>
+        <span class="kv-card-title">{% trans "Artículos" %}<span class="badge-soft badge-default ms-1">{{ items|length }}</span></span>
       </div>
       <table class="kv-table">
         <thead>
@@ -321,7 +317,7 @@
             <td class="text-end font-monospace">{{ order.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr style="border-top:2px solid #e5e7eb">
+          <tr class="table-group-divider">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
             <td class="text-end font-monospace fw-bold num-pos">{{ order.total|floatformat:2|intcomma }}</td>
           </tr>

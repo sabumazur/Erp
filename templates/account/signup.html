@@ -33,35 +33,38 @@
     {{ form.email|as_crispy_field }}
     {{ form.password1|as_crispy_field }}
 
-    <div class="mb-3" x-show="password.length > 0" x-cloak>
-      <div class="progress mb-2" style="height:4px;">
-        <div class="progress-bar"
+    <div class="password-strength" x-show="password.length > 0" x-cloak>
+      <div class="password-strength-track">
+        <div class="password-strength-bar"
              :class="strengthColor"
              :style="`width:${strengthPct}%`"
-             role="progressbar"></div>
+             role="progressbar"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             :aria-valuenow="strengthPct"></div>
       </div>
-      <ul class="list-unstyled mb-0" style="font-size:.78rem;">
-        <li :class="rules.length ? 'text-success' : 'text-danger'">
+      <div class="password-rule-grid">
+        <div class="password-rule" :class="rules.length ? 'is-valid' : 'is-invalid'">
           <i class="bi" :class="rules.length ? 'bi-check-circle-fill' : 'bi-x-circle'"></i>
-          Al menos 8 caracteres
-        </li>
-        <li :class="rules.hasLetter ? 'text-success' : 'text-danger'">
+          <span>8 caracteres</span>
+        </div>
+        <div class="password-rule" :class="rules.hasLetter ? 'is-valid' : 'is-invalid'">
           <i class="bi" :class="rules.hasLetter ? 'bi-check-circle-fill' : 'bi-x-circle'"></i>
-          Al menos una letra
-        </li>
-        <li :class="rules.hasNumber ? 'text-success' : 'text-danger'">
+          <span>Una letra</span>
+        </div>
+        <div class="password-rule" :class="rules.hasNumber ? 'is-valid' : 'is-invalid'">
           <i class="bi" :class="rules.hasNumber ? 'bi-check-circle-fill' : 'bi-x-circle'"></i>
-          Al menos un número
-        </li>
-        <li :class="rules.hasSymbol ? 'text-success' : 'text-danger'">
+          <span>Un número</span>
+        </div>
+        <div class="password-rule" :class="rules.hasSymbol ? 'is-valid' : 'is-invalid'">
           <i class="bi" :class="rules.hasSymbol ? 'bi-check-circle-fill' : 'bi-x-circle'"></i>
-          Al menos un símbolo
-        </li>
-        <li :class="rules.matches ? 'text-success' : 'text-danger'" x-show="confirm.length > 0">
+          <span>Un símbolo</span>
+        </div>
+        <div class="password-rule" :class="rules.matches ? 'is-valid' : 'is-invalid'" x-show="confirm.length > 0">
           <i class="bi" :class="rules.matches ? 'bi-check-circle-fill' : 'bi-x-circle'"></i>
-          Las contraseñas coinciden
-        </li>
-      </ul>
+          <span>Coinciden</span>
+        </div>
+      </div>
     </div>
 
     {{ form.password2|as_crispy_field }}

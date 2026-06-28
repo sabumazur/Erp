@@ -52,9 +52,9 @@
 <div class="customer-block no-print">
   <div class="customer-avatar">{{ customer.name|slice:":2"|upper }}</div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ customer.name }}</p>
+    <p class="fw-semibold mb-0">{{ customer.name }}</p>
     {% if customer.rnc_cedula %}
-    <p class="text-muted mb-0" style="font-size:.8rem">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
+    <p class="text-muted mb-0 small">{{ customer.get_id_type_display }} {{ customer.rnc_cedula }}</p>
     {% endif %}
   </div>
   {% if date_from and date_to %}
@@ -68,7 +68,7 @@
 <div class="row g-2 mb-4 no-print">
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if opening_balance > 0 %}text-warning{% endif %}">
+      <div class="app-metric-value {% if opening_balance > 0 %}num-warn{% endif %}">
         {{ opening_balance|floatformat:2|intcomma }}
       </div>
       <div class="app-metric-label">{% trans "Saldo inicial" %}</div>
@@ -82,13 +82,13 @@
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ period_collected|floatformat:2|intcomma }}</div>
+      <div class="app-metric-value num-pos">{{ period_collected|floatformat:2|intcomma }}</div>
       <div class="app-metric-label">{% trans "Cobrado" %}</div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="app-metric-card">
-      <div class="app-metric-value {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+      <div class="app-metric-value {% if closing_balance > 0 %}num-warn{% elif closing_balance < 0 %}num-neg{% else %}num-pos{% endif %}">
         {{ closing_balance|floatformat:2|intcomma }}
       </div>
       <div class="app-metric-label">{% trans "Saldo final" %}</div>
@@ -114,9 +114,8 @@
       </thead>
       <tbody>
         <tr class="table-light">
-          <td class="ps-4 text-muted" style="font-size:.8rem" colspan="5">{% trans "Saldo anterior al período" %}</td>
-          <td class="pe-4 text-end font-monospace fw-semibold {% if opening_balance > 0 %}text-warning{% endif %}"
-              style="font-size:.8rem">
+          <td class="ps-4 text-muted small" colspan="5">{% trans "Saldo anterior al período" %}</td>
+          <td class="pe-4 text-end font-monospace fw-semibold small {% if opening_balance > 0 %}num-warn{% endif %}">
             {{ opening_balance|floatformat:2|intcomma }}
           </td>
         </tr>
@@ -131,7 +130,7 @@
             {% endif %}
           </td>
           <td>
-            <a href="{{ line.url }}" class="text-decoration-none font-monospace fw-semibold text-dark" style="font-size:.82rem">
+            <a href="{{ line.url }}" class="v-link font-monospace fw-semibold small">
               {% if line.type == 'invoice' %}<i class="bi bi-receipt me-1 text-muted no-print icon-xs"></i>
               {% else %}<i class="bi bi-cash me-1 text-muted no-print icon-xs"></i>{% endif %}
               {{ line.ref }}
@@ -140,21 +139,21 @@
           <td class="text-end font-monospace">
             {% if line.debit %}{{ line.debit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="text-end font-monospace text-success">
+          <td class="text-end font-monospace num-pos">
             {% if line.credit %}{{ line.credit|floatformat:2|intcomma }}{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="pe-4 text-end font-monospace fw-semibold
-            {% if line.balance > 0 %}text-warning{% elif line.balance < 0 %}text-danger{% endif %}">
+            {% if line.balance > 0 %}num-warn{% elif line.balance < 0 %}num-neg{% endif %}">
             {{ line.balance|floatformat:2|intcomma }}
           </td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
+        <tr class="table-group-divider">
           <td class="ps-4" colspan="5">{% trans "Saldo final" %}</td>
           <td class="pe-4 text-end font-monospace
-            {% if closing_balance > 0 %}text-warning{% elif closing_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+            {% if closing_balance > 0 %}num-warn{% elif closing_balance < 0 %}num-neg{% else %}num-pos{% endif %}">
             {{ closing_balance|floatformat:2|intcomma }}
           </td>
         </tr>

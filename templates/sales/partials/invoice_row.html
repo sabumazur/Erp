@@ -10,7 +10,7 @@
     data-status="{{ row.status }}"
     data-detail-url="{% url 'sales:invoice_detail' row.pk %}">
 
-  {# ── e-NCF ──────────────────────────────────────────────── #}
+  {# ── NCF ────────────────────────────────────────────────── #}
   <td data-col="encf">
     {% if row.encf %}
       <a href="{% url 'sales:invoice_detail' row.pk %}" class="docnum">{{ row.display_number }}</a>

@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Pagos a Proveedores{% endblock %}
+{% block title %}{% trans "Pagos a Proveedores" %}{% endblock %}
 
 {% block content %}
 
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Pagos a Proveedores</h1>
+  <h1 class="print-title">{% trans "Pagos a Proveedores" %}</h1>
   {% if date_from and date_to %}<p class="print-meta">{{ date_from }} — {{ date_to }}</p>{% endif %}
 </div>
 
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Pagos a Proveedores</h1>
+    <h1 class="app-header-title">{% trans "Pagos a Proveedores" %}</h1>
     {% if date_from and date_to %}<p class="app-header-sub">{{ date_from }} — {{ date_to }}</p>{% endif %}
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if payments %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -41,17 +41,17 @@
   {% for m in by_method %}
   <div class="col-6 col-sm-4 col-md-3">
     <div class="app-metric-card">
-      <div class="app-metric-value text-success">{{ m.total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-value num-pos">{{ m.total|floatformat:2|intcomma }}</div>
       <div class="app-metric-label">{{ m.method_display }}</div>
-      <div class="text-muted" style="font-size:.72rem">{{ m.count }} pago{{ m.count|pluralize:"s" }}</div>
+      <div class="text-muted small">{{ m.count }} {% blocktrans with c=m.count %}pago{{ c|pluralize:"s" }}{% endblocktrans %}</div>
     </div>
   </div>
   {% endfor %}
   <div class="col-6 col-sm-4 col-md-3">
-    <div class="app-metric-card" style="border-color:#16a34a">
-      <div class="app-metric-value text-success">{{ grand_total|floatformat:2|intcomma }}</div>
-      <div class="app-metric-label">Total pagado</div>
-      <div class="text-muted" style="font-size:.72rem">{{ payments|length }} pago{{ payments|length|pluralize:"s" }}</div>
+    <div class="app-metric-card border-success">
+      <div class="app-metric-value num-pos">{{ grand_total|floatformat:2|intcomma }}</div>
+      <div class="app-metric-label">{% trans "Total pagado" %}</div>
+      <div class="text-muted small">{{ payments|length }} {% blocktrans with c=payments|length %}pago{{ c|pluralize:"s" }}{% endblocktrans %}</div>
     </div>
   </div>
 </div>
@@ -61,43 +61,43 @@
     <table class="table table-hover table-sm mb-0">
       <thead>
         <tr>
-          <th>N°</th>
-          <th>Fecha</th>
-          <th>Proveedor</th>
-          <th>Método</th>
-          <th>Referencia</th>
-          <th class="text-end">Monto</th>
+          <th>{% trans "N°" %}</th>
+          <th>{% trans "Fecha" %}</th>
+          <th>{% trans "Proveedor" %}</th>
+          <th>{% trans "Método" %}</th>
+          <th>{% trans "Referencia" %}</th>
+          <th class="text-end">{% trans "Monto" %}</th>
         </tr>
       </thead>
       <tbody>
         {% for pmt in payments %}
         <tr>
           <td class="font-monospace small">
-            <a href="{% url 'purchases:supplier_payment_detail' pmt.pk %}" class="text-decoration-none">
+            <a href="{% url 'purchases:supplier_payment_detail' pmt.pk %}" class="v-link">
               PAG-{{ pmt.pk.hex|slice:":8"|upper }}
             </a>
           </td>
           <td class="small text-nowrap">{{ pmt.date|date:"d/m/Y" }}</td>
           <td>
             <a href="{% url 'purchases:supplier_detail' pmt.supplier.pk %}"
-               class="text-decoration-none fw-semibold">
+               class="v-link fw-semibold">
               {{ pmt.supplier.name }}
             </a>
           </td>
           <td class="small">
-            <span class="badge {% if pmt.method == 'TRANSFER' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+            <span class="badge-soft {% if pmt.method == 'TRANSFER' %}badge-sent{% else %}badge-default{% endif %}">
               {{ pmt.get_method_display }}
             </span>
           </td>
           <td class="small text-muted">{{ pmt.reference|default:"—" }}</td>
-          <td class="text-end font-monospace text-success fw-semibold">{{ pmt.amount|floatformat:2|intcomma }}</td>
+          <td class="text-end font-monospace num-pos fw-semibold">{{ pmt.amount|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td colspan="5" class="text-end">Total</td>
-          <td class="text-end font-monospace text-success">{{ grand_total|floatformat:2|intcomma }}</td>
+        <tr class="table-group-divider">
+          <td colspan="5" class="text-end">{% trans "Total" %}</td>
+          <td class="text-end font-monospace num-pos">{{ grand_total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
     </table>
@@ -106,7 +106,7 @@
 {% else %}
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
-  No se registraron pagos a proveedores en el período seleccionado.
+  {% trans "No se registraron pagos a proveedores en el período seleccionado." %}
 </div>
 {% endif %}
 

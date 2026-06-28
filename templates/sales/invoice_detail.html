@@ -236,16 +236,18 @@
           <div class="kv-stat-l">{% trans "Total" %} {{ invoice.currency }}</div>
           <div class="kv-stat-n font-monospace num-pos">{{ invoice.total|floatformat:2|intcomma }}</div>
         </div>
-        {% if invoice.paid_amount %}
+        {% if paid_amount %}
         <div class="kv-stat">
           <div class="kv-stat-l">{% trans "Pagado" %}</div>
-          <div class="kv-stat-n font-monospace num-pos">{{ invoice.paid_amount|floatformat:2|intcomma }}</div>
+          <div class="kv-stat-n font-monospace num-pos">{{ paid_amount|floatformat:2|intcomma }}</div>
         </div>
         {% endif %}
+        {% if balance_due and invoice.status != "PAID" %}
         <div class="kv-stat">
-          <div class="kv-stat-l">{% trans "Artículos" %}</div>
-          <div class="kv-stat-n font-monospace">{{ items|length }}</div>
+          <div class="kv-stat-l">{% trans "Saldo pendiente" %}</div>
+          <div class="kv-stat-n font-monospace num-neg">{{ balance_due|floatformat:2|intcomma }}</div>
         </div>
+        {% endif %}
       </div>
     </section>
 
@@ -254,6 +256,7 @@
       <div class="kv-card-head">
         <i class="bi bi-list-ul" aria-hidden="true"></i>
         <span class="kv-card-title">{% trans "Artículos" %}</span>
+        <span class="badge-soft badge-default ms-1">{{ items|length }}</span>
       </div>
       <table class="kv-table">
         <thead>
@@ -297,7 +300,7 @@
             <td class="text-end font-monospace">{{ invoice.itbis_16|floatformat:2|intcomma }}</td>
           </tr>
           {% endif %}
-          <tr style="border-top:2px solid #e5e7eb">
+          <tr class="table-group-divider">
             <td colspan="5" class="text-end fw-bold">{% trans "Total" %}</td>
             <td class="text-end font-monospace fw-bold num-pos">{{ invoice.total|floatformat:2|intcomma }}</td>
           </tr>
@@ -313,9 +316,11 @@
         <span class="kv-card-title">{% trans "Notas y condiciones" %}</span>
       </div>
       {% if invoice.notes %}
+      <p class="small fw-semibold text-muted mb-1 px-3 pt-3">{% trans "Notas" %}</p>
       <div class="kv-note">{{ invoice.notes }}</div>
       {% endif %}
       {% if invoice.terms %}
+      <p class="small fw-semibold text-muted mb-1 px-3 {% if not invoice.notes %}pt-3{% endif %}">{% trans "Condiciones" %}</p>
       <div class="kv-note">{{ invoice.terms }}</div>
       {% endif %}
     </section>
@@ -375,7 +380,11 @@
         <tbody>
           {% for alloc in allocations %}
           <tr>
-            <td class="small text-muted text-nowrap">{{ alloc.payment.date|date:"d/m/Y" }}</td>
+            <td class="small text-nowrap">
+              <a href="{% url 'sales:payment_detail' alloc.payment.pk %}" class="v-link text-muted">
+                {{ alloc.payment.date|date:"d/m/Y" }}
+              </a>
+            </td>
             <td class="small">{{ alloc.payment.get_method_display }}</td>
             <td class="small text-muted font-monospace">{{ alloc.payment.reference|default:"—" }}</td>
             <td class="text-end fw-semibold font-monospace num-pos">{{ alloc.amount|floatformat:2|intcomma }}</td>
@@ -402,12 +411,16 @@
       </div>
       {% if stepper_steps %}{% include "sales/partials/status_stepper.html" %}{% endif %}
       <div class="kv-row">
-        <span class="kv-k">{% trans "e-NCF" %}</span>
+        <span class="kv-k">{% trans "NCF" %}</span>
         <span class="kv-v font-monospace fw-semibold">{{ invoice.encf|default:"—" }}</span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Estado DGII" %}</span>
-        <span class="kv-v v-type">{{ invoice.get_dgii_status_display }}</span>
+        <span class="kv-v v-type">
+          {% if not invoice.encf %}—
+          {% elif invoice.encf|slice:":1" == "E" %}{{ invoice.get_dgii_status_display }}
+          {% else %}{% trans "Emitido" %}{% endif %}
+        </span>
       </div>
       <div class="kv-row">
         <span class="kv-k">{% trans "Moneda" %}</span>
@@ -471,8 +484,8 @@
       <form method="post" action="{% url 'sales:invoice_pay' invoice.pk %}">
         {% csrf_token %}
         <div class="modal-header">
-          <h5 class="modal-title fw-semibold" style="font-size:.9rem;color:#111827">
-            {% trans "Registrar pago" %}
+          <h5 class="modal-title fw-semibold small">
+            <i class="bi bi-cash-coin me-2 text-muted"></i>{% trans "Registrar pago" %}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>

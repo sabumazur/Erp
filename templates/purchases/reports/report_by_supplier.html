@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Compras por Proveedor{% endblock %}
+{% block title %}{% trans "Compras por Proveedor" %}{% endblock %}
 
 {% block content %}
 
 <div class="print-header">
   <p class="print-org">{{ organization.name }}</p>
-  <h1 class="print-title">Compras por Proveedor</h1>
+  <h1 class="print-title">{% trans "Compras por Proveedor" %}</h1>
   {% if date_from and date_to %}<p class="print-meta">{{ date_from }} — {{ date_to }}</p>{% endif %}
 </div>
 
 <div class="app-header no-print">
   <div>
-    <h1 class="app-header-title">Compras por Proveedor</h1>
+    <h1 class="app-header-title">{% trans "Compras por Proveedor" %}</h1>
     {% if date_from and date_to %}<p class="app-header-sub">{{ date_from }} — {{ date_to }}</p>{% endif %}
   </div>
   <div class="app-header-actions">
     <a href="{% url 'core:reports' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Reportes
+      <i class="bi bi-arrow-left me-1"></i>{% trans "Reportes" %}
     </a>
     {% if rows or detail_invoices %}
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-      <i class="bi bi-printer me-1"></i>Imprimir
+      <i class="bi bi-printer me-1"></i>{% trans "Imprimir" %}
     </button>
     {% endif %}
   </div>
@@ -41,14 +41,14 @@
 <div class="customer-block no-print mb-3">
   <div class="customer-avatar">{{ supplier.name|slice:":2"|upper }}</div>
   <div class="flex-grow-1">
-    <p class="fw-semibold mb-0" style="font-size:.95rem">{{ supplier.name }}</p>
+    <p class="fw-semibold mb-0">{{ supplier.name }}</p>
     {% if supplier.rnc_cedula %}
-    <p class="text-muted mb-0" style="font-size:.8rem">{{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}</p>
+    <p class="text-muted mb-0 small">{{ supplier.get_id_type_display }} {{ supplier.rnc_cedula }}</p>
     {% endif %}
   </div>
   <a href="{% url 'purchases:report_by_supplier' %}?date_from={{ date_from }}&date_to={{ date_to }}"
      class="btn btn-sm btn-outline-secondary no-print">
-    <i class="bi bi-x me-1"></i>Ver todos los proveedores
+    <i class="bi bi-x me-1"></i>{% trans "Ver todos los proveedores" %}
   </a>
 </div>
 
@@ -57,12 +57,12 @@
     <table class="table table-hover table-sm mb-0">
       <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Número</th>
-          <th>NCF</th>
-          <th class="text-end">Subtotal</th>
-          <th class="text-end">ITBIS</th>
-          <th class="text-end">Total</th>
+          <th>{% trans "Fecha" %}</th>
+          <th>{% trans "Número" %}</th>
+          <th>{% trans "NCF" %}</th>
+          <th class="text-end">{% trans "Subtotal" %}</th>
+          <th class="text-end">{% trans "ITBIS" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -71,7 +71,7 @@
           <td class="small text-nowrap">{{ inv.issue_date|date:"d/m/Y" }}</td>
           <td>
             <a href="{% url 'purchases:supplier_invoice_detail' inv.pk %}"
-               class="text-decoration-none font-monospace fw-semibold" style="font-size:.82rem">
+               class="v-link font-monospace fw-semibold small">
               {{ inv.display_number }}
             </a>
           </td>
@@ -83,8 +83,8 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td colspan="3">Total ({{ totals.count }} factura{{ totals.count|pluralize:"s" }})</td>
+        <tr class="table-group-divider">
+          <td colspan="3">{% blocktrans with c=totals.count %}Total ({{ c }} factura{{ c|pluralize:"s" }}){% endblocktrans %}</td>
           <td class="text-end font-monospace">{{ totals.subtotal|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.itbis|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.total|floatformat:2|intcomma }}</td>
@@ -101,11 +101,11 @@
     <table class="table table-hover table-sm mb-0">
       <thead>
         <tr>
-          <th>Proveedor</th>
-          <th class="text-end">Facturas</th>
-          <th class="text-end">Subtotal</th>
-          <th class="text-end">ITBIS</th>
-          <th class="text-end">Total</th>
+          <th>{% trans "Proveedor" %}</th>
+          <th class="text-end">{% trans "Facturas" %}</th>
+          <th class="text-end">{% trans "Subtotal" %}</th>
+          <th class="text-end">{% trans "ITBIS" %}</th>
+          <th class="text-end">{% trans "Total" %}</th>
         </tr>
       </thead>
       <tbody>
@@ -113,7 +113,7 @@
         <tr>
           <td>
             <a href="{% url 'purchases:report_by_supplier' %}?date_from={{ date_from }}&date_to={{ date_to }}&supplier={{ row.supplier_id }}"
-               class="text-decoration-none fw-semibold">
+               class="v-link fw-semibold">
               {{ row.supplier_name }}
             </a>
           </td>
@@ -125,8 +125,8 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr>
-          <td>Total</td>
+        <tr class="table-group-divider">
+          <td>{% trans "Total" %}</td>
           <td class="text-end">{{ totals.count }}</td>
           <td class="text-end font-monospace">{{ totals.subtotal|floatformat:2|intcomma }}</td>
           <td class="text-end font-monospace">{{ totals.itbis|floatformat:2|intcomma }}</td>
@@ -139,7 +139,7 @@
 {% else %}
 <div class="alert alert-info">
   <i class="bi bi-info-circle me-1"></i>
-  No hay facturas de proveedor confirmadas en el período seleccionado.
+  {% trans "No hay facturas de proveedor confirmadas en el período seleccionado." %}
 </div>
 {% endif %}
 

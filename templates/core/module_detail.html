@@ -13,7 +13,7 @@
     </p>
   </div>
   <div class="app-header-actions">
-    <a href="{% url 'core:module_list' %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'core:module_list' %}" class="btn btn-outline-secondary btn-sm" aria-label="{% trans 'Volver a módulos' %}">
       <i class="bi bi-arrow-left"></i>
     </a>
     <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -65,10 +65,6 @@
           <div class="fw-semibold">{{ module.name }}</div>
           <div class="v-muted font-monospace">{{ module.slug }}</div>
         </div>
-      </div>
-      <div class="kv-row">
-        <div class="kv-k">{% trans "Slug" %}</div>
-        <div class="kv-v font-monospace">{{ module.slug }}</div>
       </div>
       <div class="kv-row">
         <div class="kv-k">{% trans "Nombre" %}</div>
